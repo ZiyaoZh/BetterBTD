@@ -1,0 +1,55 @@
+<UserControl x:Class="BetterBTD.Views.Controls.ScriptEditor.ScriptEditorMetadataPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:vio="http://schemas.lepo.co/wpfui/2022/xaml/violeta"
+             xmlns:converters="clr-namespace:BetterBTD.Views.Converters"
+             mc:Ignorable="d"
+             d:DesignHeight="120"
+             d:DesignWidth="1200">
+    <UserControl.Resources>
+        <converters:MapTypeToCascadingItemConverter x:Key="MapTypeToCascadingItemConverter" />
+    </UserControl.Resources>
+
+    <ui:CardControl Style="{StaticResource AppCardControlStyle}">
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+            <StackPanel Margin="0,0,12,0" VerticalAlignment="Center">
+                <TextBlock Style="{StaticResource CardDescriptionTextStyle}" Text="{Binding MetadataMapText}" />
+                <vio:CascadingComboBox Width="180"
+                                       Margin="0,4,0,0"
+                                       PlaceholderText="{Binding MetadataMapPlaceholderText}"
+                                       ItemsSource="{Binding MapItems}"
+                                       SelectedCascadingItem="{Binding SelectedMap, Mode=TwoWay, Converter={StaticResource MapTypeToCascadingItemConverter}}" />
+            </StackPanel>
+
+            <StackPanel Margin="0,0,12,0" VerticalAlignment="Center">
+                <TextBlock Style="{StaticResource CardDescriptionTextStyle}" Text="{Binding MetadataDifficultyText}" />
+                <ComboBox Width="140"
+                          Margin="0,4,0,0"
+                          DisplayMemberPath="DisplayName"
+                          ItemsSource="{Binding DifficultyOptions}"
+                          SelectedItem="{Binding SelectedDifficultyOption}" />
+            </StackPanel>
+
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock Style="{StaticResource CardDescriptionTextStyle}" Text="{Binding MetadataModeText}" />
+                <ComboBox Width="140"
+                          Margin="0,4,0,0"
+                          DisplayMemberPath="DisplayName"
+                          ItemsSource="{Binding ModeOptions}"
+                          SelectedItem="{Binding SelectedModeOption}" />
+            </StackPanel>
+
+            <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+                <TextBlock Style="{StaticResource CardDescriptionTextStyle}" Text="{Binding MetadataHeroText}" />
+                <ComboBox Width="140"
+                          Margin="0,4,0,0"
+                          DisplayMemberPath="DisplayName"
+                          ItemsSource="{Binding HeroOptions}"
+                          SelectedItem="{Binding SelectedHeroOption}" />
+            </StackPanel>
+        </StackPanel>
+    </ui:CardControl>
+</UserControl>

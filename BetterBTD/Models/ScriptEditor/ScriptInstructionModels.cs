@@ -321,8 +321,23 @@ public sealed class ScriptInstructionInstance : ObservableObject
     public bool RequiresAbilityCoordinate
     {
         get => _requiresAbilityCoordinate;
-        set => SetProperty(ref _requiresAbilityCoordinate, value);
+        set
+        {
+            if (!SetProperty(ref _requiresAbilityCoordinate, value))
+            {
+                return;
+            }
+
+            OnPropertyChanged(nameof(ShowAbilityCoordinateInputs));
+            OnPropertyChanged(nameof(ShowPlacementCoordinateInputs));
+        }
     }
+
+    public bool ShowAbilityCoordinateInputs =>
+        RequiresAbilityCoordinate && (Type == ScriptCommandType.SetMonkeyAbility || Type == ScriptCommandType.ActivateAbility);
+
+    public bool ShowPlacementCoordinateInputs =>
+        Type == ScriptCommandType.PlaceHeroInventory && RequiresAbilityCoordinate;
 
     public double AbilityCoordinateX
     {

@@ -136,8 +136,26 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
     public ScriptInstructionInstance? SelectedSequenceInstruction
     {
         get => _selectedSequenceInstruction;
-        set => SetProperty(ref _selectedSequenceInstruction, value);
+        set
+        {
+            if (!SetProperty(ref _selectedSequenceInstruction, value))
+            {
+                return;
+            }
+
+            OnPropertyChanged(nameof(HasSelectedSequenceInstruction));
+            OnPropertyChanged(nameof(ShowPropertiesEmptyState));
+            OnPropertyChanged(nameof(ShowNonExecutableInstructionHint));
+        }
     }
+
+    public bool HasSelectedSequenceInstruction => SelectedSequenceInstruction is not null;
+
+    public bool ShowPropertiesEmptyState => SelectedSequenceInstruction is null;
+
+    public bool ShowNonExecutableInstructionHint => SelectedSequenceInstruction is { IsExecutable: false };
+
+    public bool ShowSequenceEmptyState => InstructionSequence.Count == 0;
 
     public string StatsTitle => _localizationService.T("Editor.Stats");
     public string TotalScriptsText => string.Format(_localizationService.T("Editor.TotalScripts"), ScriptCount);
@@ -336,10 +354,12 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         if (_isRestoringHistory || _suppressHistoryTracking)
         {
             _pendingMonkeyObjectOptionsRebuild = true;
+            OnPropertyChanged(nameof(ShowSequenceEmptyState));
             RefreshHistoryCommandState();
             return;
         }
 
+        OnPropertyChanged(nameof(ShowSequenceEmptyState));
         RebuildMonkeyObjectOptions();
         RefreshHistoryCommandState();
     }
@@ -380,11 +400,14 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
             string.Equals(e.PropertyName, nameof(ScriptInstructionInstance.MonkeyBindingId), StringComparison.Ordinal) ||
             string.Equals(e.PropertyName, nameof(ScriptInstructionInstance.MonkeyObjectId), StringComparison.Ordinal) ||
             string.Equals(e.PropertyName, nameof(ScriptInstructionInstance.TargetMonkeyObjectId), StringComparison.Ordinal) ||
+            string.Equals(e.PropertyName, nameof(ScriptInstructionInstance.ShowUpgradePathSelector), StringComparison.Ordinal) ||
             string.Equals(e.PropertyName, nameof(ScriptInstructionInstance.ShowNextRoundSendCount), StringComparison.Ordinal) ||
             string.Equals(e.PropertyName, nameof(ScriptInstructionInstance.ShowWaitTimeMilliseconds), StringComparison.Ordinal) ||
             string.Equals(e.PropertyName, nameof(ScriptInstructionInstance.ShowWaitGoldAmount), StringComparison.Ordinal) ||
             string.Equals(e.PropertyName, nameof(ScriptInstructionInstance.ShowWaitRoundCount), StringComparison.Ordinal) ||
-            string.Equals(e.PropertyName, nameof(ScriptInstructionInstance.ShowWaitCoordinateColor), StringComparison.Ordinal))
+            string.Equals(e.PropertyName, nameof(ScriptInstructionInstance.ShowWaitCoordinateColor), StringComparison.Ordinal) ||
+            string.Equals(e.PropertyName, nameof(ScriptInstructionInstance.ShowAbilityCoordinateInputs), StringComparison.Ordinal) ||
+            string.Equals(e.PropertyName, nameof(ScriptInstructionInstance.ShowPlacementCoordinateInputs), StringComparison.Ordinal))
         {
             return;
         }

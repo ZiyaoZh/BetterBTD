@@ -1,0 +1,530 @@
+<UserControl x:Class="BetterBTD.Views.Controls.ScriptEditor.ScriptInstructionPropertiesPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:vio="http://schemas.lepo.co/wpfui/2022/xaml/violeta"
+             xmlns:controls="clr-namespace:BetterBTD.Views.Controls.ScriptEditor"
+             xmlns:converters="clr-namespace:BetterBTD.Views.Converters"
+             mc:Ignorable="d"
+             d:DesignHeight="900"
+             d:DesignWidth="360">
+    <UserControl.Resources>
+        <converters:MonkeyTowerTypeToCascadingItemConverter x:Key="MonkeyTowerTypeToCascadingItemConverter" />
+
+        <SolidColorBrush x:Key="NonExecutableInstructionBorderBrush" Color="#C48B18" />
+        <SolidColorBrush x:Key="NonExecutableInstructionBackgroundBrush" Color="#1FC48B18" />
+        <Style x:Key="CoordinateNumberBoxStyle"
+               TargetType="ui:NumberBox"
+               BasedOn="{StaticResource {x:Type ui:NumberBox}}">
+            <Setter Property="MinWidth" Value="120" />
+            <Setter Property="HorizontalAlignment" Value="Right" />
+        </Style>
+        <Style x:Key="CoordinateAxisLabelStyle"
+               TargetType="TextBlock"
+               BasedOn="{StaticResource CardDescriptionTextStyle}">
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <DataTemplate x:Key="PlaceMonkeyEditorTemplate">
+            <StackPanel Margin="0,0,0,10">
+                <TextBlock Style="{StaticResource CardDescriptionTextStyle}"
+                           Text="{Binding DataContext.PropertyMonkeyTowerText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}" />
+                <vio:CascadingComboBox Margin="0,4,0,10"
+                                       PlaceholderText="{Binding DataContext.MetadataMapPlaceholderText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}"
+                                       ItemsSource="{Binding DataContext.MonkeyTowerItems, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}"
+                                       SelectedCascadingItem="{Binding SelectedMonkeyTower, Mode=TwoWay, Converter={StaticResource MonkeyTowerTypeToCascadingItemConverter}}" />
+
+                <TextBlock Style="{StaticResource CardDescriptionTextStyle}"
+                           Text="{Binding DataContext.PropertyCoordinateText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}" />
+                <Grid Margin="0,4,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Row="0"
+                               Grid.Column="0"
+                               Margin="0,0,12,8"
+                               Style="{StaticResource CoordinateAxisLabelStyle}"
+                               Text="X" />
+                    <ui:NumberBox Grid.Row="0"
+                                  Grid.Column="1"
+                                  Margin="0,0,0,8"
+                                  Style="{StaticResource CoordinateNumberBoxStyle}"
+                                  Value="{Binding PositionX, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <TextBlock Grid.Row="1"
+                               Grid.Column="0"
+                               Margin="0,0,12,0"
+                               Style="{StaticResource CoordinateAxisLabelStyle}"
+                               Text="Y" />
+                    <ui:NumberBox Grid.Row="1"
+                                  Grid.Column="1"
+                                  Style="{StaticResource CoordinateNumberBoxStyle}"
+                                  Value="{Binding PositionY, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </Grid>
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate x:Key="UpgradeMonkeyEditorTemplate">
+            <StackPanel Margin="0,0,0,10">
+                <TextBlock Style="{StaticResource CardDescriptionTextStyle}"
+                           Text="{Binding DataContext.PropertyTargetMonkeyText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}" />
+                <ComboBox Margin="0,4,0,10"
+                          DisplayMemberPath="DisplayName"
+                          SelectedValuePath="Code"
+                          ItemsSource="{Binding DataContext.MonkeyObjectOptions, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}"
+                          SelectedValue="{Binding TargetMonkeyBindingId, Mode=TwoWay}" />
+
+                <StackPanel Margin="0,0,0,10"
+                            Visibility="{Binding ShowUpgradePathSelector, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <TextBlock Style="{StaticResource CardDescriptionTextStyle}"
+                               Text="{Binding DataContext.PropertyUpgradePathText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}" />
+                    <ComboBox Margin="0,4,0,0"
+                              DisplayMemberPath="DisplayName"
+                              SelectedValuePath="Code"
+                              ItemsSource="{Binding DataContext.UpgradePathOptions, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}"
+                              SelectedValue="{Binding UpgradePath, Mode=TwoWay}" />
+                </StackPanel>
+
+                <TextBlock Style="{StaticResource CardDescriptionTextStyle}"
+                           Text="{Binding DataContext.PropertyUpgradeCountText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}" />
+                <ui:NumberBox Margin="0,4,0,0"
+                              Minimum="1"
+                              Maximum="5"
+                              Value="{Binding UpgradeCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate x:Key="SwitchMonkeyTargetEditorTemplate">
+            <StackPanel Margin="0,0,0,10">
+                <TextBlock Style="{StaticResource CardDescriptionTextStyle}"
+                           Text="{Binding DataContext.PropertyTargetMonkeyText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}" />
+                <ComboBox Margin="0,4,0,10"
+                          DisplayMemberPath="DisplayName"
+                          SelectedValuePath="Code"
+                          ItemsSource="{Binding DataContext.MonkeyObjectOptions, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}"
+                          SelectedValue="{Binding TargetMonkeyBindingId, Mode=TwoWay}" />
+
+                <TextBlock Style="{StaticResource CardDescriptionTextStyle}"
+                           Text="{Binding DataContext.PropertySwitchDirectionText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}" />
+                <ComboBox Margin="0,4,0,10"
+                          DisplayMemberPath="DisplayName"
+                          SelectedValuePath="Code"
+                          ItemsSource="{Binding DataContext.SwitchDirectionOptions, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}"
+                          SelectedValue="{Binding SwitchDirection, Mode=TwoWay}" />
+
+                <TextBlock Style="{StaticResource CardDescriptionTextStyle}"
+                           Text="{Binding DataContext.PropertySwitchCountText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}" />
+                <ui:NumberBox Margin="0,4,0,0"
+                              Minimum="1"
+                              Maximum="3"
+                              Value="{Binding SwitchCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate x:Key="SetMonkeyAbilityEditorTemplate">
+            <StackPanel Margin="0,0,0,10">
+                <TextBlock Style="{StaticResource CardDescriptionTextStyle}"
+                           Text="{Binding DataContext.PropertyTargetMonkeyText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}" />
+                <ComboBox Margin="0,4,0,10"
+                          DisplayMemberPath="DisplayName"
+                          SelectedValuePath="Code"
+                          ItemsSource="{Binding DataContext.MonkeyObjectOptions, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}"
+                          SelectedValue="{Binding TargetMonkeyBindingId, Mode=TwoWay}" />
+
+                <TextBlock Style="{StaticResource CardDescriptionTextStyle}"
+                           Text="{Binding DataContext.PropertyAbilityText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}" />
+                <ComboBox Margin="0,4,0,10"
+                          DisplayMemberPath="DisplayName"
+                          SelectedValuePath="Code"
+                          ItemsSource="{Binding DataContext.MonkeyAbilityOptions, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}"
+                          SelectedValue="{Binding SelectedAbility, Mode=TwoWay}" />
+
+                <ui:ToggleSwitch Margin="0,4,0,10"
+                                 Content="{Binding DataContext.PropertyNeedAbilityCoordinateText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}"
+                                 IsChecked="{Binding RequiresAbilityCoordinate, Mode=TwoWay}" />
+
+                <Grid Visibility="{Binding ShowAbilityCoordinateInputs, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Row="0"
+                               Grid.Column="0"
+                               Margin="0,0,12,8"
+                               Style="{StaticResource CoordinateAxisLabelStyle}"
+                               Text="X" />
+                    <ui:NumberBox Grid.Row="0"
+                                  Grid.Column="1"
+                                  Margin="0,0,0,8"
+                                  Style="{StaticResource CoordinateNumberBoxStyle}"
+                                  Value="{Binding AbilityCoordinateX, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <TextBlock Grid.Row="1"
+                               Grid.Column="0"
+                               Margin="0,0,12,0"
+                               Style="{StaticResource CoordinateAxisLabelStyle}"
+                               Text="Y" />
+                    <ui:NumberBox Grid.Row="1"
+                                  Grid.Column="1"
+                                  Style="{StaticResource CoordinateNumberBoxStyle}"
+                                  Value="{Binding AbilityCoordinateY, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </Grid>
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate x:Key="PlaceHeroInventoryEditorTemplate">
+            <StackPanel Margin="0,0,0,10">
+                <TextBlock Style="{StaticResource CardDescriptionTextStyle}"
+                           Text="{Binding DataContext.PropertyInventoryText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}" />
+                <ComboBox Margin="0,4,0,10"
+                          DisplayMemberPath="DisplayName"
+                          SelectedValuePath="Code"
+                          ItemsSource="{Binding DataContext.InventoryOptions, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}"
+                          SelectedValue="{Binding SelectedInventoryItem, Mode=TwoWay}" />
+
+                <ui:ToggleSwitch Margin="0,4,0,10"
+                                 Content="{Binding DataContext.PropertyNeedCoordinateText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}"
+                                 IsChecked="{Binding RequiresAbilityCoordinate, Mode=TwoWay}" />
+
+                <Grid Visibility="{Binding ShowPlacementCoordinateInputs, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Row="0"
+                               Grid.Column="0"
+                               Margin="0,0,12,8"
+                               Style="{StaticResource CoordinateAxisLabelStyle}"
+                               Text="X" />
+                    <ui:NumberBox Grid.Row="0"
+                                  Grid.Column="1"
+                                  Margin="0,0,0,8"
+                                  Style="{StaticResource CoordinateNumberBoxStyle}"
+                                  Value="{Binding PositionX, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <TextBlock Grid.Row="1"
+                               Grid.Column="0"
+                               Margin="0,0,12,0"
+                               Style="{StaticResource CoordinateAxisLabelStyle}"
+                               Text="Y" />
+                    <ui:NumberBox Grid.Row="1"
+                                  Grid.Column="1"
+                                  Style="{StaticResource CoordinateNumberBoxStyle}"
+                                  Value="{Binding PositionY, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </Grid>
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate x:Key="ActivateAbilityEditorTemplate">
+            <StackPanel Margin="0,0,0,10">
+                <TextBlock Style="{StaticResource CardDescriptionTextStyle}"
+                           Text="{Binding DataContext.PropertyActivatedAbilityText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}" />
+                <ComboBox Margin="0,4,0,10"
+                          DisplayMemberPath="DisplayName"
+                          SelectedValuePath="Code"
+                          ItemsSource="{Binding DataContext.ActivatedAbilityOptions, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}"
+                          SelectedValue="{Binding SelectedActivatedAbility, Mode=TwoWay}" />
+
+                <ui:ToggleSwitch Margin="0,4,0,10"
+                                 Content="{Binding DataContext.PropertyNeedCoordinateText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}"
+                                 IsChecked="{Binding RequiresAbilityCoordinate, Mode=TwoWay}" />
+
+                <Grid Visibility="{Binding ShowAbilityCoordinateInputs, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Row="0"
+                               Grid.Column="0"
+                               Margin="0,0,12,8"
+                               Style="{StaticResource CoordinateAxisLabelStyle}"
+                               Text="X" />
+                    <ui:NumberBox Grid.Row="0"
+                                  Grid.Column="1"
+                                  Margin="0,0,0,8"
+                                  Style="{StaticResource CoordinateNumberBoxStyle}"
+                                  Value="{Binding AbilityCoordinateX, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <TextBlock Grid.Row="1"
+                               Grid.Column="0"
+                               Margin="0,0,12,0"
+                               Style="{StaticResource CoordinateAxisLabelStyle}"
+                               Text="Y" />
+                    <ui:NumberBox Grid.Row="1"
+                                  Grid.Column="1"
+                                  Style="{StaticResource CoordinateNumberBoxStyle}"
+                                  Value="{Binding AbilityCoordinateY, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </Grid>
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate x:Key="NextRoundEditorTemplate">
+            <StackPanel Margin="0,0,0,10">
+                <TextBlock Style="{StaticResource CardDescriptionTextStyle}"
+                           Text="{Binding DataContext.PropertyNextRoundActionText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}" />
+                <ComboBox Margin="0,4,0,0"
+                          DisplayMemberPath="DisplayName"
+                          SelectedValuePath="Code"
+                          ItemsSource="{Binding DataContext.NextRoundActionOptions, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}"
+                          SelectedValue="{Binding NextRoundAction, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                <StackPanel Margin="0,10,0,0"
+                            Visibility="{Binding ShowNextRoundSendCount, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <TextBlock Style="{StaticResource CardDescriptionTextStyle}"
+                               Text="{Binding DataContext.PropertyNextRoundSendCountText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}" />
+                    <ui:NumberBox Margin="0,4,0,0"
+                                  Minimum="1"
+                                  Maximum="500"
+                                  Value="{Binding NextRoundSendCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate x:Key="WaitEditorTemplate">
+            <StackPanel Margin="0,0,0,10">
+                <TextBlock Style="{StaticResource CardDescriptionTextStyle}"
+                           Text="{Binding DataContext.PropertyWaitModeText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}" />
+                <ComboBox Margin="0,4,0,0"
+                          DisplayMemberPath="DisplayName"
+                          SelectedValuePath="Code"
+                          ItemsSource="{Binding DataContext.WaitModeOptions, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}"
+                          SelectedValue="{Binding WaitMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                <StackPanel Margin="0,10,0,0"
+                            Visibility="{Binding ShowWaitTimeMilliseconds, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <TextBlock Style="{StaticResource CardDescriptionTextStyle}"
+                               Text="{Binding DataContext.PropertyWaitTimeMillisecondsText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}" />
+                    <ui:NumberBox Margin="0,4,0,0"
+                                  Minimum="0"
+                                  Value="{Binding WaitTimeMilliseconds, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+
+                <StackPanel Margin="0,10,0,0"
+                            Visibility="{Binding ShowWaitGoldAmount, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <TextBlock Style="{StaticResource CardDescriptionTextStyle}"
+                               Text="{Binding DataContext.PropertyWaitGoldAmountText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}" />
+                    <ui:NumberBox Margin="0,4,0,0"
+                                  Minimum="0"
+                                  Value="{Binding WaitGoldAmount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+
+                <StackPanel Margin="0,10,0,0"
+                            Visibility="{Binding ShowWaitRoundCount, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <TextBlock Style="{StaticResource CardDescriptionTextStyle}"
+                               Text="{Binding DataContext.PropertyWaitRoundCountText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}" />
+                    <ui:NumberBox Margin="0,4,0,0"
+                                  Minimum="1"
+                                  Value="{Binding WaitRoundCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+
+                <StackPanel Margin="0,10,0,0"
+                            Visibility="{Binding ShowWaitCoordinateColor, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <TextBlock Style="{StaticResource CardDescriptionTextStyle}"
+                               Text="{Binding DataContext.PropertyCoordinateText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}" />
+                    <Grid Margin="0,4,0,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Row="0"
+                                   Grid.Column="0"
+                                   Margin="0,0,12,8"
+                                   Style="{StaticResource CoordinateAxisLabelStyle}"
+                                   Text="X" />
+                        <ui:NumberBox Grid.Row="0"
+                                      Grid.Column="1"
+                                      Margin="0,0,0,8"
+                                      Style="{StaticResource CoordinateNumberBoxStyle}"
+                                      Value="{Binding WaitColorCoordinateX, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <TextBlock Grid.Row="1"
+                                   Grid.Column="0"
+                                   Margin="0,0,12,0"
+                                   Style="{StaticResource CoordinateAxisLabelStyle}"
+                                   Text="Y" />
+                        <ui:NumberBox Grid.Row="1"
+                                      Grid.Column="1"
+                                      Margin="0,0,0,8"
+                                      Style="{StaticResource CoordinateNumberBoxStyle}"
+                                      Value="{Binding WaitColorCoordinateY, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    </Grid>
+
+                    <TextBlock Style="{StaticResource CardDescriptionTextStyle}"
+                               Text="{Binding DataContext.PropertyWaitColorHexText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}" />
+                    <TextBox Margin="0,4,0,10"
+                             Text="{Binding WaitColorHex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <TextBlock Style="{StaticResource CardDescriptionTextStyle}"
+                               Text="{Binding DataContext.PropertyWaitColorToleranceText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}" />
+                    <ui:NumberBox Margin="0,4,0,0"
+                                  Minimum="0"
+                                  Maximum="255"
+                                  Value="{Binding WaitColorTolerance, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate x:Key="SellMonkeyEditorTemplate">
+            <StackPanel Margin="0,0,0,10">
+                <TextBlock Style="{StaticResource CardDescriptionTextStyle}"
+                           Text="{Binding DataContext.PropertyTargetMonkeyText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}" />
+                <ComboBox Margin="0,4,0,0"
+                          DisplayMemberPath="DisplayName"
+                          SelectedValuePath="Code"
+                          ItemsSource="{Binding DataContext.MonkeyObjectOptions, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}"
+                          SelectedValue="{Binding TargetMonkeyBindingId, Mode=TwoWay}" />
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate x:Key="ModifyMonkeyCoordinateEditorTemplate">
+            <StackPanel Margin="0,0,0,10">
+                <TextBlock Style="{StaticResource CardDescriptionTextStyle}"
+                           Text="{Binding DataContext.PropertyTargetMonkeyText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}" />
+                <ComboBox Margin="0,4,0,10"
+                          DisplayMemberPath="DisplayName"
+                          SelectedValuePath="Code"
+                          ItemsSource="{Binding DataContext.MonkeyObjectOptions, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}"
+                          SelectedValue="{Binding TargetMonkeyBindingId, Mode=TwoWay}" />
+
+                <TextBlock Style="{StaticResource CardDescriptionTextStyle}"
+                           Text="{Binding DataContext.PropertyCoordinateText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}" />
+                <Grid Margin="0,4,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Row="0"
+                               Grid.Column="0"
+                               Margin="0,0,12,8"
+                               Style="{StaticResource CoordinateAxisLabelStyle}"
+                               Text="X" />
+                    <ui:NumberBox Grid.Row="0"
+                                  Grid.Column="1"
+                                  Margin="0,0,0,8"
+                                  Style="{StaticResource CoordinateNumberBoxStyle}"
+                                  Value="{Binding PositionX, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <TextBlock Grid.Row="1"
+                               Grid.Column="0"
+                               Margin="0,0,12,0"
+                               Style="{StaticResource CoordinateAxisLabelStyle}"
+                               Text="Y" />
+                    <ui:NumberBox Grid.Row="1"
+                                  Grid.Column="1"
+                                  Style="{StaticResource CoordinateNumberBoxStyle}"
+                                  Value="{Binding PositionY, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </Grid>
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate x:Key="CommentEditorTemplate">
+            <StackPanel Margin="0,0,0,10">
+                <TextBlock Style="{StaticResource CardDescriptionTextStyle}"
+                           Text="{Binding DataContext.PropertyCommentContentText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}" />
+                <TextBox Margin="0,4,0,0"
+                         MinHeight="100"
+                         AcceptsReturn="True"
+                         TextWrapping="Wrap"
+                         VerticalScrollBarVisibility="Auto"
+                         Text="{Binding CommentContent, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            </StackPanel>
+        </DataTemplate>
+
+        <controls:ScriptInstructionEditorTemplateSelector x:Key="InstructionEditorTemplateSelector"
+                                                          PlaceMonkeyTemplate="{StaticResource PlaceMonkeyEditorTemplate}"
+                                                          UpgradeMonkeyTemplate="{StaticResource UpgradeMonkeyEditorTemplate}"
+                                                          SwitchMonkeyTargetTemplate="{StaticResource SwitchMonkeyTargetEditorTemplate}"
+                                                          SetMonkeyAbilityTemplate="{StaticResource SetMonkeyAbilityEditorTemplate}"
+                                                          SellMonkeyTemplate="{StaticResource SellMonkeyEditorTemplate}"
+                                                          PlaceHeroInventoryTemplate="{StaticResource PlaceHeroInventoryEditorTemplate}"
+                                                          ActivateAbilityTemplate="{StaticResource ActivateAbilityEditorTemplate}"
+                                                          NextRoundTemplate="{StaticResource NextRoundEditorTemplate}"
+                                                          WaitTemplate="{StaticResource WaitEditorTemplate}"
+                                                          ModifyMonkeyCoordinateTemplate="{StaticResource ModifyMonkeyCoordinateEditorTemplate}"
+                                                          CommentTemplate="{StaticResource CommentEditorTemplate}" />
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0"
+                   Style="{StaticResource CardTitleTextStyle}"
+                   Text="{Binding PropertiesTitle}" />
+
+        <ScrollViewer x:Name="PropertiesScrollViewer"
+                      Grid.Row="1"
+                      Margin="0,10,0,0"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
+                      CanContentScroll="False"
+                      PreviewMouseWheel="PropertiesScrollViewer_PreviewMouseWheel">
+            <StackPanel>
+                <Border Margin="0,0,0,10"
+                        Padding="10"
+                        CornerRadius="8"
+                        BorderThickness="1"
+                        BorderBrush="{StaticResource NonExecutableInstructionBorderBrush}"
+                        Background="{StaticResource NonExecutableInstructionBackgroundBrush}"
+                        Visibility="{Binding ShowNonExecutableInstructionHint, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <TextBlock Style="{StaticResource CardDescriptionTextStyle}"
+                               Text="{Binding NonExecutableInstructionHintText}"
+                               TextWrapping="Wrap" />
+                </Border>
+
+                <TextBlock Style="{StaticResource CardDescriptionTextStyle}"
+                           Text="{Binding PropertiesEmptyText}"
+                           Visibility="{Binding ShowPropertiesEmptyState, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+                <StackPanel Visibility="{Binding HasSelectedSequenceInstruction, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <ContentControl Content="{Binding SelectedSequenceInstruction}"
+                                    ContentTemplateSelector="{StaticResource InstructionEditorTemplateSelector}" />
+
+                    <TextBlock Style="{StaticResource CardDescriptionTextStyle}"
+                               Text="{Binding PropertyNotesText}" />
+                    <TextBox Margin="0,4,0,0"
+                             MinHeight="100"
+                             AcceptsReturn="True"
+                             TextWrapping="Wrap"
+                             VerticalScrollBarVisibility="Auto"
+                             Text="{Binding SelectedSequenceInstruction.Notes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>
