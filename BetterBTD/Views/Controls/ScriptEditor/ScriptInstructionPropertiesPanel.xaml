@@ -18,13 +18,21 @@
         <Style x:Key="CoordinateNumberBoxStyle"
                TargetType="ui:NumberBox"
                BasedOn="{StaticResource {x:Type ui:NumberBox}}">
-            <Setter Property="MinWidth" Value="120" />
+            <Setter Property="MinWidth" Value="160" />
             <Setter Property="HorizontalAlignment" Value="Right" />
         </Style>
         <Style x:Key="CoordinateAxisLabelStyle"
                TargetType="TextBlock"
                BasedOn="{StaticResource CardDescriptionTextStyle}">
             <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="CoordinateSelectButtonStyle"
+               TargetType="ui:Button"
+               BasedOn="{StaticResource {x:Type ui:Button}}">
+            <Setter Property="MinWidth" Value="88" />
+            <Setter Property="Padding" Value="12,4" />
+            <Setter Property="Margin" Value="0,0,8,0" />
+            <Setter Property="HorizontalAlignment" Value="Right" />
         </Style>
 
         <DataTemplate x:Key="PlaceMonkeyEditorTemplate">
@@ -40,8 +48,21 @@
                                  ContentPadding="0"
                                  IsExpanded="False">
                     <ui:CardExpander.Header>
-                        <TextBlock Style="{StaticResource CardTitleTextStyle}"
-                                   Text="{Binding DataContext.PropertyCoordinateText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Column="0"
+                                       Margin="0,0,12,0"
+                                       Style="{StaticResource CardTitleTextStyle}"
+                                       VerticalAlignment="Center"
+                                       Text="{Binding DataContext.PropertyCoordinateText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}" />
+                            <ui:Button Grid.Column="1"
+                                       Style="{StaticResource CoordinateSelectButtonStyle}"
+                                       Content="选择坐标" />
+                        </Grid>
                     </ui:CardExpander.Header>
 
                     <Grid Margin="16">
@@ -162,8 +183,21 @@
                                  IsExpanded="False"
                                  Visibility="{Binding ShowAbilityCoordinateInputs, Converter={StaticResource BoolToVisibilityConverter}}">
                     <ui:CardExpander.Header>
-                        <TextBlock Style="{StaticResource CardTitleTextStyle}"
-                                   Text="{Binding DataContext.PropertyCoordinateText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Column="0"
+                                       Margin="0,0,12,0"
+                                       Style="{StaticResource CardTitleTextStyle}"
+                                       VerticalAlignment="Center"
+                                       Text="{Binding DataContext.PropertyCoordinateText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}" />
+                            <ui:Button Grid.Column="1"
+                                       Style="{StaticResource CoordinateSelectButtonStyle}"
+                                       Content="选择坐标" />
+                        </Grid>
                     </ui:CardExpander.Header>
 
                     <Grid Margin="16">
@@ -219,8 +253,21 @@
                                  IsExpanded="False"
                                  Visibility="{Binding ShowPlacementCoordinateInputs, Converter={StaticResource BoolToVisibilityConverter}}">
                     <ui:CardExpander.Header>
-                        <TextBlock Style="{StaticResource CardTitleTextStyle}"
-                                   Text="{Binding DataContext.PropertyCoordinateText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Column="0"
+                                       Margin="0,0,12,0"
+                                       Style="{StaticResource CardTitleTextStyle}"
+                                       VerticalAlignment="Center"
+                                       Text="{Binding DataContext.PropertyCoordinateText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}" />
+                            <ui:Button Grid.Column="1"
+                                       Style="{StaticResource CoordinateSelectButtonStyle}"
+                                       Content="选择坐标" />
+                        </Grid>
                     </ui:CardExpander.Header>
 
                     <Grid Margin="16">
@@ -276,8 +323,21 @@
                                  IsExpanded="False"
                                  Visibility="{Binding ShowAbilityCoordinateInputs, Converter={StaticResource BoolToVisibilityConverter}}">
                     <ui:CardExpander.Header>
-                        <TextBlock Style="{StaticResource CardTitleTextStyle}"
-                                   Text="{Binding DataContext.PropertyCoordinateText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Column="0"
+                                       Margin="0,0,12,0"
+                                       Style="{StaticResource CardTitleTextStyle}"
+                                       VerticalAlignment="Center"
+                                       Text="{Binding DataContext.PropertyCoordinateText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}" />
+                            <ui:Button Grid.Column="1"
+                                       Style="{StaticResource CoordinateSelectButtonStyle}"
+                                       Content="选择坐标" />
+                        </Grid>
                     </ui:CardExpander.Header>
 
                     <Grid Margin="16">
@@ -380,8 +440,21 @@
                                      ContentPadding="0"
                                      IsExpanded="False">
                         <ui:CardExpander.Header>
-                            <TextBlock Style="{StaticResource CardTitleTextStyle}"
-                                       Text="{Binding DataContext.PropertyCoordinateText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0"
+                                           Margin="0,0,12,0"
+                                           Style="{StaticResource CardTitleTextStyle}"
+                                           VerticalAlignment="Center"
+                                           Text="{Binding DataContext.PropertyCoordinateText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}" />
+                                <ui:Button Grid.Column="1"
+                                           Style="{StaticResource CoordinateSelectButtonStyle}"
+                                           Content="选择坐标" />
+                            </Grid>
                         </ui:CardExpander.Header>
 
                         <Grid Margin="16">
@@ -457,8 +530,21 @@
                 <ui:CardExpander ContentPadding="0"
                                  IsExpanded="False">
                     <ui:CardExpander.Header>
-                        <TextBlock Style="{StaticResource CardTitleTextStyle}"
-                                   Text="{Binding DataContext.PropertyCoordinateText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Column="0"
+                                       Margin="0,0,12,0"
+                                       Style="{StaticResource CardTitleTextStyle}"
+                                       VerticalAlignment="Center"
+                                       Text="{Binding DataContext.PropertyCoordinateText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}" />
+                            <ui:Button Grid.Column="1"
+                                       Style="{StaticResource CoordinateSelectButtonStyle}"
+                                       Content="选择坐标" />
+                        </Grid>
                     </ui:CardExpander.Header>
 
                     <Grid Margin="16">
@@ -586,7 +672,7 @@
                                        Text="{Binding PropertyIntervalToNextInstructionText}" />
                             <ui:NumberBox Grid.Row="0"
                                           Grid.Column="1"
-                                          Width="120"
+                                          Width="160"
                                           Minimum="0"
                                           SmallChange="10"
                                           Value="{Binding SelectedSequenceInstruction.IntervalToNextInstructionMs, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
