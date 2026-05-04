@@ -32,6 +32,7 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
     private bool _isRestoringHistory;
     private bool _suppressHistoryTracking;
     private bool _isUpdatingSequenceInternals;
+    private bool _pendingMonkeyObjectOptionsRebuild;
     private List<ScriptInstructionInstance> _sequenceSnapshot = [];
 
     public ScriptEditorPageViewModel(LocalizationService localizationService)
@@ -84,6 +85,7 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
     public ObservableCollection<LanguageOption> InventoryOptions { get; } = [];
     public ObservableCollection<LanguageOption> ActivatedAbilityOptions { get; } = [];
     public ObservableCollection<LanguageOption> NextRoundActionOptions { get; } = [];
+    public ObservableCollection<LanguageOption> WaitModeOptions { get; } = [];
 
     public ObservableCollection<ScriptInstructionTemplate> InstructionLibrary { get; } = [];
     public ObservableCollection<ScriptInstructionInstance> InstructionSequence { get; } = [];
@@ -185,6 +187,14 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
     public string PropertyNeedCoordinateText => _localizationService.T("Editor.Property.NeedCoordinate");
     public string PropertyNextRoundActionText => _localizationService.T("Editor.Property.NextRoundAction");
     public string PropertyNextRoundSendCountText => _localizationService.T("Editor.Property.NextRound.SendCount");
+    public string PropertyWaitModeText => _localizationService.T("Editor.Property.WaitMode");
+    public string PropertyWaitTimeMillisecondsText => _localizationService.T("Editor.Property.WaitTimeMilliseconds");
+    public string PropertyWaitGoldAmountText => _localizationService.T("Editor.Property.WaitGoldAmount");
+    public string PropertyWaitRoundCountText => _localizationService.T("Editor.Property.WaitRoundCount");
+    public string PropertyWaitColorHexText => _localizationService.T("Editor.Property.WaitColorHex");
+    public string PropertyWaitColorToleranceText => _localizationService.T("Editor.Property.WaitColorTolerance");
+    public string PropertyCommentContentText => _localizationService.T("Editor.Property.CommentContent");
+    public string NonExecutableInstructionHintText => _localizationService.T("Editor.Property.NonExecutableHint");
     public string PropertyNotesText => _localizationService.T("Editor.Property.Notes");
     public string DeleteSelectedInstructionText => _localizationService.T("Editor.Command.DeleteSelected");
     public string CopySelectedInstructionText => _localizationService.T("Editor.Command.CopySelected");
@@ -323,6 +333,13 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
             _sequenceSnapshot = CaptureSequenceSnapshot();
         }
 
+        if (_isRestoringHistory || _suppressHistoryTracking)
+        {
+            _pendingMonkeyObjectOptionsRebuild = true;
+            RefreshHistoryCommandState();
+            return;
+        }
+
         RebuildMonkeyObjectOptions();
         RefreshHistoryCommandState();
     }
@@ -337,6 +354,11 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         if (_isUpdatingSequenceInternals)
         {
             return;
+        }
+
+        if (string.Equals(e.PropertyName, nameof(ScriptInstructionInstance.TargetMonkeyBindingId), StringComparison.Ordinal))
+        {
+            SynchronizeTargetMonkeyObjectId(instruction);
         }
 
         if (instruction.Type == ScriptCommandType.PlaceMonkey &&
@@ -355,8 +377,14 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
 
         if (string.Equals(e.PropertyName, nameof(ScriptInstructionInstance.DisplayName), StringComparison.Ordinal) ||
             string.Equals(e.PropertyName, nameof(ScriptInstructionInstance.Description), StringComparison.Ordinal) ||
+            string.Equals(e.PropertyName, nameof(ScriptInstructionInstance.MonkeyBindingId), StringComparison.Ordinal) ||
             string.Equals(e.PropertyName, nameof(ScriptInstructionInstance.MonkeyObjectId), StringComparison.Ordinal) ||
-            string.Equals(e.PropertyName, nameof(ScriptInstructionInstance.ShowNextRoundSendCount), StringComparison.Ordinal))
+            string.Equals(e.PropertyName, nameof(ScriptInstructionInstance.TargetMonkeyObjectId), StringComparison.Ordinal) ||
+            string.Equals(e.PropertyName, nameof(ScriptInstructionInstance.ShowNextRoundSendCount), StringComparison.Ordinal) ||
+            string.Equals(e.PropertyName, nameof(ScriptInstructionInstance.ShowWaitTimeMilliseconds), StringComparison.Ordinal) ||
+            string.Equals(e.PropertyName, nameof(ScriptInstructionInstance.ShowWaitGoldAmount), StringComparison.Ordinal) ||
+            string.Equals(e.PropertyName, nameof(ScriptInstructionInstance.ShowWaitRoundCount), StringComparison.Ordinal) ||
+            string.Equals(e.PropertyName, nameof(ScriptInstructionInstance.ShowWaitCoordinateColor), StringComparison.Ordinal))
         {
             return;
         }
@@ -376,7 +404,33 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         _isUpdatingSequenceInternals = true;
         try
         {
-            var counters = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            var originalTargetBindingIds = InstructionSequence
+                .Where(RequiresMonkeyObjectTarget)
+                .ToDictionary(x => x, x => x.TargetMonkeyBindingId);
+            var originalTargetObjectIds = InstructionSequence
+                .Where(RequiresMonkeyObjectTarget)
+                .ToDictionary(x => x, x => x.TargetMonkeyObjectId);
+
+            var existingKeyCounts = InstructionSequence
+                .Where(x => x.Type == ScriptCommandType.PlaceMonkey && !string.IsNullOrWhiteSpace(x.MonkeyObjectId))
+                .GroupBy(x => x.MonkeyObjectId, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(x => x.Key, x => x.Count(), StringComparer.OrdinalIgnoreCase);
+
+            var maxTowerIndexes = new Dictionary<MonkeyTowerType, int>();
+            foreach (var key in existingKeyCounts.Keys)
+            {
+                if (!TryParseMonkeyObjectKey(key, out var towerType, out var index))
+                {
+                    continue;
+                }
+
+                maxTowerIndexes.TryGetValue(towerType, out var currentMaxIndex);
+                maxTowerIndexes[towerType] = Math.Max(currentMaxIndex, index);
+            }
+
+            var bindingIdToObjectKey = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var objectKeyToBindingId = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var usedKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var options = new List<LanguageOption>();
 
             foreach (var instruction in InstructionSequence)
@@ -387,17 +441,32 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
                 }
 
                 var selectionCode = NormalizePlaceSelectionCode(instruction.SelectedMonkeyTower);
+                var originalKey = instruction.MonkeyObjectId;
+                if (string.IsNullOrWhiteSpace(instruction.MonkeyBindingId))
+                {
+                    instruction.MonkeyBindingId = CreateMonkeyBindingId();
+                }
 
                 if (TryParseHeroSelection(selectionCode, out var heroType))
                 {
                     var heroKey = BuildHeroObjectKey(heroType);
-                    instruction.MonkeyObjectId = heroKey;
+                    if (objectKeyToBindingId.TryGetValue(heroKey, out var existingHeroBindingId))
+                    {
+                        instruction.MonkeyBindingId = existingHeroBindingId;
+                    }
+                    else
+                    {
+                        objectKeyToBindingId[heroKey] = instruction.MonkeyBindingId;
+                    }
 
-                    if (options.All(x => !string.Equals(x.Code, heroKey, StringComparison.OrdinalIgnoreCase)))
+                    instruction.MonkeyObjectId = heroKey;
+                    bindingIdToObjectKey[instruction.MonkeyBindingId] = heroKey;
+
+                    if (options.All(x => !string.Equals(x.Code, instruction.MonkeyBindingId, StringComparison.OrdinalIgnoreCase)))
                     {
                         options.Add(new LanguageOption
                         {
-                            Code = heroKey,
+                            Code = instruction.MonkeyBindingId,
                             DisplayName = BuildHeroObjectDisplayName(heroType)
                         });
                     }
@@ -408,19 +477,17 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
                 var towerType = TryParseTowerSelection(selectionCode, out var parsedTowerType)
                     ? parsedTowerType
                     : MonkeyTowerType.DartMonkey;
-                var towerCode = BuildTowerSelectionCode(towerType);
-
-                counters.TryGetValue(towerCode, out var count);
-                count++;
-                counters[towerCode] = count;
-
-                var key = BuildMonkeyObjectKey(towerType, count);
+                var key = ResolveMonkeyObjectKey(originalKey, towerType, maxTowerIndexes, usedKeys);
                 instruction.MonkeyObjectId = key;
+                bindingIdToObjectKey[instruction.MonkeyBindingId] = key;
+                objectKeyToBindingId.TryAdd(key, instruction.MonkeyBindingId);
+
+                usedKeys.Add(key);
 
                 options.Add(new LanguageOption
                 {
-                    Code = key,
-                    DisplayName = BuildMonkeyObjectDisplayName(towerType, count)
+                    Code = instruction.MonkeyBindingId,
+                    DisplayName = BuildMonkeyObjectDisplayName(key)
                 });
             }
 
@@ -430,16 +497,29 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
                 MonkeyObjectOptions.Add(option);
             }
 
-            var availableKeys = options.Select(x => x.Code).ToHashSet(StringComparer.OrdinalIgnoreCase);
-            var fallbackKey = options.FirstOrDefault()?.Code ?? string.Empty;
+            var availableBindingIds = options.Select(x => x.Code).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
             foreach (var instruction in InstructionSequence.Where(RequiresMonkeyObjectTarget))
             {
-                if (string.IsNullOrWhiteSpace(instruction.TargetMonkeyObjectId) ||
-                    !availableKeys.Contains(instruction.TargetMonkeyObjectId))
+                var targetBindingId = originalTargetBindingIds.GetValueOrDefault(instruction) ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(targetBindingId))
                 {
-                    instruction.TargetMonkeyObjectId = fallbackKey;
+                    var targetObjectId = originalTargetObjectIds.GetValueOrDefault(instruction) ?? string.Empty;
+                    if (!string.IsNullOrWhiteSpace(targetObjectId) &&
+                        objectKeyToBindingId.TryGetValue(targetObjectId, out var resolvedBindingId))
+                    {
+                        targetBindingId = resolvedBindingId;
+                    }
                 }
+
+                if (string.IsNullOrWhiteSpace(targetBindingId) ||
+                    !availableBindingIds.Contains(targetBindingId))
+                {
+                    targetBindingId = string.Empty;
+                }
+
+                instruction.TargetMonkeyBindingId = targetBindingId;
+                instruction.TargetMonkeyObjectId = bindingIdToObjectKey.GetValueOrDefault(targetBindingId, string.Empty);
             }
         }
         finally
@@ -453,6 +533,52 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
     private static string BuildMonkeyObjectKey(MonkeyTowerType towerType, int index)
     {
         return $"{towerType}:{index}";
+    }
+
+    private static string CreateMonkeyBindingId()
+    {
+        return Guid.NewGuid().ToString("N");
+    }
+
+    private static string ResolveMonkeyObjectKey(
+        string? currentKey,
+        MonkeyTowerType towerType,
+        IDictionary<MonkeyTowerType, int> maxTowerIndexes,
+        ISet<string> usedKeys)
+    {
+        if (TryParseMonkeyObjectKey(currentKey, out var currentTowerType, out _) &&
+            currentTowerType == towerType &&
+            !usedKeys.Contains(currentKey!))
+        {
+            return currentKey!;
+        }
+
+        maxTowerIndexes.TryGetValue(towerType, out var currentMaxIndex);
+        var nextIndex = currentMaxIndex + 1;
+        maxTowerIndexes[towerType] = nextIndex;
+        return BuildMonkeyObjectKey(towerType, nextIndex);
+    }
+
+    private static bool TryParseMonkeyObjectKey(string? objectKey, out MonkeyTowerType towerType, out int index)
+    {
+        towerType = default;
+        index = 0;
+        if (string.IsNullOrWhiteSpace(objectKey))
+        {
+            return false;
+        }
+
+        var separatorIndex = objectKey.IndexOf(':');
+        if (separatorIndex <= 0 || separatorIndex >= objectKey.Length - 1)
+        {
+            return false;
+        }
+
+        var towerText = objectKey.Substring(0, separatorIndex);
+        var indexText = objectKey.Substring(separatorIndex + 1);
+        return Enum.TryParse(towerText, out towerType) &&
+               int.TryParse(indexText, out index) &&
+               index > 0;
     }
 
     private static string BuildHeroObjectKey(HeroType heroType)
@@ -522,15 +648,80 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         return $"{towerName}{index}";
     }
 
+    private string BuildMonkeyObjectDisplayName(string objectKey)
+    {
+        if (TryParseMonkeyObjectKey(objectKey, out var towerType, out var index))
+        {
+            return BuildMonkeyObjectDisplayName(towerType, index);
+        }
+
+        if (TryParseHeroSelection(objectKey, out var heroType))
+        {
+            return BuildHeroObjectDisplayName(heroType);
+        }
+
+        return objectKey;
+    }
+
     private string BuildHeroObjectDisplayName(HeroType heroType)
     {
         var hero = GameElementCatalog.Heroes.FirstOrDefault(x => x.Type == heroType);
         return hero is null ? heroType.ToString() : _localizationService.T(hero.NameKey);
     }
 
+    private string ResolveTargetMonkeyObjectKey(ScriptInstructionInstance instruction)
+    {
+        if (!RequiresMonkeyObjectTarget(instruction))
+        {
+            return string.Empty;
+        }
+
+        if (!string.IsNullOrWhiteSpace(instruction.TargetMonkeyBindingId))
+        {
+            var placeInstruction = InstructionSequence.FirstOrDefault(x =>
+                x.Type == ScriptCommandType.PlaceMonkey &&
+                string.Equals(x.MonkeyBindingId, instruction.TargetMonkeyBindingId, StringComparison.OrdinalIgnoreCase));
+            if (placeInstruction is not null && !string.IsNullOrWhiteSpace(placeInstruction.MonkeyObjectId))
+            {
+                return placeInstruction.MonkeyObjectId;
+            }
+        }
+
+        return instruction.TargetMonkeyObjectId;
+    }
+
+    private void SynchronizeTargetMonkeyObjectId(ScriptInstructionInstance instruction)
+    {
+        if (!RequiresMonkeyObjectTarget(instruction))
+        {
+            return;
+        }
+
+        var targetObjectKey = ResolveTargetMonkeyObjectKey(instruction);
+        if (string.Equals(instruction.TargetMonkeyObjectId, targetObjectKey, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        var restoreUpdatingState = _isUpdatingSequenceInternals;
+        _isUpdatingSequenceInternals = true;
+        try
+        {
+            instruction.TargetMonkeyObjectId = targetObjectKey;
+        }
+        finally
+        {
+            _isUpdatingSequenceInternals = restoreUpdatingState;
+        }
+    }
+
     private static bool RequiresMonkeyObjectTarget(ScriptInstructionInstance instruction)
     {
-        return instruction.Type is ScriptCommandType.UpgradeMonkey or ScriptCommandType.SwitchMonkeyTarget or ScriptCommandType.SetMonkeyAbility or ScriptCommandType.SellMonkey;
+        return instruction.Type is ScriptCommandType.UpgradeMonkey
+            or ScriptCommandType.SwitchMonkeyTarget
+            or ScriptCommandType.SetMonkeyAbility
+            or ScriptCommandType.SellMonkey
+            or ScriptCommandType.ModifyMonkeyCoordinate;
     }
 
     private void DeleteSelectedSequenceInstructions(IList? selectedItems)
@@ -582,7 +773,8 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
 
         if (RequiresMonkeyObjectTarget(instruction))
         {
-            instruction.TargetMonkeyObjectId = MonkeyObjectOptions.FirstOrDefault()?.Code ?? string.Empty;
+            instruction.TargetMonkeyBindingId = MonkeyObjectOptions.FirstOrDefault()?.Code ?? string.Empty;
+            instruction.TargetMonkeyObjectId = ResolveTargetMonkeyObjectKey(instruction);
         }
 
         if (instruction.Type == ScriptCommandType.PlaceHeroInventory)
@@ -599,6 +791,16 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         {
             instruction.NextRoundAction = "PlayFastForward";
             instruction.NextRoundSendCount = 1;
+        }
+
+        if (instruction.Type == ScriptCommandType.Wait)
+        {
+            instruction.WaitMode = WaitModeType.Time.ToString();
+            instruction.WaitTimeMilliseconds = 1000;
+            instruction.WaitGoldAmount = 0;
+            instruction.WaitRoundCount = 1;
+            instruction.WaitColorHex = "#FFFFFF";
+            instruction.WaitColorTolerance = 0;
         }
 
         UpdateInstructionDisplayName(instruction);
@@ -661,11 +863,11 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         ExecuteTrackedSequenceMutation(() =>
         {
             var insertIndex = GetPasteInsertIndex(selectedItems);
+            var pastedInstructions = CloneInstructionsForPaste(_clipboardSequenceInstructions);
             ScriptInstructionInstance? firstPasted = null;
 
-            foreach (var copiedInstruction in _clipboardSequenceInstructions)
+            foreach (var pastedInstruction in pastedInstructions)
             {
-                var pastedInstruction = CloneInstructionInstance(copiedInstruction);
                 InstructionSequence.Insert(insertIndex, pastedInstruction);
                 firstPasted ??= pastedInstruction;
                 insertIndex++;
@@ -695,6 +897,7 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
 
         PushUndoSnapshot();
         _suppressHistoryTracking = true;
+        _pendingMonkeyObjectOptionsRebuild = false;
         try
         {
             mutation();
@@ -702,6 +905,7 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         finally
         {
             _suppressHistoryTracking = false;
+            FlushPendingMonkeyObjectOptionsRebuild();
             _sequenceSnapshot = CaptureSequenceSnapshot();
             RefreshHistoryCommandState();
         }
@@ -772,6 +976,7 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         ArgumentNullException.ThrowIfNull(snapshot);
 
         _suppressHistoryTracking = true;
+        _pendingMonkeyObjectOptionsRebuild = false;
         try
         {
             InstructionSequence.Clear();
@@ -785,7 +990,19 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         finally
         {
             _suppressHistoryTracking = false;
+            FlushPendingMonkeyObjectOptionsRebuild();
         }
+    }
+
+    private void FlushPendingMonkeyObjectOptionsRebuild()
+    {
+        if (!_pendingMonkeyObjectOptionsRebuild)
+        {
+            return;
+        }
+
+        _pendingMonkeyObjectOptionsRebuild = false;
+        RebuildMonkeyObjectOptions();
     }
 
     private bool CanUndoSequence()
@@ -826,14 +1043,22 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
             DisplayName = source.DisplayName,
             Description = source.Description,
             SelectedMonkeyTower = NormalizePlaceSelectionCode(source.SelectedMonkeyTower),
+            MonkeyBindingId = source.MonkeyBindingId,
             MonkeyObjectId = source.MonkeyObjectId,
+            TargetMonkeyBindingId = source.TargetMonkeyBindingId,
             TargetMonkeyObjectId = source.TargetMonkeyObjectId,
             SelectedInventoryItem = source.SelectedInventoryItem,
             SelectedActivatedAbility = source.SelectedActivatedAbility,
             NextRoundAction = source.NextRoundAction,
             NextRoundSendCount = source.NextRoundSendCount,
+            WaitMode = source.WaitMode,
+            WaitTimeMilliseconds = source.WaitTimeMilliseconds,
+            WaitGoldAmount = source.WaitGoldAmount,
+            WaitRoundCount = source.WaitRoundCount,
             PositionX = source.PositionX,
             PositionY = source.PositionY,
+            WaitColorCoordinateX = source.WaitColorCoordinateX,
+            WaitColorCoordinateY = source.WaitColorCoordinateY,
             UpgradePath = source.UpgradePath,
             UpgradeCount = source.UpgradeCount,
             SwitchDirection = source.SwitchDirection,
@@ -842,8 +1067,42 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
             RequiresAbilityCoordinate = source.RequiresAbilityCoordinate,
             AbilityCoordinateX = source.AbilityCoordinateX,
             AbilityCoordinateY = source.AbilityCoordinateY,
+            WaitColorHex = source.WaitColorHex,
+            WaitColorTolerance = source.WaitColorTolerance,
+            CommentContent = source.CommentContent,
             Notes = source.Notes
         };
+    }
+
+    private static List<ScriptInstructionInstance> CloneInstructionsForPaste(IEnumerable<ScriptInstructionInstance> source)
+    {
+        var clonedInstructions = source.Select(CloneInstructionInstance).ToList();
+        var pastedBindingIdMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var instruction in clonedInstructions.Where(x => x.Type == ScriptCommandType.PlaceMonkey))
+        {
+            var originalBindingId = instruction.MonkeyBindingId;
+            var newBindingId = CreateMonkeyBindingId();
+
+            if (!string.IsNullOrWhiteSpace(originalBindingId) &&
+                !pastedBindingIdMap.ContainsKey(originalBindingId))
+            {
+                pastedBindingIdMap[originalBindingId] = newBindingId;
+            }
+
+            instruction.MonkeyBindingId = newBindingId;
+        }
+
+        foreach (var instruction in clonedInstructions.Where(RequiresMonkeyObjectTarget))
+        {
+            if (!string.IsNullOrWhiteSpace(instruction.TargetMonkeyBindingId) &&
+                pastedBindingIdMap.TryGetValue(instruction.TargetMonkeyBindingId, out var remappedBindingId))
+            {
+                instruction.TargetMonkeyBindingId = remappedBindingId;
+            }
+        }
+
+        return clonedInstructions;
     }
 
     private void BuildInstructionLibrary()
@@ -897,6 +1156,24 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
             NameKey = "Editor.Command.NextRound.Title",
             DescriptionKey = "Editor.Command.NextRound.Description"
         });
+        InstructionLibrary.Add(new ScriptInstructionTemplate
+        {
+            Type = ScriptCommandType.Wait,
+            NameKey = "Editor.Command.Wait.Title",
+            DescriptionKey = "Editor.Command.Wait.Description"
+        });
+        InstructionLibrary.Add(new ScriptInstructionTemplate
+        {
+            Type = ScriptCommandType.ModifyMonkeyCoordinate,
+            NameKey = "Editor.Command.ModifyMonkeyCoordinate.Title",
+            DescriptionKey = "Editor.Command.ModifyMonkeyCoordinate.Description"
+        });
+        InstructionLibrary.Add(new ScriptInstructionTemplate
+        {
+            Type = ScriptCommandType.Comment,
+            NameKey = "Editor.Command.Comment.Title",
+            DescriptionKey = "Editor.Command.Comment.Description"
+        });
     }
 
     private void BuildScriptParameterOptions()
@@ -935,6 +1212,12 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
                 DisplayName = GameElementCatalog.GetNextRoundActionDisplayName(action)
             });
         }
+
+        WaitModeOptions.Clear();
+        WaitModeOptions.Add(new LanguageOption { Code = WaitModeType.Time.ToString(), DisplayName = _localizationService.T("Editor.Property.WaitMode.Time") });
+        WaitModeOptions.Add(new LanguageOption { Code = WaitModeType.Gold.ToString(), DisplayName = _localizationService.T("Editor.Property.WaitMode.Gold") });
+        WaitModeOptions.Add(new LanguageOption { Code = WaitModeType.Round.ToString(), DisplayName = _localizationService.T("Editor.Property.WaitMode.Round") });
+        WaitModeOptions.Add(new LanguageOption { Code = WaitModeType.CoordinateColor.ToString(), DisplayName = _localizationService.T("Editor.Property.WaitMode.CoordinateColor") });
     }
 
     private void BuildMetadataOptions()
@@ -1019,25 +1302,27 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
                 _localizationService.T("Editor.Display.PlaceMonkey"),
                 string.IsNullOrWhiteSpace(instruction.MonkeyObjectId)
                     ? GetPlaceSelectionDisplayName(instruction.SelectedMonkeyTower)
-                    : GetMonkeyObjectDisplayName(instruction.MonkeyObjectId)),
-            ScriptCommandType.UpgradeMonkey => IsHeroObjectKey(instruction.TargetMonkeyObjectId)
+                    : GetMonkeyObjectDisplayName(instruction.MonkeyObjectId),
+                FormatCoordinate(instruction.PositionX),
+                FormatCoordinate(instruction.PositionY)),
+            ScriptCommandType.UpgradeMonkey => IsHeroObjectKey(ResolveTargetMonkeyObjectKey(instruction))
                 ? string.Format(
                     _localizationService.T("Editor.Display.UpgradeMonkey.Hero"),
-                    GetMonkeyObjectDisplayName(instruction.TargetMonkeyObjectId),
+                    GetTargetMonkeyDisplayName(instruction),
                     instruction.UpgradeCount)
                 : string.Format(
                     _localizationService.T("Editor.Display.UpgradeMonkey"),
-                    GetMonkeyObjectDisplayName(instruction.TargetMonkeyObjectId),
+                    GetTargetMonkeyDisplayName(instruction),
                     GetUpgradePathDisplayName(instruction.UpgradePath),
                     instruction.UpgradeCount),
             ScriptCommandType.SwitchMonkeyTarget => string.Format(
                 _localizationService.T("Editor.Display.SwitchMonkeyTarget"),
-                GetMonkeyObjectDisplayName(instruction.TargetMonkeyObjectId),
+                GetTargetMonkeyDisplayName(instruction),
                 GetSwitchDirectionDisplayName(instruction.SwitchDirection),
                 instruction.SwitchCount),
             ScriptCommandType.SetMonkeyAbility => string.Format(
                 _localizationService.T("Editor.Display.SetMonkeyAbility"),
-                GetMonkeyObjectDisplayName(instruction.TargetMonkeyObjectId),
+                GetTargetMonkeyDisplayName(instruction),
                 GetAbilityDisplayNumber(instruction.SelectedAbility),
                 instruction.RequiresAbilityCoordinate
                     ? string.Format(
@@ -1047,7 +1332,7 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
                     : string.Empty),
             ScriptCommandType.SellMonkey => string.Format(
                 _localizationService.T("Editor.Display.SellMonkey"),
-                GetMonkeyObjectDisplayName(instruction.TargetMonkeyObjectId)),
+                GetTargetMonkeyDisplayName(instruction)),
             ScriptCommandType.PlaceHeroInventory => string.Format(
                 _localizationService.T("Editor.Display.PlaceHeroInventory"),
                 GetInventoryDisplayName(instruction.SelectedInventoryItem),
@@ -1067,6 +1352,15 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
                         FormatCoordinate(instruction.AbilityCoordinateY))
                     : string.Empty),
             ScriptCommandType.NextRound => GetNextRoundActionDisplayName(instruction),
+            ScriptCommandType.Wait => GetWaitDisplayName(instruction),
+            ScriptCommandType.ModifyMonkeyCoordinate => string.Format(
+                _localizationService.T("Editor.Display.ModifyMonkeyCoordinate"),
+                GetTargetMonkeyDisplayName(instruction),
+                FormatCoordinate(instruction.PositionX),
+                FormatCoordinate(instruction.PositionY)),
+            ScriptCommandType.Comment => string.Format(
+                _localizationService.T("Editor.Display.Comment"),
+                GetCommentPreview(instruction.CommentContent)),
             _ => _localizationService.T(instruction.NameKey)
         };
 
@@ -1102,8 +1396,14 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
 
     private string GetMonkeyObjectDisplayName(string objectKey)
     {
-        return MonkeyObjectOptions.FirstOrDefault(x => string.Equals(x.Code, objectKey, StringComparison.OrdinalIgnoreCase))?.DisplayName
-               ?? _localizationService.T("Editor.Property.TargetMonkey");
+        return string.IsNullOrWhiteSpace(objectKey)
+            ? _localizationService.T("Editor.Property.TargetMonkey")
+            : BuildMonkeyObjectDisplayName(objectKey);
+    }
+
+    private string GetTargetMonkeyDisplayName(ScriptInstructionInstance instruction)
+    {
+        return GetMonkeyObjectDisplayName(ResolveTargetMonkeyObjectKey(instruction));
     }
 
     private string GetUpgradePathDisplayName(UpgradePathType path)
@@ -1157,9 +1457,49 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         };
     }
 
+    private string GetWaitDisplayName(ScriptInstructionInstance instruction)
+    {
+        return instruction.WaitMode switch
+        {
+            nameof(WaitModeType.Gold) => string.Format(
+                _localizationService.T("Editor.Display.Wait.Gold"),
+                instruction.WaitGoldAmount),
+            nameof(WaitModeType.Round) => string.Format(
+                _localizationService.T("Editor.Display.Wait.Round"),
+                instruction.WaitRoundCount),
+            nameof(WaitModeType.CoordinateColor) => string.Format(
+                _localizationService.T("Editor.Display.Wait.CoordinateColor"),
+                FormatCoordinate(instruction.WaitColorCoordinateX),
+                FormatCoordinate(instruction.WaitColorCoordinateY),
+                FormatWaitColorHex(instruction.WaitColorHex),
+                instruction.WaitColorTolerance),
+            _ => string.Format(
+                _localizationService.T("Editor.Display.Wait.Time"),
+                instruction.WaitTimeMilliseconds)
+        };
+    }
+
     private static string FormatCoordinate(double value)
     {
         return value.ToString("0.##");
+    }
+
+    private static string FormatWaitColorHex(string value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? "#FFFFFF" : value.Trim().ToUpperInvariant();
+    }
+
+    private string GetCommentPreview(string? content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return _localizationService.T("Editor.Display.Comment.Empty");
+        }
+
+        return content
+            .Replace("\r\n", " ", StringComparison.Ordinal)
+            .Replace('\n', ' ')
+            .Trim();
     }
 
     private void RaiseLocalizedProperties()
@@ -1213,6 +1553,14 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         OnPropertyChanged(nameof(PropertyNeedCoordinateText));
         OnPropertyChanged(nameof(PropertyNextRoundActionText));
         OnPropertyChanged(nameof(PropertyNextRoundSendCountText));
+        OnPropertyChanged(nameof(PropertyWaitModeText));
+        OnPropertyChanged(nameof(PropertyWaitTimeMillisecondsText));
+        OnPropertyChanged(nameof(PropertyWaitGoldAmountText));
+        OnPropertyChanged(nameof(PropertyWaitRoundCountText));
+        OnPropertyChanged(nameof(PropertyWaitColorHexText));
+        OnPropertyChanged(nameof(PropertyWaitColorToleranceText));
+        OnPropertyChanged(nameof(PropertyCommentContentText));
+        OnPropertyChanged(nameof(NonExecutableInstructionHintText));
         OnPropertyChanged(nameof(PropertyNotesText));
         OnPropertyChanged(nameof(DeleteSelectedInstructionText));
         OnPropertyChanged(nameof(CopySelectedInstructionText));

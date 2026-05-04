@@ -13,7 +13,18 @@ public enum ScriptCommandType
     SellMonkey,
     PlaceHeroInventory,
     ActivateAbility,
-    NextRound
+    NextRound,
+    Wait,
+    ModifyMonkeyCoordinate,
+    Comment
+}
+
+public static class ScriptCommandTypeExtensions
+{
+    public static bool IsExecutable(this ScriptCommandType type)
+    {
+        return type is not ScriptCommandType.ModifyMonkeyCoordinate and not ScriptCommandType.Comment;
+    }
 }
 
 public enum UpgradePathType
@@ -33,6 +44,14 @@ public enum MonkeyAbilityType
 {
     Ability1,
     Ability2
+}
+
+public enum WaitModeType
+{
+    Time,
+    Gold,
+    Round,
+    CoordinateColor
 }
 
 public sealed class ScriptInstructionTemplate : ObservableObject
@@ -57,6 +76,8 @@ public sealed class ScriptInstructionTemplate : ObservableObject
         get => _description;
         set => SetProperty(ref _description, value);
     }
+
+    public bool IsExecutable => Type.IsExecutable();
 }
 
 public sealed class ScriptInstructionInstance : ObservableObject
@@ -64,14 +85,22 @@ public sealed class ScriptInstructionInstance : ObservableObject
     private string _displayName = string.Empty;
     private string _description = string.Empty;
     private string _selectedMonkeyTower = "Tower:DartMonkey";
+    private string _monkeyBindingId = string.Empty;
     private string _monkeyObjectId = string.Empty;
+    private string _targetMonkeyBindingId = string.Empty;
     private string _targetMonkeyObjectId = string.Empty;
     private string _selectedInventoryItem = string.Empty;
     private string _selectedActivatedAbility = string.Empty;
     private string _nextRoundAction = "PlayFastForward";
+    private string _waitMode = WaitModeType.Time.ToString();
     private int _nextRoundSendCount = 1;
+    private int _waitTimeMilliseconds = 1000;
+    private int _waitGoldAmount;
+    private int _waitRoundCount = 1;
     private double _positionX;
     private double _positionY;
+    private double _waitColorCoordinateX;
+    private double _waitColorCoordinateY;
     private UpgradePathType _upgradePath = UpgradePathType.Top;
     private int _upgradeCount = 1;
     private SwitchDirectionType _switchDirection = SwitchDirectionType.Right;
@@ -80,6 +109,9 @@ public sealed class ScriptInstructionInstance : ObservableObject
     private bool _requiresAbilityCoordinate;
     private double _abilityCoordinateX;
     private double _abilityCoordinateY;
+    private string _waitColorHex = "#FFFFFF";
+    private int _waitColorTolerance;
+    private string _commentContent = string.Empty;
     private string _notes = string.Empty;
 
     public ScriptInstructionInstance(ScriptCommandType type, string nameKey, string descriptionKey)
@@ -107,16 +139,30 @@ public sealed class ScriptInstructionInstance : ObservableObject
         set => SetProperty(ref _description, value);
     }
 
+    public bool IsExecutable => Type.IsExecutable();
+
     public string SelectedMonkeyTower
     {
         get => _selectedMonkeyTower;
         set => SetProperty(ref _selectedMonkeyTower, value);
     }
 
+    public string MonkeyBindingId
+    {
+        get => _monkeyBindingId;
+        set => SetProperty(ref _monkeyBindingId, value);
+    }
+
     public string MonkeyObjectId
     {
         get => _monkeyObjectId;
         set => SetProperty(ref _monkeyObjectId, value);
+    }
+
+    public string TargetMonkeyBindingId
+    {
+        get => _targetMonkeyBindingId;
+        set => SetProperty(ref _targetMonkeyBindingId, value);
     }
 
     public string TargetMonkeyObjectId
@@ -168,6 +214,53 @@ public sealed class ScriptInstructionInstance : ObservableObject
         set => SetProperty(ref _nextRoundSendCount, value < 1 ? 1 : (value > 500 ? 500 : value));
     }
 
+    public string WaitMode
+    {
+        get => _waitMode;
+        set
+        {
+            if (!SetProperty(ref _waitMode, value))
+            {
+                return;
+            }
+
+            OnPropertyChanged(nameof(ShowWaitTimeMilliseconds));
+            OnPropertyChanged(nameof(ShowWaitGoldAmount));
+            OnPropertyChanged(nameof(ShowWaitRoundCount));
+            OnPropertyChanged(nameof(ShowWaitCoordinateColor));
+        }
+    }
+
+    public bool ShowWaitTimeMilliseconds =>
+        Type == ScriptCommandType.Wait && string.Equals(WaitMode, WaitModeType.Time.ToString(), StringComparison.OrdinalIgnoreCase);
+
+    public bool ShowWaitGoldAmount =>
+        Type == ScriptCommandType.Wait && string.Equals(WaitMode, WaitModeType.Gold.ToString(), StringComparison.OrdinalIgnoreCase);
+
+    public bool ShowWaitRoundCount =>
+        Type == ScriptCommandType.Wait && string.Equals(WaitMode, WaitModeType.Round.ToString(), StringComparison.OrdinalIgnoreCase);
+
+    public bool ShowWaitCoordinateColor =>
+        Type == ScriptCommandType.Wait && string.Equals(WaitMode, WaitModeType.CoordinateColor.ToString(), StringComparison.OrdinalIgnoreCase);
+
+    public int WaitTimeMilliseconds
+    {
+        get => _waitTimeMilliseconds;
+        set => SetProperty(ref _waitTimeMilliseconds, value < 0 ? 0 : value);
+    }
+
+    public int WaitGoldAmount
+    {
+        get => _waitGoldAmount;
+        set => SetProperty(ref _waitGoldAmount, value < 0 ? 0 : value);
+    }
+
+    public int WaitRoundCount
+    {
+        get => _waitRoundCount;
+        set => SetProperty(ref _waitRoundCount, value < 1 ? 1 : value);
+    }
+
     public bool ShowUpgradePathSelector =>
         Type == ScriptCommandType.UpgradeMonkey && !TargetMonkeyObjectId.StartsWith("Hero:", StringComparison.OrdinalIgnoreCase);
 
@@ -181,6 +274,18 @@ public sealed class ScriptInstructionInstance : ObservableObject
     {
         get => _positionY;
         set => SetProperty(ref _positionY, value);
+    }
+
+    public double WaitColorCoordinateX
+    {
+        get => _waitColorCoordinateX;
+        set => SetProperty(ref _waitColorCoordinateX, value);
+    }
+
+    public double WaitColorCoordinateY
+    {
+        get => _waitColorCoordinateY;
+        set => SetProperty(ref _waitColorCoordinateY, value);
     }
 
     public UpgradePathType UpgradePath
@@ -231,9 +336,38 @@ public sealed class ScriptInstructionInstance : ObservableObject
         set => SetProperty(ref _abilityCoordinateY, value);
     }
 
+    public string WaitColorHex
+    {
+        get => _waitColorHex;
+        set => SetProperty(ref _waitColorHex, NormalizeWaitColorHex(value));
+    }
+
+    public int WaitColorTolerance
+    {
+        get => _waitColorTolerance;
+        set => SetProperty(ref _waitColorTolerance, value < 0 ? 0 : (value > 255 ? 255 : value));
+    }
+
+    public string CommentContent
+    {
+        get => _commentContent;
+        set => SetProperty(ref _commentContent, value);
+    }
+
     public string Notes
     {
         get => _notes;
         set => SetProperty(ref _notes, value);
+    }
+
+    private static string NormalizeWaitColorHex(string? value)
+    {
+        var text = string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim().ToUpperInvariant();
+        if (string.IsNullOrEmpty(text))
+        {
+            return string.Empty;
+        }
+
+        return text.StartsWith('#') ? text : $"#{text}";
     }
 }

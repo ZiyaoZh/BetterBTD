@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Threading;
 using BetterBTD.Services;
 using BetterBTD.ViewModels;
@@ -63,5 +64,31 @@ public partial class ScriptEditorPageView : Page
 
         var maxHeight = _hostWindow.ActualHeight - EditorMaxHeightOffset;
         MaxHeight = maxHeight > 0 ? maxHeight : 0;
+    }
+
+    private void PropertiesScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        if (sender is not ScrollViewer scrollViewer)
+        {
+            return;
+        }
+
+        var nextOffset = scrollViewer.VerticalOffset - e.Delta;
+        if (nextOffset < 0)
+        {
+            nextOffset = 0;
+        }
+        else if (nextOffset > scrollViewer.ScrollableHeight)
+        {
+            nextOffset = scrollViewer.ScrollableHeight;
+        }
+
+        if (Math.Abs(nextOffset - scrollViewer.VerticalOffset) < double.Epsilon)
+        {
+            return;
+        }
+
+        scrollViewer.ScrollToVerticalOffset(nextOffset);
+        e.Handled = true;
     }
 }
