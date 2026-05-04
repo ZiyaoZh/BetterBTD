@@ -396,6 +396,12 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
             RefreshHistoryCommandState();
         }
 
+        if (ShouldRefreshAllInstructionDisplayNames(instruction, e.PropertyName))
+        {
+            UpdateAllInstructionDisplayNames();
+            return;
+        }
+
         UpdateInstructionDisplayName(instruction);
     }
 
@@ -1288,13 +1294,21 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
 
     private void UpdateAllInstructionDisplayNames()
     {
+        var upgradeLevelStates = BuildUpgradeLevelStates();
         foreach (var instruction in InstructionSequence)
         {
-            UpdateInstructionDisplayName(instruction);
+            UpdateInstructionDisplayName(instruction, upgradeLevelStates);
         }
     }
 
     private void UpdateInstructionDisplayName(ScriptInstructionInstance instruction)
+    {
+        UpdateInstructionDisplayName(instruction, BuildUpgradeLevelStates());
+    }
+
+    private void UpdateInstructionDisplayName(
+        ScriptInstructionInstance instruction,
+        IReadOnlyDictionary<ScriptInstructionInstance, string> upgradeLevelStates)
     {
         var text = instruction.Type switch
         {
@@ -1313,8 +1327,7 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
                 : string.Format(
                     _localizationService.T("Editor.Display.UpgradeMonkey"),
                     GetTargetMonkeyDisplayName(instruction),
-                    GetUpgradePathDisplayName(instruction.UpgradePath),
-                    instruction.UpgradeCount),
+                    upgradeLevelStates.GetValueOrDefault(instruction, "000")),
             ScriptCommandType.SwitchMonkeyTarget => string.Format(
                 _localizationService.T("Editor.Display.SwitchMonkeyTarget"),
                 GetTargetMonkeyDisplayName(instruction),
@@ -1365,6 +1378,77 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         };
 
         instruction.DisplayName = text;
+    }
+
+    private bool ShouldRefreshAllInstructionDisplayNames(ScriptInstructionInstance instruction, string? propertyName)
+    {
+        if (instruction.Type != ScriptCommandType.UpgradeMonkey)
+        {
+            return false;
+        }
+
+        return string.Equals(propertyName, nameof(ScriptInstructionInstance.TargetMonkeyBindingId), StringComparison.Ordinal) ||
+               string.Equals(propertyName, nameof(ScriptInstructionInstance.UpgradePath), StringComparison.Ordinal) ||
+               string.Equals(propertyName, nameof(ScriptInstructionInstance.UpgradeCount), StringComparison.Ordinal);
+    }
+
+    private IReadOnlyDictionary<ScriptInstructionInstance, string> BuildUpgradeLevelStates()
+    {
+        var upgradeStates = new Dictionary<ScriptInstructionInstance, string>();
+        var monkeyLevels = new Dictionary<string, (int Top, int Middle, int Bottom)>(StringComparer.OrdinalIgnoreCase);
+
+        for (var index = 0; index < InstructionSequence.Count; index++)
+        {
+            var instruction = InstructionSequence[index];
+            if (instruction.Type != ScriptCommandType.UpgradeMonkey)
+            {
+                continue;
+            }
+
+            var targetObjectKey = ResolveTargetMonkeyObjectKey(instruction);
+            if (IsHeroObjectKey(targetObjectKey))
+            {
+                continue;
+            }
+
+            var trackingKey = ResolveUpgradeTrackingKey(instruction, targetObjectKey, index);
+            monkeyLevels.TryGetValue(trackingKey, out var currentLevels);
+            currentLevels = instruction.UpgradePath switch
+            {
+                UpgradePathType.Top => (currentLevels.Top + instruction.UpgradeCount, currentLevels.Middle, currentLevels.Bottom),
+                UpgradePathType.Middle => (currentLevels.Top, currentLevels.Middle + instruction.UpgradeCount, currentLevels.Bottom),
+                UpgradePathType.Bottom => (currentLevels.Top, currentLevels.Middle, currentLevels.Bottom + instruction.UpgradeCount),
+                _ => currentLevels
+            };
+
+            monkeyLevels[trackingKey] = currentLevels;
+            upgradeStates[instruction] = $"{currentLevels.Top}{currentLevels.Middle}{currentLevels.Bottom}";
+        }
+
+        return upgradeStates;
+    }
+
+    private static string ResolveUpgradeTrackingKey(
+        ScriptInstructionInstance instruction,
+        string targetObjectKey,
+        int sequenceIndex)
+    {
+        if (!string.IsNullOrWhiteSpace(targetObjectKey))
+        {
+            return $"Object:{targetObjectKey}";
+        }
+
+        if (!string.IsNullOrWhiteSpace(instruction.TargetMonkeyBindingId))
+        {
+            return $"Binding:{instruction.TargetMonkeyBindingId}";
+        }
+
+        if (!string.IsNullOrWhiteSpace(instruction.TargetMonkeyObjectId))
+        {
+            return $"Target:{instruction.TargetMonkeyObjectId}";
+        }
+
+        return $"Instruction:{sequenceIndex}";
     }
 
     private static bool IsHeroObjectKey(string objectKey)
