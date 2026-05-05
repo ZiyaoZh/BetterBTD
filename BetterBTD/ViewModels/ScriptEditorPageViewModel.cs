@@ -25,6 +25,7 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
     private const string ScriptFileDialogFilter = "BetterBTD Script (*.btd)|*.btd|JSON File (*.json)|*.json|All Files (*.*)|*.*";
 
     private readonly LocalizationService _localizationService;
+    private readonly AppDialogService _appDialogService;
     private readonly ScriptDocumentService _scriptDocumentService;
     private readonly List<ScriptInstructionInstance> _clipboardSequenceInstructions = [];
     private readonly Stack<List<ScriptInstructionInstance>> _undoHistory = [];
@@ -53,6 +54,7 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
     public ScriptEditorPageViewModel(LocalizationService localizationService)
     {
         _localizationService = localizationService;
+        _appDialogService = AppDialogService.Instance;
         _scriptDocumentService = ScriptDocumentService.Instance;
         _localizationService.LanguageChanged += (_, _) =>
         {
@@ -409,16 +411,19 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
             return true;
         }
 
-        var result = System.Windows.MessageBox.Show(
-            _localizationService.T(promptKey),
-            _localizationService.T("Editor.File.UnsavedChanges.Title"),
-            MessageBoxButton.YesNoCancel,
-            MessageBoxImage.Warning);
+        var result = _appDialogService.Show(new AppDialogRequest
+        {
+            Title = _localizationService.T("Editor.File.UnsavedChanges.Title"),
+            Message = _localizationService.T(promptKey),
+            PrimaryButtonText = FileSaveText,
+            SecondaryButtonText = _localizationService.T("Editor.Dialog.DontSave"),
+            CloseButtonText = _localizationService.T("Editor.Dialog.Cancel")
+        });
 
         return result switch
         {
-            MessageBoxResult.Yes => TrySaveScriptFile(),
-            MessageBoxResult.No => true,
+            AppDialogResult.Primary => TrySaveScriptFile(),
+            AppDialogResult.Secondary => true,
             _ => false
         };
     }
@@ -448,11 +453,9 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show(
-                string.Format(_localizationService.T("Editor.File.OpenError.Message"), ex.Message),
+            ShowMessageDialog(
                 _localizationService.T("Editor.File.OpenError.Title"),
-                MessageBoxButton.OK,
-                MessageBoxImage.Error);
+                string.Format(_localizationService.T("Editor.File.OpenError.Message"), ex.Message));
         }
     }
 
@@ -524,11 +527,19 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
 
     private void ShowSaveError(Exception ex)
     {
-        System.Windows.MessageBox.Show(
-            string.Format(_localizationService.T("Editor.File.SaveError.Message"), ex.Message),
+        ShowMessageDialog(
             _localizationService.T("Editor.File.SaveError.Title"),
-            MessageBoxButton.OK,
-            MessageBoxImage.Error);
+            string.Format(_localizationService.T("Editor.File.SaveError.Message"), ex.Message));
+    }
+
+    private void ShowMessageDialog(string title, string message)
+    {
+        _ = _appDialogService.Show(new AppDialogRequest
+        {
+            Title = title,
+            Message = message,
+            PrimaryButtonText = _localizationService.T("Editor.Dialog.Ok")
+        });
     }
 
     private string BuildDefaultSaveFileName()

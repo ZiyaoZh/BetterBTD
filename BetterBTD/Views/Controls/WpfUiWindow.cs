@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media.Imaging;
 using Wpf.Ui.Controls;
 using Grid = System.Windows.Controls.Grid;
 using StackPanel = System.Windows.Controls.StackPanel;
@@ -38,7 +37,7 @@ public class WpfUiWindow : FluentWindow
 
         var titleBar = new TitleBar
         {
-            Icon = new ImageIcon { Source = new BitmapImage(new Uri(@"pack://application:,,,/Resources/Images/logo.png", UriKind.Absolute)) }
+            Icon = new SymbolIcon { Symbol = SymbolRegular.Info24 }
         };
         Grid.SetRow(titleBar, 0);
         grid.Children.Add(titleBar);
