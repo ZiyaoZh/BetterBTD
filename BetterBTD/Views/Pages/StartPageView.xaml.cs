@@ -9,6 +9,6 @@ public partial class StartPageView : Page
     public StartPageView()
     {
         InitializeComponent();
-        DataContext = new StartPageViewModel(LocalizationService.Instance);
+        DataContext = new StartPageViewModel(LocalizationService.Instance, MaskWindowService.Instance);
     }
 }

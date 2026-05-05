@@ -5,6 +5,7 @@
               xmlns:vio="http://schemas.lepo.co/wpfui/2022/xaml/violeta"
               xmlns:behavior="clr-namespace:BetterBTD.View.Behavior"
               xmlns:converters="clr-namespace:BetterBTD.Views.Converters"
+             ShutdownMode="OnMainWindowClose"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
         <ResourceDictionary>

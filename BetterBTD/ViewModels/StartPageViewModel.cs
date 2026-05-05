@@ -9,6 +9,7 @@ namespace BetterBTD.ViewModels;
 public sealed class StartPageViewModel : ObservableObject
 {
     private readonly LocalizationService _localizationService;
+    private readonly MaskWindowService _maskWindowService;
 
     private bool _isCapturerRunning;
     private string _selectedCaptureMode = "BitBlt";
@@ -23,25 +24,29 @@ public sealed class StartPageViewModel : ObservableObject
     private bool _recordGameTimeEnabled;
     private bool _autoFixWin11BitBlt;
 
-    public StartPageViewModel(LocalizationService localizationService)
+    public StartPageViewModel(LocalizationService localizationService, MaskWindowService maskWindowService)
     {
         _localizationService = localizationService;
+        _maskWindowService = maskWindowService;
         _localizationService.LanguageChanged += (_, _) => RaiseLocalizedProperties();
+        _maskWindowService.RunningStateChanged += OnMaskWindowRunningStateChanged;
 
         CaptureModes = ["BitBlt", "WindowsGraphicsCapture"];
         InferenceDevices = ["Auto", "CPU", "GPU"];
 
         OpenTutorialCommand = new RelayCommand(OpenTutorial);
-        StartCaptureCommand = new RelayCommand(() => IsCapturerRunning = true);
-        StopCaptureCommand = new RelayCommand(() => IsCapturerRunning = false);
+        StartCaptureCommand = new RelayCommand(StartCapture);
+        StopCaptureCommand = new RelayCommand(StopCapture);
         ChangeBannerImageCommand = new RelayCommand(() => { });
         ResetBannerImageCommand = new RelayCommand(() => { });
         OpenHardwareAccelerationSettingsCommand = new RelayCommand(() => { });
         StartCaptureTestCommand = new RelayCommand(() => { });
-        ManualPickWindowCommand = new RelayCommand(() => { });
+        ManualPickWindowCommand = new RelayCommand(RefreshMaskWindowTarget);
         OpenDisplayAdvancedGraphicsSettingsCommand = new RelayCommand(() => { });
         OpenGameCommandLineDocumentCommand = new RelayCommand(OpenTutorial);
         SelectInstallPathCommand = new RelayCommand(() => { });
+
+        IsCapturerRunning = _maskWindowService.IsRunning;
     }
 
     public ObservableCollection<string> CaptureModes { get; }
@@ -193,6 +198,30 @@ public sealed class StartPageViewModel : ObservableObject
             FileName = tutorialUrl,
             UseShellExecute = true
         });
+    }
+
+    private void StartCapture()
+    {
+        _maskWindowService.Start();
+        IsCapturerRunning = _maskWindowService.IsRunning;
+    }
+
+    private void StopCapture()
+    {
+        _maskWindowService.Stop();
+        IsCapturerRunning = _maskWindowService.IsRunning;
+    }
+
+    private void RefreshMaskWindowTarget()
+    {
+        _maskWindowService.Start();
+        _maskWindowService.RefreshNow();
+        IsCapturerRunning = _maskWindowService.IsRunning;
+    }
+
+    private void OnMaskWindowRunningStateChanged(object? sender, bool isRunning)
+    {
+        IsCapturerRunning = isRunning;
     }
 
     private void RaiseLocalizedProperties()

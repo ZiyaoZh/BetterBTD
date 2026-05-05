@@ -18,5 +18,11 @@ namespace BetterBTD
             Activated += (_, _) => ThemeService.Instance.ApplyTheme(ThemeService.Instance.CurrentTheme);
             Deactivated += (_, _) => ThemeService.Instance.ApplyTheme(ThemeService.Instance.CurrentTheme);
         }
+
+        protected override void OnExit(ExitEventArgs e)
+        {
+            MaskWindowService.Instance.Shutdown();
+            base.OnExit(e);
+        }
     }
 }

@@ -1,0 +1,36 @@
+<Window x:Class="BetterBTD.Views.Windows.MaskWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:overlay="clr-namespace:BetterBTD.Views.Windows.Overlay"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ShowInTaskbar="False"
+        ShowActivated="False"
+        Topmost="True"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        Visibility="Hidden">
+    <Grid IsHitTestVisible="False">
+        <overlay:MaskOverlaySurface x:Name="OverlaySurface" />
+
+        <Border Margin="18"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Top"
+                Padding="12,8"
+                Background="#D9101827"
+                BorderBrush="#55A9FF3F"
+                BorderThickness="1"
+                CornerRadius="999">
+            <StackPanel>
+                <TextBlock FontSize="12"
+                           FontWeight="SemiBold"
+                           Foreground="#FFF4F7FB"
+                           Text="Mask Window Service" />
+                <TextBlock x:Name="StatusTextBlock"
+                           Margin="0,2,0,0"
+                           Foreground="#FFD7E0EE"
+                           Text="Waiting for testWindow" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

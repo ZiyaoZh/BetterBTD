@@ -4,6 +4,8 @@ namespace BetterBTD.Models;
 
 public sealed class AppConfiguration
 {
+    public string MaskWindowTargetTitle { get; set; } = "testWindow";
+
     public string LanguageCode { get; set; } = "zh-CN";
 
     public string ThemeMode { get; set; } = "Dark";

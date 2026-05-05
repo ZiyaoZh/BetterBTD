@@ -33,6 +33,7 @@ public sealed class ConfigurationService
     {
         ArgumentNullException.ThrowIfNull(configuration);
 
+        Current.MaskWindowTargetTitle = configuration.MaskWindowTargetTitle;
         Current.LanguageCode = configuration.LanguageCode;
         Current.ThemeMode = configuration.ThemeMode;
         Current.GameLanguageCode = configuration.GameLanguageCode;
