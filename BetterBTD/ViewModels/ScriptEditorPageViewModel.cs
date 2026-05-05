@@ -1351,7 +1351,10 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
     private void UpdateCoordinateSelectionAnchor(GameWindowInfo windowInfo, Point clientRelativePoint, Point scriptRelativePoint, bool isInsideTargetWindow)
     {
         var strokeColor = isInsideTargetWindow ? CoordinateSelectionActiveColor : CoordinateSelectionInactiveColor;
-        var labelOffsetX = clientRelativePoint.X > windowInfo.ClientWidth - 180 ? -158d : 14d;
+        var hasAspectRatioWarning = !_coordinateTransformService.HasReferenceAspectRatio(windowInfo);
+        var labelOffsetX = clientRelativePoint.X > windowInfo.ClientWidth - (hasAspectRatioWarning ? 240d : 180d)
+            ? (hasAspectRatioWarning ? -218d : -158d)
+            : 14d;
         var labelOffsetY = clientRelativePoint.Y < 52 ? 14d : -46d;
         var label = string.Format(
             _localizationService.T("Editor.Property.CoordinateSelectionLabel"),
@@ -1359,6 +1362,12 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
             scriptRelativePoint.Y.ToString("0.##"),
             clientRelativePoint.X.ToString("0.##"),
             clientRelativePoint.Y.ToString("0.##"));
+
+        if (hasAspectRatioWarning)
+        {
+            label = $"{label}\n{_localizationService.T("Editor.Property.CoordinateSelectionAspectWarning")}";
+        }
+
         if (_coordinateSelectionAnchorId is null)
         {
             _coordinateSelectionAnchorId = _maskWindowService.RegisterAnchor(

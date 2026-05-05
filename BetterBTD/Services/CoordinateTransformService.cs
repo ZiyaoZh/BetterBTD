@@ -8,6 +8,7 @@ public sealed class CoordinateTransformService
     private static readonly Lazy<CoordinateTransformService> InstanceHolder = new(() => new CoordinateTransformService());
     private const double DefaultScriptReferenceWidth = 1920d;
     private const double DefaultScriptReferenceHeight = 1080d;
+    private const double DefaultAspectRatioTolerance = 0.01d;
 
     private CoordinateTransformService()
     {
@@ -42,5 +43,17 @@ public sealed class CoordinateTransformService
     public Point ToScreenCoordinate(Point scriptCoordinate, GameWindowInfo windowInfo)
     {
         return windowInfo.ClientToScreen(ToClientCoordinate(scriptCoordinate, windowInfo));
+    }
+
+    public bool HasReferenceAspectRatio(GameWindowInfo windowInfo, double tolerance = DefaultAspectRatioTolerance)
+    {
+        if (windowInfo.ClientWidth <= 0 || windowInfo.ClientHeight <= 0)
+        {
+            return false;
+        }
+
+        var referenceAspectRatio = ScriptReferenceWidth / ScriptReferenceHeight;
+        var currentAspectRatio = windowInfo.ClientWidth / (double)windowInfo.ClientHeight;
+        return Math.Abs(currentAspectRatio - referenceAspectRatio) <= tolerance;
     }
 }
