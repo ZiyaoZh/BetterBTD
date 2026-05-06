@@ -21,7 +21,7 @@
     <PackageReference Include="gong-wpf-dragdrop" Version="4.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.6" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
-    <PackageReference Include="OpenCvSharp4" Version="4.13.0.20260427" />
+    <PackageReference Include="OpenCvSharp4" Version="4.13.0.20260302" />
     <PackageReference Include="Vanara.PInvoke.NtDll" Version="5.0.4" />
     <PackageReference Include="Vanara.PInvoke.User32" Version="5.0.4" />
     <PackageReference Include="WPF-UI" Version="4.2.0" />

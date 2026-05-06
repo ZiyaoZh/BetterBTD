@@ -15,10 +15,12 @@ public partial class CaptureTestWindow : FluentWindow
 {
     private IGameCapture? _capture;
     private Size _cachedFrameSize;
+    private readonly Stopwatch _statsUpdateTimer = new();
     private long _captureElapsedMilliseconds;
     private long _transferElapsedMilliseconds;
     private long _captureCount;
     private string _captureModeName = "Unknown";
+    private string? _lastError;
 
     public CaptureTestWindow()
     {
@@ -40,12 +42,24 @@ public partial class CaptureTestWindow : FluentWindow
             : $"目标窗口: {windowDisplayName}";
         CaptureStatsTextBlock.Text = $"模式: {options.CaptureModeName}";
         _captureModeName = options.CaptureModeName;
+        _statsUpdateTimer.Restart();
 
         _capture = GameCaptureFactory.Create(ParseCaptureMode(options.CaptureModeName));
-        _capture.Start(hWnd, new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase)
+        try
         {
-            ["autoFixWin11BitBlt"] = options.AutoFixWin11BitBlt
-        });
+            _capture.Start(hWnd, new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["autoFixWin11BitBlt"] = options.AutoFixWin11BitBlt
+            });
+        }
+        catch (Exception ex)
+        {
+            _lastError = ex.ToString();
+            EmptyStateTextBlock.Text = _lastError;
+            EmptyStateTextBlock.Visibility = Visibility.Visible;
+            CaptureStatsTextBlock.Text = $"模式: {_captureModeName} | 启动失败";
+            throw;
+        }
 
         CompositionTarget.Rendering += OnRendering;
     }
@@ -57,41 +71,57 @@ public partial class CaptureTestWindow : FluentWindow
             return;
         }
 
+        Mat? capturedFrame = null;
         var captureStopwatch = Stopwatch.StartNew();
-        using var capturedFrame = _capture.Capture();
-        captureStopwatch.Stop();
-
-        _captureElapsedMilliseconds += captureStopwatch.ElapsedMilliseconds;
-
-        if (capturedFrame is null || capturedFrame.Empty())
+        try
         {
+            capturedFrame = _capture.Capture();
+        }
+        catch (Exception ex)
+        {
+            captureStopwatch.Stop();
+            _lastError = ex.ToString();
+            EmptyStateTextBlock.Text = _lastError;
             EmptyStateTextBlock.Visibility = Visibility.Visible;
-            CaptureStatsTextBlock.Text = $"模式: {_captureModeName} | 最近一次捕获失败";
+            UpdateStatsText(failed: true);
             return;
         }
 
-        EmptyStateTextBlock.Visibility = Visibility.Collapsed;
-        _captureCount++;
-
-        var transferStopwatch = Stopwatch.StartNew();
-        if (_cachedFrameSize != capturedFrame.Size())
+        using (capturedFrame)
         {
-            DisplayCaptureResultImage.Source = capturedFrame.ToWriteableBitmap();
-            _cachedFrameSize = capturedFrame.Size();
-        }
-        else if (DisplayCaptureResultImage.Source is WriteableBitmap bitmap)
-        {
-            capturedFrame.UpdateWriteableBitmap(bitmap);
-        }
-        transferStopwatch.Stop();
+            captureStopwatch.Stop();
+            _captureElapsedMilliseconds += captureStopwatch.ElapsedMilliseconds;
 
-        _transferElapsedMilliseconds += transferStopwatch.ElapsedMilliseconds;
-        CaptureStatsTextBlock.Text =
-            $"模式: {_captureModeName} | 帧尺寸: {capturedFrame.Width}x{capturedFrame.Height} | " +
-            $"平均截图: {AverageMilliseconds(_captureElapsedMilliseconds):F2} ms | " +
-            $"平均显示: {AverageMilliseconds(_transferElapsedMilliseconds):F2} ms | " +
-            $"平均总耗时: {AverageMilliseconds(_captureElapsedMilliseconds + _transferElapsedMilliseconds):F2} ms | " +
-            $"样本数: {_captureCount}";
+            if (capturedFrame is null || capturedFrame.Empty())
+            {
+                EmptyStateTextBlock.Visibility = Visibility.Visible;
+                EmptyStateTextBlock.Text = string.IsNullOrWhiteSpace(_lastError)
+                    ? "等待捕获帧... / 捕获失败"
+                    : _lastError;
+                UpdateStatsText(failed: true);
+                return;
+            }
+
+            _lastError = null;
+            EmptyStateTextBlock.Visibility = Visibility.Collapsed;
+            _captureCount++;
+
+            var transferStopwatch = Stopwatch.StartNew();
+            if (_cachedFrameSize != capturedFrame.Size() || DisplayCaptureResultImage.Source is not WriteableBitmap bitmap)
+            {
+                DisplayCaptureResultImage.Source = capturedFrame.ToWriteableBitmap();
+                _cachedFrameSize = capturedFrame.Size();
+            }
+            else
+            {
+                capturedFrame.UpdateWriteableBitmap(bitmap);
+            }
+
+            transferStopwatch.Stop();
+            _transferElapsedMilliseconds += transferStopwatch.ElapsedMilliseconds;
+
+            UpdateStatsText(failed: false, width: capturedFrame.Width, height: capturedFrame.Height);
+        }
     }
 
     private double AverageMilliseconds(long totalMilliseconds)
@@ -99,12 +129,32 @@ public partial class CaptureTestWindow : FluentWindow
         return _captureCount == 0 ? 0d : totalMilliseconds / (double)_captureCount;
     }
 
+    private void UpdateStatsText(bool failed, int width = 0, int height = 0)
+    {
+        if (_statsUpdateTimer.IsRunning && _statsUpdateTimer.ElapsedMilliseconds < 250)
+        {
+            return;
+        }
+
+        _statsUpdateTimer.Restart();
+        CaptureStatsTextBlock.Text = failed
+            ? $"模式: {_captureModeName} | 最近一次捕获失败"
+            : $"模式: {_captureModeName} | 帧尺寸: {width}x{height} | " +
+              $"平均截图: {AverageMilliseconds(_captureElapsedMilliseconds):F2} ms | " +
+              $"平均显示: {AverageMilliseconds(_transferElapsedMilliseconds):F2} ms | " +
+              $"平均总耗时: {AverageMilliseconds(_captureElapsedMilliseconds + _transferElapsedMilliseconds):F2} ms | " +
+              $"样本数: {_captureCount}";
+    }
+
     private void OnClosed(object? sender, EventArgs e)
     {
         CompositionTarget.Rendering -= OnRendering;
+        DisplayCaptureResultImage.Source = null;
+        _capture?.Stop();
         _capture?.Dispose();
         _capture = null;
         _cachedFrameSize = default;
+        _statsUpdateTimer.Stop();
     }
 
     private static CaptureModes ParseCaptureMode(string captureModeName)
