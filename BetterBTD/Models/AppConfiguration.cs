@@ -6,6 +6,10 @@ public sealed class AppConfiguration
 {
     public string MaskWindowTargetTitle { get; set; } = "testWindow";
 
+    public string CaptureModeName { get; set; } = "BitBlt";
+
+    public bool AutoFixWin11BitBlt { get; set; }
+
     public string LanguageCode { get; set; } = "zh-CN";
 
     public string ThemeMode { get; set; } = "Dark";

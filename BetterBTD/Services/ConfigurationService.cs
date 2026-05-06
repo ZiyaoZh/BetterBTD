@@ -34,6 +34,8 @@ public sealed class ConfigurationService
         ArgumentNullException.ThrowIfNull(configuration);
 
         Current.MaskWindowTargetTitle = configuration.MaskWindowTargetTitle;
+        Current.CaptureModeName = configuration.CaptureModeName;
+        Current.AutoFixWin11BitBlt = configuration.AutoFixWin11BitBlt;
         Current.LanguageCode = configuration.LanguageCode;
         Current.ThemeMode = configuration.ThemeMode;
         Current.GameLanguageCode = configuration.GameLanguageCode;
@@ -60,6 +62,9 @@ public sealed class ConfigurationService
             var json = File.ReadAllText(_configFilePath);
             var config = JsonSerializer.Deserialize<AppConfiguration>(json) ?? new AppConfiguration();
             config.KeyBindings ??= new BetterBTD.Core.Config.KeyBindingsConfig();
+            config.CaptureModeName = string.IsNullOrWhiteSpace(config.CaptureModeName)
+                ? "BitBlt"
+                : config.CaptureModeName;
             return config;
         }
         catch (Exception ex) when (ex is IOException or JsonException)

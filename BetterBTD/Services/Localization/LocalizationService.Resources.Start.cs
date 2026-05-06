@@ -8,9 +8,9 @@ public sealed partial class LocalizationService
     private static Dictionary<string, string> BuildZhCnStartResources() => new(StringComparer.OrdinalIgnoreCase)
     {
         ["Start.HeroImageTitle"] = "游戏展示图",
-        ["Start.HeroImageHint"] = "（装饰位，后续可替换为实际大图）",
+        ["Start.HeroImageHint"] = "（占位图，后续可替换为实际大图）",
         ["Start.ActionPanelTitle"] = "核心功能",
-        ["Start.ActionPanelDescription"] = "保持简单直达，方便在游戏窗口旁快速操作。",
+        ["Start.ActionPanelDescription"] = "保持简洁直达，方便在游戏窗口旁快速操作。",
         ["Start.LaunchGame"] = "启动游戏",
         ["Start.LaunchCapture"] = "启动截图器",
         ["Start.StopCapture"] = "停止截图器",
@@ -26,17 +26,13 @@ public sealed partial class LocalizationService
         ["Start.CaptureModeDescription"] = "推荐选择 BitBlt，问题较少。",
         ["Start.TriggerIntervalTitle"] = "触发器间隔（毫秒）",
         ["Start.TriggerIntervalDescription"] = "默认 50ms，普通用户不建议调整。",
-        ["Start.CaptureBitmapCacheTitle"] = "启用位图缓存",
-        ["Start.CaptureBitmapCacheDescription"] = "出现黑屏或掉帧可尝试关闭并重启。",
-        ["Start.InferenceDeviceTitle"] = "AI 推理设备设置",
-        ["Start.InferenceDeviceDescription"] = "修改后建议重启应用生效。",
         ["Start.CaptureTestTitle"] = "测试图像捕获",
         ["Start.CaptureTestDescription"] = "测试几种截图模式的效果。",
         ["Start.CaptureTestButtonText"] = "测试图像捕获",
         ["Start.ManualPickWindowTitle"] = "手动选择窗口",
         ["Start.ManualPickWindowDescription"] = "找不到游戏窗口时使用。",
         ["Start.ManualPickWindowButtonText"] = "选择捕获窗口",
-        ["Start.AutoFixWin11Title"] = "自动关闭 Win11 窗口化优化",
+        ["Start.AutoFixWin11Title"] = "自动关闭 Win11 窗口优化",
         ["Start.AutoFixWin11Description"] = "修改后重启游戏生效。",
         ["Start.ManualSettings"] = "手动设置",
         ["Start.LinkedStartTitle"] = "同时启动游戏",
@@ -52,8 +48,7 @@ public sealed partial class LocalizationService
         ["Start.StartWithCmdDescription"] = "遇到启动兼容问题时可尝试开启。",
         ["Start.RecordGameTimeTitle"] = "记录游戏时间",
         ["Start.RecordGameTimeDescription"] = "启动后同步记录时长。",
-        ["Start.Browse"] = "浏览",
-        ["Start.More"] = "更多..."
+        ["Start.Browse"] = "浏览"
     };
 
     private static Dictionary<string, string> BuildEnUsStartResources() => new(StringComparer.OrdinalIgnoreCase)
@@ -77,10 +72,6 @@ public sealed partial class LocalizationService
         ["Start.CaptureModeDescription"] = "BitBlt is recommended for better compatibility.",
         ["Start.TriggerIntervalTitle"] = "Trigger Interval (ms)",
         ["Start.TriggerIntervalDescription"] = "Default is 50ms; regular users should keep this value.",
-        ["Start.CaptureBitmapCacheTitle"] = "Enable Bitmap Cache",
-        ["Start.CaptureBitmapCacheDescription"] = "Disable and restart if black screen or frame drop appears.",
-        ["Start.InferenceDeviceTitle"] = "AI Inference Device",
-        ["Start.InferenceDeviceDescription"] = "Restart is recommended after changes.",
         ["Start.CaptureTestTitle"] = "Capture Test",
         ["Start.CaptureTestDescription"] = "Test capture quality in several modes.",
         ["Start.CaptureTestButtonText"] = "Test Capture",
@@ -103,7 +94,6 @@ public sealed partial class LocalizationService
         ["Start.StartWithCmdDescription"] = "Enable this when startup compatibility issues occur.",
         ["Start.RecordGameTimeTitle"] = "Record Game Time",
         ["Start.RecordGameTimeDescription"] = "Track playtime after launch.",
-        ["Start.Browse"] = "Browse",
-        ["Start.More"] = "More..."
+        ["Start.Browse"] = "Browse"
     };
 }

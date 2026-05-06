@@ -1,8 +1,13 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using BetterBTD.Helpers;
+using BetterBTD.Models;
 using BetterBTD.Services;
+using BetterBTD.Views.Windows;
+using Fischless.GameCapture.BitBlt;
 
 namespace BetterBTD.ViewModels;
 
@@ -10,12 +15,13 @@ public sealed class StartPageViewModel : ObservableObject
 {
     private readonly LocalizationService _localizationService;
     private readonly MaskWindowService _maskWindowService;
+    private readonly GameCaptureService _gameCaptureService;
+    private readonly ConfigurationService _configurationService;
+    private readonly AppDialogService _appDialogService;
 
     private bool _isCapturerRunning;
     private string _selectedCaptureMode = "BitBlt";
     private int _triggerIntervalMs = 50;
-    private bool _captureBitmapCacheEnabled;
-    private string _selectedInferenceDevice = "Auto";
     private bool _linkedStartEnabled;
     private string _installPath = string.Empty;
     private string _startArguments = string.Empty;
@@ -23,42 +29,43 @@ public sealed class StartPageViewModel : ObservableObject
     private bool _startGameWithCmd;
     private bool _recordGameTimeEnabled;
     private bool _autoFixWin11BitBlt;
+    private bool _isLoadingConfiguration;
 
     public StartPageViewModel(LocalizationService localizationService, MaskWindowService maskWindowService)
     {
         _localizationService = localizationService;
         _maskWindowService = maskWindowService;
-        _localizationService.LanguageChanged += (_, _) => RaiseLocalizedProperties();
-        _maskWindowService.RunningStateChanged += OnMaskWindowRunningStateChanged;
+        _gameCaptureService = GameCaptureService.Instance;
+        _configurationService = ConfigurationService.Instance;
+        _appDialogService = AppDialogService.Instance;
 
-        CaptureModes = ["BitBlt", "WindowsGraphicsCapture"];
-        InferenceDevices = ["Auto", "CPU", "GPU"];
+        _localizationService.LanguageChanged += (_, _) => RaiseLocalizedProperties();
+        _gameCaptureService.RunningStateChanged += OnGameCaptureRunningStateChanged;
+
+        CaptureModes = new ObservableCollection<string>(_gameCaptureService.AvailableCaptureModes);
 
         OpenTutorialCommand = new RelayCommand(OpenTutorial);
         StartCaptureCommand = new RelayCommand(StartCapture);
         StopCaptureCommand = new RelayCommand(StopCapture);
         ChangeBannerImageCommand = new RelayCommand(() => { });
         ResetBannerImageCommand = new RelayCommand(() => { });
-        OpenHardwareAccelerationSettingsCommand = new RelayCommand(() => { });
-        StartCaptureTestCommand = new RelayCommand(() => { });
-        ManualPickWindowCommand = new RelayCommand(RefreshMaskWindowTarget);
-        OpenDisplayAdvancedGraphicsSettingsCommand = new RelayCommand(() => { });
+        StartCaptureTestCommand = new RelayCommand(StartCaptureTest);
+        ManualPickWindowCommand = new RelayCommand(ManualPickWindow);
+        OpenDisplayAdvancedGraphicsSettingsCommand = new RelayCommand(OpenDisplayAdvancedGraphicsSettings);
         OpenGameCommandLineDocumentCommand = new RelayCommand(OpenTutorial);
         SelectInstallPathCommand = new RelayCommand(() => { });
 
-        IsCapturerRunning = _maskWindowService.IsRunning;
+        LoadConfiguration();
+        IsCapturerRunning = _gameCaptureService.IsRunning;
     }
 
     public ObservableCollection<string> CaptureModes { get; }
-
-    public ObservableCollection<string> InferenceDevices { get; }
 
     public IRelayCommand OpenTutorialCommand { get; }
     public IRelayCommand StartCaptureCommand { get; }
     public IRelayCommand StopCaptureCommand { get; }
     public IRelayCommand ChangeBannerImageCommand { get; }
     public IRelayCommand ResetBannerImageCommand { get; }
-    public IRelayCommand OpenHardwareAccelerationSettingsCommand { get; }
     public IRelayCommand StartCaptureTestCommand { get; }
     public IRelayCommand ManualPickWindowCommand { get; }
     public IRelayCommand OpenDisplayAdvancedGraphicsSettingsCommand { get; }
@@ -74,25 +81,27 @@ public sealed class StartPageViewModel : ObservableObject
     public string SelectedCaptureMode
     {
         get => _selectedCaptureMode;
-        set => SetProperty(ref _selectedCaptureMode, value);
+        set
+        {
+            if (!SetProperty(ref _selectedCaptureMode, value))
+            {
+                return;
+            }
+
+            PersistConfiguration(config => config.CaptureModeName = value);
+            _gameCaptureService.Configure(BuildCaptureOptions());
+
+            if (_gameCaptureService.IsRunning)
+            {
+                RestartCapture();
+            }
+        }
     }
 
     public int TriggerIntervalMs
     {
         get => _triggerIntervalMs;
         set => SetProperty(ref _triggerIntervalMs, value);
-    }
-
-    public bool CaptureBitmapCacheEnabled
-    {
-        get => _captureBitmapCacheEnabled;
-        set => SetProperty(ref _captureBitmapCacheEnabled, value);
-    }
-
-    public string SelectedInferenceDevice
-    {
-        get => _selectedInferenceDevice;
-        set => SetProperty(ref _selectedInferenceDevice, value);
     }
 
     public bool LinkedStartEnabled
@@ -134,7 +143,21 @@ public sealed class StartPageViewModel : ObservableObject
     public bool AutoFixWin11BitBlt
     {
         get => _autoFixWin11BitBlt;
-        set => SetProperty(ref _autoFixWin11BitBlt, value);
+        set
+        {
+            if (!SetProperty(ref _autoFixWin11BitBlt, value))
+            {
+                return;
+            }
+
+            PersistConfiguration(config => config.AutoFixWin11BitBlt = value);
+            _gameCaptureService.Configure(BuildCaptureOptions());
+
+            if (value && OsVersionHelper.IsWindows11_OrGreater)
+            {
+                BitBltRegistryHelper.SetDirectXUserGlobalSettings();
+            }
+        }
     }
 
     public string HeroImageTitle => _localizationService.T("Start.HeroImageTitle");
@@ -156,10 +179,6 @@ public sealed class StartPageViewModel : ObservableObject
     public string CaptureModeDescription => _localizationService.T("Start.CaptureModeDescription");
     public string TriggerIntervalTitle => _localizationService.T("Start.TriggerIntervalTitle");
     public string TriggerIntervalDescription => _localizationService.T("Start.TriggerIntervalDescription");
-    public string CaptureBitmapCacheTitle => _localizationService.T("Start.CaptureBitmapCacheTitle");
-    public string CaptureBitmapCacheDescription => _localizationService.T("Start.CaptureBitmapCacheDescription");
-    public string InferenceDeviceTitle => _localizationService.T("Start.InferenceDeviceTitle");
-    public string InferenceDeviceDescription => _localizationService.T("Start.InferenceDeviceDescription");
     public string CaptureTestTitle => _localizationService.T("Start.CaptureTestTitle");
     public string CaptureTestDescription => _localizationService.T("Start.CaptureTestDescription");
     public string CaptureTestButtonText => _localizationService.T("Start.CaptureTestButtonText");
@@ -183,7 +202,6 @@ public sealed class StartPageViewModel : ObservableObject
     public string RecordGameTimeTitle => _localizationService.T("Start.RecordGameTimeTitle");
     public string RecordGameTimeDescription => _localizationService.T("Start.RecordGameTimeDescription");
     public string BrowseText => _localizationService.T("Start.Browse");
-    public string MoreText => _localizationService.T("Start.More");
 
     private void OpenTutorial()
     {
@@ -202,26 +220,182 @@ public sealed class StartPageViewModel : ObservableObject
 
     private void StartCapture()
     {
+        _gameCaptureService.Configure(BuildCaptureOptions());
+
+        if (!_gameCaptureService.TryStart(BuildCaptureOptions(), out _))
+        {
+            ShowTargetWindowNotFoundDialog();
+            return;
+        }
+
         _maskWindowService.Start();
-        IsCapturerRunning = _maskWindowService.IsRunning;
+        _maskWindowService.RefreshNow();
+        IsCapturerRunning = _gameCaptureService.IsRunning;
     }
 
     private void StopCapture()
     {
+        _gameCaptureService.Stop();
         _maskWindowService.Stop();
-        IsCapturerRunning = _maskWindowService.IsRunning;
+        IsCapturerRunning = _gameCaptureService.IsRunning;
     }
 
-    private void RefreshMaskWindowTarget()
+    private void StartCaptureTest()
     {
-        _maskWindowService.Start();
-        _maskWindowService.RefreshNow();
-        IsCapturerRunning = _maskWindowService.IsRunning;
+        var owner = GetActiveWindow();
+        var picker = new PickerWindow(isCaptureTest: true);
+        if (!picker.TryPickCaptureTarget(owner, out var selectedWindow))
+        {
+            return;
+        }
+
+        try
+        {
+            var captureTestWindow = new CaptureTestWindow();
+            if (owner is not null)
+            {
+                captureTestWindow.Owner = owner;
+            }
+
+            captureTestWindow.StartCapture(selectedWindow.Handle, BuildCaptureOptions(), selectedWindow.DisplayName);
+            captureTestWindow.Show();
+        }
+        catch (Exception ex)
+        {
+            ShowErrorDialog("测试图像捕获失败", ex.Message);
+        }
     }
 
-    private void OnMaskWindowRunningStateChanged(object? sender, bool isRunning)
+    private void ManualPickWindow()
     {
+        var owner = GetActiveWindow();
+        var picker = new PickerWindow();
+        if (!picker.TryPickCaptureTarget(owner, out var selectedWindow))
+        {
+            return;
+        }
+
+        PersistConfiguration(config => config.MaskWindowTargetTitle = selectedWindow.Title);
+        _gameCaptureService.Configure(BuildCaptureOptions());
+
+        try
+        {
+            _gameCaptureService.Start(selectedWindow.Handle, BuildCaptureOptions());
+            _maskWindowService.Start();
+            _maskWindowService.RefreshNow();
+            IsCapturerRunning = _gameCaptureService.IsRunning;
+        }
+        catch (Exception ex)
+        {
+            _maskWindowService.Stop();
+            ShowErrorDialog("启动截图器失败", ex.Message);
+        }
+    }
+
+    private void OpenDisplayAdvancedGraphicsSettings()
+    {
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = "ms-settings:display-advancedgraphics",
+            UseShellExecute = true
+        });
+    }
+
+    private void OnGameCaptureRunningStateChanged(object? sender, bool isRunning)
+    {
+        if (!isRunning)
+        {
+            _maskWindowService.Stop();
+        }
+
         IsCapturerRunning = isRunning;
+    }
+
+    private void RestartCapture()
+    {
+        try
+        {
+            _gameCaptureService.Configure(BuildCaptureOptions());
+            _gameCaptureService.Restart();
+            _maskWindowService.Start();
+            _maskWindowService.RefreshNow();
+        }
+        catch (Exception ex)
+        {
+            ShowErrorDialog("重启截图器失败", ex.Message);
+        }
+    }
+
+    private GameCaptureOptions BuildCaptureOptions()
+    {
+        return new GameCaptureOptions
+        {
+            CaptureModeName = SelectedCaptureMode,
+            AutoFixWin11BitBlt = AutoFixWin11BitBlt
+        };
+    }
+
+    private void LoadConfiguration()
+    {
+        _isLoadingConfiguration = true;
+        try
+        {
+            var configuration = _configurationService.Current;
+            var configuredCaptureMode = configuration.CaptureModeName;
+            if (string.IsNullOrWhiteSpace(configuredCaptureMode) ||
+                !CaptureModes.Contains(configuredCaptureMode))
+            {
+                configuredCaptureMode = CaptureModes.FirstOrDefault() ?? "BitBlt";
+            }
+
+            _selectedCaptureMode = configuredCaptureMode;
+            _autoFixWin11BitBlt = configuration.AutoFixWin11BitBlt;
+            _gameCaptureService.Configure(BuildCaptureOptions());
+        }
+        finally
+        {
+            _isLoadingConfiguration = false;
+        }
+    }
+
+    private void PersistConfiguration(Action<AppConfiguration> updateConfiguration)
+    {
+        if (_isLoadingConfiguration)
+        {
+            return;
+        }
+
+        ArgumentNullException.ThrowIfNull(updateConfiguration);
+
+        var configuration = _configurationService.Current;
+        updateConfiguration(configuration);
+        _configurationService.Save(configuration);
+    }
+
+    private void ShowTargetWindowNotFoundDialog()
+    {
+        var windowTitle = _gameCaptureService.TargetWindowTitle;
+        var message = string.IsNullOrWhiteSpace(windowTitle)
+            ? "未找到目标窗口。请先启动游戏，或使用“手动选择窗口”指定捕获对象。"
+            : $"未找到目标窗口“{windowTitle}”。请先启动游戏，或使用“手动选择窗口”指定捕获对象。";
+        ShowErrorDialog("未找到目标窗口", message);
+    }
+
+    private void ShowErrorDialog(string title, string message)
+    {
+        _ = _appDialogService.Show(new AppDialogRequest
+        {
+            Title = title,
+            Message = message,
+            PrimaryButtonText = "确定"
+        });
+    }
+
+    private static Window? GetActiveWindow()
+    {
+        return Application.Current?.Windows
+            .OfType<Window>()
+            .FirstOrDefault(window => window.IsActive) ?? Application.Current?.MainWindow;
     }
 
     private void RaiseLocalizedProperties()
@@ -245,10 +419,6 @@ public sealed class StartPageViewModel : ObservableObject
         OnPropertyChanged(nameof(CaptureModeDescription));
         OnPropertyChanged(nameof(TriggerIntervalTitle));
         OnPropertyChanged(nameof(TriggerIntervalDescription));
-        OnPropertyChanged(nameof(CaptureBitmapCacheTitle));
-        OnPropertyChanged(nameof(CaptureBitmapCacheDescription));
-        OnPropertyChanged(nameof(InferenceDeviceTitle));
-        OnPropertyChanged(nameof(InferenceDeviceDescription));
         OnPropertyChanged(nameof(CaptureTestTitle));
         OnPropertyChanged(nameof(CaptureTestDescription));
         OnPropertyChanged(nameof(CaptureTestButtonText));
@@ -272,6 +442,5 @@ public sealed class StartPageViewModel : ObservableObject
         OnPropertyChanged(nameof(RecordGameTimeTitle));
         OnPropertyChanged(nameof(RecordGameTimeDescription));
         OnPropertyChanged(nameof(BrowseText));
-        OnPropertyChanged(nameof(MoreText));
     }
 }

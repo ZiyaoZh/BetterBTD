@@ -123,40 +123,6 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding CaptureBitmapCacheTitle}" TextWrapping="Wrap" />
-                    <ui:TextBlock Grid.Row="1" Grid.Column="0" Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}" Text="{Binding CaptureBitmapCacheDescription}" TextWrapping="Wrap" />
-                    <ui:ToggleSwitch Grid.Row="0" Grid.RowSpan="2" Grid.Column="1" Margin="0,0,36,0" IsChecked="{Binding CaptureBitmapCacheEnabled, Mode=TwoWay}" />
-                </Grid>
-
-                <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
-                <Grid Margin="16">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-
-                    <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding InferenceDeviceTitle}" TextWrapping="Wrap" />
-                    <ui:TextBlock Grid.Row="1" Grid.Column="0" Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}" Text="{Binding InferenceDeviceDescription}" TextWrapping="Wrap" />
-                    <ComboBox Grid.Row="0" Grid.RowSpan="2" Grid.Column="1" Margin="0,0,10,0" Width="160" ItemsSource="{Binding InferenceDevices}" SelectedItem="{Binding SelectedInferenceDevice, Mode=TwoWay}" />
-                    <ui:Button Grid.Row="0" Grid.RowSpan="2" Grid.Column="2" Margin="0,0,36,0" Command="{Binding OpenHardwareAccelerationSettingsCommand}" Content="{Binding MoreText}" />
-                </Grid>
-
-                <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
-                <Grid Margin="16">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-
                     <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding CaptureTestTitle}" TextWrapping="Wrap" />
                     <ui:TextBlock Grid.Row="1" Grid.Column="0" Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}" Text="{Binding CaptureTestDescription}" TextWrapping="Wrap" />
                     <ui:Button Grid.Row="0" Grid.RowSpan="2" Grid.Column="1" Margin="0,0,36,0" Command="{Binding StartCaptureTestCommand}" Content="{Binding CaptureTestButtonText}" />

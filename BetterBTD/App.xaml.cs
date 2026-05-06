@@ -1,5 +1,7 @@
-﻿using System.Windows;
+using System.Windows;
+using BetterBTD.Helpers;
 using BetterBTD.Services;
+using Fischless.GameCapture.BitBlt;
 
 namespace BetterBTD
 {
@@ -13,6 +15,11 @@ namespace BetterBTD
             base.OnStartup(e);
 
             var config = ConfigurationService.Instance.Current;
+            if (config.AutoFixWin11BitBlt && OsVersionHelper.IsWindows11_OrGreater)
+            {
+                BitBltRegistryHelper.SetDirectXUserGlobalSettings();
+            }
+
             ThemeService.Instance.ApplyTheme(config.ThemeMode);
 
             Activated += (_, _) => ThemeService.Instance.ApplyTheme(ThemeService.Instance.CurrentTheme);
