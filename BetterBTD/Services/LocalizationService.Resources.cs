@@ -8,6 +8,7 @@ public sealed partial class LocalizationService
     private static Dictionary<string, string> BuildZhCnResources() => MergeResources(
         BuildZhCnShellResources(),
         BuildZhCnStartResources(),
+        BuildZhCnCaptureTestResources(),
         BuildZhCnTasksResources(),
         BuildZhCnEditorResources(),
         BuildZhCnGameElementsResources());
@@ -15,6 +16,7 @@ public sealed partial class LocalizationService
     private static Dictionary<string, string> BuildEnUsResources() => MergeResources(
         BuildEnUsShellResources(),
         BuildEnUsStartResources(),
+        BuildEnUsCaptureTestResources(),
         BuildEnUsTasksResources(),
         BuildEnUsEditorResources(),
         BuildEnUsGameElementsResources());

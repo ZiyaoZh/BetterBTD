@@ -22,7 +22,7 @@
 
         <ui:TitleBar x:Name="TestTitleBar"
                      Grid.Row="0"
-                     Title="测试图像捕获">
+                     Title="">
             <ui:TitleBar.Icon>
                 <ui:SymbolIcon Symbol="ImageSearch24" />
             </ui:TitleBar.Icon>
@@ -43,7 +43,7 @@
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center"
                            Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
-                           Text="等待捕获帧..."
+                           Text=""
                            Visibility="Collapsed" />
             </Grid>
         </Border>
@@ -51,7 +51,7 @@
         <StackPanel Grid.Row="2" Margin="24,16,24,20">
             <ui:TextBlock x:Name="CaptureTargetTextBlock"
                           FontWeight="SemiBold"
-                          Text="目标窗口" />
+                          Text="" />
             <ui:TextBlock x:Name="CaptureStatsTextBlock"
                           Margin="0,4,0,0"
                           Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
