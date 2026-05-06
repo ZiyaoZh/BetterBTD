@@ -21,6 +21,7 @@ namespace BetterBTD
 
         protected override void OnExit(ExitEventArgs e)
         {
+            GameCaptureService.Instance.Shutdown();
             MaskWindowService.Instance.Shutdown();
             base.OnExit(e);
         }
