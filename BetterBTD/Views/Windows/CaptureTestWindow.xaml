@@ -39,6 +39,46 @@
                        Margin="12"
                        Stretch="Uniform" />
 
+                <Canvas x:Name="CaptureOverlayCanvas"
+                        Margin="12"
+                        IsHitTestVisible="False">
+                    <Rectangle x:Name="GoldRegionRectangle"
+                               Stroke="#FFE8A344"
+                               StrokeThickness="2"
+                               RadiusX="4"
+                               RadiusY="4"
+                               Visibility="Collapsed" />
+                    <Border x:Name="GoldRegionLabelBorder"
+                            Padding="6,2"
+                            Background="#CC1A202C"
+                            CornerRadius="4"
+                            Visibility="Collapsed">
+                        <TextBlock x:Name="GoldRegionLabelTextBlock"
+                                   Foreground="White"
+                                   FontSize="12"
+                                   FontWeight="SemiBold"
+                                   Text="Gold" />
+                    </Border>
+
+                    <Rectangle x:Name="RoundRegionRectangle"
+                               Stroke="#FF57F287"
+                               StrokeThickness="2"
+                               RadiusX="4"
+                               RadiusY="4"
+                               Visibility="Collapsed" />
+                    <Border x:Name="RoundRegionLabelBorder"
+                            Padding="6,2"
+                            Background="#CC1A202C"
+                            CornerRadius="4"
+                            Visibility="Collapsed">
+                        <TextBlock x:Name="RoundRegionLabelTextBlock"
+                                   Foreground="White"
+                                   FontSize="12"
+                                   FontWeight="SemiBold"
+                                   Text="Round" />
+                    </Border>
+                </Canvas>
+
                 <TextBlock x:Name="EmptyStateTextBlock"
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center"
@@ -55,6 +95,10 @@
             <ui:TextBlock x:Name="CaptureStatsTextBlock"
                           Margin="0,4,0,0"
                           Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                          TextWrapping="Wrap" />
+            <ui:TextBlock x:Name="OcrStatsTextBlock"
+                          Margin="0,6,0,0"
+                          Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
                           TextWrapping="Wrap" />
         </StackPanel>
     </Grid>

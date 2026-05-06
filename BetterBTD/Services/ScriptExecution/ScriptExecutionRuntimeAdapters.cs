@@ -16,7 +16,7 @@ public static class ScriptExecutionRuntimeServiceFactory
         {
             Capture = new ScriptCaptureServiceAdapter(GameCaptureService.Instance),
             Input = new ScriptInputServiceAdapter(ScriptInputSimulationService.Instance),
-            GameTargetOcr = new NullGameTargetOcrService()
+            GameTargetOcr = GameTargetOcrService.Instance
         };
     }
 }
@@ -84,15 +84,5 @@ public sealed class ScriptInputServiceAdapter : IScriptInputService
     public void PressKey(KeyId key)
     {
         _scriptInputSimulationService.PressKey(key);
-    }
-}
-
-public sealed class NullGameTargetOcrService : IGameTargetOcrService
-{
-    public bool IsAvailable => false;
-
-    public Task<ScriptGameTargetSnapshot?> CaptureSnapshotAsync(CancellationToken cancellationToken = default)
-    {
-        return Task.FromResult<ScriptGameTargetSnapshot?>(null);
     }
 }

@@ -19,15 +19,67 @@ public sealed class TemplateMatchService
 
     public TemplateMatchInfo Match(Bitmap sourceImage, Bitmap templateImage, double threshold = DefaultThreshold)
     {
+        return Match(sourceImage, templateImage, null, threshold);
+    }
+
+    public TemplateMatchInfo Match(Bitmap sourceImage, Bitmap templateImage, Bitmap? templateMask, double threshold = DefaultThreshold)
+    {
         ArgumentNullException.ThrowIfNull(sourceImage);
         ArgumentNullException.ThrowIfNull(templateImage);
 
         using var sourceMat = ConvertBitmapToMat(sourceImage);
         using var templateMat = ConvertBitmapToMat(templateImage);
-        return Match(sourceMat, templateMat, threshold);
+        var maskMat = templateMask is null ? null : ConvertBitmapToMat(templateMask);
+
+        try
+        {
+            return Match(sourceMat, templateMat, maskMat, threshold);
+        }
+        finally
+        {
+            maskMat?.Dispose();
+        }
     }
 
     public TemplateMatchInfo Match(Mat sourceImage, Mat templateImage, double threshold = DefaultThreshold)
+    {
+        return Match(sourceImage, templateImage, null, threshold);
+    }
+
+    public TemplateMatchInfo Match(Mat sourceImage, Mat templateImage, Mat? templateMask, double threshold = DefaultThreshold)
+    {
+        ArgumentNullException.ThrowIfNull(sourceImage);
+        ArgumentNullException.ThrowIfNull(templateImage);
+        using var result = CreateMatchResult(sourceImage, templateImage, templateMask);
+        Cv2.MinMaxLoc(result, out _, out var maxValue, out _, out var maxLocation);
+        return new TemplateMatchInfo(maxLocation.X, maxLocation.Y, templateImage.Width, templateImage.Height, maxValue, threshold);
+    }
+
+    public bool TryMatch(Bitmap sourceImage, Bitmap templateImage, out TemplateMatchInfo matchInfo, double threshold = DefaultThreshold)
+    {
+        matchInfo = Match(sourceImage, templateImage, threshold);
+        return matchInfo.IsMatch;
+    }
+
+    public bool TryMatch(Bitmap sourceImage, Bitmap templateImage, Bitmap? templateMask, out TemplateMatchInfo matchInfo, double threshold = DefaultThreshold)
+    {
+        matchInfo = Match(sourceImage, templateImage, templateMask, threshold);
+        return matchInfo.IsMatch;
+    }
+
+    public bool TryMatch(Mat sourceImage, Mat templateImage, out TemplateMatchInfo matchInfo, double threshold = DefaultThreshold)
+    {
+        matchInfo = Match(sourceImage, templateImage, threshold);
+        return matchInfo.IsMatch;
+    }
+
+    public bool TryMatch(Mat sourceImage, Mat templateImage, Mat? templateMask, out TemplateMatchInfo matchInfo, double threshold = DefaultThreshold)
+    {
+        matchInfo = Match(sourceImage, templateImage, templateMask, threshold);
+        return matchInfo.IsMatch;
+    }
+
+    public Mat CreateMatchResult(Mat sourceImage, Mat templateImage, Mat? templateMask = null)
     {
         ArgumentNullException.ThrowIfNull(sourceImage);
         ArgumentNullException.ThrowIfNull(templateImage);
@@ -49,30 +101,26 @@ public sealed class TemplateMatchService
 
         using var preparedSource = PrepareForTemplateMatch(sourceImage);
         using var preparedTemplate = PrepareForTemplateMatch(templateImage);
-        using var result = new Mat();
+        var preparedMask = PrepareMask(templateMask, new OpenCvSharp.Size(preparedTemplate.Width, preparedTemplate.Height));
 
-        Cv2.MatchTemplate(preparedSource, preparedTemplate, result, TemplateMatchModes.CCoeffNormed);
-        Cv2.MinMaxLoc(result, out _, out var maxValue, out _, out var maxLocation);
+        try
+        {
+            var result = new Mat();
+            if (preparedMask is null)
+            {
+                Cv2.MatchTemplate(preparedSource, preparedTemplate, result, TemplateMatchModes.CCoeffNormed);
+            }
+            else
+            {
+                Cv2.MatchTemplate(preparedSource, preparedTemplate, result, TemplateMatchModes.CCorrNormed, preparedMask);
+            }
 
-        return new TemplateMatchInfo(
-            maxLocation.X,
-            maxLocation.Y,
-            preparedTemplate.Width,
-            preparedTemplate.Height,
-            maxValue,
-            threshold);
-    }
-
-    public bool TryMatch(Bitmap sourceImage, Bitmap templateImage, out TemplateMatchInfo matchInfo, double threshold = DefaultThreshold)
-    {
-        matchInfo = Match(sourceImage, templateImage, threshold);
-        return matchInfo.IsMatch;
-    }
-
-    public bool TryMatch(Mat sourceImage, Mat templateImage, out TemplateMatchInfo matchInfo, double threshold = DefaultThreshold)
-    {
-        matchInfo = Match(sourceImage, templateImage, threshold);
-        return matchInfo.IsMatch;
+            return result;
+        }
+        finally
+        {
+            preparedMask?.Dispose();
+        }
     }
 
     private static Mat PrepareForTemplateMatch(Mat image)
@@ -92,6 +140,45 @@ public sealed class TemplateMatchService
 
         Cv2.CvtColor(image, grayscale, colorConversionCode);
         return grayscale;
+    }
+
+    private static Mat? PrepareMask(Mat? templateMask, OpenCvSharp.Size expectedSize)
+    {
+        if (templateMask is null)
+        {
+            return null;
+        }
+
+        if (templateMask.Empty())
+        {
+            throw new ArgumentException("Template mask cannot be empty.", nameof(templateMask));
+        }
+
+        if (templateMask.Width != expectedSize.Width || templateMask.Height != expectedSize.Height)
+        {
+            throw new ArgumentException("Template mask size must match the template image size.", nameof(templateMask));
+        }
+
+        Mat mask;
+        switch (templateMask.Channels())
+        {
+            case 1:
+                mask = templateMask.Clone();
+                break;
+            case 3:
+                mask = new Mat();
+                Cv2.CvtColor(templateMask, mask, ColorConversionCodes.BGR2GRAY);
+                break;
+            case 4:
+                mask = new Mat();
+                Cv2.ExtractChannel(templateMask, mask, 3);
+                break;
+            default:
+                throw new NotSupportedException($"Unsupported channel count {templateMask.Channels()} for template mask.");
+        }
+
+        Cv2.Threshold(mask, mask, 0, 255, ThresholdTypes.Binary);
+        return mask;
     }
 
     private static Mat ConvertBitmapToMat(Bitmap bitmap)

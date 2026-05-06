@@ -17,7 +17,15 @@ public sealed partial class LocalizationService
         ["CaptureTest.AvgCapture"] = "平均截图",
         ["CaptureTest.AvgDisplay"] = "平均显示",
         ["CaptureTest.AvgTotal"] = "平均总耗时",
-        ["CaptureTest.SampleCount"] = "样本数"
+        ["CaptureTest.SampleCount"] = "样本数",
+        ["CaptureTest.Ocr"] = "OCR",
+        ["CaptureTest.Gold"] = "金币",
+        ["CaptureTest.Round"] = "回合",
+        ["CaptureTest.AvgOcr"] = "平均 OCR",
+        ["CaptureTest.OcrUnavailable"] = "OCR 模板不可用",
+        ["CaptureTest.OcrFailedRecent"] = "最近一次 OCR 失败",
+        ["CaptureTest.RegionGold"] = "金币区域",
+        ["CaptureTest.RegionRound"] = "回合区域"
     };
 
     private static Dictionary<string, string> BuildEnUsCaptureTestResources() => new(StringComparer.OrdinalIgnoreCase)
@@ -32,6 +40,14 @@ public sealed partial class LocalizationService
         ["CaptureTest.AvgCapture"] = "Avg Capture",
         ["CaptureTest.AvgDisplay"] = "Avg Display",
         ["CaptureTest.AvgTotal"] = "Avg Total",
-        ["CaptureTest.SampleCount"] = "Samples"
+        ["CaptureTest.SampleCount"] = "Samples",
+        ["CaptureTest.Ocr"] = "OCR",
+        ["CaptureTest.Gold"] = "Gold",
+        ["CaptureTest.Round"] = "Round",
+        ["CaptureTest.AvgOcr"] = "Avg OCR",
+        ["CaptureTest.OcrUnavailable"] = "OCR templates are unavailable",
+        ["CaptureTest.OcrFailedRecent"] = "Most recent OCR attempt failed",
+        ["CaptureTest.RegionGold"] = "Gold",
+        ["CaptureTest.RegionRound"] = "Round"
     };
 }
