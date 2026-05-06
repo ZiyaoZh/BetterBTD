@@ -2,17 +2,19 @@ using System.Diagnostics;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using BetterBTD.Helpers.Extensions;
 using BetterBTD.Models;
 using Fischless.GameCapture;
 using OpenCvSharp;
 using Wpf.Ui.Controls;
+using Size = OpenCvSharp.Size;
 
 namespace BetterBTD.Views.Windows;
 
 public partial class CaptureTestWindow : FluentWindow
 {
     private IGameCapture? _capture;
-    private WriteableBitmap? _writeableBitmap;
+    private Size _cachedFrameSize;
     private long _captureElapsedMilliseconds;
     private long _transferElapsedMilliseconds;
     private long _captureCount;
@@ -72,82 +74,24 @@ public partial class CaptureTestWindow : FluentWindow
         _captureCount++;
 
         var transferStopwatch = Stopwatch.StartNew();
-        using var displayFrame = CreateDisplayFrame(capturedFrame);
-        UpdatePreview(displayFrame);
+        if (_cachedFrameSize != capturedFrame.Size())
+        {
+            DisplayCaptureResultImage.Source = capturedFrame.ToWriteableBitmap();
+            _cachedFrameSize = capturedFrame.Size();
+        }
+        else if (DisplayCaptureResultImage.Source is WriteableBitmap bitmap)
+        {
+            capturedFrame.UpdateWriteableBitmap(bitmap);
+        }
         transferStopwatch.Stop();
 
         _transferElapsedMilliseconds += transferStopwatch.ElapsedMilliseconds;
         CaptureStatsTextBlock.Text =
-            $"模式: {_captureModeName} | 帧尺寸: {displayFrame.Width}x{displayFrame.Height} | " +
+            $"模式: {_captureModeName} | 帧尺寸: {capturedFrame.Width}x{capturedFrame.Height} | " +
             $"平均截图: {AverageMilliseconds(_captureElapsedMilliseconds):F2} ms | " +
             $"平均显示: {AverageMilliseconds(_transferElapsedMilliseconds):F2} ms | " +
             $"平均总耗时: {AverageMilliseconds(_captureElapsedMilliseconds + _transferElapsedMilliseconds):F2} ms | " +
             $"样本数: {_captureCount}";
-    }
-
-    private void UpdatePreview(Mat frame)
-    {
-        var pixelFormat = frame.Channels() == 4 ? PixelFormats.Bgra32 : PixelFormats.Bgr24;
-        var stride = checked((int)frame.Step());
-        var bufferSize = stride * frame.Rows;
-
-        if (_writeableBitmap is null ||
-            _writeableBitmap.PixelWidth != frame.Width ||
-            _writeableBitmap.PixelHeight != frame.Height ||
-            _writeableBitmap.Format != pixelFormat)
-        {
-            _writeableBitmap = new WriteableBitmap(
-                frame.Width,
-                frame.Height,
-                96,
-                96,
-                pixelFormat,
-                null);
-            DisplayCaptureResultImage.Source = _writeableBitmap;
-        }
-
-        _writeableBitmap.WritePixels(
-            new Int32Rect(0, 0, frame.Width, frame.Height),
-            frame.Data,
-            bufferSize,
-            stride);
-    }
-
-    private static Mat CreateDisplayFrame(Mat sourceFrame)
-    {
-        return sourceFrame.Channels() switch
-        {
-            4 when sourceFrame.Depth() == MatType.CV_8U => sourceFrame.Clone(),
-            3 when sourceFrame.Depth() == MatType.CV_8U => sourceFrame.Clone(),
-            1 => ConvertGrayToBgr(sourceFrame),
-            _ => ConvertUnsupportedFrame(sourceFrame)
-        };
-    }
-
-    private static Mat ConvertGrayToBgr(Mat sourceFrame)
-    {
-        var converted = new Mat();
-        Cv2.CvtColor(sourceFrame, converted, ColorConversionCodes.GRAY2BGR);
-        return converted;
-    }
-
-    private static Mat ConvertUnsupportedFrame(Mat sourceFrame)
-    {
-        var normalized = new Mat();
-        sourceFrame.ConvertTo(normalized, MatType.CV_8UC(sourceFrame.Channels()));
-
-        if (normalized.Channels() == 4)
-        {
-            return normalized;
-        }
-
-        if (normalized.Channels() == 3)
-        {
-            return normalized;
-        }
-
-        normalized.Dispose();
-        throw new NotSupportedException($"Unsupported capture frame format: channels={sourceFrame.Channels()}, depth={sourceFrame.Depth()}.");
     }
 
     private double AverageMilliseconds(long totalMilliseconds)
@@ -160,7 +104,7 @@ public partial class CaptureTestWindow : FluentWindow
         CompositionTarget.Rendering -= OnRendering;
         _capture?.Dispose();
         _capture = null;
-        _writeableBitmap = null;
+        _cachedFrameSize = default;
     }
 
     private static CaptureModes ParseCaptureMode(string captureModeName)
