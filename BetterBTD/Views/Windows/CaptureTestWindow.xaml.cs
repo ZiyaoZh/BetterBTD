@@ -42,6 +42,9 @@ public partial class CaptureTestWindow : UiFluentWindow
     private long _transferElapsedMilliseconds;
     private long _ocrElapsedMilliseconds;
     private long _captureCount;
+    private long _changedFrameCount;
+    private long _unchangedFrameCount;
+    private long _unchangedFrameStreak;
     private string _captureModeName = "Unknown";
     private string? _lastError;
     private string? _lastOcrError;
@@ -51,6 +54,8 @@ public partial class CaptureTestWindow : UiFluentWindow
     private int _lastFrameWidth;
     private int _lastFrameHeight;
     private GameStageStateSnapshot? _lastStageStateSnapshot;
+    private ulong? _lastFrameSignature;
+    private ulong _currentFrameSignature;
     private const double OverlayCrosshairLength = 10d;
     private const double OverlayCrosshairGap = 4d;
 
@@ -73,6 +78,7 @@ public partial class CaptureTestWindow : UiFluentWindow
 
         _windowDisplayName = windowDisplayName;
         _captureModeName = options.CaptureModeName;
+        ResetCaptureDiagnostics();
         _captureStatsUpdateTimer.Restart();
         _ocrStatsUpdateTimer.Restart();
         ApplyLocalization();
@@ -148,6 +154,7 @@ public partial class CaptureTestWindow : UiFluentWindow
             _captureCount++;
             _lastFrameWidth = capturedFrame.Width;
             _lastFrameHeight = capturedFrame.Height;
+            UpdateFrameDiagnostics(capturedFrame);
             RunStageStateCapture(capturedFrame);
 
             var transferStopwatch = Stopwatch.StartNew();
@@ -252,13 +259,20 @@ public partial class CaptureTestWindow : UiFluentWindow
 
         _captureStatsUpdateTimer.Restart();
         var modeLabel = _localizationService.T("CaptureTest.Mode");
+        var changedSamplesLabel = _localizationService.T("CaptureTest.ChangedSamples");
+        var unchangedSamplesLabel = _localizationService.T("CaptureTest.UnchangedSamples");
+        var unchangedStreakLabel = _localizationService.T("CaptureTest.UnchangedStreak");
         CaptureStatsTextBlock.Text = failed
             ? $"{modeLabel}: {_captureModeName} | {_localizationService.T("CaptureTest.CaptureFailedRecent")}"
             : $"{modeLabel}: {_captureModeName} | {_localizationService.T("CaptureTest.FrameSize")}: {width}x{height} | " +
               $"{_localizationService.T("CaptureTest.AvgCapture")}: {AverageMilliseconds(_captureElapsedMilliseconds):F2} ms | " +
               $"{_localizationService.T("CaptureTest.AvgDisplay")}: {AverageMilliseconds(_transferElapsedMilliseconds):F2} ms | " +
               $"{_localizationService.T("CaptureTest.AvgTotal")}: {AverageMilliseconds(_captureElapsedMilliseconds + _transferElapsedMilliseconds):F2} ms | " +
-              $"{_localizationService.T("CaptureTest.SampleCount")}: {_captureCount}";
+              $"{_localizationService.T("CaptureTest.SampleCount")}: {_captureCount} | " +
+              $"{changedSamplesLabel}: {_changedFrameCount} | " +
+              $"{unchangedSamplesLabel}: {_unchangedFrameCount} | " +
+              $"{unchangedStreakLabel}: {_unchangedFrameStreak} | " +
+              $"Sig: 0x{_currentFrameSignature:X16}";
     }
 
     private void UpdateOcrStatsText(bool failed, bool force = false)
@@ -549,6 +563,81 @@ public partial class CaptureTestWindow : UiFluentWindow
         }
     }
 
+    private void ResetCaptureDiagnostics()
+    {
+        _cachedFrameSize = default;
+        _captureElapsedMilliseconds = 0;
+        _transferElapsedMilliseconds = 0;
+        _ocrElapsedMilliseconds = 0;
+        _captureCount = 0;
+        _changedFrameCount = 0;
+        _unchangedFrameCount = 0;
+        _unchangedFrameStreak = 0;
+        _lastFrameSignature = null;
+        _currentFrameSignature = 0;
+        _lastError = null;
+        _lastOcrError = null;
+        _lastCaptureFailed = true;
+        _lastOcrFailed = true;
+        _lastFrameWidth = 0;
+        _lastFrameHeight = 0;
+        _lastStageStateSnapshot = null;
+    }
+
+    private void UpdateFrameDiagnostics(Mat capturedFrame)
+    {
+        var signature = ComputeFrameSignature(capturedFrame);
+        if (_lastFrameSignature.HasValue)
+        {
+            if (_lastFrameSignature.Value == signature)
+            {
+                _unchangedFrameCount++;
+                _unchangedFrameStreak++;
+            }
+            else
+            {
+                _changedFrameCount++;
+                _unchangedFrameStreak = 0;
+            }
+        }
+
+        _lastFrameSignature = signature;
+        _currentFrameSignature = signature;
+    }
+
+    private static unsafe ulong ComputeFrameSignature(Mat frame)
+    {
+        var bytesPerPixel = frame.ElemSize();
+        var rowStep = Math.Max(1, frame.Rows / 32);
+        var colStep = Math.Max(1, frame.Cols / 32);
+        const ulong offsetBasis = 14695981039346656037UL;
+        const ulong prime = 1099511628211UL;
+
+        var hash = offsetBasis;
+        hash = (hash ^ (uint)frame.Rows) * prime;
+        hash = (hash ^ (uint)frame.Cols) * prime;
+        hash = (hash ^ (uint)bytesPerPixel) * prime;
+
+        var basePtr = (byte*)frame.Data.ToPointer();
+        var stride = frame.Step();
+
+        for (var row = 0; row < frame.Rows; row += rowStep)
+        {
+            var rowPtr = basePtr + row * stride;
+            for (var col = 0; col < frame.Cols; col += colStep)
+            {
+                var pixelPtr = rowPtr + col * bytesPerPixel;
+                for (var channel = 0; channel < bytesPerPixel; channel++)
+                {
+                    hash ^= pixelPtr[channel];
+                    hash *= prime;
+                }
+            }
+        }
+
+        return hash;
+    }
+
     private void OnLanguageChanged(object? sender, EventArgs e)
     {
         Dispatcher.Invoke(ApplyLocalization);
@@ -562,7 +651,7 @@ public partial class CaptureTestWindow : UiFluentWindow
         _capture?.Stop();
         _capture?.Dispose();
         _capture = null;
-        _cachedFrameSize = default;
+        ResetCaptureDiagnostics();
         _captureStatsUpdateTimer.Stop();
         _ocrStatsUpdateTimer.Stop();
         HideOverlayRegions();

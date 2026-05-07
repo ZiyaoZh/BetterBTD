@@ -1,5 +1,7 @@
 using System.Windows;
+using BetterBTD.Helpers;
 using BetterBTD.Models;
+using Fischless.GameCapture;
 
 namespace BetterBTD.Services;
 
@@ -12,6 +14,7 @@ public sealed class CoordinateTransformService
 
     private CoordinateTransformService()
     {
+        _gameCaptureService = GameCaptureService.Instance;
     }
 
     public static CoordinateTransformService Instance => InstanceHolder.Value;
@@ -20,40 +23,79 @@ public sealed class CoordinateTransformService
 
     public double ScriptReferenceHeight { get; } = DefaultScriptReferenceHeight;
 
-    public Point ToScriptCoordinate(Point clientCoordinate, GameWindowInfo windowInfo)
+    public Point ToScriptCoordinate(Point referenceCoordinate, GameWindowInfo windowInfo)
     {
-        var safeClientWidth = windowInfo.ClientWidth <= 0 ? 1d : windowInfo.ClientWidth;
-        var safeClientHeight = windowInfo.ClientHeight <= 0 ? 1d : windowInfo.ClientHeight;
+        var referenceBounds = GetReferenceBounds(windowInfo);
+        var safeReferenceWidth = referenceBounds.Width <= 0 ? 1d : referenceBounds.Width;
+        var safeReferenceHeight = referenceBounds.Height <= 0 ? 1d : referenceBounds.Height;
 
         return new Point(
-            clientCoordinate.X / safeClientWidth * ScriptReferenceWidth,
-            clientCoordinate.Y / safeClientHeight * ScriptReferenceHeight);
+            referenceCoordinate.X / safeReferenceWidth * ScriptReferenceWidth,
+            referenceCoordinate.Y / safeReferenceHeight * ScriptReferenceHeight);
     }
 
-    public Point ToClientCoordinate(Point scriptCoordinate, GameWindowInfo windowInfo)
+    public Point ToReferenceCoordinate(Point scriptCoordinate, GameWindowInfo windowInfo)
     {
         var safeReferenceWidth = ScriptReferenceWidth <= 0 ? DefaultScriptReferenceWidth : ScriptReferenceWidth;
         var safeReferenceHeight = ScriptReferenceHeight <= 0 ? DefaultScriptReferenceHeight : ScriptReferenceHeight;
+        var referenceBounds = GetReferenceBounds(windowInfo);
 
         return new Point(
-            scriptCoordinate.X / safeReferenceWidth * windowInfo.ClientWidth,
-            scriptCoordinate.Y / safeReferenceHeight * windowInfo.ClientHeight);
+            scriptCoordinate.X / safeReferenceWidth * referenceBounds.Width,
+            scriptCoordinate.Y / safeReferenceHeight * referenceBounds.Height);
+    }
+
+    public Point ToReferenceCoordinateFromScreen(Point screenCoordinate, GameWindowInfo windowInfo)
+    {
+        var referenceBounds = GetReferenceBounds(windowInfo);
+        return new Point(
+            screenCoordinate.X - referenceBounds.Left,
+            screenCoordinate.Y - referenceBounds.Top);
     }
 
     public Point ToScreenCoordinate(Point scriptCoordinate, GameWindowInfo windowInfo)
     {
-        return windowInfo.ClientToScreen(ToClientCoordinate(scriptCoordinate, windowInfo));
+        var referenceBounds = GetReferenceBounds(windowInfo);
+        var referenceCoordinate = ToReferenceCoordinate(scriptCoordinate, windowInfo);
+        return new Point(
+            referenceBounds.Left + referenceCoordinate.X,
+            referenceBounds.Top + referenceCoordinate.Y);
+    }
+
+    public NativeWindowBounds GetReferenceBounds(GameWindowInfo windowInfo)
+    {
+        if (IsSharedSurfaceMode() &&
+            NativeWindowHelper.TryGetRawWindowBounds(windowInfo.Handle, out var rawWindowBounds))
+        {
+            return new NativeWindowBounds(
+                rawWindowBounds.Left,
+                rawWindowBounds.Top + rawWindowBounds.Height - windowInfo.ClientHeight,
+                windowInfo.ClientWidth,
+                windowInfo.ClientHeight);
+        }
+
+        return windowInfo.ClientBounds;
     }
 
     public bool HasReferenceAspectRatio(GameWindowInfo windowInfo, double tolerance = DefaultAspectRatioTolerance)
     {
-        if (windowInfo.ClientWidth <= 0 || windowInfo.ClientHeight <= 0)
+        var referenceBounds = GetReferenceBounds(windowInfo);
+        if (referenceBounds.Width <= 0 || referenceBounds.Height <= 0)
         {
             return false;
         }
 
         var referenceAspectRatio = ScriptReferenceWidth / ScriptReferenceHeight;
-        var currentAspectRatio = windowInfo.ClientWidth / (double)windowInfo.ClientHeight;
+        var currentAspectRatio = referenceBounds.Width / (double)referenceBounds.Height;
         return Math.Abs(currentAspectRatio - referenceAspectRatio) <= tolerance;
     }
+
+    private bool IsSharedSurfaceMode()
+    {
+        var captureModeName = _gameCaptureService.CurrentOptions.CaptureModeName;
+        return Enum.TryParse<CaptureModes>(captureModeName, true, out var captureMode) &&
+               captureMode == CaptureModes.DwmGetDxSharedSurface;
+    }
+
+    private readonly GameCaptureService _gameCaptureService;
 }

@@ -1,37 +1,58 @@
-﻿using BetterBTD.Core.Simulator;
+using BetterBTD.Core.Simulator;
 using Fischless.WindowsInput;
-using OpenCvSharp;
+using CvPoint = OpenCvSharp.Point;
+using System.Windows;
 
 namespace BetterBTD.Helpers.Extensions;
 
 public static class ClickExtension
 {
-    public static void Click(this Point point)
+    public static void Click(this CvPoint point)
     {
-        Simulation.SendInput.Mouse.MoveMouseTo(point.X * 65535 * 1d / PrimaryScreen.WorkingArea.Width,
-            point.Y * 65535 * 1d / PrimaryScreen.WorkingArea.Height).LeftButtonDown().Sleep(50).LeftButtonUp();
+        Click(point.X, point.Y);
     }
-
-    // public static void ClickCenter(this Rect rect, bool isRand = false)
-    // {
-    //     Simulation.SendInputEx.Mouse.MoveMouseTo((rect.X + (isRand ? Rd.Next(rect.Width) : rect.Width * 1d / 2)) * 65535 / PrimaryScreen.WorkingArea.Width,
-    //         (rect.Y + (isRand ? Rd.Next(rect.Height) : rect.Height * 1d / 2)) * 65535 / PrimaryScreen.WorkingArea.Height).LeftButtonDown().Sleep(50).LeftButtonUp();
-    // }
 
     public static IMouseSimulator Click(double x, double y)
     {
-        return Simulation.SendInput.Mouse.MoveMouseTo(x * 65535 * 1d / PrimaryScreen.WorkingArea.Width,
-            y * 65535 * 1d / PrimaryScreen.WorkingArea.Height).LeftButtonDown().Sleep(50).LeftButtonUp();
+        var absoluteCoordinate = ToVirtualDesktopAbsoluteCoordinate(new Point(x, y));
+        return Simulation.SendInput.Mouse
+            .MoveMouseToPositionOnVirtualDesktop(absoluteCoordinate.X, absoluteCoordinate.Y)
+            .LeftButtonDown()
+            .Sleep(50)
+            .LeftButtonUp();
     }
 
     public static IMouseSimulator Move(double x, double y)
     {
-        return Simulation.SendInput.Mouse.MoveMouseTo(x * 65535 * 1d / PrimaryScreen.WorkingArea.Width,
-            y * 65535 * 1d / PrimaryScreen.WorkingArea.Height);
+        var absoluteCoordinate = ToVirtualDesktopAbsoluteCoordinate(new Point(x, y));
+        return Simulation.SendInput.Mouse.MoveMouseToPositionOnVirtualDesktop(absoluteCoordinate.X, absoluteCoordinate.Y);
     }
 
-    public static IMouseSimulator Move(Point p)
+    public static IMouseSimulator Move(CvPoint point)
     {
-        return Move(p.X, p.Y);
+        return Move(point.X, point.Y);
+    }
+
+    private static Point ToVirtualDesktopAbsoluteCoordinate(Point screenCoordinate)
+    {
+        var left = SystemParameters.VirtualScreenLeft;
+        var top = SystemParameters.VirtualScreenTop;
+        var width = Math.Max(1d, SystemParameters.VirtualScreenWidth);
+        var height = Math.Max(1d, SystemParameters.VirtualScreenHeight);
+
+        return new Point(
+            ScaleToAbsoluteCoordinate(screenCoordinate.X, left, width),
+            ScaleToAbsoluteCoordinate(screenCoordinate.Y, top, height));
+    }
+
+    private static double ScaleToAbsoluteCoordinate(double coordinate, double origin, double length)
+    {
+        if (length <= 1d)
+        {
+            return 0d;
+        }
+
+        var normalized = (coordinate - origin) * 65535d / (length - 1d);
+        return Math.Clamp(normalized, 0d, 65535d);
     }
 }

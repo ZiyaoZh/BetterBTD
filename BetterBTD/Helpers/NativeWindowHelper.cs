@@ -61,6 +61,29 @@ public static class NativeWindowHelper
         return true;
     }
 
+    public static bool TryGetRawWindowBounds(nint hWnd, out NativeWindowBounds bounds)
+    {
+        bounds = default;
+
+        if (hWnd == nint.Zero || !IsWindowVisible(hWnd) || IsIconic(hWnd))
+        {
+            return false;
+        }
+
+        if (!GetWindowRect(hWnd, out var rect))
+        {
+            return false;
+        }
+
+        if (rect.Right <= rect.Left || rect.Bottom <= rect.Top)
+        {
+            return false;
+        }
+
+        bounds = new NativeWindowBounds(rect.Left, rect.Top, rect.Right - rect.Left, rect.Bottom - rect.Top);
+        return true;
+    }
+
     public static bool TryGetClientBounds(nint hWnd, out NativeWindowBounds bounds)
     {
         bounds = default;
@@ -140,6 +163,54 @@ public static class NativeWindowHelper
         return true;
     }
 
+    public static bool TryClientToScreen(nint hWnd, Point clientPoint, out Point screenPoint)
+    {
+        screenPoint = default;
+
+        if (hWnd == nint.Zero || !IsWindowVisible(hWnd) || IsIconic(hWnd))
+        {
+            return false;
+        }
+
+        var nativePoint = new POINT
+        {
+            X = (int)Math.Round(clientPoint.X),
+            Y = (int)Math.Round(clientPoint.Y)
+        };
+
+        if (!ClientToScreen(hWnd, ref nativePoint))
+        {
+            return false;
+        }
+
+        screenPoint = new Point(nativePoint.X, nativePoint.Y);
+        return true;
+    }
+
+    public static bool TryScreenToClient(nint hWnd, Point screenPoint, out Point clientPoint)
+    {
+        clientPoint = default;
+
+        if (hWnd == nint.Zero || !IsWindowVisible(hWnd) || IsIconic(hWnd))
+        {
+            return false;
+        }
+
+        var nativePoint = new POINT
+        {
+            X = (int)Math.Round(screenPoint.X),
+            Y = (int)Math.Round(screenPoint.Y)
+        };
+
+        if (!ScreenToClient(hWnd, ref nativePoint))
+        {
+            return false;
+        }
+
+        clientPoint = new Point(nativePoint.X, nativePoint.Y);
+        return true;
+    }
+
     public static bool IsRightMouseButtonDown()
     {
         return (GetAsyncKeyState(VkRButton) & 0x8000) != 0;
@@ -190,6 +261,10 @@ public static class NativeWindowHelper
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool ClientToScreen(nint hWnd, ref POINT lpPoint);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool ScreenToClient(nint hWnd, ref POINT lpPoint);
 
     [DllImport("user32.dll")]
     private static extern uint GetDpiForWindow(nint hWnd);

@@ -1519,8 +1519,9 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         }
 
         var clientRelativePoint = windowInfo.ScreenToClient(cursorPosition);
-        var scriptRelativePoint = _coordinateTransformService.ToScriptCoordinate(clientRelativePoint, windowInfo);
-        var isInsideClientArea = windowInfo.ClientBounds.Contains(cursorPosition);
+        var referenceRelativePoint = _coordinateTransformService.ToReferenceCoordinateFromScreen(cursorPosition, windowInfo);
+        var scriptRelativePoint = _coordinateTransformService.ToScriptCoordinate(referenceRelativePoint, windowInfo);
+        var isInsideClientArea = _coordinateTransformService.GetReferenceBounds(windowInfo).Contains(cursorPosition);
 
         UpdateCoordinateSelectionAnchor(windowInfo, clientRelativePoint, scriptRelativePoint, isInsideClientArea);
 
