@@ -100,6 +100,10 @@
                           Margin="0,6,0,0"
                           Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
                           TextWrapping="Wrap" />
+            <ui:TextBlock x:Name="StageStateDetailsTextBlock"
+                          Margin="0,6,0,0"
+                          Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                          TextWrapping="Wrap" />
         </StackPanel>
     </Grid>
 </ui:FluentWindow>

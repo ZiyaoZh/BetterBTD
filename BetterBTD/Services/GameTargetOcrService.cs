@@ -1,16 +1,13 @@
 using System.IO;
 using System.Globalization;
-using System.Diagnostics;
 using System.Text;
-using BetterBTD.Core.ScriptExecution.Runtime;
-using BetterBTD.Models.ScriptExecution;
 using OpenCvSharp;
 using OpenCvRect = OpenCvSharp.Rect;
 using OpenCvSize = OpenCvSharp.Size;
 
 namespace BetterBTD.Services;
 
-public sealed class GameTargetOcrService : IGameTargetOcrService
+public sealed class GameTargetOcrService
 {
     private static readonly Lazy<GameTargetOcrService> InstanceHolder = new(() => new GameTargetOcrService());
     private static readonly OpenCvRect GoldReferenceRect = new(360, 20, 180, 50);
@@ -28,7 +25,6 @@ public sealed class GameTargetOcrService : IGameTargetOcrService
 
     private DigitTemplateRepository? _repository;
     private string? _repositoryUnavailableReason;
-    private string _lastLoggedDiagnostics = string.Empty;
 
     private GameTargetOcrService()
     {
@@ -39,12 +35,6 @@ public sealed class GameTargetOcrService : IGameTargetOcrService
     public static GameTargetOcrService Instance => InstanceHolder.Value;
 
     public bool IsAvailable => TryEnsureRepository(out _);
-
-    public Task<ScriptGameTargetSnapshot?> CaptureSnapshotAsync(CancellationToken cancellationToken = default)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        return Task.FromResult(TryCaptureSnapshot(out var snapshot, out _) ? snapshot : null);
-    }
 
     public (OpenCvRect GoldRegion, OpenCvRect RoundRegion) GetCaptureRegions(int frameWidth, int frameHeight)
     {
@@ -61,57 +51,6 @@ public sealed class GameTargetOcrService : IGameTargetOcrService
         return (
             ScaleReferenceRect(GoldReferenceRect, frameWidth, frameHeight),
             ScaleReferenceRect(RoundReferenceRect, frameWidth, frameHeight));
-    }
-
-    public bool TryCaptureSnapshot(out ScriptGameTargetSnapshot snapshot)
-    {
-        return TryCaptureSnapshot(out snapshot, out _);
-    }
-
-    public bool TryCaptureSnapshot(out ScriptGameTargetSnapshot snapshot, out string diagnostics)
-    {
-        snapshot = new ScriptGameTargetSnapshot();
-        diagnostics = "Capture frame unavailable.";
-
-        if (!_gameCaptureService.TryCaptureFrame(out var frame))
-        {
-            TraceOcrDiagnosticsIfNeeded(diagnostics);
-            return false;
-        }
-
-        using (frame)
-        {
-            return TryCaptureSnapshot(frame, out snapshot, out diagnostics);
-        }
-    }
-
-    public bool TryCaptureSnapshot(Mat frame, out ScriptGameTargetSnapshot snapshot)
-    {
-        ArgumentNullException.ThrowIfNull(frame);
-
-        if (frame.Empty())
-        {
-            snapshot = new ScriptGameTargetSnapshot();
-            TraceOcrDiagnosticsIfNeeded("Source frame is empty.");
-            return false;
-        }
-
-        return TryCaptureSnapshotCore(frame, out snapshot, out _);
-    }
-
-    public bool TryCaptureSnapshot(Mat frame, out ScriptGameTargetSnapshot snapshot, out string diagnostics)
-    {
-        ArgumentNullException.ThrowIfNull(frame);
-
-        if (frame.Empty())
-        {
-            snapshot = new ScriptGameTargetSnapshot();
-            diagnostics = "Source frame is empty.";
-            TraceOcrDiagnosticsIfNeeded(diagnostics);
-            return false;
-        }
-
-        return TryCaptureSnapshotCore(frame, out snapshot, out diagnostics);
     }
 
     public bool TryReadGold(out int gold)
@@ -144,41 +83,7 @@ public sealed class GameTargetOcrService : IGameTargetOcrService
         }
     }
 
-    private bool TryCaptureSnapshotCore(Mat frame, out ScriptGameTargetSnapshot snapshot)
-    {
-        return TryCaptureSnapshotCore(frame, out snapshot, out _);
-    }
-
-    private bool TryCaptureSnapshotCore(Mat frame, out ScriptGameTargetSnapshot snapshot, out string diagnostics)
-    {
-        var builder = new StringBuilder();
-        builder.AppendLine($"Frame: {frame.Width}x{frame.Height}");
-
-        var hasGold = TryReadGold(frame, out var gold, out var goldDiagnostics);
-        builder.AppendLine(goldDiagnostics);
-
-        var hasRound = TryReadRound(frame, out var round, out var roundDiagnostics);
-        builder.AppendLine(roundDiagnostics);
-
-        snapshot = new ScriptGameTargetSnapshot
-        {
-            Gold = hasGold ? gold : null,
-            Round = hasRound ? round : null,
-            StageTarget = string.Empty
-        };
-
-        diagnostics = builder.ToString().TrimEnd();
-        var succeeded = hasGold || hasRound;
-        if (!succeeded)
-        {
-            TraceOcrDiagnosticsIfNeeded(diagnostics);
-        }
-        TraceOcrDiagnosticsIfNeeded(diagnostics);
-
-        return succeeded;
-    }
-
-    private bool TryReadGold(Mat frame, out int gold)
+    public bool TryReadGold(Mat frame, out int gold)
     {
         gold = 0;
 
@@ -230,7 +135,7 @@ public sealed class GameTargetOcrService : IGameTargetOcrService
         return true;
     }
 
-    private bool TryReadRound(Mat frame, out int round)
+    public bool TryReadRound(Mat frame, out int round)
     {
         round = 0;
 
@@ -693,26 +598,6 @@ public sealed class GameTargetOcrService : IGameTargetOcrService
             ? "Unknown repository initialization failure."
             : _repositoryUnavailableReason;
         return $"{targetName}: repository unavailable | AssetRoot={BuildAssetRootPath()} | Reason={reason}";
-    }
-
-    private void TraceOcrDiagnosticsIfNeeded(string diagnostics)
-    {
-        if (string.IsNullOrWhiteSpace(diagnostics))
-        {
-            return;
-        }
-
-        lock (_syncRoot)
-        {
-            if (string.Equals(_lastLoggedDiagnostics, diagnostics, StringComparison.Ordinal))
-            {
-                return;
-            }
-
-            _lastLoggedDiagnostics = diagnostics;
-        }
-
-        Trace.WriteLine($"[GameTargetOcr]{Environment.NewLine}{diagnostics}");
     }
 
     private bool TryEnsureRepository(out DigitTemplateRepository repository)

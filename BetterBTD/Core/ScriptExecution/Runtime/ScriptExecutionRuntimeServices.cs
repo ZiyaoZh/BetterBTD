@@ -35,11 +35,11 @@ public interface IScriptInputService
     void PressKey(KeyId key);
 }
 
-public interface IGameTargetOcrService
+public interface IGameStageStateService
 {
     bool IsAvailable { get; }
 
-    Task<ScriptGameTargetSnapshot?> CaptureSnapshotAsync(CancellationToken cancellationToken = default);
+    Task<GameStageStateSnapshot?> CaptureSnapshotAsync(CancellationToken cancellationToken = default);
 }
 
 public sealed class ScriptExecutionRuntimeServices
@@ -48,5 +48,5 @@ public sealed class ScriptExecutionRuntimeServices
 
     public required IScriptInputService Input { get; init; }
 
-    public required IGameTargetOcrService GameTargetOcr { get; init; }
+    public required IGameStageStateService GameStageState { get; init; }
 }

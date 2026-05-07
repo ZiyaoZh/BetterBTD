@@ -105,13 +105,36 @@ public sealed class ScriptInstructionExecutionContext
     public required ScriptExecutionRuntimeServices RuntimeServices { get; init; }
 }
 
-public sealed class ScriptGameTargetSnapshot
+public sealed class GameStageUpgradePanelState
+{
+    public static GameStageUpgradePanelState Empty { get; } = new();
+
+    public bool? IsVisible { get; init; }
+
+    public int? TopPathLevel { get; init; }
+
+    public int? MiddlePathLevel { get; init; }
+
+    public int? BottomPathLevel { get; init; }
+}
+
+public sealed class GameStageStateSnapshot
 {
     public DateTimeOffset CapturedAt { get; init; } = DateTimeOffset.UtcNow;
+
+    public bool? IsInLevel { get; init; }
 
     public int? Gold { get; init; }
 
     public int? Round { get; init; }
+
+    public GameStageUpgradePanelState RightUpgradePanel { get; init; } = GameStageUpgradePanelState.Empty;
+
+    public GameStageUpgradePanelState LeftUpgradePanel { get; init; } = GameStageUpgradePanelState.Empty;
+
+    public bool? IsPlacingMonkey { get; init; }
+
+    public bool? CanPlaceHero { get; init; }
 
     public string StageTarget { get; init; } = string.Empty;
 }

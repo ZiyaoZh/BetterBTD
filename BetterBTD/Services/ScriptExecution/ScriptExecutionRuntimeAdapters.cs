@@ -16,7 +16,7 @@ public static class ScriptExecutionRuntimeServiceFactory
         {
             Capture = new ScriptCaptureServiceAdapter(GameCaptureService.Instance),
             Input = new ScriptInputServiceAdapter(ScriptInputSimulationService.Instance),
-            GameTargetOcr = GameTargetOcrService.Instance
+            GameStageState = GameStageStateService.Instance
         };
     }
 }

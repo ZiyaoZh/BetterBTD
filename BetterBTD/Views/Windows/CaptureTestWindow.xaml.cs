@@ -6,6 +6,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using BetterBTD.Helpers.Extensions;
 using BetterBTD.Models;
+using BetterBTD.Models.ScriptExecution;
 using BetterBTD.Services;
 using Fischless.GameCapture;
 using OpenCvSharp;
@@ -18,7 +19,9 @@ namespace BetterBTD.Views.Windows;
 public partial class CaptureTestWindow : UiFluentWindow
 {
     private readonly LocalizationService _localizationService = LocalizationService.Instance;
+    private readonly GameStageStateService _gameStageStateService = GameStageStateService.Instance;
     private readonly GameTargetOcrService _gameTargetOcrService = GameTargetOcrService.Instance;
+    private readonly CaptureTestStageStateDisplayService _captureTestStageStateDisplayService = CaptureTestStageStateDisplayService.Instance;
     private IGameCapture? _capture;
     private Size _cachedFrameSize;
     private readonly Stopwatch _captureStatsUpdateTimer = new();
@@ -30,14 +33,12 @@ public partial class CaptureTestWindow : UiFluentWindow
     private string _captureModeName = "Unknown";
     private string? _lastError;
     private string? _lastOcrError;
-    private string _lastLoggedOcrDiagnostics = string.Empty;
     private string? _windowDisplayName;
     private bool _lastCaptureFailed = true;
     private bool _lastOcrFailed = true;
     private int _lastFrameWidth;
     private int _lastFrameHeight;
-    private int? _lastGold;
-    private int? _lastRound;
+    private GameStageStateSnapshot? _lastStageStateSnapshot;
 
     public CaptureTestWindow()
     {
@@ -133,7 +134,7 @@ public partial class CaptureTestWindow : UiFluentWindow
             _captureCount++;
             _lastFrameWidth = capturedFrame.Width;
             _lastFrameHeight = capturedFrame.Height;
-            RunOcr(capturedFrame);
+            RunStageStateCapture(capturedFrame);
 
             var transferStopwatch = Stopwatch.StartNew();
             if (_cachedFrameSize != capturedFrame.Size() || DisplayCaptureResultImage.Source is not WriteableBitmap bitmap)
@@ -160,63 +161,45 @@ public partial class CaptureTestWindow : UiFluentWindow
         return _captureCount == 0 ? 0d : totalMilliseconds / (double)_captureCount;
     }
 
-    private void RunOcr(Mat capturedFrame)
+    private void RunStageStateCapture(Mat capturedFrame)
     {
-        if (!_gameTargetOcrService.IsAvailable)
+        if (!_gameStageStateService.IsAvailable)
         {
             _lastOcrFailed = true;
             _lastOcrError = _localizationService.T("CaptureTest.OcrUnavailable");
-            _lastGold = null;
-            _lastRound = null;
-            LogOcrDiagnosticsIfNeeded($"OCR unavailable. AssetRoot={System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "OcrDigits")}");
+            _lastStageStateSnapshot = null;
             return;
         }
 
         var ocrStopwatch = Stopwatch.StartNew();
         try
         {
-            if (_gameTargetOcrService.TryCaptureSnapshot(capturedFrame, out var snapshot, out var diagnostics))
+            if (_gameStageStateService.TryCaptureSnapshot(capturedFrame, out var snapshot, out var failureMessage))
             {
                 _lastOcrFailed = false;
                 _lastOcrError = null;
-                _lastGold = snapshot.Gold;
-                _lastRound = snapshot.Round;
-                _lastLoggedOcrDiagnostics = string.Empty;
+                _lastStageStateSnapshot = snapshot;
             }
             else
             {
                 _lastOcrFailed = true;
-                _lastOcrError = diagnostics;
-                _lastGold = null;
-                _lastRound = null;
-                LogOcrDiagnosticsIfNeeded(diagnostics);
+                _lastOcrError = string.IsNullOrWhiteSpace(failureMessage)
+                    ? _localizationService.T("CaptureTest.OcrFailedRecent")
+                    : failureMessage;
+                _lastStageStateSnapshot = snapshot;
             }
         }
         catch (Exception ex)
         {
             _lastOcrFailed = true;
             _lastOcrError = ex.Message;
-            _lastGold = null;
-            _lastRound = null;
-            LogOcrDiagnosticsIfNeeded($"OCR exception:{Environment.NewLine}{ex}");
+            _lastStageStateSnapshot = null;
         }
         finally
         {
             ocrStopwatch.Stop();
             _ocrElapsedMilliseconds += ocrStopwatch.ElapsedMilliseconds;
         }
-    }
-
-    private void LogOcrDiagnosticsIfNeeded(string diagnostics)
-    {
-        if (string.IsNullOrWhiteSpace(diagnostics) ||
-            string.Equals(_lastLoggedOcrDiagnostics, diagnostics, StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        _lastLoggedOcrDiagnostics = diagnostics;
-        Trace.WriteLine($"[CaptureTest][OCR]{Environment.NewLine}{diagnostics}");
     }
 
     private void ApplyLocalization()
@@ -267,18 +250,16 @@ public partial class CaptureTestWindow : UiFluentWindow
         }
 
         _ocrStatsUpdateTimer.Restart();
-        var ocrLabel = _localizationService.T("CaptureTest.Ocr");
-        if (!_gameTargetOcrService.IsAvailable)
-        {
-            OcrStatsTextBlock.Text = $"{ocrLabel}: {_localizationService.T("CaptureTest.OcrUnavailable")}";
-            return;
-        }
+        var displayModel = _captureTestStageStateDisplayService.Build(
+            _localizationService,
+            _gameStageStateService.IsAvailable,
+            failed,
+            _lastOcrError,
+            _lastStageStateSnapshot,
+            AverageMilliseconds(_ocrElapsedMilliseconds));
 
-        OcrStatsTextBlock.Text = failed
-            ? $"{ocrLabel}: {(_lastOcrError ?? _localizationService.T("CaptureTest.OcrFailedRecent"))}"
-            : $"{ocrLabel}: {_localizationService.T("CaptureTest.Gold")}: {FormatNullableValue(_lastGold)} | " +
-              $"{_localizationService.T("CaptureTest.Round")}: {FormatNullableValue(_lastRound)} | " +
-              $"{_localizationService.T("CaptureTest.AvgOcr")}: {AverageMilliseconds(_ocrElapsedMilliseconds):F2} ms";
+        OcrStatsTextBlock.Text = displayModel.SummaryText;
+        StageStateDetailsTextBlock.Text = displayModel.DetailsText;
     }
 
     private void UpdateOverlayRegions(int frameWidth, int frameHeight)
@@ -351,11 +332,6 @@ public partial class CaptureTestWindow : UiFluentWindow
         GoldRegionLabelBorder.Visibility = Visibility.Collapsed;
         RoundRegionRectangle.Visibility = Visibility.Collapsed;
         RoundRegionLabelBorder.Visibility = Visibility.Collapsed;
-    }
-
-    private static string FormatNullableValue(int? value)
-    {
-        return value?.ToString() ?? "--";
     }
 
     private void OnLanguageChanged(object? sender, EventArgs e)
