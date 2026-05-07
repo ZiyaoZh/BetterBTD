@@ -13,6 +13,7 @@ public enum ScriptCommandType
     SellMonkey,
     PlaceHeroInventory,
     ActivateAbility,
+    MouseClick,
     NextRound,
     Wait,
     ModifyMonkeyCoordinate,
@@ -93,6 +94,8 @@ public sealed class ScriptInstructionInstance : ObservableObject
     private string _selectedActivatedAbility = string.Empty;
     private string _nextRoundAction = "PlayFastForward";
     private string _waitMode = WaitModeType.Time.ToString();
+    private int _clickCount = 1;
+    private int _clickIntervalMilliseconds = 80;
     private int _nextRoundSendCount = 1;
     private int _waitTimeMilliseconds = 1000;
     private int _waitGoldAmount;
@@ -204,6 +207,18 @@ public sealed class ScriptInstructionInstance : ObservableObject
 
             OnPropertyChanged(nameof(ShowNextRoundSendCount));
         }
+    }
+
+    public int ClickCount
+    {
+        get => _clickCount;
+        set => SetProperty(ref _clickCount, value < 1 ? 1 : (value > 1000 ? 1000 : value));
+    }
+
+    public int ClickIntervalMilliseconds
+    {
+        get => _clickIntervalMilliseconds;
+        set => SetProperty(ref _clickIntervalMilliseconds, value < 0 ? 0 : value);
     }
 
     public bool ShowNextRoundSendCount =>

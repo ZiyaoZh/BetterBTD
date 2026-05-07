@@ -25,6 +25,7 @@ public sealed class ScriptEditorInstructionService
             CreateTemplate(ScriptCommandType.SellMonkey, "Editor.Command.SellMonkey.Title", "Editor.Command.SellMonkey.Description"),
             CreateTemplate(ScriptCommandType.PlaceHeroInventory, "Editor.Command.PlaceHeroInventory.Title", "Editor.Command.PlaceHeroInventory.Description"),
             CreateTemplate(ScriptCommandType.ActivateAbility, "Editor.Command.ActivateAbility.Title", "Editor.Command.ActivateAbility.Description"),
+            CreateTemplate(ScriptCommandType.MouseClick, "Editor.Command.MouseClick.Title", "Editor.Command.MouseClick.Description"),
             CreateTemplate(ScriptCommandType.NextRound, "Editor.Command.NextRound.Title", "Editor.Command.NextRound.Description"),
             CreateTemplate(ScriptCommandType.Wait, "Editor.Command.Wait.Title", "Editor.Command.Wait.Description"),
             CreateTemplate(ScriptCommandType.ModifyMonkeyCoordinate, "Editor.Command.ModifyMonkeyCoordinate.Title", "Editor.Command.ModifyMonkeyCoordinate.Description"),
@@ -65,6 +66,12 @@ public sealed class ScriptEditorInstructionService
         {
             instruction.NextRoundAction = "PlayFastForward";
             instruction.NextRoundSendCount = 1;
+        }
+
+        if (instruction.Type == ScriptCommandType.MouseClick)
+        {
+            instruction.ClickCount = 1;
+            instruction.ClickIntervalMilliseconds = 80;
         }
 
         if (instruction.Type == ScriptCommandType.Wait)
@@ -118,6 +125,8 @@ public sealed class ScriptEditorInstructionService
             SelectedActivatedAbility = instruction.SelectedActivatedAbility,
             NextRoundAction = instruction.NextRoundAction,
             WaitMode = instruction.WaitMode,
+            ClickCount = instruction.ClickCount,
+            ClickIntervalMilliseconds = instruction.ClickIntervalMilliseconds,
             NextRoundSendCount = instruction.NextRoundSendCount,
             WaitTimeMilliseconds = instruction.WaitTimeMilliseconds,
             WaitGoldAmount = instruction.WaitGoldAmount,
@@ -188,6 +197,10 @@ public sealed class ScriptEditorInstructionService
         instruction.WaitMode = string.IsNullOrWhiteSpace(document.WaitMode)
             ? instruction.WaitMode
             : document.WaitMode;
+        instruction.ClickCount = document.ClickCount <= 0 ? instruction.ClickCount : document.ClickCount;
+        instruction.ClickIntervalMilliseconds = document.ClickIntervalMilliseconds < 0
+            ? instruction.ClickIntervalMilliseconds
+            : document.ClickIntervalMilliseconds;
         instruction.NextRoundSendCount = document.NextRoundSendCount <= 0 ? instruction.NextRoundSendCount : document.NextRoundSendCount;
         instruction.WaitTimeMilliseconds = document.WaitTimeMilliseconds < 0 ? instruction.WaitTimeMilliseconds : document.WaitTimeMilliseconds;
         instruction.WaitGoldAmount = document.WaitGoldAmount;
@@ -241,6 +254,8 @@ public sealed class ScriptEditorInstructionService
             SelectedInventoryItem = source.SelectedInventoryItem,
             SelectedActivatedAbility = source.SelectedActivatedAbility,
             NextRoundAction = source.NextRoundAction,
+            ClickCount = source.ClickCount,
+            ClickIntervalMilliseconds = source.ClickIntervalMilliseconds,
             NextRoundSendCount = source.NextRoundSendCount,
             WaitMode = source.WaitMode,
             WaitTimeMilliseconds = source.WaitTimeMilliseconds,

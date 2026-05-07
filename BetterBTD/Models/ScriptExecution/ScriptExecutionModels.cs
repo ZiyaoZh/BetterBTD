@@ -1,4 +1,5 @@
 using System.Windows;
+using BetterBTD.Core.ScriptExecution;
 using BetterBTD.Core.ScriptExecution.Runtime;
 using BetterBTD.Models.ScriptEditor;
 
@@ -6,6 +7,17 @@ namespace BetterBTD.Models.ScriptExecution;
 
 public enum ScriptExecutionStatus
 {
+    Completed,
+    Cancelled,
+    Failed
+}
+
+public enum ScriptExecutionRunState
+{
+    Idle,
+    Running,
+    PauseRequested,
+    Paused,
     Completed,
     Cancelled,
     Failed
@@ -90,6 +102,46 @@ public sealed class ScriptExecutionState
         ArgumentException.ThrowIfNullOrWhiteSpace(bindingId);
         return _monkeyStates.TryGetValue(bindingId, out monkeyState!);
     }
+
+    public ScriptMonkeyRuntimeState UpsertMonkeyState(
+        string bindingId,
+        string objectId,
+        string selectionCode,
+        int placementOrder = 0)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(bindingId);
+
+        if (_monkeyStates.TryGetValue(bindingId, out var monkeyState))
+        {
+            if (!string.IsNullOrWhiteSpace(objectId))
+            {
+                monkeyState.ObjectId = objectId;
+            }
+
+            if (!string.IsNullOrWhiteSpace(selectionCode))
+            {
+                monkeyState.SelectionCode = selectionCode;
+            }
+
+            if (placementOrder > 0)
+            {
+                monkeyState.PlacementOrder = placementOrder;
+            }
+
+            return monkeyState;
+        }
+
+        monkeyState = new ScriptMonkeyRuntimeState
+        {
+            BindingId = bindingId,
+            ObjectId = objectId ?? string.Empty,
+            SelectionCode = selectionCode ?? string.Empty,
+            PlacementOrder = placementOrder
+        };
+
+        _monkeyStates[bindingId] = monkeyState;
+        return monkeyState;
+    }
 }
 
 public sealed class ScriptInstructionExecutionContext
@@ -103,6 +155,8 @@ public sealed class ScriptInstructionExecutionContext
     public required ScriptExecutionOptions Options { get; init; }
 
     public required ScriptExecutionRuntimeServices RuntimeServices { get; init; }
+
+    public required ScriptExecutionSession ExecutionSession { get; init; }
 }
 
 public sealed class GameStageUpgradePanelState
@@ -148,4 +202,67 @@ public sealed class ScriptExecutionResult
     public required int LastCompletedStepIndex { get; init; }
 
     public Exception? Exception { get; init; }
+
+    public ScriptExecutionProgressSnapshot? FinalProgress { get; init; }
+
+    public ScriptExecutionFailureDetails? Failure { get; init; }
+}
+
+public sealed class ScriptExecutionProgressSnapshot
+{
+    public string SourceFilePath { get; set; } = string.Empty;
+
+    public DateTimeOffset StartedAt { get; set; } = DateTimeOffset.UtcNow;
+
+    public DateTimeOffset LastUpdatedAt { get; set; } = DateTimeOffset.UtcNow;
+
+    public ScriptExecutionRunState RunState { get; set; } = ScriptExecutionRunState.Idle;
+
+    public int CurrentStepIndex { get; set; } = -1;
+
+    public string CurrentCommandType { get; set; } = string.Empty;
+
+    public string CurrentCheckpoint { get; set; } = string.Empty;
+
+    public int CurrentAttempt { get; set; }
+
+    public int CompletedStepCount { get; set; }
+
+    public int LastCompletedStepIndex { get; set; } = -1;
+
+    public bool IsPauseRequested { get; set; }
+
+    public string Message { get; set; } = string.Empty;
+
+    public ScriptExecutionProgressSnapshot Clone()
+    {
+        return new ScriptExecutionProgressSnapshot
+        {
+            SourceFilePath = SourceFilePath,
+            StartedAt = StartedAt,
+            LastUpdatedAt = LastUpdatedAt,
+            RunState = RunState,
+            CurrentStepIndex = CurrentStepIndex,
+            CurrentCommandType = CurrentCommandType,
+            CurrentCheckpoint = CurrentCheckpoint,
+            CurrentAttempt = CurrentAttempt,
+            CompletedStepCount = CompletedStepCount,
+            LastCompletedStepIndex = LastCompletedStepIndex,
+            IsPauseRequested = IsPauseRequested,
+            Message = Message
+        };
+    }
+}
+
+public sealed class ScriptExecutionFailureDetails
+{
+    public int StepIndex { get; init; } = -1;
+
+    public string CommandType { get; init; } = string.Empty;
+
+    public string Checkpoint { get; init; } = string.Empty;
+
+    public int Attempt { get; init; }
+
+    public string Message { get; init; } = string.Empty;
 }

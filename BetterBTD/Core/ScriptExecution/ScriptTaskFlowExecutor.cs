@@ -14,6 +14,7 @@ public sealed class ScriptTaskFlowExecutor
     private readonly ScriptInstructionHandlerRegistry _handlerRegistry;
 
     private bool _isRunning;
+    private ScriptExecutionSession? _currentSession;
 
     private ScriptTaskFlowExecutor()
     {
@@ -32,6 +33,41 @@ public sealed class ScriptTaskFlowExecutor
                 return _isRunning;
             }
         }
+    }
+
+    public ScriptExecutionProgressSnapshot? CurrentProgress
+    {
+        get
+        {
+            lock (_syncRoot)
+            {
+                return _currentSession?.GetSnapshot();
+            }
+        }
+    }
+
+    public event EventHandler<ScriptExecutionProgressSnapshot>? ProgressChanged;
+
+    public bool RequestPause()
+    {
+        ScriptExecutionSession? session;
+        lock (_syncRoot)
+        {
+            session = _currentSession;
+        }
+
+        return session?.RequestPause() == true;
+    }
+
+    public bool Resume()
+    {
+        ScriptExecutionSession? session;
+        lock (_syncRoot)
+        {
+            session = _currentSession;
+        }
+
+        return session?.Resume() == true;
     }
 
     public Task<ScriptExecutionResult> ExecuteAsync(
@@ -55,11 +91,13 @@ public sealed class ScriptTaskFlowExecutor
         var runtimeServices = options.RuntimeServices ?? ScriptExecutionRuntimeServiceFactory.CreateDefault();
         var executedStepCount = 0;
         var lastCompletedStepIndex = -1;
+        var executionSession = new ScriptExecutionSession(taskFlow.SourceFilePath);
 
-        EnterRunningState();
+        EnterRunningState(executionSession);
         try
         {
             ValidateRuntimePrerequisites(options, runtimeServices);
+            executionSession.MarkStarted();
 
             var state = new ScriptExecutionState();
             state.SeedMonkeyStates(taskFlow.Document.MonkeyObjects);
@@ -67,6 +105,10 @@ public sealed class ScriptTaskFlowExecutor
             foreach (var step in taskFlow.Steps)
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                executionSession.EnterStep(step.Index, step.CommandType.ToString());
+                await executionSession
+                    .ReachCheckpointAsync("BeforeInstruction", "Waiting to enter instruction handler.", null, cancellationToken)
+                    .ConfigureAwait(false);
 
                 var context = new ScriptInstructionExecutionContext
                 {
@@ -74,7 +116,8 @@ public sealed class ScriptTaskFlowExecutor
                     Step = step,
                     State = state,
                     Options = options,
-                    RuntimeServices = runtimeServices
+                    RuntimeServices = runtimeServices,
+                    ExecutionSession = executionSession
                 };
 
                 var handler = _handlerRegistry.GetRequiredHandler(step.CommandType);
@@ -82,38 +125,79 @@ public sealed class ScriptTaskFlowExecutor
 
                 executedStepCount++;
                 lastCompletedStepIndex = step.Index;
+                executionSession.MarkStepCompleted(executedStepCount, lastCompletedStepIndex);
 
                 var instructionIntervalMs = ResolveInstructionInterval(step, options);
                 if (instructionIntervalMs > 0)
                 {
-                    await Task.Delay(instructionIntervalMs, cancellationToken).ConfigureAwait(false);
+                    await executionSession
+                        .ReachCheckpointAsync("InstructionInterval", $"Waiting {instructionIntervalMs} ms before next instruction.", null, cancellationToken)
+                        .ConfigureAwait(false);
+                    await executionSession.DelayAsync(instructionIntervalMs, cancellationToken).ConfigureAwait(false);
                 }
             }
+
+            executionSession.MarkCompleted(executedStepCount, lastCompletedStepIndex);
+            var finalProgress = executionSession.GetSnapshot();
 
             return new ScriptExecutionResult
             {
                 Status = ScriptExecutionStatus.Completed,
                 ExecutedStepCount = executedStepCount,
-                LastCompletedStepIndex = lastCompletedStepIndex
+                LastCompletedStepIndex = lastCompletedStepIndex,
+                FinalProgress = finalProgress
             };
         }
         catch (OperationCanceledException)
         {
+            executionSession.MarkCancelled(executedStepCount, lastCompletedStepIndex);
             return new ScriptExecutionResult
             {
                 Status = ScriptExecutionStatus.Cancelled,
                 ExecutedStepCount = executedStepCount,
-                LastCompletedStepIndex = lastCompletedStepIndex
+                LastCompletedStepIndex = lastCompletedStepIndex,
+                FinalProgress = executionSession.GetSnapshot()
             };
         }
-        catch (Exception ex)
+        catch (ScriptExecutionException ex)
         {
+            executionSession.MarkFailed(executedStepCount, lastCompletedStepIndex, ex.Message);
             return new ScriptExecutionResult
             {
                 Status = ScriptExecutionStatus.Failed,
                 ExecutedStepCount = executedStepCount,
                 LastCompletedStepIndex = lastCompletedStepIndex,
-                Exception = ex
+                Exception = ex,
+                FinalProgress = executionSession.GetSnapshot(),
+                Failure = new ScriptExecutionFailureDetails
+                {
+                    StepIndex = ex.StepIndex,
+                    CommandType = ex.CommandType,
+                    Checkpoint = ex.Checkpoint,
+                    Attempt = ex.Attempt,
+                    Message = ex.Message
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            executionSession.MarkFailed(executedStepCount, lastCompletedStepIndex, ex.Message);
+            var currentProgress = executionSession.GetSnapshot();
+            return new ScriptExecutionResult
+            {
+                Status = ScriptExecutionStatus.Failed,
+                ExecutedStepCount = executedStepCount,
+                LastCompletedStepIndex = lastCompletedStepIndex,
+                Exception = ex,
+                FinalProgress = currentProgress,
+                Failure = new ScriptExecutionFailureDetails
+                {
+                    StepIndex = currentProgress.CurrentStepIndex,
+                    CommandType = currentProgress.CurrentCommandType,
+                    Checkpoint = currentProgress.CurrentCheckpoint,
+                    Attempt = currentProgress.CurrentAttempt,
+                    Message = ex.Message
+                }
             };
         }
         finally
@@ -153,8 +237,10 @@ public sealed class ScriptTaskFlowExecutor
         }
     }
 
-    private void EnterRunningState()
+    private void EnterRunningState(ScriptExecutionSession executionSession)
     {
+        ArgumentNullException.ThrowIfNull(executionSession);
+
         lock (_syncRoot)
         {
             if (_isRunning)
@@ -163,14 +249,29 @@ public sealed class ScriptTaskFlowExecutor
             }
 
             _isRunning = true;
+            _currentSession = executionSession;
+            _currentSession.ProgressChanged += OnCurrentSessionProgressChanged;
         }
     }
 
     private void ExitRunningState()
     {
+        ScriptExecutionSession? session;
         lock (_syncRoot)
         {
+            session = _currentSession;
+            if (session is not null)
+            {
+                session.ProgressChanged -= OnCurrentSessionProgressChanged;
+            }
+
+            _currentSession = null;
             _isRunning = false;
         }
+    }
+
+    private void OnCurrentSessionProgressChanged(object? sender, ScriptExecutionProgressSnapshot snapshot)
+    {
+        ProgressChanged?.Invoke(this, snapshot);
     }
 }

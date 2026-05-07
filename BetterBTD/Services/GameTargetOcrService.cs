@@ -302,11 +302,12 @@ public sealed class GameTargetOcrService
 
             using var matchResult = _templateMatchService.CreateMatchResult(captureRegion, template.Image, template.Mask);
             using var working = matchResult.Clone();
+            var maxIterations = Math.Max(1, working.Width * working.Height);
 
-            while (true)
+            for (var iteration = 0; iteration < maxIterations; iteration++)
             {
                 Cv2.MinMaxLoc(working, out _, out var maxValue, out _, out var maxLocation);
-                if (maxValue < threshold)
+                if (!double.IsFinite(maxValue) || maxValue < threshold)
                 {
                     break;
                 }

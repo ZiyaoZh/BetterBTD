@@ -166,17 +166,17 @@ public sealed class GameStageStateService : IGameStageStateService
 
     public Task<int?> GetGoldAsync(CancellationToken cancellationToken = default)
     {
-        return CaptureFrameValueAsync(ReadGold, default(int?), cancellationToken);
+        return CaptureInLevelValueAsync(ReadGold, default(int?), cancellationToken);
     }
 
     public Task<int?> GetRoundAsync(CancellationToken cancellationToken = default)
     {
-        return CaptureFrameValueAsync(ReadRound, default(int?), cancellationToken);
+        return CaptureInLevelValueAsync(ReadRound, default(int?), cancellationToken);
     }
 
     public Task<bool?> GetRightUpgradeVisibleAsync(CancellationToken cancellationToken = default)
     {
-        return CaptureFrameValueAsync(
+        return CaptureInLevelValueAsync(
             static frame => ReadUpgradePanelVisible(frame, RightUpgradeVisiblePoints, UpgradePanelVisibleColors),
             default(bool?),
             cancellationToken);
@@ -184,22 +184,22 @@ public sealed class GameStageStateService : IGameStageStateService
 
     public Task<int?> GetRightTopUpgradeLevelAsync(CancellationToken cancellationToken = default)
     {
-        return CaptureFrameValueAsync(static frame => ReadUpgradePathLevel(frame, RightTopUpgradePoints).Level, default(int?), cancellationToken);
+        return CaptureInLevelValueAsync(static frame => ReadUpgradePathLevel(frame, RightTopUpgradePoints).Level, default(int?), cancellationToken);
     }
 
     public Task<int?> GetRightMiddleUpgradeLevelAsync(CancellationToken cancellationToken = default)
     {
-        return CaptureFrameValueAsync(static frame => ReadUpgradePathLevel(frame, RightMiddleUpgradePoints).Level, default(int?), cancellationToken);
+        return CaptureInLevelValueAsync(static frame => ReadUpgradePathLevel(frame, RightMiddleUpgradePoints).Level, default(int?), cancellationToken);
     }
 
     public Task<int?> GetRightBottomUpgradeLevelAsync(CancellationToken cancellationToken = default)
     {
-        return CaptureFrameValueAsync(static frame => ReadUpgradePathLevel(frame, RightBottomUpgradePoints).Level, default(int?), cancellationToken);
+        return CaptureInLevelValueAsync(static frame => ReadUpgradePathLevel(frame, RightBottomUpgradePoints).Level, default(int?), cancellationToken);
     }
 
     public Task<bool?> GetLeftUpgradeVisibleAsync(CancellationToken cancellationToken = default)
     {
-        return CaptureFrameValueAsync(
+        return CaptureInLevelValueAsync(
             static frame => ReadUpgradePanelVisible(frame, LeftUpgradeVisiblePoints, UpgradePanelVisibleColors),
             default(bool?),
             cancellationToken);
@@ -207,27 +207,27 @@ public sealed class GameStageStateService : IGameStageStateService
 
     public Task<int?> GetLeftTopUpgradeLevelAsync(CancellationToken cancellationToken = default)
     {
-        return CaptureFrameValueAsync(static frame => ReadUpgradePathLevel(frame, LeftTopUpgradePoints).Level, default(int?), cancellationToken);
+        return CaptureInLevelValueAsync(static frame => ReadUpgradePathLevel(frame, LeftTopUpgradePoints).Level, default(int?), cancellationToken);
     }
 
     public Task<int?> GetLeftMiddleUpgradeLevelAsync(CancellationToken cancellationToken = default)
     {
-        return CaptureFrameValueAsync(static frame => ReadUpgradePathLevel(frame, LeftMiddleUpgradePoints).Level, default(int?), cancellationToken);
+        return CaptureInLevelValueAsync(static frame => ReadUpgradePathLevel(frame, LeftMiddleUpgradePoints).Level, default(int?), cancellationToken);
     }
 
     public Task<int?> GetLeftBottomUpgradeLevelAsync(CancellationToken cancellationToken = default)
     {
-        return CaptureFrameValueAsync(static frame => ReadUpgradePathLevel(frame, LeftBottomUpgradePoints).Level, default(int?), cancellationToken);
+        return CaptureInLevelValueAsync(static frame => ReadUpgradePathLevel(frame, LeftBottomUpgradePoints).Level, default(int?), cancellationToken);
     }
 
     public Task<bool?> GetIsPlacingMonkeyAsync(CancellationToken cancellationToken = default)
     {
-        return CaptureFrameValueAsync(static frame => DetectIsPlacingMonkey(frame), default(bool?), cancellationToken);
+        return CaptureInLevelValueAsync(static frame => DetectIsPlacingMonkey(frame), default(bool?), cancellationToken);
     }
 
     public Task<bool?> GetCanPlaceHeroAsync(CancellationToken cancellationToken = default)
     {
-        return CaptureFrameValueAsync(static frame => DetectCanPlaceHero(frame), default(bool?), cancellationToken);
+        return CaptureInLevelValueAsync(static frame => DetectCanPlaceHero(frame), default(bool?), cancellationToken);
     }
 
     public Task<string> GetStageTargetAsync(CancellationToken cancellationToken = default)
@@ -288,6 +288,18 @@ public sealed class GameStageStateService : IGameStageStateService
             return false;
         }
 
+        var isInLevel = DetectIsInLevel(frame);
+        if (isInLevel != true)
+        {
+            snapshot = new GameStageStateSnapshot
+            {
+                IsInLevel = isInLevel,
+                StageTarget = string.Empty
+            };
+            failureMessage = string.Empty;
+            return true;
+        }
+
         var captureRegions = GetCaptureRegions(frame.Width, frame.Height);
 
         using var goldCaptureRegion = new Mat(frame, captureRegions.GoldRegion);
@@ -298,7 +310,7 @@ public sealed class GameStageStateService : IGameStageStateService
 
         snapshot = new GameStageStateSnapshot
         {
-            IsInLevel = DetectIsInLevel(frame),
+            IsInLevel = isInLevel,
             Gold = hasGold ? gold : null,
             Round = hasRound ? round : null,
             RightUpgradePanel = ReadRightUpgradePanelState(frame),
@@ -313,6 +325,14 @@ public sealed class GameStageStateService : IGameStageStateService
             : "Gold/Round OCR failed.";
 
         return hasGold || hasRound;
+    }
+
+    private Task<T> CaptureInLevelValueAsync<T>(Func<Mat, T> selector, T fallbackValue, CancellationToken cancellationToken)
+    {
+        return CaptureFrameValueAsync(
+            frame => DetectIsInLevel(frame) == true ? selector(frame) : fallbackValue,
+            fallbackValue,
+            cancellationToken);
     }
 
     private Task<T> CaptureFrameValueAsync<T>(Func<Mat, T> selector, T fallbackValue, CancellationToken cancellationToken)
@@ -418,14 +438,11 @@ public sealed class GameStageStateService : IGameStageStateService
         }
 
         var isVisible = ReadUpgradePanelVisible(visibleChecks);
-        var topPath = ReadUpgradePathLevel(frame, topPathPoints);
-        var middlePath = ReadUpgradePathLevel(frame, middlePathPoints);
-        var bottomPath = ReadUpgradePathLevel(frame, bottomPathPoints);
-
-        WriteUpgradePanelDebugOutput(panelName, isVisible, visibleChecks, topPath, middlePath, bottomPath);
-
         if (!isVisible)
         {
+            var emptyPath = new UpgradePathReadResult(0, []);
+            WriteUpgradePanelDebugOutput(panelName, false, visibleChecks, emptyPath, emptyPath, emptyPath);
+
             return new GameStageUpgradePanelState
             {
                 IsVisible = false,
@@ -434,6 +451,12 @@ public sealed class GameStageStateService : IGameStageStateService
                 BottomPathLevel = null
             };
         }
+
+        var topPath = ReadUpgradePathLevel(frame, topPathPoints);
+        var middlePath = ReadUpgradePathLevel(frame, middlePathPoints);
+        var bottomPath = ReadUpgradePathLevel(frame, bottomPathPoints);
+
+        WriteUpgradePanelDebugOutput(panelName, true, visibleChecks, topPath, middlePath, bottomPath);
 
         return new GameStageUpgradePanelState
         {

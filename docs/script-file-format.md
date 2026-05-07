@@ -48,9 +48,9 @@
 当前会持久化的关键字段包括：
 
 - 猴子相关：`selectedMonkeyTower`、`monkeyBindingId`、`monkeyObjectId`、`targetMonkeyBindingId`、`targetMonkeyObjectId`
-- 行为参数：`upgradePath`、`upgradeCount`、`switchDirection`、`switchCount`、`selectedAbility`
+- 行为参数：`upgradePath`、`upgradeCount`、`switchDirection`、`switchCount`、`selectedAbility`、`clickCount`
 - 资源/技能：`selectedInventoryItem`、`selectedActivatedAbility`
-- 节奏控制：`nextRoundAction`、`nextRoundSendCount`、`waitMode`
+- 节奏控制：`nextRoundAction`、`nextRoundSendCount`、`waitMode`、`clickIntervalMilliseconds`
 - 等待参数：`waitTimeMilliseconds`、`waitGoldAmount`、`waitRoundCount`
 - 坐标参数：`positionX`、`positionY`、`abilityCoordinateX`、`abilityCoordinateY`
 - 颜色等待：`waitColorCoordinateX`、`waitColorCoordinateY`、`waitColorHex`、`waitColorTolerance`
@@ -95,6 +95,14 @@
       "targetMonkeyBindingId": "f35513d719f04bb0a17ccfd8f4c57077",
       "upgradePath": "Top",
       "upgradeCount": 2,
+      "intervalToNextInstructionMs": 100
+    },
+    {
+      "commandType": "MouseClick",
+      "positionX": 620.0,
+      "positionY": 148.0,
+      "clickCount": 2,
+      "clickIntervalMilliseconds": 80,
       "intervalToNextInstructionMs": 100
     }
   ]

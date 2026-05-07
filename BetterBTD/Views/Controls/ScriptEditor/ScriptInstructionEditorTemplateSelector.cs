@@ -20,6 +20,8 @@ public sealed class ScriptInstructionEditorTemplateSelector : DataTemplateSelect
 
     public DataTemplate? ActivateAbilityTemplate { get; set; }
 
+    public DataTemplate? MouseClickTemplate { get; set; }
+
     public DataTemplate? NextRoundTemplate { get; set; }
 
     public DataTemplate? WaitTemplate { get; set; }
@@ -44,6 +46,7 @@ public sealed class ScriptInstructionEditorTemplateSelector : DataTemplateSelect
             ScriptCommandType.SellMonkey => SellMonkeyTemplate,
             ScriptCommandType.PlaceHeroInventory => PlaceHeroInventoryTemplate,
             ScriptCommandType.ActivateAbility => ActivateAbilityTemplate,
+            ScriptCommandType.MouseClick => MouseClickTemplate,
             ScriptCommandType.NextRound => NextRoundTemplate,
             ScriptCommandType.Wait => WaitTemplate,
             ScriptCommandType.ModifyMonkeyCoordinate => ModifyMonkeyCoordinateTemplate,

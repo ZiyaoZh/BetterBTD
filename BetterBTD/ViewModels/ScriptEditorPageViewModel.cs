@@ -8,10 +8,12 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Threading;
+using BetterBTD.Core.ScriptExecution;
 using BetterBTD.Helpers;
 using BetterBTD.Models;
 using BetterBTD.Models.GameElements;
 using BetterBTD.Models.ScriptEditor;
+using BetterBTD.Models.ScriptExecution;
 using BetterBTD.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -45,6 +47,8 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
     private readonly ScriptEditorInstructionService _scriptEditorInstructionService;
     private readonly ScriptEditorSequenceService _scriptEditorSequenceService;
     private readonly ScriptEditorOptionService _scriptEditorOptionService;
+    private readonly ScriptTaskFlowService _scriptTaskFlowService;
+    private readonly ScriptTaskFlowExecutor _scriptTaskFlowExecutor;
     private readonly List<ScriptInstructionInstance> _clipboardSequenceInstructions = [];
     private readonly Stack<List<ScriptInstructionInstance>> _undoHistory = [];
     private readonly Stack<List<ScriptInstructionInstance>> _redoHistory = [];
@@ -72,7 +76,10 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
     private Guid? _coordinateSelectionAnchorId;
     private bool _wasRightMouseButtonDown;
     private string _persistedWorkspaceSnapshot = string.Empty;
+    private string _scriptExecutionStatus = string.Empty;
+    private bool _isScriptExecutionRunning;
     private List<ScriptInstructionInstance> _sequenceSnapshot = [];
+    private CancellationTokenSource? _scriptExecutionCancellationTokenSource;
 
     public ScriptEditorPageViewModel(LocalizationService localizationService)
     {
@@ -84,6 +91,8 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         _scriptEditorInstructionService = ScriptEditorInstructionService.Instance;
         _scriptEditorSequenceService = ScriptEditorSequenceService.Instance;
         _scriptEditorOptionService = ScriptEditorOptionService.Instance;
+        _scriptTaskFlowService = ScriptTaskFlowService.Instance;
+        _scriptTaskFlowExecutor = ScriptTaskFlowExecutor.Instance;
         _coordinateSelectionTimer = new DispatcherTimer(DispatcherPriority.Background)
         {
             Interval = TimeSpan.FromMilliseconds(33)
@@ -112,6 +121,8 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         CreateNewScriptFileCommand = new RelayCommand(CreateNewScriptFile);
         StartCoordinateSelectionCommand = new RelayCommand<string?>(StartCoordinateSelection);
         CancelCoordinateSelectionCommand = new RelayCommand<string?>(_ => CancelCoordinateSelection());
+        RunScriptCommand = new AsyncRelayCommand(RunScriptAsync, CanRunScript);
+        StopScriptExecutionCommand = new RelayCommand(StopScriptExecution, CanStopScriptExecution);
 
         BuildMetadataOptions();
         BuildInstructionLibrary();
@@ -139,6 +150,8 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
     public IRelayCommand CreateNewScriptFileCommand { get; }
     public IRelayCommand<string?> StartCoordinateSelectionCommand { get; }
     public IRelayCommand<string?> CancelCoordinateSelectionCommand { get; }
+    public IAsyncRelayCommand RunScriptCommand { get; }
+    public IRelayCommand StopScriptExecutionCommand { get; }
 
     public ObservableCollection<LanguageOption> DifficultyOptions { get; } = [];
     public ObservableCollection<LanguageOption> ModeOptions { get; } = [];
@@ -255,6 +268,7 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
             OnPropertyChanged(nameof(ShowPropertiesEmptyState));
             OnPropertyChanged(nameof(ShowNonExecutableInstructionHint));
             OnPropertyChanged(nameof(ShowAdvancedProperties));
+            OnPropertyChanged(nameof(ShowMouseClickAdvancedProperties));
         }
     }
 
@@ -265,6 +279,8 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
     public bool ShowNonExecutableInstructionHint => SelectedSequenceInstruction is { IsExecutable: false };
 
     public bool ShowAdvancedProperties => SelectedSequenceInstruction?.Type is not ScriptCommandType.ModifyMonkeyCoordinate and not ScriptCommandType.Comment;
+
+    public bool ShowMouseClickAdvancedProperties => SelectedSequenceInstruction?.Type == ScriptCommandType.MouseClick;
 
     public bool ShowSequenceEmptyState => InstructionSequence.Count == 0;
 
@@ -296,6 +312,21 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
     public string DebugStepText => _localizationService.T("Editor.Debug.Step");
     public string DebugStopText => _localizationService.T("Editor.Debug.Stop");
     public string DebugValidateText => _localizationService.T("Editor.Debug.Validate");
+    public string ScriptExecutionStatus => _scriptExecutionStatus;
+    public bool IsScriptExecutionRunning
+    {
+        get => _isScriptExecutionRunning;
+        private set
+        {
+            if (!SetProperty(ref _isScriptExecutionRunning, value))
+            {
+                return;
+            }
+
+            RunScriptCommand.NotifyCanExecuteChanged();
+            StopScriptExecutionCommand.NotifyCanExecuteChanged();
+        }
+    }
 
     public string LibraryTitle => _localizationService.T("Editor.Panel.Library.Title");
     public string SequenceTitle => _localizationService.T("Editor.Panel.Sequence.Title");
@@ -324,8 +355,10 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
     public string PropertyWaitRoundCountText => _localizationService.T("Editor.Property.WaitRoundCount");
     public string PropertyWaitColorHexText => _localizationService.T("Editor.Property.WaitColorHex");
     public string PropertyWaitColorToleranceText => _localizationService.T("Editor.Property.WaitColorTolerance");
+    public string PropertyClickCountText => _localizationService.T("Editor.Property.ClickCount");
     public string PropertyCommentContentText => _localizationService.T("Editor.Property.CommentContent");
     public string PropertyAdvancedText => _localizationService.T("Editor.Property.Advanced");
+    public string PropertyClickIntervalMillisecondsText => _localizationService.T("Editor.Property.ClickIntervalMilliseconds");
     public string PropertyIntervalToNextInstructionText => _localizationService.T("Editor.Property.IntervalToNextInstruction");
     public string NonExecutableInstructionHintText => _localizationService.T("Editor.Property.NonExecutableHint");
     public string PropertyNotesText => _localizationService.T("Editor.Property.Notes");
@@ -582,6 +615,80 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         CreateNewScriptDocument();
     }
 
+    private async Task RunScriptAsync()
+    {
+        if (IsScriptExecutionRunning)
+        {
+            return;
+        }
+
+        if (_scriptTaskFlowExecutor.IsRunning)
+        {
+            ShowMessageDialog(
+                _localizationService.T("Editor.Debug.Run"),
+                "已有脚本任务正在运行，当前编辑器不能启动新的执行。");
+            return;
+        }
+
+        if (!InstructionSequence.Any())
+        {
+            ShowMessageDialog(
+                _localizationService.T("Editor.Debug.Run"),
+                "当前脚本没有任何指令。");
+            return;
+        }
+
+        ScriptTaskFlow taskFlow;
+        try
+        {
+            taskFlow = _scriptTaskFlowService.Build(
+                ExportScriptDocument(),
+                string.IsNullOrWhiteSpace(CurrentScriptFilePath) ? "[Unsaved Script]" : CurrentScriptFilePath);
+        }
+        catch (Exception ex)
+        {
+            ShowMessageDialog(
+                _localizationService.T("Editor.Debug.Run"),
+                $"构建执行任务失败。\n\n{ex.Message}");
+            return;
+        }
+
+        _scriptExecutionCancellationTokenSource?.Dispose();
+        _scriptExecutionCancellationTokenSource = new CancellationTokenSource();
+        IsScriptExecutionRunning = true;
+        SetScriptExecutionStatus("正在启动脚本执行...");
+        _scriptTaskFlowExecutor.ProgressChanged += OnScriptExecutionProgressChanged;
+
+        try
+        {
+            var result = await _scriptTaskFlowExecutor
+                .ExecuteAsync(taskFlow, cancellationToken: _scriptExecutionCancellationTokenSource.Token)
+                .ConfigureAwait(true);
+
+            ApplyExecutionResult(result);
+        }
+        catch (Exception ex)
+        {
+            SetScriptExecutionStatus($"脚本执行异常：{ex.Message}");
+            ShowMessageDialog(
+                _localizationService.T("Editor.Debug.Run"),
+                $"脚本执行异常。\n\n{ex.Message}");
+        }
+        finally
+        {
+            _scriptTaskFlowExecutor.ProgressChanged -= OnScriptExecutionProgressChanged;
+            _scriptExecutionCancellationTokenSource?.Dispose();
+            _scriptExecutionCancellationTokenSource = null;
+            IsScriptExecutionRunning = false;
+        }
+    }
+
+    private void StopScriptExecution()
+    {
+        _scriptExecutionCancellationTokenSource?.Cancel();
+        SetScriptExecutionStatus("正在请求停止脚本执行...");
+    }
+
     private void ShowSaveError(Exception ex)
     {
         ShowMessageDialog(
@@ -597,6 +704,85 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
             Message = message,
             PrimaryButtonText = _localizationService.T("Editor.Dialog.Ok")
         });
+    }
+
+    private bool CanRunScript()
+    {
+        return !IsScriptExecutionRunning;
+    }
+
+    private bool CanStopScriptExecution()
+    {
+        return IsScriptExecutionRunning;
+    }
+
+    private void OnScriptExecutionProgressChanged(object? sender, ScriptExecutionProgressSnapshot snapshot)
+    {
+        if (Application.Current?.Dispatcher?.CheckAccess() == true)
+        {
+            SetScriptExecutionStatus(BuildExecutionStatusText(snapshot));
+            return;
+        }
+
+        _ = Application.Current?.Dispatcher?.InvokeAsync(
+            () => SetScriptExecutionStatus(BuildExecutionStatusText(snapshot)),
+            DispatcherPriority.Background);
+    }
+
+    private void ApplyExecutionResult(ScriptExecutionResult result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+
+        switch (result.Status)
+        {
+            case BetterBTD.Models.ScriptExecution.ScriptExecutionStatus.Completed:
+                SetScriptExecutionStatus(
+                    $"执行完成：已完成 {result.ExecutedStepCount} 步，最后一步索引 {result.LastCompletedStepIndex}。");
+                break;
+            case BetterBTD.Models.ScriptExecution.ScriptExecutionStatus.Cancelled:
+                SetScriptExecutionStatus(
+                    $"执行已取消：已完成 {result.ExecutedStepCount} 步，最后一步索引 {result.LastCompletedStepIndex}。");
+                break;
+            case BetterBTD.Models.ScriptExecution.ScriptExecutionStatus.Failed:
+                var failure = result.Failure;
+                var message = failure is null
+                    ? $"执行失败：{result.Exception?.Message ?? "未知错误"}"
+                    : $"执行失败：第 {failure.StepIndex} 步 {failure.CommandType}，检查点 {failure.Checkpoint}，尝试 {failure.Attempt}，{failure.Message}";
+                SetScriptExecutionStatus(message);
+                ShowMessageDialog(_localizationService.T("Editor.Debug.Run"), message);
+                break;
+        }
+    }
+
+    private static string BuildExecutionStatusText(ScriptExecutionProgressSnapshot snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+
+        var stepText = snapshot.CurrentStepIndex >= 0
+            ? $"第 {snapshot.CurrentStepIndex} 步"
+            : "未进入步骤";
+        var commandText = string.IsNullOrWhiteSpace(snapshot.CurrentCommandType)
+            ? "无指令"
+            : snapshot.CurrentCommandType;
+        var checkpointText = string.IsNullOrWhiteSpace(snapshot.CurrentCheckpoint)
+            ? "无检查点"
+            : snapshot.CurrentCheckpoint;
+        var attemptText = snapshot.CurrentAttempt > 0
+            ? $"，尝试 {snapshot.CurrentAttempt}"
+            : string.Empty;
+        var messageText = string.IsNullOrWhiteSpace(snapshot.Message)
+            ? string.Empty
+            : $"，{snapshot.Message}";
+
+        return $"执行状态：{snapshot.RunState}，{stepText}，{commandText}，{checkpointText}{attemptText}{messageText}";
+    }
+
+    private void SetScriptExecutionStatus(string value)
+    {
+        if (SetProperty(ref _scriptExecutionStatus, value ?? string.Empty))
+        {
+            OnPropertyChanged(nameof(ScriptExecutionStatus));
+        }
     }
 
     private string BuildDefaultSaveFileName()
@@ -844,7 +1030,7 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
     {
         return target switch
         {
-            CoordinateSelectionTarget.Position => instruction.Type is ScriptCommandType.PlaceMonkey or ScriptCommandType.ModifyMonkeyCoordinate
+            CoordinateSelectionTarget.Position => instruction.Type is ScriptCommandType.PlaceMonkey or ScriptCommandType.MouseClick or ScriptCommandType.ModifyMonkeyCoordinate
                 || (instruction.Type == ScriptCommandType.PlaceHeroInventory && instruction.ShowPlacementCoordinateInputs),
             CoordinateSelectionTarget.Ability => instruction.ShowAbilityCoordinateInputs,
             CoordinateSelectionTarget.WaitColor => instruction.ShowWaitCoordinateColor,
@@ -1533,8 +1719,10 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         OnPropertyChanged(nameof(PropertyWaitRoundCountText));
         OnPropertyChanged(nameof(PropertyWaitColorHexText));
         OnPropertyChanged(nameof(PropertyWaitColorToleranceText));
+        OnPropertyChanged(nameof(PropertyClickCountText));
         OnPropertyChanged(nameof(PropertyCommentContentText));
         OnPropertyChanged(nameof(PropertyAdvancedText));
+        OnPropertyChanged(nameof(PropertyClickIntervalMillisecondsText));
         OnPropertyChanged(nameof(PropertyIntervalToNextInstructionText));
         OnPropertyChanged(nameof(NonExecutableInstructionHintText));
         OnPropertyChanged(nameof(PropertyNotesText));

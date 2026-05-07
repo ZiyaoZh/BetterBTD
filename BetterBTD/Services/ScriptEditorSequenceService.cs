@@ -287,6 +287,16 @@ public sealed class ScriptEditorSequenceService
                         FormatCoordinate(instruction.AbilityCoordinateX),
                         FormatCoordinate(instruction.AbilityCoordinateY))
                     : string.Empty),
+            ScriptCommandType.MouseClick => string.Format(
+                localizationService.T("Editor.Display.MouseClick"),
+                FormatCoordinate(instruction.PositionX),
+                FormatCoordinate(instruction.PositionY),
+                instruction.ClickCount,
+                instruction.ClickCount > 1
+                    ? string.Format(
+                        localizationService.T("Editor.Display.MouseClick.WithIntervalSuffix"),
+                        instruction.ClickIntervalMilliseconds)
+                    : string.Empty),
             ScriptCommandType.NextRound => GetNextRoundActionDisplayName(instruction, localizationService),
             ScriptCommandType.Wait => GetWaitDisplayName(instruction, localizationService),
             ScriptCommandType.ModifyMonkeyCoordinate => string.Format(

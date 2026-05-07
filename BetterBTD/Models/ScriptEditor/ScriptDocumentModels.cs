@@ -87,6 +87,10 @@ public sealed class ScriptInstructionDocument
 
     public string WaitMode { get; set; } = string.Empty;
 
+    public int ClickCount { get; set; }
+
+    public int ClickIntervalMilliseconds { get; set; }
+
     public int NextRoundSendCount { get; set; }
 
     public int WaitTimeMilliseconds { get; set; }

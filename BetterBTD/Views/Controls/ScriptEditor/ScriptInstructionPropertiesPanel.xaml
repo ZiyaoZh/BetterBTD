@@ -396,6 +396,79 @@
             </StackPanel>
         </DataTemplate>
 
+        <DataTemplate x:Key="MouseClickEditorTemplate">
+            <StackPanel Margin="0,0,0,10">
+                <TextBlock Style="{StaticResource CardDescriptionTextStyle}"
+                           Text="{Binding DataContext.PropertyCoordinateText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}" />
+
+                <ui:CardExpander Margin="0,4,0,10"
+                                 ContentPadding="0"
+                                 IsExpanded="False">
+                    <ui:CardExpander.Header>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Column="0"
+                                       Margin="0,0,12,0"
+                                       Style="{StaticResource CardTitleTextStyle}"
+                                       VerticalAlignment="Center"
+                                       Text="{Binding DataContext.PropertyCoordinateText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}" />
+                            <sharedControls:TwoStateButton Grid.Column="1"
+                                                           Style="{StaticResource CoordinateSelectButtonStyle}"
+                                                           IsChecked="{Binding DataContext.IsPositionCoordinateSelectionActive, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}, Mode=OneWay}"
+                                                           EnableCommand="{Binding DataContext.StartCoordinateSelectionCommand, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}"
+                                                           DisableCommand="{Binding DataContext.CancelCoordinateSelectionCommand, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}"
+                                                           EnableContent="{Binding DataContext.CoordinateSelectButtonText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}"
+                                                           DisableContent="{Binding DataContext.CoordinateCancelButtonText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}"
+                                                           CommandParameter="Position" />
+                        </Grid>
+                    </ui:CardExpander.Header>
+
+                    <Grid Margin="16">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Row="0"
+                                   Grid.Column="0"
+                                   Margin="0,0,12,8"
+                                   Style="{StaticResource CoordinateAxisLabelStyle}"
+                                   Text="X" />
+                        <ui:NumberBox Grid.Row="0"
+                                      Grid.Column="1"
+                                      Margin="0,0,0,8"
+                                      Style="{StaticResource CoordinateNumberBoxStyle}"
+                                      Value="{Binding PositionX, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <TextBlock Grid.Row="1"
+                                   Grid.Column="0"
+                                   Margin="0,0,12,0"
+                                   Style="{StaticResource CoordinateAxisLabelStyle}"
+                                   Text="Y" />
+                        <ui:NumberBox Grid.Row="1"
+                                      Grid.Column="1"
+                                      Style="{StaticResource CoordinateNumberBoxStyle}"
+                                      Value="{Binding PositionY, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    </Grid>
+                </ui:CardExpander>
+
+                <TextBlock Style="{StaticResource CardDescriptionTextStyle}"
+                           Text="{Binding DataContext.PropertyClickCountText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}" />
+                <ui:NumberBox Margin="0,4,0,0"
+                              Minimum="1"
+                              Maximum="1000"
+                              Value="{Binding ClickCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            </StackPanel>
+        </DataTemplate>
+
         <DataTemplate x:Key="NextRoundEditorTemplate">
             <StackPanel Margin="0,0,0,10">
                 <TextBlock Style="{StaticResource CardDescriptionTextStyle}"
@@ -634,6 +707,7 @@
                                                           SellMonkeyTemplate="{StaticResource SellMonkeyEditorTemplate}"
                                                           PlaceHeroInventoryTemplate="{StaticResource PlaceHeroInventoryEditorTemplate}"
                                                           ActivateAbilityTemplate="{StaticResource ActivateAbilityEditorTemplate}"
+                                                          MouseClickTemplate="{StaticResource MouseClickEditorTemplate}"
                                                           NextRoundTemplate="{StaticResource NextRoundEditorTemplate}"
                                                           WaitTemplate="{StaticResource WaitEditorTemplate}"
                                                           ModifyMonkeyCoordinateTemplate="{StaticResource ModifyMonkeyCoordinateEditorTemplate}"
@@ -687,28 +761,44 @@
                                        Text="{Binding PropertyAdvancedText}" />
                         </ui:CardExpander.Header>
 
-                        <Grid Margin="16">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
+                        <StackPanel Margin="16">
+                            <Grid Margin="0,0,0,10"
+                                  Visibility="{Binding ShowMouseClickAdvancedProperties, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
 
-                            <TextBlock Grid.Row="0"
-                                       Grid.Column="0"
-                                       Margin="0,0,16,0"
-                                       VerticalAlignment="Center"
-                                       Style="{StaticResource CardDescriptionTextStyle}"
-                                       Text="{Binding PropertyIntervalToNextInstructionText}" />
-                            <ui:NumberBox Grid.Row="0"
-                                          Grid.Column="1"
-                                          Width="160"
-                                          Minimum="0"
-                                          SmallChange="10"
-                                          Value="{Binding SelectedSequenceInstruction.IntervalToNextInstructionMs, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                        </Grid>
+                                <TextBlock Grid.Column="0"
+                                           Margin="0,0,16,0"
+                                           VerticalAlignment="Center"
+                                           Style="{StaticResource CardDescriptionTextStyle}"
+                                           Text="{Binding PropertyClickIntervalMillisecondsText}" />
+                                <ui:NumberBox Grid.Column="1"
+                                              Width="160"
+                                              Minimum="0"
+                                              SmallChange="10"
+                                              Value="{Binding SelectedSequenceInstruction.ClickIntervalMilliseconds, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            </Grid>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0"
+                                           Margin="0,0,16,0"
+                                           VerticalAlignment="Center"
+                                           Style="{StaticResource CardDescriptionTextStyle}"
+                                           Text="{Binding PropertyIntervalToNextInstructionText}" />
+                                <ui:NumberBox Grid.Column="1"
+                                              Width="160"
+                                              Minimum="0"
+                                              SmallChange="10"
+                                              Value="{Binding SelectedSequenceInstruction.IntervalToNextInstructionMs, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            </Grid>
+                        </StackPanel>
                     </ui:CardExpander>
 
                     <TextBlock Style="{StaticResource CardDescriptionTextStyle}"
