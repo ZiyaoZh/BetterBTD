@@ -1,7 +1,9 @@
 using System.Diagnostics;
 using BetterBTD.Core.ScriptExecution.Runtime;
+using BetterBTD.Models;
 using BetterBTD.Models.ScriptExecution;
 using OpenCvSharp;
+using OpenCvPoint = OpenCvSharp.Point;
 using OpenCvRect = OpenCvSharp.Rect;
 using OpenCvSize = OpenCvSharp.Size;
 
@@ -130,6 +132,31 @@ public sealed class GameStageStateService : IGameStageStateService
         return (
             ScaleReferenceRect(GoldReferenceRect, frameWidth, frameHeight),
             ScaleReferenceRect(RoundReferenceRect, frameWidth, frameHeight));
+    }
+
+    public CaptureTestOverlayLayout GetCaptureOverlayLayout(int frameWidth, int frameHeight)
+    {
+        var captureRegions = GetCaptureRegions(frameWidth, frameHeight);
+
+        return new CaptureTestOverlayLayout
+        {
+            GoldRegion = captureRegions.GoldRegion,
+            RoundRegion = captureRegions.RoundRegion,
+            PointGroups =
+            [
+                BuildOverlayPointGroup("InLevel", "CaptureTest.InLevel", frameWidth, frameHeight, InLevelPoints),
+                BuildOverlayPointGroup("RightUpgradeVisible", "CaptureTest.RightUpgradeVisible", frameWidth, frameHeight, RightUpgradeVisiblePoints),
+                BuildOverlayPointGroup("RightTopUpgrade", "CaptureTest.RightTopUpgrade", frameWidth, frameHeight, RightTopUpgradePoints.Select(static x => x.Point)),
+                BuildOverlayPointGroup("RightMiddleUpgrade", "CaptureTest.RightMiddleUpgrade", frameWidth, frameHeight, RightMiddleUpgradePoints.Select(static x => x.Point)),
+                BuildOverlayPointGroup("RightBottomUpgrade", "CaptureTest.RightBottomUpgrade", frameWidth, frameHeight, RightBottomUpgradePoints.Select(static x => x.Point)),
+                BuildOverlayPointGroup("LeftUpgradeVisible", "CaptureTest.LeftUpgradeVisible", frameWidth, frameHeight, LeftUpgradeVisiblePoints),
+                BuildOverlayPointGroup("LeftTopUpgrade", "CaptureTest.LeftTopUpgrade", frameWidth, frameHeight, LeftTopUpgradePoints.Select(static x => x.Point)),
+                BuildOverlayPointGroup("LeftMiddleUpgrade", "CaptureTest.LeftMiddleUpgrade", frameWidth, frameHeight, LeftMiddleUpgradePoints.Select(static x => x.Point)),
+                BuildOverlayPointGroup("LeftBottomUpgrade", "CaptureTest.LeftBottomUpgrade", frameWidth, frameHeight, LeftBottomUpgradePoints.Select(static x => x.Point)),
+                BuildOverlayPointGroup("IsPlacingMonkey", "CaptureTest.IsPlacingMonkey", frameWidth, frameHeight, [new ReferencePoint(1600, 120), new ReferencePoint(1600, 98)]),
+                BuildOverlayPointGroup("CanPlaceHero", "CaptureTest.CanPlaceHero", frameWidth, frameHeight, [new ReferencePoint(1757, 272), new ReferencePoint(1670, 274)])
+            ]
+        };
     }
 
     public Task<bool?> GetIsInLevelAsync(CancellationToken cancellationToken = default)
@@ -484,6 +511,24 @@ public sealed class GameStageStateService : IGameStageStateService
             diffG,
             diffB,
             diffR <= tolerance && diffG <= tolerance && diffB <= tolerance);
+    }
+
+    private static CaptureTestOverlayPointGroup BuildOverlayPointGroup(
+        string id,
+        string labelKey,
+        int frameWidth,
+        int frameHeight,
+        IEnumerable<ReferencePoint> referencePoints)
+    {
+        return new CaptureTestOverlayPointGroup
+        {
+            Id = id,
+            LabelKey = labelKey,
+            Points = referencePoints
+                .Select(point => ScaleReferencePoint(point, frameWidth, frameHeight))
+                .Select(static point => new OpenCvPoint(point.X, point.Y))
+                .ToArray()
+        };
     }
 
     private static ReferenceColor ReadPixel(Mat frame, ReferencePoint point)

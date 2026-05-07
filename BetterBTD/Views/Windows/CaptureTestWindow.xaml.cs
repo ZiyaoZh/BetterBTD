@@ -11,6 +11,7 @@ using BetterBTD.Services;
 using Fischless.GameCapture;
 using OpenCvSharp;
 using UiFluentWindow = Wpf.Ui.Controls.FluentWindow;
+using WpfPoint = System.Windows.Point;
 using WpfRect = System.Windows.Rect;
 using Size = OpenCvSharp.Size;
 
@@ -18,9 +19,21 @@ namespace BetterBTD.Views.Windows;
 
 public partial class CaptureTestWindow : UiFluentWindow
 {
+    private sealed class PointGroupOverlayVisual
+    {
+        public required Path Path { get; init; }
+
+        public required Border LabelBorder { get; init; }
+
+        public required TextBlock LabelTextBlock { get; init; }
+
+        public required string LabelKey { get; set; }
+    }
+
     private readonly LocalizationService _localizationService = LocalizationService.Instance;
     private readonly GameStageStateService _gameStageStateService = GameStageStateService.Instance;
     private readonly CaptureTestStageStateDisplayService _captureTestStageStateDisplayService = CaptureTestStageStateDisplayService.Instance;
+    private readonly Dictionary<string, PointGroupOverlayVisual> _pointGroupVisuals = new(StringComparer.Ordinal);
     private IGameCapture? _capture;
     private Size _cachedFrameSize;
     private readonly Stopwatch _captureStatsUpdateTimer = new();
@@ -38,6 +51,8 @@ public partial class CaptureTestWindow : UiFluentWindow
     private int _lastFrameWidth;
     private int _lastFrameHeight;
     private GameStageStateSnapshot? _lastStageStateSnapshot;
+    private const double OverlayCrosshairLength = 10d;
+    private const double OverlayCrosshairGap = 4d;
 
     public CaptureTestWindow()
     {
@@ -221,6 +236,11 @@ public partial class CaptureTestWindow : UiFluentWindow
         UpdateOcrStatsText(_lastOcrFailed, force: true);
         GoldRegionLabelTextBlock.Text = _localizationService.T("CaptureTest.RegionGold");
         RoundRegionLabelTextBlock.Text = _localizationService.T("CaptureTest.RegionRound");
+
+        foreach (var pointGroupVisual in _pointGroupVisuals.Values)
+        {
+            pointGroupVisual.LabelTextBlock.Text = _localizationService.T(pointGroupVisual.LabelKey);
+        }
     }
 
     private void UpdateStatsText(bool failed, int width = 0, int height = 0, bool force = false)
@@ -270,13 +290,13 @@ public partial class CaptureTestWindow : UiFluentWindow
         }
 
         var overlayBounds = CalculateDisplayedFrameBounds(frameWidth, frameHeight, CaptureOverlayCanvas.ActualWidth, CaptureOverlayCanvas.ActualHeight);
-        var captureRegions = _gameStageStateService.GetCaptureRegions(frameWidth, frameHeight);
+        var overlayLayout = _gameStageStateService.GetCaptureOverlayLayout(frameWidth, frameHeight);
 
         ApplyOverlayRegion(
             GoldRegionRectangle,
             GoldRegionLabelBorder,
             overlayBounds,
-            captureRegions.GoldRegion,
+            overlayLayout.GoldRegion,
             frameWidth,
             frameHeight);
 
@@ -284,7 +304,13 @@ public partial class CaptureTestWindow : UiFluentWindow
             RoundRegionRectangle,
             RoundRegionLabelBorder,
             overlayBounds,
-            captureRegions.RoundRegion,
+            overlayLayout.RoundRegion,
+            frameWidth,
+            frameHeight);
+
+        ApplyOverlayPointGroups(
+            overlayBounds,
+            overlayLayout.PointGroups,
             frameWidth,
             frameHeight);
     }
@@ -325,12 +351,203 @@ public partial class CaptureTestWindow : UiFluentWindow
         Canvas.SetTop(labelBorder, Math.Max(displayedFrameBounds.Y, y - 28d));
     }
 
+    private void ApplyOverlayPointGroups(
+        WpfRect displayedFrameBounds,
+        IReadOnlyList<CaptureTestOverlayPointGroup> pointGroups,
+        int frameWidth,
+        int frameHeight)
+    {
+        var activeGroupIds = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var pointGroup in pointGroups)
+        {
+            activeGroupIds.Add(pointGroup.Id);
+            ApplyOverlayPointGroup(displayedFrameBounds, pointGroup, frameWidth, frameHeight);
+        }
+
+        foreach (var entry in _pointGroupVisuals)
+        {
+            if (!activeGroupIds.Contains(entry.Key))
+            {
+                HidePointGroupVisual(entry.Value);
+            }
+        }
+    }
+
+    private void ApplyOverlayPointGroup(
+        WpfRect displayedFrameBounds,
+        CaptureTestOverlayPointGroup pointGroup,
+        int frameWidth,
+        int frameHeight)
+    {
+        if (pointGroup.Points.Count == 0)
+        {
+            return;
+        }
+
+        var pointGroupVisual = EnsurePointGroupVisual(pointGroup.Id, pointGroup.LabelKey);
+        var geometry = new GeometryGroup();
+
+        foreach (var point in pointGroup.Points)
+        {
+            AppendCrosshairGeometry(geometry, MapFramePoint(displayedFrameBounds, point, frameWidth, frameHeight));
+        }
+
+        pointGroupVisual.Path.Stroke = new SolidColorBrush(GetPointGroupColor(pointGroup.Id));
+        pointGroupVisual.Path.Data = geometry;
+        pointGroupVisual.Path.Visibility = Visibility.Visible;
+
+        pointGroupVisual.LabelKey = pointGroup.LabelKey;
+        pointGroupVisual.LabelTextBlock.Text = _localizationService.T(pointGroup.LabelKey);
+        pointGroupVisual.LabelBorder.Visibility = Visibility.Visible;
+        pointGroupVisual.LabelBorder.Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
+
+        var labelAnchor = MapFramePoint(displayedFrameBounds, pointGroup.Points[0], frameWidth, frameHeight);
+        var labelLocation = CalculatePointGroupLabelLocation(
+            displayedFrameBounds,
+            labelAnchor,
+            pointGroupVisual.LabelBorder.DesiredSize.Width,
+            pointGroupVisual.LabelBorder.DesiredSize.Height);
+
+        Canvas.SetLeft(pointGroupVisual.LabelBorder, labelLocation.X);
+        Canvas.SetTop(pointGroupVisual.LabelBorder, labelLocation.Y);
+    }
+
+    private PointGroupOverlayVisual EnsurePointGroupVisual(string groupId, string labelKey)
+    {
+        if (_pointGroupVisuals.TryGetValue(groupId, out var pointGroupVisual))
+        {
+            pointGroupVisual.LabelKey = labelKey;
+            return pointGroupVisual;
+        }
+
+        var path = new Path
+        {
+            StrokeThickness = 2,
+            StrokeLineJoin = PenLineJoin.Round,
+            StrokeStartLineCap = PenLineCap.Round,
+            StrokeEndLineCap = PenLineCap.Round,
+            Visibility = Visibility.Collapsed,
+            IsHitTestVisible = false
+        };
+
+        var labelTextBlock = new TextBlock
+        {
+            Foreground = Brushes.White,
+            FontSize = 12,
+            FontWeight = FontWeights.SemiBold,
+            Text = _localizationService.T(labelKey)
+        };
+
+        var labelBorder = new Border
+        {
+            Padding = new Thickness(6, 2, 6, 2),
+            Background = new SolidColorBrush(Color.FromArgb(204, 26, 32, 44)),
+            CornerRadius = new CornerRadius(4),
+            Visibility = Visibility.Collapsed,
+            IsHitTestVisible = false,
+            Child = labelTextBlock
+        };
+
+        CaptureOverlayCanvas.Children.Add(path);
+        CaptureOverlayCanvas.Children.Add(labelBorder);
+
+        pointGroupVisual = new PointGroupOverlayVisual
+        {
+            Path = path,
+            LabelBorder = labelBorder,
+            LabelTextBlock = labelTextBlock,
+            LabelKey = labelKey
+        };
+
+        _pointGroupVisuals[groupId] = pointGroupVisual;
+        return pointGroupVisual;
+    }
+
+    private static void AppendCrosshairGeometry(GeometryGroup geometryGroup, WpfPoint center)
+    {
+        var diagonalOffsetInner = OverlayCrosshairGap / Math.Sqrt(2d);
+        var diagonalOffsetOuter = (OverlayCrosshairGap + OverlayCrosshairLength) / Math.Sqrt(2d);
+
+        geometryGroup.Children.Add(new LineGeometry(
+            new WpfPoint(center.X - diagonalOffsetOuter, center.Y - diagonalOffsetOuter),
+            new WpfPoint(center.X - diagonalOffsetInner, center.Y - diagonalOffsetInner)));
+        geometryGroup.Children.Add(new LineGeometry(
+            new WpfPoint(center.X + diagonalOffsetInner, center.Y + diagonalOffsetInner),
+            new WpfPoint(center.X + diagonalOffsetOuter, center.Y + diagonalOffsetOuter)));
+        geometryGroup.Children.Add(new LineGeometry(
+            new WpfPoint(center.X - diagonalOffsetOuter, center.Y + diagonalOffsetOuter),
+            new WpfPoint(center.X - diagonalOffsetInner, center.Y + diagonalOffsetInner)));
+        geometryGroup.Children.Add(new LineGeometry(
+            new WpfPoint(center.X + diagonalOffsetInner, center.Y - diagonalOffsetInner),
+            new WpfPoint(center.X + diagonalOffsetOuter, center.Y - diagonalOffsetOuter)));
+    }
+
+    private static WpfPoint MapFramePoint(WpfRect displayedFrameBounds, OpenCvSharp.Point point, int frameWidth, int frameHeight)
+    {
+        var scaleX = displayedFrameBounds.Width / frameWidth;
+        var scaleY = displayedFrameBounds.Height / frameHeight;
+
+        return new WpfPoint(
+            displayedFrameBounds.X + point.X * scaleX,
+            displayedFrameBounds.Y + point.Y * scaleY);
+    }
+
+    private static WpfPoint CalculatePointGroupLabelLocation(WpfRect displayedFrameBounds, WpfPoint anchor, double labelWidth, double labelHeight)
+    {
+        var x = anchor.X + 12d;
+        if (x + labelWidth > displayedFrameBounds.Right)
+        {
+            x = anchor.X - labelWidth - 12d;
+        }
+
+        var y = anchor.Y - labelHeight - 10d;
+        if (y < displayedFrameBounds.Top)
+        {
+            y = anchor.Y + 10d;
+        }
+
+        x = Math.Clamp(x, displayedFrameBounds.Left, Math.Max(displayedFrameBounds.Left, displayedFrameBounds.Right - labelWidth));
+        y = Math.Clamp(y, displayedFrameBounds.Top, Math.Max(displayedFrameBounds.Top, displayedFrameBounds.Bottom - labelHeight));
+        return new WpfPoint(x, y);
+    }
+
+    private static Color GetPointGroupColor(string groupId)
+    {
+        return groupId switch
+        {
+            "InLevel" => Color.FromRgb(125, 211, 252),
+            "RightUpgradeVisible" => Color.FromRgb(251, 191, 36),
+            "RightTopUpgrade" => Color.FromRgb(245, 158, 11),
+            "RightMiddleUpgrade" => Color.FromRgb(249, 115, 22),
+            "RightBottomUpgrade" => Color.FromRgb(234, 88, 12),
+            "LeftUpgradeVisible" => Color.FromRgb(52, 211, 153),
+            "LeftTopUpgrade" => Color.FromRgb(34, 197, 94),
+            "LeftMiddleUpgrade" => Color.FromRgb(16, 185, 129),
+            "LeftBottomUpgrade" => Color.FromRgb(5, 150, 105),
+            "IsPlacingMonkey" => Color.FromRgb(244, 114, 182),
+            "CanPlaceHero" => Color.FromRgb(250, 204, 21),
+            _ => Colors.White
+        };
+    }
+
+    private static void HidePointGroupVisual(PointGroupOverlayVisual pointGroupVisual)
+    {
+        pointGroupVisual.Path.Visibility = Visibility.Collapsed;
+        pointGroupVisual.LabelBorder.Visibility = Visibility.Collapsed;
+    }
+
     private void HideOverlayRegions()
     {
         GoldRegionRectangle.Visibility = Visibility.Collapsed;
         GoldRegionLabelBorder.Visibility = Visibility.Collapsed;
         RoundRegionRectangle.Visibility = Visibility.Collapsed;
         RoundRegionLabelBorder.Visibility = Visibility.Collapsed;
+
+        foreach (var pointGroupVisual in _pointGroupVisuals.Values)
+        {
+            HidePointGroupVisual(pointGroupVisual);
+        }
     }
 
     private void OnLanguageChanged(object? sender, EventArgs e)
