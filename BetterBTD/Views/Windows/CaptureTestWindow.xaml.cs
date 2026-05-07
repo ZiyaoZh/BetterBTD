@@ -277,7 +277,6 @@ public partial class CaptureTestWindow : UiFluentWindow
             _lastStageStateSnapshot,
             AverageMilliseconds(_ocrElapsedMilliseconds));
 
-        OcrStatsTextBlock.Text = displayModel.SummaryText;
         StageStateDetailsTextBlock.Text = displayModel.DetailsText;
     }
 

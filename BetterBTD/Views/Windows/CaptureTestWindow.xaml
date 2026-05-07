@@ -96,10 +96,6 @@
                           Margin="0,4,0,0"
                           Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
                           TextWrapping="Wrap" />
-            <ui:TextBlock x:Name="OcrStatsTextBlock"
-                          Margin="0,6,0,0"
-                          Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                          TextWrapping="Wrap" />
             <ui:TextBlock x:Name="StageStateDetailsTextBlock"
                           Margin="0,6,0,0"
                           Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
