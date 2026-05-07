@@ -1,5 +1,6 @@
 using System.IO;
 using System.Globalization;
+using System.Diagnostics;
 using System.Text;
 using BetterBTD.Core.ScriptExecution.Runtime;
 using BetterBTD.Models.ScriptExecution;
@@ -16,6 +17,8 @@ public sealed class GameTargetOcrService : IGameTargetOcrService
     private static readonly OpenCvRect RoundReferenceRect = new(1370, 25, 195, 70);
     private static readonly double[] GoldThresholds = [0.90d, 0.84d, 0.78d];
     private static readonly double[] RoundThresholds = [0.90d, 0.84d, 0.78d];
+    private const double GoldOneScoreDelta = 0.04d;
+    private const int GoldOneTopTolerance = 2;
     private static readonly OpenCvSize Reference1080p = new(1920, 1080);
     private static readonly OpenCvSize Reference720p = new(1280, 720);
 
@@ -24,6 +27,8 @@ public sealed class GameTargetOcrService : IGameTargetOcrService
     private readonly TemplateMatchService _templateMatchService;
 
     private DigitTemplateRepository? _repository;
+    private string? _repositoryUnavailableReason;
+    private string _lastLoggedDiagnostics = string.Empty;
 
     private GameTargetOcrService()
     {
@@ -38,7 +43,7 @@ public sealed class GameTargetOcrService : IGameTargetOcrService
     public Task<ScriptGameTargetSnapshot?> CaptureSnapshotAsync(CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        return Task.FromResult(TryCaptureSnapshot(out var snapshot) ? snapshot : null);
+        return Task.FromResult(TryCaptureSnapshot(out var snapshot, out _) ? snapshot : null);
     }
 
     public (OpenCvRect GoldRegion, OpenCvRect RoundRegion) GetCaptureRegions(int frameWidth, int frameHeight)
@@ -60,17 +65,7 @@ public sealed class GameTargetOcrService : IGameTargetOcrService
 
     public bool TryCaptureSnapshot(out ScriptGameTargetSnapshot snapshot)
     {
-        snapshot = new ScriptGameTargetSnapshot();
-
-        if (!_gameCaptureService.TryCaptureFrame(out var frame))
-        {
-            return false;
-        }
-
-        using (frame)
-        {
-            return TryCaptureSnapshot(frame, out snapshot);
-        }
+        return TryCaptureSnapshot(out snapshot, out _);
     }
 
     public bool TryCaptureSnapshot(out ScriptGameTargetSnapshot snapshot, out string diagnostics)
@@ -80,6 +75,7 @@ public sealed class GameTargetOcrService : IGameTargetOcrService
 
         if (!_gameCaptureService.TryCaptureFrame(out var frame))
         {
+            TraceOcrDiagnosticsIfNeeded(diagnostics);
             return false;
         }
 
@@ -96,10 +92,11 @@ public sealed class GameTargetOcrService : IGameTargetOcrService
         if (frame.Empty())
         {
             snapshot = new ScriptGameTargetSnapshot();
+            TraceOcrDiagnosticsIfNeeded("Source frame is empty.");
             return false;
         }
 
-        return TryCaptureSnapshotCore(frame, out snapshot);
+        return TryCaptureSnapshotCore(frame, out snapshot, out _);
     }
 
     public bool TryCaptureSnapshot(Mat frame, out ScriptGameTargetSnapshot snapshot, out string diagnostics)
@@ -110,6 +107,7 @@ public sealed class GameTargetOcrService : IGameTargetOcrService
         {
             snapshot = new ScriptGameTargetSnapshot();
             diagnostics = "Source frame is empty.";
+            TraceOcrDiagnosticsIfNeeded(diagnostics);
             return false;
         }
 
@@ -148,17 +146,7 @@ public sealed class GameTargetOcrService : IGameTargetOcrService
 
     private bool TryCaptureSnapshotCore(Mat frame, out ScriptGameTargetSnapshot snapshot)
     {
-        var hasGold = TryReadGold(frame, out var gold);
-        var hasRound = TryReadRound(frame, out var round);
-
-        snapshot = new ScriptGameTargetSnapshot
-        {
-            Gold = hasGold ? gold : null,
-            Round = hasRound ? round : null,
-            StageTarget = string.Empty
-        };
-
-        return hasGold || hasRound;
+        return TryCaptureSnapshotCore(frame, out snapshot, out _);
     }
 
     private bool TryCaptureSnapshotCore(Mat frame, out ScriptGameTargetSnapshot snapshot, out string diagnostics)
@@ -180,7 +168,14 @@ public sealed class GameTargetOcrService : IGameTargetOcrService
         };
 
         diagnostics = builder.ToString().TrimEnd();
-        return hasGold || hasRound;
+        var succeeded = hasGold || hasRound;
+        if (!succeeded)
+        {
+            TraceOcrDiagnosticsIfNeeded(diagnostics);
+        }
+        TraceOcrDiagnosticsIfNeeded(diagnostics);
+
+        return succeeded;
     }
 
     private bool TryReadGold(Mat frame, out int gold)
@@ -211,7 +206,7 @@ public sealed class GameTargetOcrService : IGameTargetOcrService
 
         if (!TryEnsureRepository(out var repository))
         {
-            diagnostics = $"Gold: repository unavailable | AssetRoot={BuildAssetRootPath()}";
+            diagnostics = BuildRepositoryUnavailableDiagnostics("Gold");
             return false;
         }
 
@@ -227,11 +222,11 @@ public sealed class GameTargetOcrService : IGameTargetOcrService
 
         if (!int.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out gold))
         {
-            diagnostics = $"Gold: parse failed | Region={FormatRect(captureRect)} | Templates={templateSelection} | Text='{text}'";
+            diagnostics = $"Gold: parse failed | Region={FormatRect(captureRect)} | Templates={templateSelection} | Text='{text}' | {recognitionDiagnostics}";
             return false;
         }
 
-        diagnostics = $"Gold: success | Value={gold} | Region={FormatRect(captureRect)} | Templates={templateSelection} | Text='{text}'";
+        diagnostics = $"Gold: success | Value={gold} | Region={FormatRect(captureRect)} | Templates={templateSelection} | Text='{text}' | {recognitionDiagnostics}";
         return true;
     }
 
@@ -264,7 +259,7 @@ public sealed class GameTargetOcrService : IGameTargetOcrService
 
         if (!TryEnsureRepository(out var repository))
         {
-            diagnostics = $"Round: repository unavailable | AssetRoot={BuildAssetRootPath()}";
+            diagnostics = BuildRepositoryUnavailableDiagnostics("Round");
             return false;
         }
 
@@ -281,11 +276,11 @@ public sealed class GameTargetOcrService : IGameTargetOcrService
 
         if (!int.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out round))
         {
-            diagnostics = $"Round: parse failed | Region={FormatRect(captureRect)} | Templates={templateSelection} | Text='{text}'";
+            diagnostics = $"Round: parse failed | Region={FormatRect(captureRect)} | Templates={templateSelection} | Text='{text}' | {recognitionDiagnostics}";
             return false;
         }
 
-        diagnostics = $"Round: success | Value={round} | Region={FormatRect(captureRect)} | Templates={templateSelection} | Text='{text}'";
+        diagnostics = $"Round: success | Value={round} | Region={FormatRect(captureRect)} | Templates={templateSelection} | Text='{text}' | {recognitionDiagnostics}";
         return true;
     }
 
@@ -299,7 +294,7 @@ public sealed class GameTargetOcrService : IGameTargetOcrService
 
         foreach (var threshold in thresholds)
         {
-            var candidates = CollectCandidates(captureRegion, templates, threshold);
+            var candidates = FilterGoldCandidates(CollectCandidates(captureRegion, templates, threshold), threshold);
             if (candidates.Count == 0)
             {
                 continue;
@@ -327,9 +322,11 @@ public sealed class GameTargetOcrService : IGameTargetOcrService
 
         foreach (var threshold in thresholds)
         {
-            var candidates = CollectCandidates(captureRegion, templates, threshold);
+            var rawCandidates = CollectCandidates(captureRegion, templates, threshold);
+            var candidates = FilterGoldCandidates(rawCandidates, threshold);
             var candidateText = candidates.Count == 0 ? string.Empty : BuildDigitText(candidates);
-            attempts.Add($"threshold={threshold:F2}, candidates={candidates.Count}, text='{candidateText}'");
+            attempts.Add(
+                $"threshold={threshold:F2}, rawCandidates={rawCandidates.Count}, filteredCandidates={candidates.Count}, text='{candidateText}', raw=[{FormatCandidates(rawCandidates)}], filtered=[{FormatCandidates(candidates)}]");
 
             if (!string.IsNullOrEmpty(candidateText))
             {
@@ -359,8 +356,8 @@ public sealed class GameTargetOcrService : IGameTargetOcrService
                 continue;
             }
 
-            double? slashCenterX = TryFindSlashCenterX(captureRegion, slashTemplate, threshold, out var detectedSlashCenterX)
-                ? detectedSlashCenterX
+            double? slashCenterX = TryFindSlashCandidate(captureRegion, slashTemplate, threshold, out var detectedSlashCandidate)
+                ? detectedSlashCandidate!.CenterX
                 : null;
 
             var filteredCandidates = FilterRoundCandidates(digitCandidates, slashCenterX);
@@ -389,16 +386,16 @@ public sealed class GameTargetOcrService : IGameTargetOcrService
             var digitCandidates = CollectCandidates(captureRegion, digitTemplates, threshold);
             if (digitCandidates.Count == 0)
             {
-                attempts.Add($"threshold={threshold:F2}, digitCandidates=0");
+                attempts.Add($"threshold={threshold:F2}, digitCandidates=0, matches=[]");
                 continue;
             }
 
-            var hasSlash = TryFindSlashCenterX(captureRegion, slashTemplate, threshold, out var detectedSlashCenterX);
-            double? slashCenterX = hasSlash ? detectedSlashCenterX : null;
+            var hasSlash = TryFindSlashCandidate(captureRegion, slashTemplate, threshold, out var detectedSlashCandidate);
+            double? slashCenterX = hasSlash ? detectedSlashCandidate!.CenterX : null;
             var filteredCandidates = FilterRoundCandidates(digitCandidates, slashCenterX);
             var candidateText = BuildDigitText(filteredCandidates);
             attempts.Add(
-                $"threshold={threshold:F2}, digitCandidates={digitCandidates.Count}, filteredCandidates={filteredCandidates.Count}, slash={(hasSlash ? detectedSlashCenterX.ToString("F2", CultureInfo.InvariantCulture) : "none")}, text='{candidateText}'");
+                $"threshold={threshold:F2}, digitCandidates={digitCandidates.Count}, filteredCandidates={filteredCandidates.Count}, slash={(hasSlash ? FormatCandidate(detectedSlashCandidate!) : "none")}, text='{candidateText}', raw=[{FormatCandidates(digitCandidates)}], filtered=[{FormatCandidates(filteredCandidates)}]");
 
             if (!string.IsNullOrEmpty(candidateText))
             {
@@ -445,9 +442,9 @@ public sealed class GameTargetOcrService : IGameTargetOcrService
         return SuppressCandidates(candidates);
     }
 
-    private bool TryFindSlashCenterX(Mat captureRegion, PreparedTemplate slashTemplate, double threshold, out double centerX)
+    private bool TryFindSlashCandidate(Mat captureRegion, PreparedTemplate slashTemplate, double threshold, out OcrCandidate? bestMatch)
     {
-        centerX = 0d;
+        bestMatch = null;
 
         var candidates = CollectCandidates(captureRegion, [slashTemplate], threshold);
         if (candidates.Count == 0)
@@ -455,9 +452,60 @@ public sealed class GameTargetOcrService : IGameTargetOcrService
             return false;
         }
 
-        var bestMatch = candidates.OrderByDescending(x => x.Score).First();
-        centerX = bestMatch.CenterX;
+        bestMatch = candidates.OrderByDescending(x => x.Score).First();
         return true;
+    }
+
+    private static string FormatCandidates(IReadOnlyList<OcrCandidate> candidates)
+    {
+        if (candidates.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        return string.Join(", ", OrderCandidates(candidates).Select(FormatCandidate));
+    }
+
+    private static string FormatCandidate(OcrCandidate candidate)
+    {
+        return string.Create(
+            CultureInfo.InvariantCulture,
+            $"{candidate.Symbol}@{FormatRect(candidate.Bounds)}:{candidate.Score:F3}");
+    }
+
+    private static List<OcrCandidate> FilterGoldCandidates(IReadOnlyList<OcrCandidate> candidates, double threshold)
+    {
+        var ordered = OrderCandidates(candidates);
+        if (ordered.Count == 0)
+        {
+            return ordered;
+        }
+
+        var nonOneCandidates = ordered
+            .Where(x => !string.Equals(x.Symbol, "1", StringComparison.Ordinal))
+            .ToList();
+
+        if (nonOneCandidates.Count == 0)
+        {
+            return ordered;
+        }
+
+        var oneScoreThreshold = Math.Max(
+            threshold,
+            nonOneCandidates.Average(x => x.Score) - GoldOneScoreDelta);
+
+        var topYValues = nonOneCandidates
+            .Select(x => x.Bounds.Y)
+            .OrderBy(x => x)
+            .ToArray();
+        var dominantTopY = topYValues[topYValues.Length / 2];
+
+        return ordered
+            .Where(candidate =>
+                !string.Equals(candidate.Symbol, "1", StringComparison.Ordinal) ||
+                (candidate.Score >= oneScoreThreshold &&
+                 Math.Abs(candidate.Bounds.Y - dominantTopY) <= GoldOneTopTolerance))
+            .ToList();
     }
 
     private static List<OcrCandidate> FilterRoundCandidates(IReadOnlyList<OcrCandidate> candidates, double? slashCenterX)
@@ -639,6 +687,34 @@ public sealed class GameTargetOcrService : IGameTargetOcrService
         return Path.Combine(AppContext.BaseDirectory, "Assets", "OcrDigits");
     }
 
+    private string BuildRepositoryUnavailableDiagnostics(string targetName)
+    {
+        var reason = string.IsNullOrWhiteSpace(_repositoryUnavailableReason)
+            ? "Unknown repository initialization failure."
+            : _repositoryUnavailableReason;
+        return $"{targetName}: repository unavailable | AssetRoot={BuildAssetRootPath()} | Reason={reason}";
+    }
+
+    private void TraceOcrDiagnosticsIfNeeded(string diagnostics)
+    {
+        if (string.IsNullOrWhiteSpace(diagnostics))
+        {
+            return;
+        }
+
+        lock (_syncRoot)
+        {
+            if (string.Equals(_lastLoggedDiagnostics, diagnostics, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _lastLoggedDiagnostics = diagnostics;
+        }
+
+        Trace.WriteLine($"[GameTargetOcr]{Environment.NewLine}{diagnostics}");
+    }
+
     private bool TryEnsureRepository(out DigitTemplateRepository repository)
     {
         lock (_syncRoot)
@@ -652,6 +728,7 @@ public sealed class GameTargetOcrService : IGameTargetOcrService
             var assetRootPath = BuildAssetRootPath();
             if (!Directory.Exists(assetRootPath))
             {
+                _repositoryUnavailableReason = $"Directory not found: {assetRootPath}";
                 repository = null!;
                 return false;
             }
@@ -659,11 +736,13 @@ public sealed class GameTargetOcrService : IGameTargetOcrService
             try
             {
                 _repository = new DigitTemplateRepository(assetRootPath);
+                _repositoryUnavailableReason = null;
                 repository = _repository;
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                _repositoryUnavailableReason = ex.ToString();
                 repository = null!;
                 return false;
             }
@@ -947,4 +1026,6 @@ public sealed class GameTargetOcrService : IGameTargetOcrService
             return new OpenCvRect(left, top, right - left, bottom - top);
         }
     }
+
+
 }

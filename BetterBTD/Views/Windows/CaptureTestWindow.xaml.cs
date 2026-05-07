@@ -21,7 +21,8 @@ public partial class CaptureTestWindow : UiFluentWindow
     private readonly GameTargetOcrService _gameTargetOcrService = GameTargetOcrService.Instance;
     private IGameCapture? _capture;
     private Size _cachedFrameSize;
-    private readonly Stopwatch _statsUpdateTimer = new();
+    private readonly Stopwatch _captureStatsUpdateTimer = new();
+    private readonly Stopwatch _ocrStatsUpdateTimer = new();
     private long _captureElapsedMilliseconds;
     private long _transferElapsedMilliseconds;
     private long _ocrElapsedMilliseconds;
@@ -57,7 +58,8 @@ public partial class CaptureTestWindow : UiFluentWindow
 
         _windowDisplayName = windowDisplayName;
         _captureModeName = options.CaptureModeName;
-        _statsUpdateTimer.Restart();
+        _captureStatsUpdateTimer.Restart();
+        _ocrStatsUpdateTimer.Restart();
         ApplyLocalization();
 
         _capture = GameCaptureFactory.Create(ParseCaptureMode(options.CaptureModeName));
@@ -184,7 +186,7 @@ public partial class CaptureTestWindow : UiFluentWindow
             else
             {
                 _lastOcrFailed = true;
-                _lastOcrError = _localizationService.T("CaptureTest.OcrFailedRecent");
+                _lastOcrError = diagnostics;
                 _lastGold = null;
                 _lastRound = null;
                 LogOcrDiagnosticsIfNeeded(diagnostics);
@@ -214,7 +216,7 @@ public partial class CaptureTestWindow : UiFluentWindow
         }
 
         _lastLoggedOcrDiagnostics = diagnostics;
-        Debug.WriteLine($"[CaptureTest][OCR]{Environment.NewLine}{diagnostics}");
+        Trace.WriteLine($"[CaptureTest][OCR]{Environment.NewLine}{diagnostics}");
     }
 
     private void ApplyLocalization()
@@ -241,12 +243,12 @@ public partial class CaptureTestWindow : UiFluentWindow
 
     private void UpdateStatsText(bool failed, int width = 0, int height = 0, bool force = false)
     {
-        if (!force && _statsUpdateTimer.IsRunning && _statsUpdateTimer.ElapsedMilliseconds < 250)
+        if (!force && _captureStatsUpdateTimer.IsRunning && _captureStatsUpdateTimer.ElapsedMilliseconds < 250)
         {
             return;
         }
 
-        _statsUpdateTimer.Restart();
+        _captureStatsUpdateTimer.Restart();
         var modeLabel = _localizationService.T("CaptureTest.Mode");
         CaptureStatsTextBlock.Text = failed
             ? $"{modeLabel}: {_captureModeName} | {_localizationService.T("CaptureTest.CaptureFailedRecent")}"
@@ -259,11 +261,12 @@ public partial class CaptureTestWindow : UiFluentWindow
 
     private void UpdateOcrStatsText(bool failed, bool force = false)
     {
-        if (!force && _statsUpdateTimer.IsRunning && _statsUpdateTimer.ElapsedMilliseconds < 250)
+        if (!force && _ocrStatsUpdateTimer.IsRunning && _ocrStatsUpdateTimer.ElapsedMilliseconds < 250)
         {
             return;
         }
 
+        _ocrStatsUpdateTimer.Restart();
         var ocrLabel = _localizationService.T("CaptureTest.Ocr");
         if (!_gameTargetOcrService.IsAvailable)
         {
@@ -369,7 +372,8 @@ public partial class CaptureTestWindow : UiFluentWindow
         _capture?.Dispose();
         _capture = null;
         _cachedFrameSize = default;
-        _statsUpdateTimer.Stop();
+        _captureStatsUpdateTimer.Stop();
+        _ocrStatsUpdateTimer.Stop();
         HideOverlayRegions();
     }
 
