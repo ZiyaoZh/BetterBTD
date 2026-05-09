@@ -16,6 +16,8 @@ public sealed class AppConfiguration
 
     public string GameLanguageCode { get; set; } = "zh-CN";
 
+    public string KeyboardMouseSimulationModeName { get; set; } = KeyboardMouseSimulationModeExtensions.StandardConfigurationValue;
+
     public string StartHotkey { get; set; } = "F1";
 
     public string StopHotkey { get; set; } = "F2";

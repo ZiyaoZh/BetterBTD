@@ -39,6 +39,7 @@ public sealed class ConfigurationService
         Current.LanguageCode = configuration.LanguageCode;
         Current.ThemeMode = configuration.ThemeMode;
         Current.GameLanguageCode = configuration.GameLanguageCode;
+        Current.KeyboardMouseSimulationModeName = KeyboardMouseSimulationModeExtensions.Parse(configuration.KeyboardMouseSimulationModeName).ToConfigurationValue();
         Current.StartHotkey = configuration.StartHotkey;
         Current.StopHotkey = configuration.StopHotkey;
         Current.GameStartHotkey = configuration.GameStartHotkey;
@@ -65,6 +66,8 @@ public sealed class ConfigurationService
             config.CaptureModeName = string.IsNullOrWhiteSpace(config.CaptureModeName)
                 ? "BitBlt"
                 : config.CaptureModeName;
+            config.KeyboardMouseSimulationModeName =
+                KeyboardMouseSimulationModeExtensions.Parse(config.KeyboardMouseSimulationModeName).ToConfigurationValue();
             return config;
         }
         catch (Exception ex) when (ex is IOException or JsonException)

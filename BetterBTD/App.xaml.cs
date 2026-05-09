@@ -30,6 +30,7 @@ namespace BetterBTD
         {
             GameCaptureService.Instance.Shutdown();
             MaskWindowService.Instance.Shutdown();
+            HardwareInputSimulationService.Instance.Shutdown();
             base.OnExit(e);
         }
     }

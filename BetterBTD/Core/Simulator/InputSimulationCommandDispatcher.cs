@@ -1,4 +1,6 @@
 using BetterBTD.Core.Config;
+using BetterBTD.Models;
+using BetterBTD.Services;
 using Fischless.WindowsInput;
 using Vanara.PInvoke;
 using InputMouseButton = Fischless.WindowsInput.MouseButton;
@@ -12,37 +14,61 @@ internal interface IInputSimulationCommandDispatcher
 
 internal sealed class InputSimulationCommandDispatcher : IInputSimulationCommandDispatcher
 {
+    private readonly HardwareInputSimulationService _hardwareInputSimulationService;
+
+    public InputSimulationCommandDispatcher()
+        : this(HardwareInputSimulationService.Instance)
+    {
+    }
+
+    internal InputSimulationCommandDispatcher(HardwareInputSimulationService hardwareInputSimulationService)
+    {
+        _hardwareInputSimulationService = hardwareInputSimulationService ?? throw new ArgumentNullException(nameof(hardwareInputSimulationService));
+    }
+
     public void Dispatch(IEnumerable<InputSimulationCommand> commands)
     {
         ArgumentNullException.ThrowIfNull(commands);
 
+        var effectiveHardwareMode =
+            KeyboardMouseSimulationModeExtensions.Parse(ConfigurationService.Instance.Current.KeyboardMouseSimulationModeName) == KeyboardMouseSimulationMode.Hardware &&
+            _hardwareInputSimulationService.TryEnsureInitialized();
+
         foreach (var command in commands)
         {
-            DispatchCommand(command);
+            DispatchCommand(command, effectiveHardwareMode);
         }
     }
 
-    private static void DispatchCommand(InputSimulationCommand command)
+    private void DispatchCommand(InputSimulationCommand command, bool hardwareMode)
     {
         switch (command.Type)
         {
             case InputSimulationCommandType.MoveMouseToVirtualDesktop:
-                Simulation.SendInput.Mouse.MoveMouseToPositionOnVirtualDesktop(command.X, command.Y);
+                if (hardwareMode)
+                {
+                    _hardwareInputSimulationService.MoveMouseToVirtualDesktop(command.X, command.Y);
+                }
+                else
+                {
+                    Simulation.SendInput.Mouse.MoveMouseToPositionOnVirtualDesktop(command.X, command.Y);
+                }
+
                 break;
             case InputSimulationCommandType.MouseButtonDown:
-                MouseButtonDown(command.MouseButton);
+                MouseButtonDown(command.MouseButton, hardwareMode);
                 break;
             case InputSimulationCommandType.MouseButtonUp:
-                MouseButtonUp(command.MouseButton);
+                MouseButtonUp(command.MouseButton, hardwareMode);
                 break;
             case InputSimulationCommandType.KeyPress:
-                KeyPress(command.Key);
+                KeyPress(command.Key, hardwareMode);
                 break;
             case InputSimulationCommandType.KeyDown:
-                KeyDown(command.Key);
+                KeyDown(command.Key, hardwareMode);
                 break;
             case InputSimulationCommandType.KeyUp:
-                KeyUp(command.Key);
+                KeyUp(command.Key, hardwareMode);
                 break;
             case InputSimulationCommandType.Delay:
                 Thread.Sleep(Math.Max(0, command.Milliseconds));
@@ -52,8 +78,14 @@ internal sealed class InputSimulationCommandDispatcher : IInputSimulationCommand
         }
     }
 
-    private static void MouseButtonDown(InputMouseButton button)
+    private void MouseButtonDown(InputMouseButton button, bool hardwareMode)
     {
+        if (hardwareMode)
+        {
+            _hardwareInputSimulationService.MouseButtonDown(button);
+            return;
+        }
+
         switch (button)
         {
             case InputMouseButton.LeftButton:
@@ -70,8 +102,14 @@ internal sealed class InputSimulationCommandDispatcher : IInputSimulationCommand
         }
     }
 
-    private static void MouseButtonUp(InputMouseButton button)
+    private void MouseButtonUp(InputMouseButton button, bool hardwareMode)
     {
+        if (hardwareMode)
+        {
+            _hardwareInputSimulationService.MouseButtonUp(button);
+            return;
+        }
+
         switch (button)
         {
             case InputMouseButton.LeftButton:
@@ -88,7 +126,7 @@ internal sealed class InputSimulationCommandDispatcher : IInputSimulationCommand
         }
     }
 
-    private static void KeyPress(KeyId key)
+    private void KeyPress(KeyId key, bool hardwareMode)
     {
         switch (key)
         {
@@ -96,36 +134,88 @@ internal sealed class InputSimulationCommandDispatcher : IInputSimulationCommand
             case KeyId.Unknown:
                 break;
             case KeyId.MouseLeftButton:
-                Simulation.SendInput.Mouse.LeftButtonClick();
-                break;
-            case KeyId.MouseRightButton:
-                Simulation.SendInput.Mouse.RightButtonClick();
-                break;
-            case KeyId.MouseMiddleButton:
-                Simulation.SendInput.Mouse.MiddleButtonClick();
-                break;
-            case KeyId.MouseSideButton1:
-                Simulation.SendInput.Mouse.XButtonClick(0x0001);
-                break;
-            case KeyId.MouseSideButton2:
-                Simulation.SendInput.Mouse.XButtonClick(0x0002);
-                break;
-            default:
-                var vk = key.ToVK();
-                if (InputBuilder.IsExtendedKey(vk))
+                if (hardwareMode)
                 {
-                    Simulation.SendInput.Keyboard.KeyPress(false, vk);
+                    _hardwareInputSimulationService.MouseButtonDown(InputMouseButton.LeftButton);
+                    _hardwareInputSimulationService.MouseButtonUp(InputMouseButton.LeftButton);
                 }
                 else
                 {
-                    Simulation.SendInput.Keyboard.KeyPress(vk);
+                    Simulation.SendInput.Mouse.LeftButtonClick();
+                }
+
+                break;
+            case KeyId.MouseRightButton:
+                if (hardwareMode)
+                {
+                    _hardwareInputSimulationService.MouseButtonDown(InputMouseButton.RightButton);
+                    _hardwareInputSimulationService.MouseButtonUp(InputMouseButton.RightButton);
+                }
+                else
+                {
+                    Simulation.SendInput.Mouse.RightButtonClick();
+                }
+
+                break;
+            case KeyId.MouseMiddleButton:
+                if (hardwareMode)
+                {
+                    _hardwareInputSimulationService.MouseButtonDown(InputMouseButton.MiddleButton);
+                    _hardwareInputSimulationService.MouseButtonUp(InputMouseButton.MiddleButton);
+                }
+                else
+                {
+                    Simulation.SendInput.Mouse.MiddleButtonClick();
+                }
+
+                break;
+            case KeyId.MouseSideButton1:
+                if (hardwareMode)
+                {
+                    _hardwareInputSimulationService.MouseXButtonDown(0x0001);
+                    _hardwareInputSimulationService.MouseXButtonUp(0x0001);
+                }
+                else
+                {
+                    Simulation.SendInput.Mouse.XButtonClick(0x0001);
+                }
+
+                break;
+            case KeyId.MouseSideButton2:
+                if (hardwareMode)
+                {
+                    _hardwareInputSimulationService.MouseXButtonDown(0x0002);
+                    _hardwareInputSimulationService.MouseXButtonUp(0x0002);
+                }
+                else
+                {
+                    Simulation.SendInput.Mouse.XButtonClick(0x0002);
+                }
+
+                break;
+            default:
+                if (hardwareMode)
+                {
+                    _hardwareInputSimulationService.KeyPress(key);
+                }
+                else
+                {
+                    var vk = key.ToVK();
+                    if (InputBuilder.IsExtendedKey(vk))
+                    {
+                        Simulation.SendInput.Keyboard.KeyPress(false, vk);
+                    }
+                    else
+                    {
+                        Simulation.SendInput.Keyboard.KeyPress(vk);
+                    }
                 }
 
                 break;
         }
     }
 
-    private static void KeyDown(KeyId key)
+    private void KeyDown(KeyId key, bool hardwareMode)
     {
         switch (key)
         {
@@ -133,36 +223,83 @@ internal sealed class InputSimulationCommandDispatcher : IInputSimulationCommand
             case KeyId.Unknown:
                 break;
             case KeyId.MouseLeftButton:
-                Simulation.SendInput.Mouse.LeftButtonDown();
-                break;
-            case KeyId.MouseRightButton:
-                Simulation.SendInput.Mouse.RightButtonDown();
-                break;
-            case KeyId.MouseMiddleButton:
-                Simulation.SendInput.Mouse.MiddleButtonDown();
-                break;
-            case KeyId.MouseSideButton1:
-                Simulation.SendInput.Mouse.XButtonDown(0x0001);
-                break;
-            case KeyId.MouseSideButton2:
-                Simulation.SendInput.Mouse.XButtonDown(0x0002);
-                break;
-            default:
-                var vk = key.ToVK();
-                if (InputBuilder.IsExtendedKey(vk))
+                if (hardwareMode)
                 {
-                    Simulation.SendInput.Keyboard.KeyDown(false, vk);
+                    _hardwareInputSimulationService.MouseButtonDown(InputMouseButton.LeftButton);
                 }
                 else
                 {
-                    Simulation.SendInput.Keyboard.KeyDown(vk);
+                    Simulation.SendInput.Mouse.LeftButtonDown();
+                }
+
+                break;
+            case KeyId.MouseRightButton:
+                if (hardwareMode)
+                {
+                    _hardwareInputSimulationService.MouseButtonDown(InputMouseButton.RightButton);
+                }
+                else
+                {
+                    Simulation.SendInput.Mouse.RightButtonDown();
+                }
+
+                break;
+            case KeyId.MouseMiddleButton:
+                if (hardwareMode)
+                {
+                    _hardwareInputSimulationService.MouseButtonDown(InputMouseButton.MiddleButton);
+                }
+                else
+                {
+                    Simulation.SendInput.Mouse.MiddleButtonDown();
+                }
+
+                break;
+            case KeyId.MouseSideButton1:
+                if (hardwareMode)
+                {
+                    _hardwareInputSimulationService.MouseXButtonDown(0x0001);
+                }
+                else
+                {
+                    Simulation.SendInput.Mouse.XButtonDown(0x0001);
+                }
+
+                break;
+            case KeyId.MouseSideButton2:
+                if (hardwareMode)
+                {
+                    _hardwareInputSimulationService.MouseXButtonDown(0x0002);
+                }
+                else
+                {
+                    Simulation.SendInput.Mouse.XButtonDown(0x0002);
+                }
+
+                break;
+            default:
+                if (hardwareMode)
+                {
+                    _hardwareInputSimulationService.KeyDown(key);
+                }
+                else
+                {
+                    var vk = key.ToVK();
+                    if (InputBuilder.IsExtendedKey(vk))
+                    {
+                        Simulation.SendInput.Keyboard.KeyDown(false, vk);
+                    }
+                    else
+                    {
+                        Simulation.SendInput.Keyboard.KeyDown(vk);
+                    }
                 }
 
                 break;
         }
     }
 
-    private static void KeyUp(KeyId key)
+    private void KeyUp(KeyId key, bool hardwareMode)
     {
         switch (key)
         {
@@ -170,29 +307,76 @@ internal sealed class InputSimulationCommandDispatcher : IInputSimulationCommand
             case KeyId.Unknown:
                 break;
             case KeyId.MouseLeftButton:
-                Simulation.SendInput.Mouse.LeftButtonUp();
-                break;
-            case KeyId.MouseRightButton:
-                Simulation.SendInput.Mouse.RightButtonUp();
-                break;
-            case KeyId.MouseMiddleButton:
-                Simulation.SendInput.Mouse.MiddleButtonUp();
-                break;
-            case KeyId.MouseSideButton1:
-                Simulation.SendInput.Mouse.XButtonUp(0x0001);
-                break;
-            case KeyId.MouseSideButton2:
-                Simulation.SendInput.Mouse.XButtonUp(0x0002);
-                break;
-            default:
-                var vk = key.ToVK();
-                if (InputBuilder.IsExtendedKey(vk))
+                if (hardwareMode)
                 {
-                    Simulation.SendInput.Keyboard.KeyUp(false, vk);
+                    _hardwareInputSimulationService.MouseButtonUp(InputMouseButton.LeftButton);
                 }
                 else
                 {
-                    Simulation.SendInput.Keyboard.KeyUp(vk);
+                    Simulation.SendInput.Mouse.LeftButtonUp();
+                }
+
+                break;
+            case KeyId.MouseRightButton:
+                if (hardwareMode)
+                {
+                    _hardwareInputSimulationService.MouseButtonUp(InputMouseButton.RightButton);
+                }
+                else
+                {
+                    Simulation.SendInput.Mouse.RightButtonUp();
+                }
+
+                break;
+            case KeyId.MouseMiddleButton:
+                if (hardwareMode)
+                {
+                    _hardwareInputSimulationService.MouseButtonUp(InputMouseButton.MiddleButton);
+                }
+                else
+                {
+                    Simulation.SendInput.Mouse.MiddleButtonUp();
+                }
+
+                break;
+            case KeyId.MouseSideButton1:
+                if (hardwareMode)
+                {
+                    _hardwareInputSimulationService.MouseXButtonUp(0x0001);
+                }
+                else
+                {
+                    Simulation.SendInput.Mouse.XButtonUp(0x0001);
+                }
+
+                break;
+            case KeyId.MouseSideButton2:
+                if (hardwareMode)
+                {
+                    _hardwareInputSimulationService.MouseXButtonUp(0x0002);
+                }
+                else
+                {
+                    Simulation.SendInput.Mouse.XButtonUp(0x0002);
+                }
+
+                break;
+            default:
+                if (hardwareMode)
+                {
+                    _hardwareInputSimulationService.KeyUp(key);
+                }
+                else
+                {
+                    var vk = key.ToVK();
+                    if (InputBuilder.IsExtendedKey(vk))
+                    {
+                        Simulation.SendInput.Keyboard.KeyUp(false, vk);
+                    }
+                    else
+                    {
+                        Simulation.SendInput.Keyboard.KeyUp(vk);
+                    }
                 }
 
                 break;

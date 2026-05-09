@@ -96,6 +96,87 @@
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <ui:TextBlock Grid.Row="0"
+                                  Grid.Column="0"
+                                  FontWeight="SemiBold"
+                                  Text="{Binding KeyboardMouseSimulationTitle}"
+                                  TextWrapping="Wrap" />
+                    <ui:TextBlock Grid.Row="1"
+                                  Grid.Column="0"
+                                  Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                  Text="{Binding KeyboardMouseSimulationSubtitle}"
+                                  TextWrapping="Wrap" />
+                </Grid>
+            </ui:CardExpander.Header>
+            <Grid Margin="16">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Row="0"
+                        Grid.Column="0"
+                        Padding="12"
+                        Background="{ui:ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                        BorderBrush="{ui:ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8">
+                    <StackPanel>
+                        <RadioButton GroupName="KeyboardMouseSimulationMode"
+                                     Content="{Binding StandardKeyboardMouseSimulationTitle}"
+                                     FontWeight="SemiBold"
+                                     IsChecked="{Binding IsStandardKeyboardMouseSimulationModeSelected, Mode=TwoWay}" />
+                        <ui:TextBlock Margin="24,6,0,0"
+                                      Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                                      Text="{Binding StandardKeyboardMouseSimulationDescription}"
+                                      TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Row="0"
+                        Grid.Column="2"
+                        Padding="12"
+                        Background="{ui:ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                        BorderBrush="{ui:ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8">
+                    <StackPanel>
+                        <RadioButton GroupName="KeyboardMouseSimulationMode"
+                                     Content="{Binding HardwareKeyboardMouseSimulationTitle}"
+                                     FontWeight="SemiBold"
+                                     IsChecked="{Binding IsHardwareKeyboardMouseSimulationModeSelected, Mode=TwoWay}" />
+                        <ui:TextBlock Margin="24,6,0,0"
+                                      Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                                      Text="{Binding HardwareKeyboardMouseSimulationDescription}"
+                                      TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
+                <ui:TextBlock Grid.Row="1"
+                              Grid.Column="0"
+                              Grid.ColumnSpan="3"
+                              Margin="0,12,0,0"
+                              Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                              Text="{Binding KeyboardMouseSimulationStatusText}"
+                              TextWrapping="Wrap" />
+            </Grid>
+        </ui:CardExpander>
+
+        <ui:CardExpander Margin="0,0,0,12" ContentPadding="0" Icon="{ui:SymbolIcon KeyboardMouse16}">
+            <ui:CardExpander.Header>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <ui:TextBlock Grid.Row="0"

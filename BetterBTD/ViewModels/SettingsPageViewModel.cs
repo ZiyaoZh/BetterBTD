@@ -19,6 +19,7 @@ public sealed class SettingsPageViewModel : ObservableObject
     private LanguageOption? _selectedUiLanguage;
     private LanguageOption? _selectedGameLanguage;
     private ThemeOption? _selectedTheme;
+    private KeyboardMouseSimulationMode _selectedKeyboardMouseSimulationMode;
     private string _startHotkey = string.Empty;
     private string _stopHotkey = string.Empty;
     private string _gameStartHotkey = string.Empty;
@@ -145,6 +146,14 @@ public sealed class SettingsPageViewModel : ObservableObject
     public string GameLanguageTitle => _localizationService.T("Settings.GameLanguage.Title");
     public string GameLanguageSubtitle => _localizationService.T("Settings.GameLanguage.Subtitle");
 
+    public string KeyboardMouseSimulationTitle => _localizationService.T("Settings.InputSimulation.Title");
+    public string KeyboardMouseSimulationSubtitle => _localizationService.T("Settings.InputSimulation.Subtitle");
+    public string StandardKeyboardMouseSimulationTitle => _localizationService.T("Settings.InputSimulation.Standard.Title");
+    public string StandardKeyboardMouseSimulationDescription => _localizationService.T("Settings.InputSimulation.Standard.Description");
+    public string HardwareKeyboardMouseSimulationTitle => _localizationService.T("Settings.InputSimulation.Hardware.Title");
+    public string HardwareKeyboardMouseSimulationDescription => _localizationService.T("Settings.InputSimulation.Hardware.Description");
+    public string KeyboardMouseSimulationStatusText => BuildKeyboardMouseSimulationStatusText();
+
     public string KeyBindingsTitle => _localizationService.T("Settings.KeyBindings.Title");
     public string KeyBindingsSubtitle => _localizationService.T("Settings.KeyBindings.Subtitle");
     public string KeyBindingsBodyText => _localizationService.T("Settings.KeyBindings.Body");
@@ -171,6 +180,30 @@ public sealed class SettingsPageViewModel : ObservableObject
     public string GameHotkeysTitle => _localizationService.T("Settings.HotkeyGroup.Game");
     public string GameStartLabel => _localizationService.T("Settings.GameStart");
     public string GameStopLabel => _localizationService.T("Settings.GameStop");
+
+    public bool IsStandardKeyboardMouseSimulationModeSelected
+    {
+        get => _selectedKeyboardMouseSimulationMode == KeyboardMouseSimulationMode.Standard;
+        set
+        {
+            if (value)
+            {
+                SetKeyboardMouseSimulationMode(KeyboardMouseSimulationMode.Standard);
+            }
+        }
+    }
+
+    public bool IsHardwareKeyboardMouseSimulationModeSelected
+    {
+        get => _selectedKeyboardMouseSimulationMode == KeyboardMouseSimulationMode.Hardware;
+        set
+        {
+            if (value)
+            {
+                SetKeyboardMouseSimulationMode(KeyboardMouseSimulationMode.Hardware);
+            }
+        }
+    }
 
     private void UpdateUiLanguage()
     {
@@ -199,6 +232,7 @@ public sealed class SettingsPageViewModel : ObservableObject
             LanguageCode = SelectedUiLanguage?.Code ?? "zh-CN",
             ThemeMode = SelectedTheme?.Code ?? "Dark",
             GameLanguageCode = SelectedGameLanguage?.Code ?? "zh-CN",
+            KeyboardMouseSimulationModeName = _selectedKeyboardMouseSimulationMode.ToConfigurationValue(),
             StartHotkey = StartHotkey,
             StopHotkey = StopHotkey,
             GameStartHotkey = GameStartHotkey,
@@ -211,6 +245,7 @@ public sealed class SettingsPageViewModel : ObservableObject
         SelectedUiLanguage = UiLanguageOptions.FirstOrDefault(x => x.Code == "zh-CN");
         SelectedGameLanguage = GameLanguageOptions.FirstOrDefault(x => x.Code == "zh-CN");
         SelectedTheme = ThemeOptions.FirstOrDefault(x => x.Code == "Dark");
+        SetKeyboardMouseSimulationMode(KeyboardMouseSimulationMode.Standard);
         StartHotkey = "F1";
         StopHotkey = "F2";
         GameStartHotkey = "F5";
@@ -222,6 +257,7 @@ public sealed class SettingsPageViewModel : ObservableObject
     private void LoadFromConfiguration()
     {
         var config = _configurationService.Current;
+        SetKeyboardMouseSimulationMode(KeyboardMouseSimulationModeExtensions.Parse(config.KeyboardMouseSimulationModeName));
         StartHotkey = config.StartHotkey;
         StopHotkey = config.StopHotkey;
         GameStartHotkey = config.GameStartHotkey;
@@ -270,6 +306,13 @@ public sealed class SettingsPageViewModel : ObservableObject
         OnPropertyChanged(nameof(ThemeSubtitle));
         OnPropertyChanged(nameof(GameLanguageTitle));
         OnPropertyChanged(nameof(GameLanguageSubtitle));
+        OnPropertyChanged(nameof(KeyboardMouseSimulationTitle));
+        OnPropertyChanged(nameof(KeyboardMouseSimulationSubtitle));
+        OnPropertyChanged(nameof(StandardKeyboardMouseSimulationTitle));
+        OnPropertyChanged(nameof(StandardKeyboardMouseSimulationDescription));
+        OnPropertyChanged(nameof(HardwareKeyboardMouseSimulationTitle));
+        OnPropertyChanged(nameof(HardwareKeyboardMouseSimulationDescription));
+        OnPropertyChanged(nameof(KeyboardMouseSimulationStatusText));
         OnPropertyChanged(nameof(KeyBindingsTitle));
         OnPropertyChanged(nameof(KeyBindingsSubtitle));
         OnPropertyChanged(nameof(KeyBindingsBodyText));
@@ -291,5 +334,32 @@ public sealed class SettingsPageViewModel : ObservableObject
         OnPropertyChanged(nameof(GameHotkeysTitle));
         OnPropertyChanged(nameof(GameStartLabel));
         OnPropertyChanged(nameof(GameStopLabel));
+    }
+
+    private void SetKeyboardMouseSimulationMode(KeyboardMouseSimulationMode mode)
+    {
+        if (_selectedKeyboardMouseSimulationMode == mode)
+        {
+            return;
+        }
+
+        _selectedKeyboardMouseSimulationMode = mode;
+        _configurationService.Current.KeyboardMouseSimulationModeName = mode.ToConfigurationValue();
+        OnPropertyChanged(nameof(IsStandardKeyboardMouseSimulationModeSelected));
+        OnPropertyChanged(nameof(IsHardwareKeyboardMouseSimulationModeSelected));
+        OnPropertyChanged(nameof(KeyboardMouseSimulationStatusText));
+    }
+
+    private string BuildKeyboardMouseSimulationStatusText()
+    {
+        var hardwareSimulationService = HardwareInputSimulationService.Instance;
+        return _selectedKeyboardMouseSimulationMode switch
+        {
+            KeyboardMouseSimulationMode.Hardware when hardwareSimulationService.IsDriverInstalled =>
+                _localizationService.T("Settings.InputSimulation.Hardware.Status.Available"),
+            KeyboardMouseSimulationMode.Hardware =>
+                _localizationService.T("Settings.InputSimulation.Hardware.Status.Unavailable"),
+            _ => _localizationService.T("Settings.InputSimulation.Standard.Status")
+        };
     }
 }
