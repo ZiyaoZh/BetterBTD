@@ -172,7 +172,6 @@ public sealed class HardwareInputSimulationService
 
     public void KeyPress(KeyId key)
     {
-        Debug.WriteLine($"Simulating key press for {key}");
         KeyDown(key);
         KeyUp(key);
     }

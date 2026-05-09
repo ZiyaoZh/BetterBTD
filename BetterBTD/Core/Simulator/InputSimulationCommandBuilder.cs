@@ -8,6 +8,9 @@ namespace BetterBTD.Core.Simulator;
 
 internal static class InputSimulationCommandBuilder
 {
+    private const int DefaultKeyPressHoldMilliseconds = 32;
+    private const int DefaultCombinationSettleMilliseconds = 16;
+
     public static IReadOnlyList<InputSimulationCommand> BuildMoveMouseToVirtualDesktop(double x, double y)
     {
         return
@@ -17,6 +20,18 @@ internal static class InputSimulationCommandBuilder
                 Type = InputSimulationCommandType.MoveMouseToVirtualDesktop,
                 X = x,
                 Y = y
+            }
+        ];
+    }
+
+    public static IReadOnlyList<InputSimulationCommand> BuildDelay(int milliseconds)
+    {
+        return
+        [
+            new InputSimulationCommand
+            {
+                Type = InputSimulationCommandType.Delay,
+                Milliseconds = Math.Max(0, milliseconds)
             }
         ];
     }
@@ -75,7 +90,7 @@ internal static class InputSimulationCommandBuilder
             KeyType.KeyDown => BuildSingleKeyCommand(InputSimulationCommandType.KeyDown, key),
             KeyType.KeyUp => BuildSingleKeyCommand(InputSimulationCommandType.KeyUp, key),
             KeyType.Hold => BuildHoldKey(key),
-            _ => BuildSingleKeyCommand(InputSimulationCommandType.KeyPress, key)
+            _ => BuildTapKey(key)
         };
     }
 
@@ -118,19 +133,33 @@ internal static class InputSimulationCommandBuilder
             });
         }
 
+        if (effectiveModifierKeys.Count > 0 && effectiveKeys.Count > 0)
+        {
+            commands.Add(new InputSimulationCommand
+            {
+                Type = InputSimulationCommandType.Delay,
+                Milliseconds = DefaultCombinationSettleMilliseconds
+            });
+        }
+
         try
         {
             foreach (var key in effectiveKeys)
             {
-                commands.Add(new InputSimulationCommand
-                {
-                    Type = InputSimulationCommandType.KeyPress,
-                    Key = key
-                });
+                commands.AddRange(BuildTapKey(key));
             }
         }
         finally
         {
+            if (effectiveModifierKeys.Count > 0 && effectiveKeys.Count > 0)
+            {
+                commands.Add(new InputSimulationCommand
+                {
+                    Type = InputSimulationCommandType.Delay,
+                    Milliseconds = DefaultCombinationSettleMilliseconds
+                });
+            }
+
             for (var index = effectiveModifierKeys.Count - 1; index >= 0; index--)
             {
                 commands.Add(new InputSimulationCommand
@@ -156,8 +185,40 @@ internal static class InputSimulationCommandBuilder
         ];
     }
 
+    private static IReadOnlyList<InputSimulationCommand> BuildTapKey(KeyId key)
+    {
+        if (!IsValidKey(key))
+        {
+            return [];
+        }
+
+        return
+        [
+            new InputSimulationCommand
+            {
+                Type = InputSimulationCommandType.KeyDown,
+                Key = key
+            },
+            new InputSimulationCommand
+            {
+                Type = InputSimulationCommandType.Delay,
+                Milliseconds = DefaultKeyPressHoldMilliseconds
+            },
+            new InputSimulationCommand
+            {
+                Type = InputSimulationCommandType.KeyUp,
+                Key = key
+            }
+        ];
+    }
+
     private static IReadOnlyList<InputSimulationCommand> BuildHoldKey(KeyId key)
     {
+        if (!IsValidKey(key))
+        {
+            return [];
+        }
+
         return
         [
             new InputSimulationCommand

@@ -16,6 +16,8 @@ public sealed class ScriptInputSimulationService
     private static readonly Lazy<ScriptInputSimulationService> InstanceHolder = new(() => new ScriptInputSimulationService());
     private const int DefaultClickHoldMilliseconds = 50;
     private const int DefaultDoubleClickIntervalMilliseconds = 80;
+    private const int DefaultMouseMoveSettleMilliseconds = 24;
+    private const int DefaultTargetWindowActivationSettleMilliseconds = 50;
 
     private readonly IScriptInputSimulationEnvironment _environment;
     private readonly IInputSimulationCommandDispatcher _dispatcher;
@@ -69,7 +71,8 @@ public sealed class ScriptInputSimulationService
 
     public void MoveMouseToScriptCoordinate(Point scriptCoordinate)
     {
-        MoveMouseToScreenCoordinate(ConvertScriptToScreenCoordinate(scriptCoordinate));
+        var windowInfo = GetRequiredTargetWindowInfo();
+        MoveMouseToScreenCoordinateCore(ConvertScriptToScreenCoordinate(scriptCoordinate, windowInfo));
     }
 
     public void MoveMouseToScreenCoordinate(double x, double y)
@@ -79,8 +82,7 @@ public sealed class ScriptInputSimulationService
 
     public void MoveMouseToScreenCoordinate(Point screenCoordinate)
     {
-        var absolutePoint = _environment.ToVirtualDesktopAbsoluteCoordinate(screenCoordinate);
-        _dispatcher.Dispatch(InputSimulationCommandBuilder.BuildMoveMouseToVirtualDesktop(absolutePoint.X, absolutePoint.Y));
+        MoveMouseToScreenCoordinateCore(screenCoordinate);
     }
 
     public void ClickMouseAtScriptCoordinate(
@@ -99,7 +101,8 @@ public sealed class ScriptInputSimulationService
         int clickCount = 1,
         int holdMilliseconds = DefaultClickHoldMilliseconds)
     {
-        ClickMouseAtScreenCoordinate(ConvertScriptToScreenCoordinate(scriptCoordinate), button, clickCount, holdMilliseconds);
+        var windowInfo = GetRequiredTargetWindowInfo();
+        ClickMouseAtScreenCoordinate(ConvertScriptToScreenCoordinate(scriptCoordinate, windowInfo), button, clickCount, holdMilliseconds);
     }
 
     public void ClickMouseAtScreenCoordinate(
@@ -118,8 +121,14 @@ public sealed class ScriptInputSimulationService
         int clickCount = 1,
         int holdMilliseconds = DefaultClickHoldMilliseconds)
     {
-        MoveMouseToScreenCoordinate(screenCoordinate);
-        ClickMouse(button, clickCount, holdMilliseconds);
+        MoveMouseToScreenCoordinateCore(screenCoordinate);
+
+        if (DefaultMouseMoveSettleMilliseconds > 0)
+        {
+            _dispatcher.Dispatch(InputSimulationCommandBuilder.BuildDelay(DefaultMouseMoveSettleMilliseconds));
+        }
+
+        ClickMouseCore(button, clickCount, holdMilliseconds);
     }
 
     public void ClickMouse(
@@ -127,11 +136,7 @@ public sealed class ScriptInputSimulationService
         int clickCount = 1,
         int holdMilliseconds = DefaultClickHoldMilliseconds)
     {
-        _dispatcher.Dispatch(InputSimulationCommandBuilder.BuildClickMouse(
-            button,
-            clickCount,
-            holdMilliseconds,
-            DefaultDoubleClickIntervalMilliseconds));
+        ClickMouseCore(button, clickCount, holdMilliseconds);
     }
 
     public void MouseDown(InputMouseButton button = InputMouseButton.LeftButton)
@@ -195,6 +200,34 @@ public sealed class ScriptInputSimulationService
         ArgumentNullException.ThrowIfNull(modifierKeys);
         ArgumentNullException.ThrowIfNull(keys);
         _dispatcher.Dispatch(InputSimulationCommandBuilder.BuildSimulateCombination(modifierKeys, keys));
+    }
+
+    public void PrepareTargetWindowForInput()
+    {
+        var windowInfo = GetRequiredTargetWindowInfo();
+        if (!NativeWindowHelper.IsForegroundWindow(windowInfo.Handle) &&
+            NativeWindowHelper.TryActivateWindow(windowInfo.Handle))
+        {
+            Thread.Sleep(DefaultTargetWindowActivationSettleMilliseconds);
+        }
+    }
+
+    private void MoveMouseToScreenCoordinateCore(Point screenCoordinate)
+    {
+        var absolutePoint = _environment.ToVirtualDesktopAbsoluteCoordinate(screenCoordinate);
+        _dispatcher.Dispatch(InputSimulationCommandBuilder.BuildMoveMouseToVirtualDesktop(absolutePoint.X, absolutePoint.Y));
+    }
+
+    private void ClickMouseCore(
+        InputMouseButton button,
+        int clickCount,
+        int holdMilliseconds)
+    {
+        _dispatcher.Dispatch(InputSimulationCommandBuilder.BuildClickMouse(
+            button,
+            clickCount,
+            holdMilliseconds,
+            DefaultDoubleClickIntervalMilliseconds));
     }
 
     private GameWindowInfo GetRequiredTargetWindowInfo()

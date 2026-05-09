@@ -9,6 +9,7 @@ public static class NativeWindowHelper
 {
     private const int VkRButton = 0x02;
     private const uint DwmwaExtendedFrameBounds = 9;
+    private const int SwRestore = 9;
     private const int SmXvirtualscreen = 76;
     private const int SmYvirtualscreen = 77;
     private const int SmCxvirtualscreen = 78;
@@ -243,6 +244,73 @@ public static class NativeWindowHelper
         return (GetAsyncKeyState(VkRButton) & 0x8000) != 0;
     }
 
+    public static bool IsForegroundWindow(nint hWnd)
+    {
+        return hWnd != nint.Zero && GetForegroundWindow() == hWnd;
+    }
+
+    public static bool TryActivateWindow(nint hWnd)
+    {
+        if (hWnd == nint.Zero || !IsWindowVisible(hWnd))
+        {
+            return false;
+        }
+
+        if (IsForegroundWindow(hWnd))
+        {
+            return true;
+        }
+
+        if (IsIconic(hWnd))
+        {
+            _ = ShowWindow(hWnd, SwRestore);
+        }
+
+        var foregroundWindow = GetForegroundWindow();
+        var currentThreadId = GetCurrentThreadId();
+        var targetThreadId = GetWindowThreadProcessId(hWnd, nint.Zero);
+        var foregroundThreadId = foregroundWindow == nint.Zero
+            ? 0u
+            : GetWindowThreadProcessId(foregroundWindow, nint.Zero);
+
+        var attachedToTarget = false;
+        var attachedToForeground = false;
+
+        try
+        {
+            if (targetThreadId != 0 && targetThreadId != currentThreadId)
+            {
+                attachedToTarget = AttachThreadInput(currentThreadId, targetThreadId, true);
+            }
+
+            if (foregroundThreadId != 0 &&
+                foregroundThreadId != currentThreadId &&
+                foregroundThreadId != targetThreadId)
+            {
+                attachedToForeground = AttachThreadInput(currentThreadId, foregroundThreadId, true);
+            }
+
+            _ = BringWindowToTop(hWnd);
+            _ = SetActiveWindow(hWnd);
+            _ = SetForegroundWindow(hWnd);
+            _ = SetFocus(hWnd);
+        }
+        finally
+        {
+            if (attachedToForeground)
+            {
+                _ = AttachThreadInput(currentThreadId, foregroundThreadId, false);
+            }
+
+            if (attachedToTarget)
+            {
+                _ = AttachThreadInput(currentThreadId, targetThreadId, false);
+            }
+        }
+
+        return IsForegroundWindow(hWnd);
+    }
+
     private static bool TryGetVisibleWindowRect(nint hWnd, out RECT rect)
     {
         rect = default;
@@ -292,6 +360,37 @@ public static class NativeWindowHelper
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool ScreenToClient(nint hWnd, ref POINT lpPoint);
+
+    [DllImport("user32.dll")]
+    private static extern nint GetForegroundWindow();
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SetForegroundWindow(nint hWnd);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool BringWindowToTop(nint hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern nint SetFocus(nint hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern nint SetActiveWindow(nint hWnd);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool ShowWindow(nint hWnd, int nCmdShow);
+
+    [DllImport("user32.dll")]
+    private static extern uint GetWindowThreadProcessId(nint hWnd, nint lpdwProcessId);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
+
+    [DllImport("kernel32.dll")]
+    private static extern uint GetCurrentThreadId();
 
     [DllImport("user32.dll")]
     private static extern uint GetDpiForWindow(nint hWnd);

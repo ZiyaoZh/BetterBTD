@@ -50,6 +50,7 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
     private readonly ScriptEditorOptionService _scriptEditorOptionService;
     private readonly ScriptTaskFlowService _scriptTaskFlowService;
     private readonly ScriptTaskFlowExecutor _scriptTaskFlowExecutor;
+    private readonly ScriptInputSimulationService _scriptInputSimulationService;
     private readonly List<ScriptInstructionInstance> _clipboardSequenceInstructions = [];
     private readonly Stack<List<ScriptInstructionInstance>> _undoHistory = [];
     private readonly Stack<List<ScriptInstructionInstance>> _redoHistory = [];
@@ -95,6 +96,7 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         _scriptEditorOptionService = ScriptEditorOptionService.Instance;
         _scriptTaskFlowService = ScriptTaskFlowService.Instance;
         _scriptTaskFlowExecutor = ScriptTaskFlowExecutor.Instance;
+        _scriptInputSimulationService = ScriptInputSimulationService.Instance;
         _coordinateSelectionTimer = new DispatcherTimer(DispatcherPriority.Background)
         {
             Interval = TimeSpan.FromMilliseconds(33)
@@ -876,6 +878,7 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         try
         {
             taskFlow = _scriptTaskFlowService.Build(scriptDocumentSnapshot, sourceFilePath);
+            _scriptInputSimulationService.PrepareTargetWindowForInput();
         }
         catch (Exception ex)
         {

@@ -41,8 +41,28 @@ public sealed class ScriptInputSimulationServiceTests
             },
             command =>
             {
-                Assert.Equal(InputSimulationCommandType.KeyPress, command.Type);
+                Assert.Equal(InputSimulationCommandType.Delay, command.Type);
+                Assert.Equal(16, command.Milliseconds);
+            },
+            command =>
+            {
+                Assert.Equal(InputSimulationCommandType.KeyDown, command.Type);
                 Assert.Equal(KeyId.U, command.Key);
+            },
+            command =>
+            {
+                Assert.Equal(InputSimulationCommandType.Delay, command.Type);
+                Assert.Equal(32, command.Milliseconds);
+            },
+            command =>
+            {
+                Assert.Equal(InputSimulationCommandType.KeyUp, command.Type);
+                Assert.Equal(KeyId.U, command.Key);
+            },
+            command =>
+            {
+                Assert.Equal(InputSimulationCommandType.Delay, command.Type);
+                Assert.Equal(16, command.Milliseconds);
             },
             command =>
             {
@@ -72,9 +92,23 @@ public sealed class ScriptInputSimulationServiceTests
         var heroHotkey = ScriptExecutionKeyBindingResolver.ResolvePlacementHotkey("Hero:Geraldo");
         service.PressHotkey(heroHotkey);
 
-        var command = Assert.Single(dispatcher.Commands);
-        Assert.Equal(InputSimulationCommandType.KeyPress, command.Type);
-        Assert.Equal(KeyId.U, command.Key);
+        Assert.Collection(
+            dispatcher.Commands,
+            command =>
+            {
+                Assert.Equal(InputSimulationCommandType.KeyDown, command.Type);
+                Assert.Equal(KeyId.U, command.Key);
+            },
+            command =>
+            {
+                Assert.Equal(InputSimulationCommandType.Delay, command.Type);
+                Assert.Equal(32, command.Milliseconds);
+            },
+            command =>
+            {
+                Assert.Equal(InputSimulationCommandType.KeyUp, command.Type);
+                Assert.Equal(KeyId.U, command.Key);
+            });
     }
 
     [Fact]
@@ -142,6 +176,47 @@ public sealed class ScriptInputSimulationServiceTests
         Assert.Equal(InputSimulationCommandType.MoveMouseToVirtualDesktop, command.Type);
         Assert.Equal(1130, command.X);
         Assert.Equal(2260, command.Y);
+    }
+
+    [Fact]
+    public void ClickMouseAtScreenCoordinate_RecordsMoveSettleAndClickSequence()
+    {
+        var dispatcher = new RecordingInputSimulationCommandDispatcher();
+        var service = new ScriptInputSimulationService(
+            CreateEnvironment(
+                toVirtualDesktopAbsoluteCoordinate: screenPoint => new Point(screenPoint.X + 500, screenPoint.Y + 700)),
+            dispatcher);
+
+        service.ClickMouseAtScreenCoordinate(new Point(100, 200), holdMilliseconds: 30);
+
+        Assert.Collection(
+            dispatcher.Commands,
+            command =>
+            {
+                Assert.Equal(InputSimulationCommandType.MoveMouseToVirtualDesktop, command.Type);
+                Assert.Equal(600, command.X);
+                Assert.Equal(900, command.Y);
+            },
+            command =>
+            {
+                Assert.Equal(InputSimulationCommandType.Delay, command.Type);
+                Assert.Equal(24, command.Milliseconds);
+            },
+            command =>
+            {
+                Assert.Equal(InputSimulationCommandType.MouseButtonDown, command.Type);
+                Assert.Equal(InputMouseButton.LeftButton, command.MouseButton);
+            },
+            command =>
+            {
+                Assert.Equal(InputSimulationCommandType.Delay, command.Type);
+                Assert.Equal(30, command.Milliseconds);
+            },
+            command =>
+            {
+                Assert.Equal(InputSimulationCommandType.MouseButtonUp, command.Type);
+                Assert.Equal(InputMouseButton.LeftButton, command.MouseButton);
+            });
     }
 
     private static FakeScriptInputSimulationEnvironment CreateEnvironment(
