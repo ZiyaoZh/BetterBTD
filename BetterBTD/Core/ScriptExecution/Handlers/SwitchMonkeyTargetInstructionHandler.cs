@@ -5,6 +5,8 @@ namespace BetterBTD.Core.ScriptExecution.Handlers;
 
 public sealed class SwitchMonkeyTargetInstructionHandler : ScriptInstructionHandlerBase
 {
+    internal const int DefaultOperationIntervalMilliseconds = 200;
+
     public override ScriptCommandType CommandType => ScriptCommandType.SwitchMonkeyTarget;
 
     public override async Task HandleAsync(ScriptInstructionExecutionContext context, CancellationToken cancellationToken)
@@ -45,9 +47,18 @@ public sealed class SwitchMonkeyTargetInstructionHandler : ScriptInstructionHand
         var targetCoordinate = monkeyState.LastKnownCoordinate.Value;
         var switchHotkey = ScriptExecutionKeyBindingResolver.ResolveSwitchTargetHotkey(switchDirection);
         var switchCount = Math.Max(1, instruction.SwitchCount);
+        var panelDetectionEnabled = ScriptInstructionHandlerSupport.ResolveMonkeyPanelDetectionEnabled(
+            monkeyState.ObjectId,
+            instruction.MonkeyPanelDetectionEnabled ?? true);
+        var operationIntervalMilliseconds = instruction.MonkeyPanelOperationIntervalMilliseconds ?? DefaultOperationIntervalMilliseconds;
 
         await ScriptInstructionHandlerSupport
-            .EnsureUpgradePanelVisibleAsync(context, targetCoordinate, cancellationToken)
+            .PrepareMonkeyPanelInteractionAsync(
+                context,
+                targetCoordinate,
+                panelDetectionEnabled,
+                operationIntervalMilliseconds,
+                cancellationToken)
             .ConfigureAwait(false);
 
         await ScriptInstructionHandlerSupport
@@ -57,6 +68,7 @@ public sealed class SwitchMonkeyTargetInstructionHandler : ScriptInstructionHand
                 switchCount,
                 "SwitchMonkeyTargetPress",
                 $"Switching '{monkeyState.ObjectId}' targeting {switchDirection} {switchCount} time(s).",
+                operationIntervalMilliseconds,
                 cancellationToken)
             .ConfigureAwait(false);
 

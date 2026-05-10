@@ -871,6 +871,53 @@
                                 </Grid>
                             </StackPanel>
 
+                            <StackPanel Visibility="{Binding ShowMonkeyPanelAdvancedProperties, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <Grid Style="{StaticResource AdvancedPropertyRowStyle}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock Grid.Column="0"
+                                               Style="{StaticResource AdvancedPropertyLabelStyle}"
+                                               Text="{Binding PropertyMonkeyPanelDetectionText}" />
+                                    <ui:ToggleSwitch Grid.Column="1"
+                                                     HorizontalAlignment="Right"
+                                                     VerticalAlignment="Center"
+                                                     IsChecked="{Binding SelectedSequenceInstruction.MonkeyPanelDetectionEnabled, Mode=TwoWay}" />
+                                </Grid>
+
+                                <Grid Style="{StaticResource AdvancedPropertyRowStyle}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock Grid.Column="0"
+                                               Style="{StaticResource AdvancedPropertyLabelStyle}"
+                                               Text="{Binding PropertyMonkeyPanelOperationIntervalMillisecondsText}" />
+                                    <ui:NumberBox Grid.Column="1"
+                                                  Style="{StaticResource AdvancedPropertyNumberBoxStyle}"
+                                                  Value="{Binding SelectedSequenceInstruction.MonkeyPanelOperationIntervalMilliseconds, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                </Grid>
+
+                                <Grid Style="{StaticResource AdvancedPropertyRowStyle}"
+                                      Visibility="{Binding ShowSellMonkeyAdvancedProperties, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock Grid.Column="0"
+                                               Style="{StaticResource AdvancedPropertyLabelStyle}"
+                                               Text="{Binding PropertySellDetectionText}" />
+                                    <ui:ToggleSwitch Grid.Column="1"
+                                                     HorizontalAlignment="Right"
+                                                     VerticalAlignment="Center"
+                                                     IsChecked="{Binding SelectedSequenceInstruction.SellDetectionEnabled, Mode=TwoWay}" />
+                                </Grid>
+                            </StackPanel>
+
                             <Grid Style="{StaticResource AdvancedPropertyRowStyle}"
                                   Visibility="{Binding ShowMouseClickAdvancedProperties, Converter={StaticResource BoolToVisibilityConverter}}">
                                 <Grid.ColumnDefinitions>

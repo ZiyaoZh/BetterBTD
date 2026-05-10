@@ -135,6 +135,9 @@ public sealed class ScriptEditorInstructionService
             PlacementAdjustmentAttemptIntervalMilliseconds = instruction.PlacementAdjustmentAttemptIntervalMilliseconds,
             UpgradeDetectionEnabled = instruction.UpgradeDetectionEnabled,
             UpgradeAttemptIntervalMilliseconds = instruction.UpgradeAttemptIntervalMilliseconds,
+            MonkeyPanelDetectionEnabled = instruction.MonkeyPanelDetectionEnabled,
+            MonkeyPanelOperationIntervalMilliseconds = instruction.MonkeyPanelOperationIntervalMilliseconds,
+            SellDetectionEnabled = instruction.SellDetectionEnabled,
             WaitGoldAmount = instruction.WaitGoldAmount,
             WaitRoundCount = instruction.WaitRoundCount,
             PositionX = instruction.PositionX,
@@ -221,6 +224,11 @@ public sealed class ScriptEditorInstructionService
         instruction.UpgradeAttemptIntervalMilliseconds = document.UpgradeAttemptIntervalMilliseconds is null or < 0
             ? instruction.UpgradeAttemptIntervalMilliseconds
             : document.UpgradeAttemptIntervalMilliseconds.Value;
+        instruction.MonkeyPanelDetectionEnabled = document.MonkeyPanelDetectionEnabled ?? instruction.MonkeyPanelDetectionEnabled;
+        instruction.MonkeyPanelOperationIntervalMilliseconds = document.MonkeyPanelOperationIntervalMilliseconds is null or < 0
+            ? instruction.MonkeyPanelOperationIntervalMilliseconds
+            : document.MonkeyPanelOperationIntervalMilliseconds.Value;
+        instruction.SellDetectionEnabled = document.SellDetectionEnabled ?? instruction.SellDetectionEnabled;
         instruction.WaitGoldAmount = document.WaitGoldAmount;
         instruction.WaitRoundCount = document.WaitRoundCount <= 0 ? instruction.WaitRoundCount : document.WaitRoundCount;
         instruction.PositionX = document.PositionX;
@@ -283,6 +291,9 @@ public sealed class ScriptEditorInstructionService
             PlacementAdjustmentAttemptIntervalMilliseconds = source.PlacementAdjustmentAttemptIntervalMilliseconds,
             UpgradeDetectionEnabled = source.UpgradeDetectionEnabled,
             UpgradeAttemptIntervalMilliseconds = source.UpgradeAttemptIntervalMilliseconds,
+            MonkeyPanelDetectionEnabled = source.MonkeyPanelDetectionEnabled,
+            MonkeyPanelOperationIntervalMilliseconds = source.MonkeyPanelOperationIntervalMilliseconds,
+            SellDetectionEnabled = source.SellDetectionEnabled,
             WaitGoldAmount = source.WaitGoldAmount,
             WaitRoundCount = source.WaitRoundCount,
             PositionX = source.PositionX,

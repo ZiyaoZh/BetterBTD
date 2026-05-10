@@ -5,6 +5,9 @@ namespace BetterBTD.Core.ScriptExecution.Handlers;
 
 public sealed class SellMonkeyInstructionHandler : ScriptInstructionHandlerBase
 {
+    internal const int DefaultOperationIntervalMilliseconds = 200;
+    internal const int SellDetectionTimeoutMilliseconds = 10 * 60 * 1000;
+
     public override ScriptCommandType CommandType => ScriptCommandType.SellMonkey;
 
     public override async Task HandleAsync(ScriptInstructionExecutionContext context, CancellationToken cancellationToken)
@@ -36,23 +39,30 @@ public sealed class SellMonkeyInstructionHandler : ScriptInstructionHandlerBase
 
         var targetCoordinate = monkeyState.LastKnownCoordinate.Value;
         var sellHotkey = ScriptExecutionKeyBindingResolver.ResolveSellHotkey();
+        var panelDetectionEnabled = ScriptInstructionHandlerSupport.ResolveMonkeyPanelDetectionEnabled(
+            monkeyState.ObjectId,
+            instruction.MonkeyPanelDetectionEnabled ?? true);
+        var operationIntervalMilliseconds = instruction.MonkeyPanelOperationIntervalMilliseconds ?? DefaultOperationIntervalMilliseconds;
+        var sellDetectionEnabled = ScriptInstructionHandlerSupport.ResolveSellDetectionEnabled(
+            monkeyState.ObjectId,
+            instruction.SellDetectionEnabled ?? true);
 
         await ScriptInstructionHandlerSupport
-            .EnsureUpgradePanelVisibleAsync(context, targetCoordinate, cancellationToken)
+            .PrepareMonkeyPanelInteractionAsync(
+                context,
+                targetCoordinate,
+                panelDetectionEnabled,
+                operationIntervalMilliseconds,
+                cancellationToken)
             .ConfigureAwait(false);
 
-        await ScriptExecutionOperations.CheckpointAsync(
+        await ScriptInstructionHandlerSupport.ExecuteSellMonkeyAsync(
             context,
-            "SellMonkeyPress",
-            $"Selling '{monkeyState.ObjectId}' with hotkey '{sellHotkey.DisplayName}'.",
-            cancellationToken).ConfigureAwait(false);
-
-        context.RuntimeServices.Input.PressHotkey(sellHotkey);
-
-        await ScriptExecutionOperations.CheckpointAsync(
-            context,
-            "SellMonkeySucceeded",
-            $"Sent sell hotkey for '{monkeyState.ObjectId}'.",
+            monkeyState.ObjectId,
+            sellHotkey,
+            sellDetectionEnabled,
+            SellDetectionTimeoutMilliseconds,
+            operationIntervalMilliseconds,
             cancellationToken).ConfigureAwait(false);
     }
 }

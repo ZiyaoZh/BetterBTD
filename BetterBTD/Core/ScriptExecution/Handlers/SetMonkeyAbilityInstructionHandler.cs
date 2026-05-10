@@ -7,6 +7,8 @@ namespace BetterBTD.Core.ScriptExecution.Handlers;
 
 public sealed class SetMonkeyAbilityInstructionHandler : ScriptInstructionHandlerBase
 {
+    internal const int DefaultOperationIntervalMilliseconds = 200;
+
     public override ScriptCommandType CommandType => ScriptCommandType.SetMonkeyAbility;
 
     public override async Task HandleAsync(ScriptInstructionExecutionContext context, CancellationToken cancellationToken)
@@ -46,9 +48,18 @@ public sealed class SetMonkeyAbilityInstructionHandler : ScriptInstructionHandle
 
         var targetCoordinate = monkeyState.LastKnownCoordinate.Value;
         var abilityHotkey = ScriptExecutionKeyBindingResolver.ResolveMonkeyAbilityHotkey(abilityType);
+        var panelDetectionEnabled = ScriptInstructionHandlerSupport.ResolveMonkeyPanelDetectionEnabled(
+            monkeyState.ObjectId,
+            instruction.MonkeyPanelDetectionEnabled ?? true);
+        var operationIntervalMilliseconds = instruction.MonkeyPanelOperationIntervalMilliseconds ?? DefaultOperationIntervalMilliseconds;
 
         await ScriptInstructionHandlerSupport
-            .EnsureUpgradePanelVisibleAsync(context, targetCoordinate, cancellationToken)
+            .PrepareMonkeyPanelInteractionAsync(
+                context,
+                targetCoordinate,
+                panelDetectionEnabled,
+                operationIntervalMilliseconds,
+                cancellationToken)
             .ConfigureAwait(false);
 
         await ScriptExecutionOperations.CheckpointAsync(
@@ -65,7 +76,7 @@ public sealed class SetMonkeyAbilityInstructionHandler : ScriptInstructionHandle
 
             await ScriptExecutionOperations.DelayAsync(
                 context,
-                60,
+                operationIntervalMilliseconds,
                 "SetMonkeyAbilityTargetingDelay",
                 cancellationToken).ConfigureAwait(false);
 

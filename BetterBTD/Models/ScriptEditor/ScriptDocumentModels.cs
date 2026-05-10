@@ -107,6 +107,12 @@ public sealed class ScriptInstructionDocument
 
     public int? UpgradeAttemptIntervalMilliseconds { get; set; }
 
+    public bool? MonkeyPanelDetectionEnabled { get; set; }
+
+    public int? MonkeyPanelOperationIntervalMilliseconds { get; set; }
+
+    public bool? SellDetectionEnabled { get; set; }
+
     public int WaitGoldAmount { get; set; }
 
     public int WaitRoundCount { get; set; }

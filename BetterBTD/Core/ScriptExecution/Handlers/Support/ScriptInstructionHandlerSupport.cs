@@ -89,6 +89,16 @@ internal static class ScriptInstructionHandlerSupport
                objectKey.StartsWith("Hero:", StringComparison.OrdinalIgnoreCase);
     }
 
+    public static bool ResolveMonkeyPanelDetectionEnabled(string? objectKey, bool detectionEnabled)
+    {
+        return !IsHeroObjectKey(objectKey) && detectionEnabled;
+    }
+
+    public static bool ResolveSellDetectionEnabled(string? objectKey, bool detectionEnabled)
+    {
+        return !IsHeroObjectKey(objectKey) && detectionEnabled;
+    }
+
     public static bool IsWaitTimeout(ScriptExecutionException exception)
     {
         ArgumentNullException.ThrowIfNull(exception);
@@ -245,6 +255,44 @@ internal static class ScriptInstructionHandlerSupport
         context.RuntimeServices.Input.PressKey(KeyId.Escape);
     }
 
+    public static async Task PrepareMonkeyPanelInteractionAsync(
+        ScriptInstructionExecutionContext context,
+        WpfPoint targetCoordinate,
+        bool panelDetectionEnabled,
+        int operationIntervalMilliseconds,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+
+        var effectiveOperationIntervalMilliseconds = Math.Max(0, operationIntervalMilliseconds);
+
+        if (panelDetectionEnabled)
+        {
+            await WaitForUpgradePanelVisibleAsync(
+                context,
+                targetCoordinate,
+                10 * 60 * 1000,
+                effectiveOperationIntervalMilliseconds,
+                cancellationToken).ConfigureAwait(false);
+
+            return;
+        }
+
+        await ScriptExecutionOperations.CheckpointAsync(
+            context,
+            "UpgradeMonkeySelect",
+            $"Selecting monkey at {FormatPoint(targetCoordinate)} without panel detection.",
+            cancellationToken).ConfigureAwait(false);
+
+        context.RuntimeServices.Input.ClickMouseAtScriptCoordinate(targetCoordinate, clickCount: 1);
+
+        await ScriptExecutionOperations.DelayAsync(
+            context,
+            effectiveOperationIntervalMilliseconds,
+            "UpgradeMonkeySelectDelay",
+            cancellationToken).ConfigureAwait(false);
+    }
+
     public static async Task<GameStageStateSnapshot> WaitForUpgradePanelVisibleAsync(
         ScriptInstructionExecutionContext context,
         WpfPoint targetCoordinate,
@@ -296,6 +344,82 @@ internal static class ScriptInstructionHandlerSupport
                 context,
                 "UpgradeMonkeyPanel",
                 $"Failed to detect the upgrade panel near {FormatPoint(targetCoordinate)}.");
+    }
+
+    public static async Task ExecuteSellMonkeyAsync(
+        ScriptInstructionExecutionContext context,
+        string monkeyObjectId,
+        HotkeyBinding sellHotkey,
+        bool sellDetectionEnabled,
+        int timeoutMilliseconds,
+        int detectionIntervalMilliseconds,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        ArgumentException.ThrowIfNullOrWhiteSpace(monkeyObjectId);
+        ArgumentNullException.ThrowIfNull(sellHotkey);
+
+        var effectiveDetectionIntervalMilliseconds = Math.Max(0, detectionIntervalMilliseconds);
+
+        if (!sellDetectionEnabled)
+        {
+            await ScriptExecutionOperations.CheckpointAsync(
+                context,
+                "SellMonkeyPress",
+                $"Selling '{monkeyObjectId}' with hotkey '{sellHotkey.DisplayName}' without sell detection.",
+                cancellationToken).ConfigureAwait(false);
+
+            context.RuntimeServices.Input.PressHotkey(sellHotkey);
+
+            await ScriptExecutionOperations.CheckpointAsync(
+                context,
+                "SellMonkeySucceeded",
+                $"Sent sell hotkey for '{monkeyObjectId}' without sell detection.",
+                cancellationToken).ConfigureAwait(false);
+
+            return;
+        }
+
+        var pressCount = 0;
+
+        await ScriptExecutionOperations.WaitUntilAsync(
+            context,
+            new ScriptWaitOptions
+            {
+                TimeoutMilliseconds = timeoutMilliseconds,
+                PollIntervalMilliseconds = 10,
+                Description = "sell panel close"
+            },
+            async innerToken =>
+            {
+                pressCount++;
+
+                await ScriptExecutionOperations.CheckpointAsync(
+                    context,
+                    "SellMonkeyPress",
+                    $"Sell attempt {pressCount}: sending hotkey '{sellHotkey.DisplayName}' for '{monkeyObjectId}'.",
+                    innerToken).ConfigureAwait(false);
+
+                context.RuntimeServices.Input.PressHotkey(sellHotkey);
+
+                await ScriptExecutionOperations.DelayAsync(
+                    context,
+                    effectiveDetectionIntervalMilliseconds,
+                    "SellMonkeyPressInterval",
+                    innerToken).ConfigureAwait(false);
+
+                var snapshot = await context.RuntimeServices.GameStageState
+                    .CaptureSnapshotAsync(innerToken)
+                    .ConfigureAwait(false);
+                return ResolveVisibleUpgradePanelSide(snapshot) is null;
+            },
+            cancellationToken).ConfigureAwait(false);
+
+        await ScriptExecutionOperations.CheckpointAsync(
+            context,
+            "SellMonkeySucceeded",
+            $"Sold '{monkeyObjectId}' after {pressCount} attempt(s).",
+            cancellationToken).ConfigureAwait(false);
     }
 
     public static async Task WaitForPlacementModeActiveAsync(

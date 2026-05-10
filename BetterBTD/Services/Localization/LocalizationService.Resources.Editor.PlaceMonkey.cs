@@ -12,7 +12,10 @@ public sealed partial class LocalizationService
         ["Editor.Property.PlacementAttemptIntervalMilliseconds"] = "\u653e\u7f6e\u5c1d\u8bd5\u95f4\u9694\uff08ms\uff09",
         ["Editor.Property.PlacementAdjustmentAttemptIntervalMilliseconds"] = "\u5fae\u8c03\u5c1d\u8bd5\u95f4\u9694\uff08ms\uff09",
         ["Editor.Property.UpgradeDetection"] = "\u5347\u7ea7\u68c0\u6d4b",
-        ["Editor.Property.UpgradeAttemptIntervalMilliseconds"] = "\u5347\u7ea7\u5c1d\u8bd5\u95f4\u9694\uff08ms\uff09"
+        ["Editor.Property.UpgradeAttemptIntervalMilliseconds"] = "\u5347\u7ea7\u5c1d\u8bd5\u95f4\u9694\uff08ms\uff09",
+        ["Editor.Property.MonkeyPanelDetection"] = "\u9762\u677f\u68c0\u6d4b",
+        ["Editor.Property.MonkeyPanelOperationIntervalMilliseconds"] = "\u64cd\u4f5c\u95f4\u9694\uff08ms\uff09",
+        ["Editor.Property.SellDetection"] = "\u51fa\u552e\u68c0\u6d4b"
     };
 
     private static Dictionary<string, string> BuildEnUsEditorPlacementResources() => new(StringComparer.OrdinalIgnoreCase)
@@ -22,6 +25,9 @@ public sealed partial class LocalizationService
         ["Editor.Property.PlacementAttemptIntervalMilliseconds"] = "Placement Attempt Interval (ms)",
         ["Editor.Property.PlacementAdjustmentAttemptIntervalMilliseconds"] = "Adjustment Attempt Interval (ms)",
         ["Editor.Property.UpgradeDetection"] = "Upgrade Detection",
-        ["Editor.Property.UpgradeAttemptIntervalMilliseconds"] = "Upgrade Attempt Interval (ms)"
+        ["Editor.Property.UpgradeAttemptIntervalMilliseconds"] = "Upgrade Attempt Interval (ms)",
+        ["Editor.Property.MonkeyPanelDetection"] = "Panel Detection",
+        ["Editor.Property.MonkeyPanelOperationIntervalMilliseconds"] = "Operation Interval (ms)",
+        ["Editor.Property.SellDetection"] = "Sell Detection"
     };
 }
