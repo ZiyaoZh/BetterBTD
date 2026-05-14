@@ -2,6 +2,7 @@ using BetterBTD.Models.ScriptExecution;
 using BetterBTD.Core.ScriptExecution.Runtime;
 using BetterBTD.Services.ScriptExecution;
 using BetterBTD.Core.ScriptExecution.Handlers;
+using System.Linq;
 
 namespace BetterBTD.Core.ScriptExecution;
 
@@ -91,6 +92,9 @@ public sealed class ScriptTaskFlowExecutor
         var runtimeServices = options.RuntimeServices ?? ScriptExecutionRuntimeServiceFactory.CreateDefault();
         var executedStepCount = 0;
         var lastCompletedStepIndex = -1;
+        var normalizedStartStepIndex = taskFlow.Steps.Count == 0
+            ? 0
+            : Math.Clamp(options.StartStepIndex, 0, taskFlow.Steps.Count - 1);
         var executionSession = new ScriptExecutionSession(taskFlow.SourceFilePath);
 
         EnterRunningState(executionSession);
@@ -102,7 +106,7 @@ public sealed class ScriptTaskFlowExecutor
             var state = new ScriptExecutionState();
             state.SeedMonkeyStates(taskFlow.Document.MonkeyObjects);
 
-            foreach (var step in taskFlow.Steps)
+            foreach (var step in taskFlow.Steps.Skip(normalizedStartStepIndex))
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 executionSession.EnterStep(step.Index, step.CommandType.ToString());

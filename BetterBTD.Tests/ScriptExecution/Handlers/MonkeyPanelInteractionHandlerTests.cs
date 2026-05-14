@@ -222,6 +222,68 @@ public sealed class MonkeyPanelInteractionHandlerTests
     }
 
     [Fact]
+    public async Task SetMonkeyAbility_WithAbilityCoordinate_WaitsAfterClickBeforeClosingPanel()
+    {
+        var input = new RecordingScriptInputService();
+        var gameStageState = new QueueGameStageStateService(
+        [
+            new GameStageStateSnapshot
+            {
+                RightUpgradePanel = new GameStageUpgradePanelState
+                {
+                    IsVisible = true
+                }
+            }
+        ]);
+        var runtimeServices = new ScriptExecutionRuntimeServices
+        {
+            Capture = new NullScriptCaptureService(),
+            Input = input,
+            GameStageState = gameStageState
+        };
+
+        var instruction = new ScriptInstructionDocument
+        {
+            CommandType = ScriptCommandType.SetMonkeyAbility.ToString(),
+            TargetMonkeyBindingId = "dart-bind",
+            SelectedAbility = MonkeyAbilityType.Ability1.ToString(),
+            RequiresAbilityCoordinate = true,
+            AbilityCoordinateX = 300,
+            AbilityCoordinateY = 400,
+            MonkeyPanelOperationIntervalMilliseconds = 100
+        };
+
+        var monkeyObjects = new[]
+        {
+            new ScriptMonkeyObjectDocument
+            {
+                BindingId = "dart-bind",
+                ObjectId = "Tower:DartMonkey",
+                SelectionCode = "DartMonkey",
+                PlacementOrder = 1
+            }
+        };
+
+        var context = TestScriptExecutionContextFactory.Create(instruction, runtimeServices, monkeyObjects);
+        context.State.UpsertMonkeyState("dart-bind", "Tower:DartMonkey", "DartMonkey", 1).LastKnownCoordinate =
+            new WpfPoint(120, 240);
+
+        var handler = new SetMonkeyAbilityInstructionHandler();
+
+        await handler.HandleAsync(context, CancellationToken.None);
+
+        Assert.Equal(
+        [
+            new WpfPoint(120, 240),
+            new WpfPoint(300, 400)
+        ], input.Clicks.Select(x => x.Coordinate).ToArray());
+        var abilityHotkey = Assert.Single(input.PressedHotkeys);
+        Assert.Equal(KeyId.PageDown, abilityHotkey.Key);
+        Assert.Equal([KeyId.Escape], input.PressedKeys);
+        Assert.Equal(1, gameStageState.CaptureSnapshotCallCount);
+    }
+
+    [Fact]
     public async Task SwitchMonkeyTarget_Hero_SkipsPanelDetectionEvenWhenEnabled()
     {
         var input = new RecordingScriptInputService();

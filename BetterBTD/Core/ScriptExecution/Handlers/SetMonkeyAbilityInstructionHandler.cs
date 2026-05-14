@@ -92,6 +92,12 @@ public sealed class SetMonkeyAbilityInstructionHandler : ScriptInstructionHandle
                 cancellationToken).ConfigureAwait(false);
 
             context.RuntimeServices.Input.ClickMouseAtScriptCoordinate(abilityCoordinate, clickCount: 1);
+
+            await ScriptExecutionOperations.DelayAsync(
+                context,
+                operationIntervalMilliseconds,
+                "SetMonkeyAbilityClickDelay",
+                cancellationToken).ConfigureAwait(false);
         }
 
         await ScriptExecutionOperations.CheckpointAsync(

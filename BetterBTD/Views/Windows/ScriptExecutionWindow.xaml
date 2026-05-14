@@ -18,13 +18,14 @@
     <ui:FluentWindow.Resources>
         <Thickness x:Key="WindowContentPadding">16,12,16,16</Thickness>
         <SolidColorBrush x:Key="RunningIndicatorBrush" Color="#FF5A66" />
+        <SolidColorBrush x:Key="SequenceSelectionBrush" Color="#FF8A63D2" />
 
         <Style x:Key="FlatListBoxStyle" TargetType="ListBox">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderBrush" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Padding" Value="0" />
-            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Focusable" Value="True" />
             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         </Style>
 
@@ -140,43 +141,63 @@
                            HorizontalAlignment="Left"
                            TextAlignment="Left" />
 
-                <ListBox Grid.Row="1"
+                <ListBox x:Name="SequenceListBox"
+                         Grid.Row="1"
                          Grid.Column="0"
                          Margin="0,10,0,0"
                          Style="{StaticResource FlatListBoxStyle}"
                          ItemContainerStyle="{StaticResource TransparentListBoxItemStyle}"
                          ItemsSource="{Binding Steps}"
+                         SelectedItem="{Binding SelectedStep, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                         SelectionChanged="OnSequenceListBoxSelectionChanged"
                          HorizontalContentAlignment="Stretch"
                          ScrollViewer.VerticalScrollBarVisibility="Auto"
                          ScrollViewer.CanContentScroll="True"
                          VirtualizingPanel.IsVirtualizing="True"
+                         VirtualizingPanel.ScrollUnit="Pixel"
                          VirtualizingPanel.VirtualizationMode="Recycling">
-                    <ListBox.ItemTemplate>
+                <ListBox.ItemTemplate>
                         <DataTemplate>
                             <Border Margin="0,0,0,8"
-                                    Padding="10,8"
-                                    Background="{Binding CardBackgroundBrush}"
-                                    BorderBrush="{Binding CardBorderBrush}"
-                                    BorderThickness="1"
-                                    CornerRadius="10">
-                                <DockPanel LastChildFill="True"
-                                           HorizontalAlignment="Stretch">
-                                    <Ellipse Width="8"
-                                             Height="8"
-                                             Margin="0,5,10,0"
-                                             VerticalAlignment="Top"
-                                             Fill="{StaticResource RunningIndicatorBrush}"
-                                             Visibility="{Binding IsCurrent, Converter={StaticResource BoolToVisibilityConverter}}"
-                                             DockPanel.Dock="Left" />
+                                    Padding="2"
+                                    CornerRadius="12">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="BorderBrush" Value="Transparent" />
+                                        <Setter Property="BorderThickness" Value="0" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsSelected}" Value="True">
+                                                <Setter Property="BorderBrush" Value="{StaticResource SequenceSelectionBrush}" />
+                                                <Setter Property="BorderThickness" Value="2" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
 
-                                    <TextBlock Foreground="{Binding TitleBrush}"
-                                               FontWeight="{Binding TitleWeight}"
-                                               Text="{Binding Title}"
-                                               TextAlignment="Left"
-                                               TextWrapping="Wrap"
-                                               HorizontalAlignment="Left"
-                                               VerticalAlignment="Top" />
-                                </DockPanel>
+                                <Border Padding="10,8"
+                                        Background="{Binding CardBackgroundBrush}"
+                                        BorderBrush="{Binding CardBorderBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="10">
+                                    <DockPanel LastChildFill="True"
+                                               HorizontalAlignment="Stretch">
+                                        <Ellipse Width="8"
+                                                 Height="8"
+                                                 Margin="0,5,10,0"
+                                                 VerticalAlignment="Top"
+                                                 Fill="{StaticResource RunningIndicatorBrush}"
+                                                 Visibility="{Binding IsCurrent, Converter={StaticResource BoolToVisibilityConverter}}"
+                                                 DockPanel.Dock="Left" />
+
+                                        <TextBlock Foreground="{Binding TitleBrush}"
+                                                   FontWeight="{Binding TitleWeight}"
+                                                   Text="{Binding Title}"
+                                                   TextAlignment="Left"
+                                                   TextWrapping="Wrap"
+                                                   HorizontalAlignment="Left"
+                                                   VerticalAlignment="Top" />
+                                    </DockPanel>
+                                </Border>
                             </Border>
                         </DataTemplate>
                     </ListBox.ItemTemplate>

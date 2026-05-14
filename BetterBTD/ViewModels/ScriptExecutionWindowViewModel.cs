@@ -28,7 +28,7 @@ public sealed class ScriptExecutionWindowViewModel : ObservableObject
     private static readonly Brush CancelledTitleBrush = CreateBrush("#FFFFD39A");
 
     private readonly LocalizationService _localizationService;
-    private readonly Func<ScriptExecutionWindowViewModel, Task> _startExecutionAsync;
+    private readonly Func<ScriptExecutionWindowViewModel, int, Task> _startExecutionAsync;
     private readonly Action _requestStop;
 
     private string _windowTitle = string.Empty;
@@ -38,6 +38,9 @@ public sealed class ScriptExecutionWindowViewModel : ObservableObject
     private string _currentInstructionText = string.Empty;
     private string _logText = string.Empty;
     private bool _isRunning;
+    private ScriptExecutionStepItem? _focusedStep;
+    private ScriptExecutionStepItem? _selectedStep;
+    private int _activeStartStepIndex;
 
     private string _lastLoggedSignature = string.Empty;
 
@@ -46,7 +49,7 @@ public sealed class ScriptExecutionWindowViewModel : ObservableObject
         string scriptDisplayName,
         string scriptSourcePath,
         IReadOnlyList<ScriptInstructionInstance> instructions,
-        Func<ScriptExecutionWindowViewModel, Task> startExecutionAsync,
+        Func<ScriptExecutionWindowViewModel, int, Task> startExecutionAsync,
         Action requestStop)
     {
         _localizationService = localizationService ?? throw new ArgumentNullException(nameof(localizationService));
@@ -138,6 +141,18 @@ public sealed class ScriptExecutionWindowViewModel : ObservableObject
         }
     }
 
+    public ScriptExecutionStepItem? FocusedStep
+    {
+        get => _focusedStep;
+        private set => SetProperty(ref _focusedStep, value);
+    }
+
+    public ScriptExecutionStepItem? SelectedStep
+    {
+        get => _selectedStep;
+        set => SetProperty(ref _selectedStep, value);
+    }
+
     public string SequenceTitle => _localizationService.T("Editor.Runtime.Sequence");
 
     public string OutputTitle => _localizationService.T("Editor.Runtime.Output");
@@ -154,14 +169,22 @@ public sealed class ScriptExecutionWindowViewModel : ObservableObject
 
     public string StopText => _localizationService.T("Editor.Debug.Stop");
 
-    public void MarkStarting()
+    public void MarkStarting(int startStepIndex)
     {
+        _activeStartStepIndex = NormalizeStepIndex(startStepIndex);
         _lastLoggedSignature = string.Empty;
         SetAllStepsToPending();
+        FocusedStep = ResolveFocusedStep(_activeStartStepIndex);
         IsRunning = true;
         StatusText = _localizationService.T("Editor.Runtime.Starting");
         CurrentInstructionText = _localizationService.T("Editor.Runtime.WaitingInstruction");
         AppendLog(StatusText);
+        if (_activeStartStepIndex > 0)
+        {
+            AppendLog(string.Format(
+                _localizationService.T("Editor.Runtime.StartingFromStep"),
+                _activeStartStepIndex + 1));
+        }
     }
 
     public void ApplyProgressSnapshot(ScriptExecutionProgressSnapshot snapshot)
@@ -173,6 +196,7 @@ public sealed class ScriptExecutionWindowViewModel : ObservableObject
             or ScriptExecutionRunState.Paused;
 
         UpdateStepsFromProgress(snapshot);
+        FocusedStep = ResolveFocusedStep(snapshot.CurrentStepIndex);
         StatusText = BuildStatusText(snapshot);
         CurrentInstructionText = BuildCurrentInstructionText(snapshot);
         AppendProgressLog(snapshot);
@@ -184,6 +208,7 @@ public sealed class ScriptExecutionWindowViewModel : ObservableObject
 
         IsRunning = false;
         UpdateStepsFromResult(result);
+        FocusedStep = ResolveFocusedStep(ResolveResultFocusIndex(result));
 
         var finalText = result.Status switch
         {
@@ -251,7 +276,7 @@ public sealed class ScriptExecutionWindowViewModel : ObservableObject
 
     private async Task StartExecutionAsync()
     {
-        await _startExecutionAsync(this);
+        await _startExecutionAsync(this, ResolveStartStepIndex());
     }
 
     private bool CanStartExecution()
@@ -466,6 +491,50 @@ public sealed class ScriptExecutionWindowViewModel : ObservableObject
         LogText = string.IsNullOrEmpty(LogText)
             ? line
             : $"{LogText}{Environment.NewLine}{line}";
+    }
+
+    private ScriptExecutionStepItem? ResolveFocusedStep(int stepIndex)
+    {
+        return stepIndex >= 0 && stepIndex < Steps.Count
+            ? Steps[stepIndex]
+            : null;
+    }
+
+    private int ResolveStartStepIndex()
+    {
+        return NormalizeStepIndex(SelectedStep?.Index ?? 0);
+    }
+
+    private int ResolveResultFocusIndex(ScriptExecutionResult result)
+    {
+        if (result.Status == ScriptExecutionStatus.Failed && result.Failure is not null)
+        {
+            return result.Failure.StepIndex;
+        }
+
+        if (result.Status == ScriptExecutionStatus.Cancelled)
+        {
+            if (result.LastCompletedStepIndex < 0)
+            {
+                return _activeStartStepIndex;
+            }
+
+            return Math.Clamp(result.LastCompletedStepIndex + 1, 0, Math.Max(0, Steps.Count - 1));
+        }
+
+        if (result.LastCompletedStepIndex < 0)
+        {
+            return _activeStartStepIndex;
+        }
+
+        return Math.Clamp(result.LastCompletedStepIndex, 0, Math.Max(0, Steps.Count - 1));
+    }
+
+    private int NormalizeStepIndex(int stepIndex)
+    {
+        return Steps.Count == 0
+            ? 0
+            : Math.Clamp(stepIndex, 0, Steps.Count - 1);
     }
 
     private static Brush CreateBrush(string hex)

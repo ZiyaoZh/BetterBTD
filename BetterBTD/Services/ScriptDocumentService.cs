@@ -23,6 +23,31 @@ public sealed class ScriptDocumentService
 
     public static ScriptDocumentService Instance => InstanceHolder.Value;
 
+    public ScriptDocumentLoadResult LoadCompatible(string filePath)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
+
+        if (string.Equals(Path.GetExtension(filePath), LegacyScriptFormat.FileExtension, StringComparison.OrdinalIgnoreCase))
+        {
+            var legacyDocument = LegacyScriptDocumentService.Instance.Load(filePath);
+            var conversionResult = LegacyScriptConversionService.Instance.Convert(legacyDocument);
+
+            return new ScriptDocumentLoadResult
+            {
+                Document = conversionResult.Document,
+                SourceKind = ScriptDocumentSourceKind.LegacyBtd6,
+                Warnings = conversionResult.Warnings
+            };
+        }
+
+        return new ScriptDocumentLoadResult
+        {
+            Document = Load(filePath),
+            SourceKind = ScriptDocumentSourceKind.Current,
+            Warnings = []
+        };
+    }
+
     public void Save(string filePath, ScriptDocument document)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
@@ -146,4 +171,19 @@ public sealed class ScriptDocumentService
     {
         return string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
     }
+}
+
+public enum ScriptDocumentSourceKind
+{
+    Current,
+    LegacyBtd6
+}
+
+public sealed class ScriptDocumentLoadResult
+{
+    public required ScriptDocument Document { get; init; }
+
+    public required ScriptDocumentSourceKind SourceKind { get; init; }
+
+    public required IReadOnlyList<string> Warnings { get; init; }
 }

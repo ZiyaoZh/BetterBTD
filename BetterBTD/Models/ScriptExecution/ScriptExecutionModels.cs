@@ -25,6 +25,8 @@ public enum ScriptExecutionRunState
 
 public sealed class ScriptExecutionOptions
 {
+    public int StartStepIndex { get; init; }
+
     public int? OverrideInstructionIntervalMs { get; init; }
 
     public bool RequireCaptureService { get; init; } = true;

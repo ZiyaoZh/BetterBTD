@@ -35,7 +35,8 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
     }
 
     private const string ScriptFileExtension = ".btd";
-    private const string ScriptFileDialogFilter = "BetterBTD Script (*.btd)|*.btd|JSON File (*.json)|*.json|All Files (*.*)|*.*";
+    private const string ScriptOpenFileDialogFilter = "BetterBTD Script (*.btd;*.btd6;*.json)|*.btd;*.btd6;*.json|BetterBTD Script (*.btd)|*.btd|Legacy BTD6 Script (*.btd6)|*.btd6|JSON File (*.json)|*.json|All Files (*.*)|*.*";
+    private const string ScriptSaveFileDialogFilter = "BetterBTD Script (*.btd)|*.btd|JSON File (*.json)|*.json|All Files (*.*)|*.*";
     private static readonly Color CoordinateSelectionActiveColor = Color.FromRgb(87, 242, 135);
     private static readonly Color CoordinateSelectionInactiveColor = Color.FromRgb(255, 176, 64);
     private static readonly Color CoordinateSelectionLabelBackgroundColor = Color.FromArgb(220, 16, 24, 39);
@@ -450,9 +451,14 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
 
     public void LoadScriptDocument(string filePath)
     {
-        var document = _scriptDocumentService.Load(filePath);
-        ImportScriptDocument(document);
+        var loadResult = _scriptDocumentService.LoadCompatible(filePath);
+        ImportScriptDocument(loadResult.Document);
         CurrentScriptFilePath = filePath;
+
+        if (loadResult.SourceKind == ScriptDocumentSourceKind.LegacyBtd6)
+        {
+            ShowLegacyScriptImportedMessage(loadResult.Warnings);
+        }
     }
 
     public void CreateNewScriptDocument()
@@ -554,7 +560,7 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
 
         var dialog = new OpenFileDialog
         {
-            Filter = ScriptFileDialogFilter,
+            Filter = ScriptOpenFileDialogFilter,
             DefaultExt = ScriptFileExtension,
             Multiselect = false
         };
@@ -593,6 +599,11 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
             return TrySaveScriptFileAs();
         }
 
+        if (string.Equals(Path.GetExtension(CurrentScriptFilePath), LegacyScriptFormat.FileExtension, StringComparison.OrdinalIgnoreCase))
+        {
+            return TrySaveScriptFileAs();
+        }
+
         try
         {
             SaveScriptDocument(CurrentScriptFilePath);
@@ -609,7 +620,7 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
     {
         var dialog = new SaveFileDialog
         {
-            Filter = ScriptFileDialogFilter,
+            Filter = ScriptSaveFileDialogFilter,
             DefaultExt = ScriptFileExtension,
             AddExtension = true,
             FileName = BuildDefaultSaveFileName()
@@ -751,6 +762,35 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
             string.Format(_localizationService.T("Editor.File.SaveError.Message"), ex.Message));
     }
 
+    private void ShowLegacyScriptImportedMessage(IReadOnlyList<string> warnings)
+    {
+        var title = _localizationService.LanguageCode.Equals("en-US", StringComparison.OrdinalIgnoreCase)
+            ? "Legacy Script Imported"
+            : "已导入旧版脚本";
+        var intro = _localizationService.LanguageCode.Equals("en-US", StringComparison.OrdinalIgnoreCase)
+            ? "The .btd6 script was converted into the current editor model. Saving will use the new format and prompt Save As."
+            : ".btd6 脚本已转换为当前编辑器模型。后续保存会使用新格式，并自动进入另存为。";
+
+        if (warnings.Count == 0)
+        {
+            ShowMessageDialog(title, intro);
+            return;
+        }
+
+        var warningLines = string.Join(
+            Environment.NewLine,
+            warnings.Take(8).Select(x => $"- {x}"));
+        var moreSuffix = warnings.Count > 8
+            ? _localizationService.LanguageCode.Equals("en-US", StringComparison.OrdinalIgnoreCase)
+                ? $"{Environment.NewLine}...and {warnings.Count - 8} more warning(s)."
+                : $"{Environment.NewLine}......其余 {warnings.Count - 8} 条警告未展开。"
+            : string.Empty;
+
+        ShowMessageDialog(
+            title,
+            $"{intro}{Environment.NewLine}{Environment.NewLine}{warningLines}{moreSuffix}");
+    }
+
     private void ShowMessageDialog(string title, string message)
     {
         _ = _appDialogService.Show(new AppDialogRequest
@@ -859,7 +899,7 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
             ResolveExecutionScriptDisplayName(),
             sourceFilePath,
             executionSequenceSnapshot,
-            viewModel => StartScriptExecutionAsync(viewModel, scriptDocumentSnapshot, sourceFilePath),
+            (viewModel, startStepIndex) => StartScriptExecutionAsync(viewModel, scriptDocumentSnapshot, sourceFilePath, startStepIndex),
             StopScriptExecution);
         var runtimeWindow = new ScriptExecutionWindow(runtimeWindowViewModel);
         runtimeWindow.Closed += OnScriptExecutionWindowClosed;
@@ -877,7 +917,8 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
     private async Task StartScriptExecutionAsync(
         ScriptExecutionWindowViewModel runtimeWindowViewModel,
         ScriptDocument scriptDocumentSnapshot,
-        string sourceFilePath)
+        string sourceFilePath,
+        int startStepIndex)
     {
         ArgumentNullException.ThrowIfNull(runtimeWindowViewModel);
         ArgumentNullException.ThrowIfNull(scriptDocumentSnapshot);
@@ -916,7 +957,7 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         _scriptExecutionCancellationTokenSource?.Dispose();
         _scriptExecutionCancellationTokenSource = new CancellationTokenSource();
         IsScriptExecutionRunning = true;
-        runtimeWindowViewModel.MarkStarting();
+        runtimeWindowViewModel.MarkStarting(startStepIndex);
 
         EventHandler<ScriptExecutionProgressSnapshot> progressHandler = (_, snapshot) =>
         {
@@ -936,7 +977,13 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         try
         {
             var result = await _scriptTaskFlowExecutor
-                .ExecuteAsync(taskFlow, cancellationToken: _scriptExecutionCancellationTokenSource.Token)
+                .ExecuteAsync(
+                    taskFlow,
+                    new ScriptExecutionOptions
+                    {
+                        StartStepIndex = startStepIndex
+                    },
+                    _scriptExecutionCancellationTokenSource.Token)
                 .ConfigureAwait(true);
 
             runtimeWindowViewModel.ApplyResult(result);

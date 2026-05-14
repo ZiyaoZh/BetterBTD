@@ -4,6 +4,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
+using System.Windows.Media;
+using System.Windows.Threading;
 using BetterBTD.ViewModels;
 using Wpf.Ui.Controls;
 using WpfTextBox = System.Windows.Controls.TextBox;
@@ -25,6 +27,8 @@ public partial class ScriptExecutionWindow : FluentWindow
 
         InitializeComponent();
         DataContext = viewModel;
+        DataContextChanged += OnDataContextChanged;
+        viewModel.PropertyChanged += OnViewModelPropertyChanged;
         SourceInitialized += OnSourceInitialized;
         Closing += OnClosing;
         Closed += OnClosed;
@@ -56,6 +60,12 @@ public partial class ScriptExecutionWindow : FluentWindow
     private void OnClosed(object? sender, EventArgs e)
     {
         ReleaseGlobalHotkey();
+        DataContextChanged -= OnDataContextChanged;
+
+        if (DataContext is INotifyPropertyChanged currentViewModel)
+        {
+            currentViewModel.PropertyChanged -= OnViewModelPropertyChanged;
+        }
 
         if (_hwndSource is not null)
         {
@@ -66,6 +76,40 @@ public partial class ScriptExecutionWindow : FluentWindow
         SourceInitialized -= OnSourceInitialized;
         Closing -= OnClosing;
         Closed -= OnClosed;
+    }
+
+    private void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        if (e.OldValue is INotifyPropertyChanged oldViewModel)
+        {
+            oldViewModel.PropertyChanged -= OnViewModelPropertyChanged;
+        }
+
+        if (e.NewValue is INotifyPropertyChanged newViewModel)
+        {
+            newViewModel.PropertyChanged += OnViewModelPropertyChanged;
+        }
+    }
+
+    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (!string.Equals(e.PropertyName, nameof(ScriptExecutionWindowViewModel.FocusedStep), StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        if (sender is not ScriptExecutionWindowViewModel viewModel)
+        {
+            return;
+        }
+
+        _ = Dispatcher.BeginInvoke(() =>
+        {
+            if (viewModel.FocusedStep is not null)
+            {
+                ScrollItemIntoPreferredView(SequenceListBox, viewModel.FocusedStep);
+            }
+        }, DispatcherPriority.Background);
     }
 
     private void OnLogTextBoxLoaded(object sender, RoutedEventArgs e)
@@ -99,6 +143,24 @@ public partial class ScriptExecutionWindow : FluentWindow
 
         textBox.CaretIndex = textBox.Text.Length;
         textBox.ScrollToEnd();
+    }
+
+    private void OnSequenceListBoxSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (sender is not ListBox listBox || listBox.SelectedItem is null)
+        {
+            return;
+        }
+
+        _ = Dispatcher.BeginInvoke(() =>
+        {
+            if (listBox.SelectedItem is null)
+            {
+                return;
+            }
+
+            ScrollItemIntoPreferredView(listBox, listBox.SelectedItem);
+        }, DispatcherPriority.Background);
     }
 
     private async void OnPreviewKeyDown(object sender, KeyEventArgs e)
@@ -181,5 +243,54 @@ public partial class ScriptExecutionWindow : FluentWindow
         {
             await viewModel.StartCommand.ExecuteAsync(null);
         }
+    }
+
+    private static void ScrollItemIntoPreferredView(ListBox listBox, object item)
+    {
+        listBox.UpdateLayout();
+        listBox.ScrollIntoView(item);
+        listBox.UpdateLayout();
+
+        if (listBox.ItemContainerGenerator.ContainerFromItem(item) is not FrameworkElement container)
+        {
+            return;
+        }
+
+        var scrollViewer = FindDescendant<ScrollViewer>(listBox);
+        if (scrollViewer is null || scrollViewer.ViewportHeight <= 0)
+        {
+            return;
+        }
+
+        var itemTop = container.TransformToAncestor(scrollViewer).Transform(new Point(0, 0)).Y;
+        var desiredTop = Math.Max(0, (scrollViewer.ViewportHeight - container.ActualHeight) / 2d);
+        var targetOffset = Math.Clamp(
+            scrollViewer.VerticalOffset + itemTop - desiredTop,
+            0,
+            scrollViewer.ScrollableHeight);
+
+        if (Math.Abs(targetOffset - scrollViewer.VerticalOffset) > 0.5d)
+        {
+            scrollViewer.ScrollToVerticalOffset(targetOffset);
+        }
+    }
+
+    private static T? FindDescendant<T>(DependencyObject parent) where T : DependencyObject
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is T target)
+            {
+                return target;
+            }
+
+            if (FindDescendant<T>(child) is { } result)
+            {
+                return result;
+            }
+        }
+
+        return null;
     }
 }
