@@ -1003,6 +1003,60 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         }
     }
 
+    private static void ReplaceLanguageOptionsPreservingCodes(
+        ObservableCollection<LanguageOption> collection,
+        IReadOnlyList<LanguageOption> items)
+    {
+        ArgumentNullException.ThrowIfNull(collection);
+        ArgumentNullException.ThrowIfNull(items);
+
+        // Keep the collection populated while reordering so monkey target ComboBox bindings
+        // do not see a transient empty ItemsSource and write back an empty selection.
+        for (var targetIndex = 0; targetIndex < items.Count; targetIndex++)
+        {
+            var desired = items[targetIndex];
+            var existingIndex = FindLanguageOptionIndex(collection, desired.Code, targetIndex);
+            if (existingIndex < 0)
+            {
+                collection.Insert(targetIndex, desired);
+                continue;
+            }
+
+            if (existingIndex != targetIndex)
+            {
+                collection.Move(existingIndex, targetIndex);
+            }
+
+            var current = collection[targetIndex];
+            if (!string.Equals(current.Code, desired.Code, StringComparison.OrdinalIgnoreCase) ||
+                !string.Equals(current.DisplayName, desired.DisplayName, StringComparison.Ordinal))
+            {
+                collection[targetIndex] = desired;
+            }
+        }
+
+        while (collection.Count > items.Count)
+        {
+            collection.RemoveAt(collection.Count - 1);
+        }
+    }
+
+    private static int FindLanguageOptionIndex(
+        IReadOnlyList<LanguageOption> collection,
+        string code,
+        int startIndex)
+    {
+        for (var index = startIndex; index < collection.Count; index++)
+        {
+            if (string.Equals(collection[index].Code, code, StringComparison.OrdinalIgnoreCase))
+            {
+                return index;
+            }
+        }
+
+        return -1;
+    }
+
     public void DragOver(IDropInfo dropInfo)
     {
         if (dropInfo.TargetCollection != InstructionSequence)
@@ -1237,7 +1291,7 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         try
         {
             var options = _scriptEditorSequenceService.RebuildMonkeyObjectOptions(InstructionSequence, _localizationService);
-            ReplaceCollection(MonkeyObjectOptions, options);
+            ReplaceLanguageOptionsPreservingCodes(MonkeyObjectOptions, options);
         }
         finally
         {
