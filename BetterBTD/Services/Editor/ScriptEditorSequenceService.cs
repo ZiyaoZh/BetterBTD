@@ -1,8 +1,8 @@
-using BetterBTD.Models;
+﻿using BetterBTD.Models;
 using BetterBTD.Models.GameElements;
 using BetterBTD.Models.ScriptEditor;
 
-namespace BetterBTD.Services;
+namespace BetterBTD.Services.Editor;
 
 public sealed class ScriptEditorSequenceService
 {
@@ -538,3 +538,4 @@ public sealed class ScriptEditorSequenceService
         return hero is null ? heroType.ToString() : localizationService.T(hero.NameKey);
     }
 }
+

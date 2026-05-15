@@ -1,5 +1,4 @@
-using BetterBTD.Models.ScriptEditor;
-using BetterBTD.Services;
+﻿using BetterBTD.Models.ScriptEditor;
 
 namespace BetterBTD.Tests.Services;
 
@@ -134,3 +133,4 @@ public sealed class ScriptDocumentServiceCompatibilityTests
         return Directory.GetFiles(repoRoot, "*.btd6", SearchOption.TopDirectoryOnly).Single();
     }
 }
+

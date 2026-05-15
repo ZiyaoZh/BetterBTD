@@ -112,5 +112,5 @@
 ## Implementation Notes
 
 - 持久化模型位于 `BetterBTD/Models/ScriptEditor/ScriptDocumentModels.cs`。
-- JSON 读写和格式校验位于 `BetterBTD/Services/ScriptDocumentService.cs`。
+- JSON 读写和格式校验位于 `BetterBTD/Services/MyScripts/ScriptDocumentService.cs`。
 - 编辑器状态和脚本文档互转位于 `BetterBTD/ViewModels/ScriptEditorPageViewModel.cs`。

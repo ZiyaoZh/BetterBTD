@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using BetterBTD.Core.ScriptExecution.Runtime;
 using BetterBTD.Models;
 using BetterBTD.Models.ScriptExecution;
@@ -8,7 +8,7 @@ using OpenCvPoint = OpenCvSharp.Point;
 using OpenCvRect = OpenCvSharp.Rect;
 using OpenCvSize = OpenCvSharp.Size;
 
-namespace BetterBTD.Services;
+namespace BetterBTD.Services.Tasks.CaptureAnalysis;
 
 public sealed class GameStageStateService : IGameStageStateService
 {
@@ -753,3 +753,4 @@ public sealed class GameStageStateService : IGameStageStateService
 
     private readonly record struct UpgradePathReadResult(int Level, IReadOnlyList<ColorMatchSample> Checks);
 }
+

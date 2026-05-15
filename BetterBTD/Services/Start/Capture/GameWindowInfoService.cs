@@ -1,7 +1,7 @@
-using BetterBTD.Helpers;
+﻿using BetterBTD.Helpers;
 using BetterBTD.Models;
 
-namespace BetterBTD.Services;
+namespace BetterBTD.Services.Start.Capture;
 
 public sealed class GameWindowInfoService
 {
@@ -41,3 +41,4 @@ public sealed class GameWindowInfoService
         return true;
     }
 }
+

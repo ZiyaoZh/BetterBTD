@@ -1,8 +1,8 @@
-using System.IO;
+﻿using System.IO;
 using BetterBTD.Models.GameElements;
 using BetterBTD.Models.ScriptEditor;
 
-namespace BetterBTD.Services;
+namespace BetterBTD.Services.Editor;
 
 public sealed class ScriptEditorInstructionService
 {
@@ -499,3 +499,4 @@ public sealed class ScriptEditorInstructionService
         return monkeyObject?.ObjectId ?? string.Empty;
     }
 }
+

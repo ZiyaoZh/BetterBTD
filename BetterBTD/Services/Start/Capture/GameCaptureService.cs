@@ -1,8 +1,8 @@
-using BetterBTD.Models;
+﻿using BetterBTD.Models;
 using Fischless.GameCapture;
 using OpenCvSharp;
 
-namespace BetterBTD.Services;
+namespace BetterBTD.Services.Start.Capture;
 
 public sealed class GameCaptureService
 {
@@ -426,3 +426,4 @@ public sealed class GameCaptureService
         return true;
     }
 }
+

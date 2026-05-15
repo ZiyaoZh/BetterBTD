@@ -1,10 +1,10 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Drawing.Imaging;
 using BetterBTD.Models;
 using OpenCvSharp;
 
-namespace BetterBTD.Services;
+namespace BetterBTD.Services.Tasks.CaptureAnalysis;
 
 public sealed class TemplateMatchService
 {
@@ -214,3 +214,4 @@ public sealed class TemplateMatchService
         }
     }
 }
+

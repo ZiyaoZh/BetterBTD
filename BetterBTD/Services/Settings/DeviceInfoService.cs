@@ -1,11 +1,11 @@
-using System;
+﻿using System;
 using System.Windows;
 using BetterBTD.Helpers;
 using BetterBTD.Models;
 using Vanara.PInvoke;
 using static Vanara.PInvoke.Gdi32;
 
-namespace BetterBTD.Services;
+namespace BetterBTD.Services.Settings;
 
 public sealed class DeviceInfoService
 {
@@ -53,3 +53,4 @@ public sealed class DeviceInfoService
             scaleY);
     }
 }
+

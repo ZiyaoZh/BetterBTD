@@ -76,7 +76,7 @@ public partial class PickerWindow : FluentWindow
     {
         var windows = new List<CapturableWindow>();
         var ownerHandle = new WindowInteropHelper(this).Handle;
-        var preferredTitle = Services.ConfigurationService.Instance.Current.MaskWindowTargetTitle;
+        var preferredTitle = ConfigurationService.Instance.Current.MaskWindowTargetTitle;
 
         _ = EnumWindows((hWnd, _) =>
         {

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Input;
@@ -9,7 +9,7 @@ using BetterBTD.Models;
 using Fischless.WindowsInput;
 using InputMouseButton = Fischless.WindowsInput.MouseButton;
 
-namespace BetterBTD.Services;
+namespace BetterBTD.Services.Tasks.Input;
 
 public sealed class ScriptInputSimulationService
 {
@@ -275,3 +275,4 @@ internal sealed class ScriptInputSimulationEnvironment : IScriptInputSimulationE
         return NativeWindowHelper.ToVirtualDesktopAbsoluteCoordinate(screenCoordinate);
     }
 }
+

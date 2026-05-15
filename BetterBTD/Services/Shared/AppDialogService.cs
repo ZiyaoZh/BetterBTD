@@ -1,7 +1,7 @@
-using System.Windows;
+﻿using System.Windows;
 using BetterBTD.Views.Windows;
 
-namespace BetterBTD.Services;
+namespace BetterBTD.Services.Shared;
 
 public enum AppDialogResult
 {
@@ -56,3 +56,4 @@ public sealed class AppDialogService
         return activeWindow ?? Application.Current?.MainWindow;
     }
 }
+

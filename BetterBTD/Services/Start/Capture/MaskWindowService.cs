@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Windows;
 using System.Windows.Threading;
 using BetterBTD.Helpers;
@@ -7,7 +7,7 @@ using BetterBTD.Views.Windows;
 using BetterBTD.Views.Windows.Overlay;
 using System.Windows.Media;
 
-namespace BetterBTD.Services;
+namespace BetterBTD.Services.Start.Capture;
 
 public sealed class MaskWindowService
 {
@@ -311,3 +311,4 @@ public sealed class MaskWindowService
         return dispatcher.Invoke(action);
     }
 }
+

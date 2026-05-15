@@ -1,4 +1,4 @@
-using BetterBTD.Core.Config;
+﻿using BetterBTD.Core.Config;
 using BetterBTD.Core.ScriptExecution.Runtime;
 using BetterBTD.Models;
 using BetterBTD.Models.ScriptExecution;
@@ -6,7 +6,7 @@ using OpenCvSharp;
 using InputMouseButton = Fischless.WindowsInput.MouseButton;
 using WpfPoint = System.Windows.Point;
 
-namespace BetterBTD.Services.ScriptExecution;
+namespace BetterBTD.Services.Tasks.ScriptExecution;
 
 public static class ScriptExecutionRuntimeServiceFactory
 {
@@ -96,3 +96,4 @@ public sealed class ScriptInputServiceAdapter : IScriptInputService
         _scriptInputSimulationService.KeyUp(key);
     }
 }
+

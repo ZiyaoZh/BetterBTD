@@ -1,9 +1,9 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 using BetterBTD.Models;
 
-namespace BetterBTD.Services;
+namespace BetterBTD.Services.Settings;
 
 public sealed class ConfigurationService
 {
@@ -77,3 +77,4 @@ public sealed class ConfigurationService
         }
     }
 }
+

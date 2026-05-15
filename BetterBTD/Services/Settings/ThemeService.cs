@@ -1,8 +1,8 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Media;
 using Wpf.Ui.Appearance;
 
-namespace BetterBTD.Services;
+namespace BetterBTD.Services.Settings;
 
 public sealed class ThemeService
 {
@@ -69,3 +69,4 @@ public sealed class ThemeService
         Application.Current.Resources[key] = brush;
     }
 }
+

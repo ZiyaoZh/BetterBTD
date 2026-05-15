@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -9,7 +9,7 @@ using Microsoft.Win32.SafeHandles;
 using Vanara.PInvoke;
 using InputMouseButton = Fischless.WindowsInput.MouseButton;
 
-namespace BetterBTD.Services;
+namespace BetterBTD.Services.Tasks.Input;
 
 public sealed class HardwareInputSimulationService
 {
@@ -763,3 +763,4 @@ public sealed class HardwareInputSimulationService
         All = 0xFFFF
     }
 }
+

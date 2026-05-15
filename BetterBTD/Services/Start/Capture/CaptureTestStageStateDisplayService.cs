@@ -1,7 +1,7 @@
-using BetterBTD.Models;
+﻿using BetterBTD.Models;
 using BetterBTD.Models.ScriptExecution;
 
-namespace BetterBTD.Services;
+namespace BetterBTD.Services.Start.Capture;
 
 public sealed class CaptureTestStageStateDisplayService
 {
@@ -109,3 +109,4 @@ public sealed class CaptureTestStageStateDisplayService
         return string.IsNullOrWhiteSpace(value) ? localizationService.T("CaptureTest.UnknownValue") : value;
     }
 }
+

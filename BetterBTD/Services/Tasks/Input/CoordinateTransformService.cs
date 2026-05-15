@@ -1,9 +1,9 @@
-using System.Windows;
+﻿using System.Windows;
 using BetterBTD.Helpers;
 using BetterBTD.Models;
 using Fischless.GameCapture;
 
-namespace BetterBTD.Services;
+namespace BetterBTD.Services.Tasks.Input;
 
 public sealed class CoordinateTransformService
 {
@@ -99,3 +99,4 @@ public sealed class CoordinateTransformService
 
     private readonly GameCaptureService _gameCaptureService;
 }
+

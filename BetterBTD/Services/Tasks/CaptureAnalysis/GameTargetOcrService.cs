@@ -1,11 +1,11 @@
-using System.IO;
+﻿using System.IO;
 using System.Globalization;
 using System.Text;
 using OpenCvSharp;
 using OpenCvRect = OpenCvSharp.Rect;
 using OpenCvSize = OpenCvSharp.Size;
 
-namespace BetterBTD.Services;
+namespace BetterBTD.Services.Tasks.CaptureAnalysis;
 
 public sealed class GameTargetOcrService
 {
@@ -875,3 +875,4 @@ public sealed class GameTargetOcrService
 
 
 }
+

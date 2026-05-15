@@ -1,6 +1,6 @@
-using BetterBTD.Models.ScriptEditor;
+﻿using BetterBTD.Models.ScriptEditor;
 
-namespace BetterBTD.Services;
+namespace BetterBTD.Services.MyScripts;
 
 public sealed class ScriptInstructionOptimizationService
 {
@@ -192,3 +192,4 @@ public sealed class ScriptInstructionOptimizationService
         };
     }
 }
+

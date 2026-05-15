@@ -4,10 +4,10 @@
   ScriptExecutionRuntimeServices.cs:8。
 
   真正的缺口不在“怎么按键”，而在“怎么把每条指令做成可验证、可重试、可暂停的工作流”。当前已有的状态探测足够支撑第一批核心指令：能读金币、回合、左右升级面板可见性、三路等级、是否处于放置态、英雄是否可放，见 /C:/Users/
-  Administrator/source/repos/BetterBTD/BetterBTD/Services/GameStageStateService.cs:177。但也有明显短板：GetStageTargetAsync 还是空的，当前没有“选中的到底是不是目标猴子”“当前是否在等待技能落点”“快进是否真的切换成功”这类高层
-  探测；坐标换算默认按 1920x1080 比例缩放，非 16:9 只做警告不做补偿，见 /C:/Users/Administrator/source/repos/BetterBTD/BetterBTD/Services/CoordinateTransformService.cs:9；输入层也没有看到“切到前台窗口再发送输入”的保障，只
-  有按标题找窗口和发 SendInput，这会直接影响稳定性，见 /C:/Users/Administrator/source/repos/BetterBTD/BetterBTD/Services/ScriptInputSimulationService.cs:31 和 /C:/Users/Administrator/source/repos/BetterBTD/BetterBTD/
-  Services/GameWindowInfoService.cs:18。
+  Administrator/source/repos/BetterBTD/BetterBTD/Services/Tasks/CaptureAnalysis/GameStageStateService.cs:177。但也有明显短板：GetStageTargetAsync 还是空的，当前没有“选中的到底是不是目标猴子”“当前是否在等待技能落点”“快进是否真的切换成功”这类高层
+  探测；坐标换算默认按 1920x1080 比例缩放，非 16:9 只做警告不做补偿，见 /C:/Users/Administrator/source/repos/BetterBTD/BetterBTD/Services/Tasks/Input/CoordinateTransformService.cs:9；输入层也没有看到“切到前台窗口再发送输入”的保障，只
+  有按标题找窗口和发 SendInput，这会直接影响稳定性，见 /C:/Users/Administrator/source/repos/BetterBTD/BetterBTD/Services/Tasks/Input/ScriptInputSimulationService.cs:31 和 /C:/Users/Administrator/source/repos/BetterBTD/BetterBTD/
+  Services/Start/Capture/GameWindowInfoService.cs:18。
 
   实现上，我建议不要把每个指令写成一坨 while + if，而是统一成“阶段化工作流”模型。每条指令都拆成 前置校验 -> 进入目标状态 -> 校验进入成功 -> 执行动作 -> 校验结果 -> 失败恢复/重试 -> 提交运行时状态。公共层提供几类原子能力：
   WaitUntil、RetryPolicy、EnsureNeutralGameState、CaptureStableSnapshot、PressHotkeyUntil、SelectMonkeyAndVerifyPanel、ClickWithOffsetSearch、FailWithDiagnostics。这样每条指令只是组合这些能力，而不是自己维护一套散乱逻辑。

@@ -1,8 +1,8 @@
-using System.IO;
+﻿using System.IO;
 using System.Text.Json;
 using BetterBTD.Models.ScriptEditor;
 
-namespace BetterBTD.Services;
+namespace BetterBTD.Services.MyScripts;
 
 public sealed class LegacyScriptDocumentService
 {
@@ -74,3 +74,4 @@ public sealed class LegacyScriptDocumentService
         }
     }
 }
+

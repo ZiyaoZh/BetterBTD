@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace BetterBTD.Services;
+namespace BetterBTD.Services.Shell.Localization;
 
 public sealed partial class LocalizationService
 {

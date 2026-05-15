@@ -1,8 +1,8 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using BetterBTD.Models.GameElements;
 using BetterBTD.Models.ScriptEditor;
 
-namespace BetterBTD.Services;
+namespace BetterBTD.Services.MyScripts;
 
 public sealed class LegacyScriptConversionService
 {
@@ -879,3 +879,4 @@ public sealed class LegacyScriptConversionService
         public required bool IsHero { get; init; }
     }
 }
+

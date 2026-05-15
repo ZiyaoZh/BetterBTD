@@ -1,8 +1,8 @@
-using BetterBTD.Models;
+﻿using BetterBTD.Models;
 using BetterBTD.Models.GameElements;
 using BetterBTD.Models.ScriptEditor;
 
-namespace BetterBTD.Services;
+namespace BetterBTD.Services.Editor;
 
 public sealed class ScriptEditorOptionService
 {
@@ -128,3 +128,4 @@ public sealed class ScriptEditorMetadataOptions
     public required IReadOnlyList<LanguageOption> ModeOptions { get; init; }
     public required IReadOnlyList<LanguageOption> HeroOptions { get; init; }
 }
+
