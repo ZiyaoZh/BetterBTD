@@ -7,7 +7,7 @@ namespace BetterBTD.Services;
 public sealed class LegacyScriptConversionService
 {
     private const string LegacyNotesPrefix = "Legacy:";
-    private const int DefaultInstructionIntervalMilliseconds = 0;
+    private const int DefaultInstructionIntervalMilliseconds = 50;
     private const string HeroBindingId = "legacy-hero";
 
     private static readonly Lazy<LegacyScriptConversionService> InstanceHolder = new(() => new LegacyScriptConversionService());
@@ -63,12 +63,14 @@ public sealed class LegacyScriptConversionService
                 ConvertInstruction(rawInstruction);
             }
 
-            Document = new ScriptDocument
+            var convertedDocument = new ScriptDocument
             {
                 Metadata = BuildMetadata(),
                 MonkeyObjects = _monkeyObjects,
                 Instructions = _instructions
             };
+
+            Document = ScriptInstructionOptimizationService.Instance.OptimizeDocument(convertedDocument);
         }
 
         private ScriptMetadataDocument BuildMetadata()
@@ -233,7 +235,7 @@ public sealed class LegacyScriptConversionService
                 MonkeyObjectId = objectId,
                 PositionX = instruction.CoordinateX,
                 PositionY = instruction.CoordinateY,
-                PlacementDetectionEnabled = instruction.Argument2 == (int)LegacyPlaceCheckType.Check,
+                PlacementDetectionEnabled = true,
                 PlacementFailureAdjustmentEnabled = instruction.Argument2 == (int)LegacyPlaceCheckType.Check,
                 IntervalToNextInstructionMs = DefaultInstructionIntervalMilliseconds,
                 Notes = BuildLegacyNotes(instruction)

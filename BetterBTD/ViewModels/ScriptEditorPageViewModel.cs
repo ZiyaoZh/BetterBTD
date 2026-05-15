@@ -47,6 +47,7 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
     private readonly CoordinateTransformService _coordinateTransformService;
     private readonly ScriptDocumentService _scriptDocumentService;
     private readonly ScriptEditorInstructionService _scriptEditorInstructionService;
+    private readonly ScriptInstructionOptimizationService _scriptInstructionOptimizationService;
     private readonly ScriptEditorSequenceService _scriptEditorSequenceService;
     private readonly ScriptEditorOptionService _scriptEditorOptionService;
     private readonly ScriptTaskFlowService _scriptTaskFlowService;
@@ -93,6 +94,7 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         _coordinateTransformService = CoordinateTransformService.Instance;
         _scriptDocumentService = ScriptDocumentService.Instance;
         _scriptEditorInstructionService = ScriptEditorInstructionService.Instance;
+        _scriptInstructionOptimizationService = ScriptInstructionOptimizationService.Instance;
         _scriptEditorSequenceService = ScriptEditorSequenceService.Instance;
         _scriptEditorOptionService = ScriptEditorOptionService.Instance;
         _scriptTaskFlowService = ScriptTaskFlowService.Instance;
@@ -444,9 +446,10 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
 
     public void SaveScriptDocument(string filePath)
     {
-        _scriptDocumentService.Save(filePath, ExportScriptDocument());
+        var optimizedDocument = _scriptInstructionOptimizationService.OptimizeDocument(ExportScriptDocument());
+        _scriptDocumentService.Save(filePath, optimizedDocument);
+        ImportScriptDocument(optimizedDocument);
         CurrentScriptFilePath = filePath;
-        MarkWorkspaceAsPersisted();
     }
 
     public void LoadScriptDocument(string filePath)

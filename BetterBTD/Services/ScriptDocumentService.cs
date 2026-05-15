@@ -53,8 +53,10 @@ public sealed class ScriptDocumentService
         ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
         ArgumentNullException.ThrowIfNull(document);
 
-        NormalizeDocument(document);
-        ValidateDocument(document);
+        var optimizedDocument = ScriptInstructionOptimizationService.Instance.OptimizeDocument(document);
+
+        NormalizeDocument(optimizedDocument);
+        ValidateDocument(optimizedDocument);
 
         var directory = Path.GetDirectoryName(filePath);
         if (!string.IsNullOrWhiteSpace(directory))
@@ -62,7 +64,7 @@ public sealed class ScriptDocumentService
             Directory.CreateDirectory(directory);
         }
 
-        var json = JsonSerializer.Serialize(document, JsonOptions);
+        var json = JsonSerializer.Serialize(optimizedDocument, JsonOptions);
         File.WriteAllText(filePath, json);
     }
 
