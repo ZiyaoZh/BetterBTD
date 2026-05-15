@@ -930,7 +930,7 @@
                                 </Grid>
 
                                 <Grid Style="{StaticResource AdvancedPropertyRowStyle}"
-                                      Visibility="{Binding ShowSellMonkeyAdvancedProperties, Converter={StaticResource BoolToVisibilityConverter}}">
+                                     Visibility="{Binding ShowSellMonkeyAdvancedProperties, Converter={StaticResource BoolToVisibilityConverter}}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
@@ -945,6 +945,21 @@
                                                      IsChecked="{Binding SelectedSequenceInstruction.SellDetectionEnabled, Mode=TwoWay}" />
                                 </Grid>
                             </StackPanel>
+
+                            <Grid Style="{StaticResource AdvancedPropertyRowStyle}"
+                                  Visibility="{Binding ShowNextRoundAdvancedProperties, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0"
+                                           Style="{StaticResource AdvancedPropertyLabelStyle}"
+                                           Text="{Binding PropertyNextRoundOperationIntervalMillisecondsText}" />
+                                <ui:NumberBox Grid.Column="1"
+                                              Style="{StaticResource AdvancedPropertyNumberBoxStyle}"
+                                              Value="{Binding SelectedSequenceInstruction.NextRoundOperationIntervalMilliseconds, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            </Grid>
 
                             <Grid Style="{StaticResource AdvancedPropertyRowStyle}"
                                   Visibility="{Binding ShowMouseClickAdvancedProperties, Converter={StaticResource BoolToVisibilityConverter}}">

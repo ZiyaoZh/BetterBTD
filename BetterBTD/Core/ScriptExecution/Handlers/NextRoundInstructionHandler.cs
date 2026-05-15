@@ -5,6 +5,8 @@ namespace BetterBTD.Core.ScriptExecution.Handlers;
 
 public sealed class NextRoundInstructionHandler : ScriptInstructionHandlerBase
 {
+    internal const int DefaultOperationIntervalMilliseconds = 100;
+
     public override ScriptCommandType CommandType => ScriptCommandType.NextRound;
 
     public override async Task HandleAsync(ScriptInstructionExecutionContext context, CancellationToken cancellationToken)
@@ -14,6 +16,7 @@ public sealed class NextRoundInstructionHandler : ScriptInstructionHandlerBase
             ? "PlayFastForward"
             : instruction.NextRoundAction.Trim();
         var nextRoundHotkey = ScriptExecutionKeyBindingResolver.ResolveNextRoundHotkey(nextRoundAction);
+        var operationIntervalMilliseconds = instruction.NextRoundOperationIntervalMilliseconds ?? DefaultOperationIntervalMilliseconds;
 
         switch (nextRoundAction)
         {
@@ -28,6 +31,8 @@ public sealed class NextRoundInstructionHandler : ScriptInstructionHandlerBase
                         sendCount,
                         "NextRoundSend",
                         $"Sending next round {sendCount} time(s).",
+                        operationIntervalMilliseconds,
+                        operationIntervalMilliseconds,
                         cancellationToken)
                     .ConfigureAwait(false);
 
@@ -40,13 +45,17 @@ public sealed class NextRoundInstructionHandler : ScriptInstructionHandlerBase
             }
             case "PlayFastForward":
             {
-                await ScriptExecutionOperations.CheckpointAsync(
-                    context,
-                    "NextRoundPress",
-                    $"Toggling play/fast forward with hotkey '{nextRoundHotkey.DisplayName}'.",
-                    cancellationToken).ConfigureAwait(false);
-
-                context.RuntimeServices.Input.PressHotkey(nextRoundHotkey);
+                await ScriptInstructionHandlerSupport
+                    .PressHotkeyRepeatedAsync(
+                        context,
+                        nextRoundHotkey,
+                        repeatCount: 1,
+                        "NextRoundPress",
+                        $"Toggling play/fast forward with hotkey '{nextRoundHotkey.DisplayName}'.",
+                        operationIntervalMilliseconds,
+                        operationIntervalMilliseconds,
+                        cancellationToken)
+                    .ConfigureAwait(false);
 
                 await ScriptExecutionOperations.CheckpointAsync(
                     context,

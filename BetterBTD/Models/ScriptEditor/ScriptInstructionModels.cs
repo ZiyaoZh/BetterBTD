@@ -97,6 +97,7 @@ public sealed class ScriptInstructionInstance : ObservableObject
     private int _clickCount = 1;
     private int _clickIntervalMilliseconds = 80;
     private int _nextRoundSendCount = 1;
+    private int _nextRoundOperationIntervalMilliseconds = 100;
     private int _waitTimeMilliseconds = 1000;
     private bool _placementDetectionEnabled = true;
     private bool _placementFailureAdjustmentEnabled = true;
@@ -239,6 +240,12 @@ public sealed class ScriptInstructionInstance : ObservableObject
     {
         get => _nextRoundSendCount;
         set => SetProperty(ref _nextRoundSendCount, value < 1 ? 1 : (value > 500 ? 500 : value));
+    }
+
+    public int NextRoundOperationIntervalMilliseconds
+    {
+        get => _nextRoundOperationIntervalMilliseconds;
+        set => SetProperty(ref _nextRoundOperationIntervalMilliseconds, value < 0 ? 0 : value);
     }
 
     public string WaitMode

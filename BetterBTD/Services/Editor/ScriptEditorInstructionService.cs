@@ -128,6 +128,7 @@ public sealed class ScriptEditorInstructionService
             ClickCount = instruction.ClickCount,
             ClickIntervalMilliseconds = instruction.ClickIntervalMilliseconds,
             NextRoundSendCount = instruction.NextRoundSendCount,
+            NextRoundOperationIntervalMilliseconds = instruction.NextRoundOperationIntervalMilliseconds,
             WaitTimeMilliseconds = instruction.WaitTimeMilliseconds,
             PlacementDetectionEnabled = instruction.PlacementDetectionEnabled,
             PlacementFailureAdjustmentEnabled = instruction.PlacementFailureAdjustmentEnabled,
@@ -213,6 +214,9 @@ public sealed class ScriptEditorInstructionService
             ? instruction.ClickIntervalMilliseconds
             : document.ClickIntervalMilliseconds;
         instruction.NextRoundSendCount = document.NextRoundSendCount <= 0 ? instruction.NextRoundSendCount : document.NextRoundSendCount;
+        instruction.NextRoundOperationIntervalMilliseconds = document.NextRoundOperationIntervalMilliseconds is null or < 0
+            ? instruction.NextRoundOperationIntervalMilliseconds
+            : document.NextRoundOperationIntervalMilliseconds.Value;
         instruction.WaitTimeMilliseconds = document.WaitTimeMilliseconds < 0 ? instruction.WaitTimeMilliseconds : document.WaitTimeMilliseconds;
         instruction.PlacementDetectionEnabled = document.PlacementDetectionEnabled ?? instruction.PlacementDetectionEnabled;
         instruction.PlacementFailureAdjustmentEnabled = document.PlacementFailureAdjustmentEnabled ?? instruction.PlacementFailureAdjustmentEnabled;
@@ -291,6 +295,7 @@ public sealed class ScriptEditorInstructionService
             ClickCount = source.ClickCount,
             ClickIntervalMilliseconds = source.ClickIntervalMilliseconds,
             NextRoundSendCount = source.NextRoundSendCount,
+            NextRoundOperationIntervalMilliseconds = source.NextRoundOperationIntervalMilliseconds,
             WaitMode = source.WaitMode,
             WaitTimeMilliseconds = source.WaitTimeMilliseconds,
             PlacementDetectionEnabled = source.PlacementDetectionEnabled,

@@ -93,6 +93,8 @@ public sealed class ScriptInstructionDocument
 
     public int NextRoundSendCount { get; set; }
 
+    public int? NextRoundOperationIntervalMilliseconds { get; set; }
+
     public int WaitTimeMilliseconds { get; set; }
 
     public bool? PlacementDetectionEnabled { get; set; }

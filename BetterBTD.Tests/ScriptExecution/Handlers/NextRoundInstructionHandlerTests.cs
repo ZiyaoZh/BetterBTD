@@ -41,7 +41,8 @@ public sealed class NextRoundInstructionHandlerTests
             {
                 CommandType = ScriptCommandType.NextRound.ToString(),
                 NextRoundAction = "SendNextRound",
-                NextRoundSendCount = 3
+                NextRoundSendCount = 3,
+                NextRoundOperationIntervalMilliseconds = 200
             };
 
             var context = TestScriptExecutionContextFactory.Create(instruction, runtimeServices);

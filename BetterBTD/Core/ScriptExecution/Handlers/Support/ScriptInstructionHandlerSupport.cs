@@ -515,7 +515,7 @@ internal static class ScriptInstructionHandlerSupport
             cancellationToken).ConfigureAwait(false);
     }
 
-    public static async Task PressHotkeyRepeatedAsync(
+    public static Task PressHotkeyRepeatedAsync(
         ScriptInstructionExecutionContext context,
         HotkeyBinding hotkey,
         int repeatCount,
@@ -524,12 +524,34 @@ internal static class ScriptInstructionHandlerSupport
         int intervalMilliseconds,
         CancellationToken cancellationToken)
     {
+        return PressHotkeyRepeatedAsync(
+            context,
+            hotkey,
+            repeatCount,
+            checkpoint,
+            description,
+            intervalMilliseconds,
+            modifierTransitionIntervalMilliseconds: 50,
+            cancellationToken);
+    }
+
+    public static async Task PressHotkeyRepeatedAsync(
+        ScriptInstructionExecutionContext context,
+        HotkeyBinding hotkey,
+        int repeatCount,
+        string checkpoint,
+        string description,
+        int intervalMilliseconds,
+        int modifierTransitionIntervalMilliseconds,
+        CancellationToken cancellationToken)
+    {
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(hotkey);
         ArgumentException.ThrowIfNullOrWhiteSpace(checkpoint);
 
         var effectiveRepeatCount = Math.Max(1, repeatCount);
-        var effectiveIntervalMilliseconds = Math.Max(0, intervalMilliseconds);
+        var effectiveIntervalMilliseconds = Math.Max(50, intervalMilliseconds);
+        var effectiveModifierTransitionIntervalMilliseconds = Math.Max(50, modifierTransitionIntervalMilliseconds);
         var effectiveDescription = string.IsNullOrWhiteSpace(description)
             ? $"Sending hotkey '{hotkey.DisplayName}'."
             : description;
@@ -548,6 +570,15 @@ internal static class ScriptInstructionHandlerSupport
                 foreach (var modifierKey in modifierKeys)
                 {
                     context.RuntimeServices.Input.KeyDown(modifierKey);
+                }
+
+                if (effectiveModifierTransitionIntervalMilliseconds > 0)
+                {
+                    await ScriptExecutionOperations.DelayAsync(
+                        context,
+                        effectiveModifierTransitionIntervalMilliseconds,
+                        $"{checkpoint}ModifiersDownInterval",
+                        cancellationToken).ConfigureAwait(false);
                 }
             }
 
@@ -573,6 +604,15 @@ internal static class ScriptInstructionHandlerSupport
         }
         finally
         {
+            if (modifierKeys.Count > 0 && effectiveModifierTransitionIntervalMilliseconds > 0)
+            {
+                await ScriptExecutionOperations.DelayAsync(
+                    context,
+                    effectiveModifierTransitionIntervalMilliseconds,
+                    $"{checkpoint}ModifiersUpInterval",
+                    cancellationToken).ConfigureAwait(false);
+            }
+
             for (var index = modifierKeys.Count - 1; index >= 0; index--)
             {
                 context.RuntimeServices.Input.KeyUp(modifierKeys[index]);

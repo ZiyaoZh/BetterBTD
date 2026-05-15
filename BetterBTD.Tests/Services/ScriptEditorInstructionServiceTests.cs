@@ -58,6 +58,64 @@ public sealed class ScriptEditorInstructionServiceTests
     }
 
     [Fact]
+    public void CreateInstructionInstance_NextRound_UsesAdvancedDefaults()
+    {
+        var service = ScriptEditorInstructionService.Instance;
+        var template = service.CreateInstructionLibrary().Single(x => x.Type == ScriptCommandType.NextRound);
+
+        var instruction = service.CreateInstructionInstance(template, string.Empty, string.Empty, string.Empty);
+
+        Assert.Equal(200, instruction.NextRoundOperationIntervalMilliseconds);
+    }
+
+    [Fact]
+    public void CreateInstructionInstanceFromDocument_NextRound_MissingAdvancedFields_UsesDefaults()
+    {
+        var service = ScriptEditorInstructionService.Instance;
+        var templates = service.CreateInstructionLibrary().ToDictionary(x => x.Type);
+        var document = new ScriptInstructionDocument
+        {
+            CommandType = ScriptCommandType.NextRound.ToString(),
+            NextRoundAction = "SendNextRound",
+            NextRoundSendCount = 1
+        };
+
+        var instruction = service.CreateInstructionInstanceFromDocument(
+            document,
+            new Dictionary<string, ScriptMonkeyObjectDocument>(),
+            templates,
+            string.Empty,
+            string.Empty,
+            string.Empty);
+
+        Assert.Equal(200, instruction.NextRoundOperationIntervalMilliseconds);
+    }
+
+    [Fact]
+    public void CreateInstructionInstanceFromDocument_NextRound_LoadsAdvancedInterval()
+    {
+        var service = ScriptEditorInstructionService.Instance;
+        var templates = service.CreateInstructionLibrary().ToDictionary(x => x.Type);
+        var document = new ScriptInstructionDocument
+        {
+            CommandType = ScriptCommandType.NextRound.ToString(),
+            NextRoundAction = "SendNextRound",
+            NextRoundSendCount = 2,
+            NextRoundOperationIntervalMilliseconds = 340
+        };
+
+        var instruction = service.CreateInstructionInstanceFromDocument(
+            document,
+            new Dictionary<string, ScriptMonkeyObjectDocument>(),
+            templates,
+            string.Empty,
+            string.Empty,
+            string.Empty);
+
+        Assert.Equal(340, instruction.NextRoundOperationIntervalMilliseconds);
+    }
+
+    [Fact]
     public void CreateInstructionInstanceFromDocument_UpgradeMonkey_MissingAdvancedFields_UsesDefaults()
     {
         var service = ScriptEditorInstructionService.Instance;

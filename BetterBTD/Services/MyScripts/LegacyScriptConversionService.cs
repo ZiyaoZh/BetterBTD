@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using BetterBTD.Core.ScriptExecution.Handlers;
 using BetterBTD.Models.GameElements;
 using BetterBTD.Models.ScriptEditor;
 
@@ -491,6 +492,7 @@ public sealed class LegacyScriptConversionService
                 CommandType = ScriptCommandType.NextRound.ToString(),
                 NextRoundAction = action,
                 NextRoundSendCount = 1,
+                NextRoundOperationIntervalMilliseconds = NextRoundInstructionHandler.DefaultOperationIntervalMilliseconds,
                 IntervalToNextInstructionMs = DefaultInstructionIntervalMilliseconds,
                 Notes = BuildLegacyNotes(instruction)
             });

@@ -275,6 +275,7 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
             OnPropertyChanged(nameof(ShowAdvancedProperties));
             OnPropertyChanged(nameof(ShowMouseClickAdvancedProperties));
             OnPropertyChanged(nameof(ShowPlaceMonkeyAdvancedProperties));
+            OnPropertyChanged(nameof(ShowNextRoundAdvancedProperties));
             OnPropertyChanged(nameof(ShowUpgradeMonkeyAdvancedProperties));
             OnPropertyChanged(nameof(ShowMonkeyPanelAdvancedProperties));
             OnPropertyChanged(nameof(ShowSellMonkeyAdvancedProperties));
@@ -292,6 +293,8 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
     public bool ShowMouseClickAdvancedProperties => SelectedSequenceInstruction?.Type == ScriptCommandType.MouseClick;
 
     public bool ShowPlaceMonkeyAdvancedProperties => SelectedSequenceInstruction?.Type == ScriptCommandType.PlaceMonkey;
+
+    public bool ShowNextRoundAdvancedProperties => SelectedSequenceInstruction?.Type == ScriptCommandType.NextRound;
 
     public bool ShowUpgradeMonkeyAdvancedProperties => SelectedSequenceInstruction?.Type == ScriptCommandType.UpgradeMonkey;
 
@@ -368,6 +371,7 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
     public string PropertyNeedCoordinateText => _localizationService.T("Editor.Property.NeedCoordinate");
     public string PropertyNextRoundActionText => _localizationService.T("Editor.Property.NextRoundAction");
     public string PropertyNextRoundSendCountText => _localizationService.T("Editor.Property.NextRound.SendCount");
+    public string PropertyNextRoundOperationIntervalMillisecondsText => _localizationService.T("Editor.Property.NextRoundOperationIntervalMilliseconds");
     public string PropertyWaitModeText => _localizationService.T("Editor.Property.WaitMode");
     public string PropertyWaitTimeMillisecondsText => _localizationService.T("Editor.Property.WaitTimeMilliseconds");
     public string PropertyWaitGoldAmountText => _localizationService.T("Editor.Property.WaitGoldAmount");
@@ -2014,6 +2018,7 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         OnPropertyChanged(nameof(PropertyNeedCoordinateText));
         OnPropertyChanged(nameof(PropertyNextRoundActionText));
         OnPropertyChanged(nameof(PropertyNextRoundSendCountText));
+        OnPropertyChanged(nameof(PropertyNextRoundOperationIntervalMillisecondsText));
         OnPropertyChanged(nameof(PropertyWaitModeText));
         OnPropertyChanged(nameof(PropertyWaitTimeMillisecondsText));
         OnPropertyChanged(nameof(PropertyWaitGoldAmountText));
