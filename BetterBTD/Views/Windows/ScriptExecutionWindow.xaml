@@ -70,6 +70,7 @@
         <Grid Grid.Row="1" Margin="{StaticResource WindowContentPadding}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="260" MinHeight="160" />
                 <RowDefinition Height="6" />
                 <RowDefinition Height="*" MinHeight="120" />
@@ -116,7 +117,53 @@
                 </StackPanel>
             </Grid>
 
-            <Grid Grid.Row="1">
+            <Grid Grid.Row="1" Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="16" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0">
+                    <TextBlock FontSize="12"
+                               Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                               Text="{Binding IntervalStrategyLabel}" />
+                    <ComboBox Margin="0,6,0,0"
+                              ItemsSource="{Binding IntervalStrategies}"
+                              SelectedItem="{Binding SelectedIntervalStrategy, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                              DisplayMemberPath="DisplayName" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="2"
+                            VerticalAlignment="Center"
+                            Visibility="{Binding ShowCommonOperationInterval, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <TextBlock FontSize="12"
+                               Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                               Text="{Binding CommonOperationIntervalLabel}" />
+                    <Grid Margin="0,6,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <Slider Grid.Column="0"
+                                VerticalAlignment="Center"
+                                Minimum="50"
+                                Maximum="1000"
+                                TickFrequency="10"
+                                SmallChange="10"
+                                LargeChange="10"
+                                IsSnapToTickEnabled="True"
+                                Value="{Binding CommonOperationIntervalMs, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBlock Grid.Column="1"
+                                   Margin="12,0,0,0"
+                                   VerticalAlignment="Center"
+                                   Text="{Binding CommonOperationIntervalMs, StringFormat={}{0} ms}" />
+                    </Grid>
+                </StackPanel>
+            </Grid>
+
+            <Grid Grid.Row="2">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="1.7*" />
                     <ColumnDefinition Width="16" />
@@ -227,7 +274,7 @@
                 </Grid>
             </Grid>
 
-            <GridSplitter Grid.Row="2"
+            <GridSplitter Grid.Row="3"
                           Height="1"
                           Margin="0,2,0,2"
                           HorizontalAlignment="Stretch"
@@ -238,7 +285,7 @@
                           ShowsPreview="True"
                           Opacity="0.65" />
 
-            <Grid Grid.Row="3">
+            <Grid Grid.Row="4">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
@@ -263,7 +310,7 @@
                          Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                          TextAlignment="Left"
                          TextWrapping="Wrap"
-                         VerticalScrollBarVisibility="Auto"
+                         VerticalScrollBarVisibility="Visible"
                          HorizontalScrollBarVisibility="Disabled"
                          Loaded="OnLogTextBoxLoaded"
                          TextChanged="OnLogTextBoxTextChanged" />

@@ -402,7 +402,8 @@ public sealed class GameStageStateService : IGameStageStateService
     private static bool? DetectIsPlacingMonkey(Mat frame)
     {
         return IsColorMatch(frame, new ReferencePoint(1600, 120), PlacementWhite, DefaultColorTolerance) &&
-               IsColorMatch(frame, new ReferencePoint(1600, 98), PlacementOrange, DefaultColorTolerance);
+               IsColorMatch(frame, new ReferencePoint(1600, 98), PlacementOrange, DefaultColorTolerance) && 
+               IsColorMatch(frame, new ReferencePoint(1625, 120), PlacementOrange, DefaultColorTolerance);
     }
 
     private static bool? DetectCanPlaceHero(Mat frame)

@@ -107,13 +107,9 @@ public sealed class ScriptInstructionDocument
 
     public bool? UpgradeDetectionEnabled { get; set; }
 
-    public int? UpgradeDetectionIntervalMilliseconds { get; set; }
-
     public int? UpgradeOperationIntervalMilliseconds { get; set; }
 
     public bool? MonkeyPanelDetectionEnabled { get; set; }
-
-    public int? MonkeyPanelDetectionIntervalMilliseconds { get; set; }
 
     public int? MonkeyPanelOperationIntervalMilliseconds { get; set; }
 

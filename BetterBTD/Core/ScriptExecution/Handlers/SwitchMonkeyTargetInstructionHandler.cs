@@ -50,8 +50,10 @@ public sealed class SwitchMonkeyTargetInstructionHandler : ScriptInstructionHand
         var panelDetectionEnabled = ScriptInstructionHandlerSupport.ResolveMonkeyPanelDetectionEnabled(
             monkeyState.ObjectId,
             instruction.MonkeyPanelDetectionEnabled ?? true);
-        var detectionIntervalMilliseconds = instruction.MonkeyPanelDetectionIntervalMilliseconds ?? DefaultOperationIntervalMilliseconds;
-        var operationIntervalMilliseconds = instruction.MonkeyPanelOperationIntervalMilliseconds ?? DefaultOperationIntervalMilliseconds;
+        var operationIntervalMilliseconds = ScriptInstructionHandlerSupport.ResolveOperationIntervalMilliseconds(
+            context.Options,
+            instruction.MonkeyPanelOperationIntervalMilliseconds,
+            DefaultOperationIntervalMilliseconds);
         var shouldSelectMonkey = ScriptInstructionHandlerSupport.ShouldSelectMonkeyForPanelInteraction(context);
         var shouldCloseMonkeyPanel = ScriptInstructionHandlerSupport.ShouldCloseMonkeyPanelAfterInstruction(context);
 
@@ -61,7 +63,6 @@ public sealed class SwitchMonkeyTargetInstructionHandler : ScriptInstructionHand
                 targetCoordinate,
                 shouldSelectMonkey,
                 panelDetectionEnabled,
-                detectionIntervalMilliseconds,
                 operationIntervalMilliseconds,
                 cancellationToken)
             .ConfigureAwait(false);

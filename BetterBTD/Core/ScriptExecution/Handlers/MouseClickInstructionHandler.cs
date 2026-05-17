@@ -13,7 +13,9 @@ public sealed class MouseClickInstructionHandler : ScriptInstructionHandlerBase
         var instruction = context.Step.Instruction;
         var coordinate = new WpfPoint(instruction.PositionX, instruction.PositionY);
         var clickCount = Math.Max(1, instruction.ClickCount);
-        var clickIntervalMilliseconds = Math.Max(0, instruction.ClickIntervalMilliseconds);
+        var clickIntervalMilliseconds = ScriptInstructionHandlerSupport.ResolveOperationIntervalMilliseconds(
+            context.Options,
+            instruction.ClickIntervalMilliseconds);
 
         for (var index = 0; index < clickCount; index++)
         {

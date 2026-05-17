@@ -102,7 +102,7 @@ public sealed class PlaceMonkeyInstructionHandler : ScriptInstructionHandlerBase
                             context,
                             new ScriptWaitOptions
                             {
-                                TimeoutMilliseconds = placementAdjustmentAttemptIntervalMilliseconds,
+                                TimeoutMilliseconds = 1000,
                                 PollIntervalMilliseconds = Math.Min(75, Math.Max(10, placementAdjustmentAttemptIntervalMilliseconds)),
                                 Description = "placement mode exit"
                             },

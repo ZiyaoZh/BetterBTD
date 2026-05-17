@@ -85,7 +85,6 @@ public sealed class ScriptInstructionOptimizationService
                string.Equals(previous.TargetMonkeyObjectId, current.TargetMonkeyObjectId, StringComparison.OrdinalIgnoreCase) &&
                string.Equals(previous.UpgradePath, current.UpgradePath, StringComparison.OrdinalIgnoreCase) &&
                previous.UpgradeDetectionEnabled == current.UpgradeDetectionEnabled &&
-               previous.UpgradeDetectionIntervalMilliseconds == current.UpgradeDetectionIntervalMilliseconds &&
                previous.UpgradeOperationIntervalMilliseconds == current.UpgradeOperationIntervalMilliseconds;
     }
 
@@ -164,10 +163,8 @@ public sealed class ScriptInstructionOptimizationService
             PlacementAttemptIntervalMilliseconds = instruction.PlacementAttemptIntervalMilliseconds,
             PlacementAdjustmentAttemptIntervalMilliseconds = instruction.PlacementAdjustmentAttemptIntervalMilliseconds,
             UpgradeDetectionEnabled = instruction.UpgradeDetectionEnabled,
-            UpgradeDetectionIntervalMilliseconds = instruction.UpgradeDetectionIntervalMilliseconds,
             UpgradeOperationIntervalMilliseconds = instruction.UpgradeOperationIntervalMilliseconds,
             MonkeyPanelDetectionEnabled = instruction.MonkeyPanelDetectionEnabled,
-            MonkeyPanelDetectionIntervalMilliseconds = instruction.MonkeyPanelDetectionIntervalMilliseconds,
             MonkeyPanelOperationIntervalMilliseconds = instruction.MonkeyPanelOperationIntervalMilliseconds,
             SellDetectionEnabled = instruction.SellDetectionEnabled,
             WaitGoldAmount = instruction.WaitGoldAmount,

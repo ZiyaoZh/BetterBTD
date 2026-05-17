@@ -8,6 +8,9 @@ namespace BetterBTD.Core.ScriptExecution.Handlers;
 
 internal static class ScriptInstructionHandlerSupport
 {
+    private const int CommonOperationIntervalMinimumMilliseconds = 50;
+    private const int CommonOperationIntervalMaximumMilliseconds = 1000;
+    private const int MonkeyPanelSelectionAttemptTimeoutMilliseconds = 5000;
     private const int RepeatedHotkeyIntervalMilliseconds = 60;
     private const int PlacementSearchRingCount = 20;
     private const double PlacementSearchRingStepPixels = 1d;
@@ -115,6 +118,52 @@ internal static class ScriptInstructionHandlerSupport
     {
         ArgumentNullException.ThrowIfNull(exception);
         return string.Equals(exception.Checkpoint, "WaitTimedOut", StringComparison.Ordinal);
+    }
+
+    public static int ResolveInstructionIntervalMilliseconds(
+        ScriptTaskFlowStep step,
+        ScriptExecutionOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(step);
+        ArgumentNullException.ThrowIfNull(options);
+
+        if (TryResolveCommonOperationIntervalMilliseconds(options, out var commonIntervalMilliseconds))
+        {
+            return commonIntervalMilliseconds;
+        }
+
+        if (options.OverrideInstructionIntervalMs.HasValue)
+        {
+            return Math.Max(0, options.OverrideInstructionIntervalMs.Value);
+        }
+
+        return Math.Max(0, step.Instruction.IntervalToNextInstructionMs);
+    }
+
+    public static int ResolveOperationIntervalMilliseconds(
+        ScriptExecutionOptions options,
+        int configuredIntervalMilliseconds)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+
+        if (TryResolveCommonOperationIntervalMilliseconds(options, out var commonIntervalMilliseconds))
+        {
+            return commonIntervalMilliseconds;
+        }
+
+        return Math.Max(0, configuredIntervalMilliseconds);
+    }
+
+    public static int ResolveOperationIntervalMilliseconds(
+        ScriptExecutionOptions options,
+        int? configuredIntervalMilliseconds,
+        int defaultIntervalMilliseconds)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+
+        return ResolveOperationIntervalMilliseconds(
+            options,
+            configuredIntervalMilliseconds ?? defaultIntervalMilliseconds);
     }
 
     public static string FormatPoint(WpfPoint point)
@@ -272,13 +321,11 @@ internal static class ScriptInstructionHandlerSupport
         WpfPoint targetCoordinate,
         bool shouldSelectMonkey,
         bool panelDetectionEnabled,
-        int detectionIntervalMilliseconds,
         int operationIntervalMilliseconds,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        var effectiveDetectionIntervalMilliseconds = Math.Max(0, detectionIntervalMilliseconds);
         var effectiveOperationIntervalMilliseconds = Math.Max(0, operationIntervalMilliseconds);
 
         if (!shouldSelectMonkey)
@@ -312,7 +359,7 @@ internal static class ScriptInstructionHandlerSupport
                 context,
                 targetCoordinate,
                 10 * 60 * 1000,
-                effectiveDetectionIntervalMilliseconds,
+                effectiveOperationIntervalMilliseconds,
                 cancellationToken).ConfigureAwait(false);
         }
 
@@ -322,7 +369,7 @@ internal static class ScriptInstructionHandlerSupport
                 context,
                 targetCoordinate,
                 10 * 60 * 1000,
-                effectiveDetectionIntervalMilliseconds,
+                effectiveOperationIntervalMilliseconds,
                 cancellationToken).ConfigureAwait(false);
         }
 
@@ -347,53 +394,93 @@ internal static class ScriptInstructionHandlerSupport
         ScriptInstructionExecutionContext context,
         WpfPoint targetCoordinate,
         int timeoutMilliseconds,
-        int detectionIntervalMilliseconds,
+        int panelPollIntervalMilliseconds,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(context);
 
         GameStageStateSnapshot? visibleSnapshot = null;
-        var clickCount = 0;
+        var effectiveTimeoutMilliseconds = Math.Max(0, timeoutMilliseconds);
+        var effectivePanelPollIntervalMilliseconds = Math.Max(0, panelPollIntervalMilliseconds);
+        var startedAt = DateTimeOffset.UtcNow;
+        var selectionAttempt = 0;
 
-        await ScriptExecutionOperations.WaitUntilAsync(
-            context,
-            new ScriptWaitOptions
+        while (true)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var elapsedOverallMilliseconds = (DateTimeOffset.UtcNow - startedAt).TotalMilliseconds;
+            if (elapsedOverallMilliseconds >= effectiveTimeoutMilliseconds)
             {
-                TimeoutMilliseconds = timeoutMilliseconds,
-                PollIntervalMilliseconds = 10,
-                Description = "upgrade panel visible"
-            },
-            async innerToken =>
+                throw CreateExecutionException(
+                    context,
+                    "UpgradeMonkeyPanel",
+                    $"Failed to detect the upgrade panel near {FormatPoint(targetCoordinate)}.");
+            }
+
+            selectionAttempt++;
+
+            await ScriptExecutionOperations.CheckpointAsync(
+                context,
+                "UpgradeMonkeySelect",
+                $"Selection attempt {selectionAttempt}: clicking {FormatPoint(targetCoordinate)}.",
+                cancellationToken).ConfigureAwait(false);
+
+            context.RuntimeServices.Input.ClickMouseAtScriptCoordinate(targetCoordinate, clickCount: 1);
+
+            var selectionAttemptStartedAt = DateTimeOffset.UtcNow;
+            var detectionPoll = 0;
+
+            while (true)
             {
-                clickCount++;
+                cancellationToken.ThrowIfCancellationRequested();
 
-                await ScriptExecutionOperations.CheckpointAsync(
-                    context,
-                    "UpgradeMonkeySelect",
-                    $"Selection press {clickCount}: clicking {FormatPoint(targetCoordinate)}.",
-                    innerToken).ConfigureAwait(false);
+                var selectionAttemptElapsedMilliseconds = (DateTimeOffset.UtcNow - selectionAttemptStartedAt).TotalMilliseconds;
+                var remainingSelectionAttemptMilliseconds = MonkeyPanelSelectionAttemptTimeoutMilliseconds - selectionAttemptElapsedMilliseconds;
+                var remainingOverallMilliseconds = effectiveTimeoutMilliseconds - (DateTimeOffset.UtcNow - startedAt).TotalMilliseconds;
+                if (remainingSelectionAttemptMilliseconds <= 0 || remainingOverallMilliseconds <= 0)
+                {
+                    break;
+                }
 
-                context.RuntimeServices.Input.ClickMouseAtScriptCoordinate(targetCoordinate, clickCount: 1);
+                var delayMilliseconds = effectivePanelPollIntervalMilliseconds > 0
+                    ? (int)Math.Min(
+                        Math.Min(remainingSelectionAttemptMilliseconds, remainingOverallMilliseconds),
+                        effectivePanelPollIntervalMilliseconds)
+                    : 0;
 
-                await ScriptExecutionOperations.DelayAsync(
-                    context,
-                    detectionIntervalMilliseconds,
-                    "UpgradeMonkeySelectDelay",
-                    innerToken).ConfigureAwait(false);
+                if (delayMilliseconds > 0)
+                {
+                    await ScriptExecutionOperations.DelayAsync(
+                        context,
+                        delayMilliseconds,
+                        "UpgradeMonkeySelectDelay",
+                        cancellationToken).ConfigureAwait(false);
+                }
 
+                detectionPoll++;
                 visibleSnapshot = await context.RuntimeServices.GameStageState
-                    .CaptureSnapshotAsync(innerToken)
+                    .CaptureSnapshotAsync(cancellationToken)
                     .ConfigureAwait(false);
 
-                return ResolveVisibleUpgradePanelSide(visibleSnapshot).HasValue;
-            },
-            cancellationToken).ConfigureAwait(false);
+                if (ResolveVisibleUpgradePanelSide(visibleSnapshot).HasValue)
+                {
+                    await ScriptExecutionOperations.CheckpointAsync(
+                        context,
+                        "UpgradeMonkeyPanelVisible",
+                        $"Upgrade panel became visible after selection attempt {selectionAttempt}, poll {detectionPoll}.",
+                        cancellationToken).ConfigureAwait(false);
 
-        return visibleSnapshot
-            ?? throw CreateExecutionException(
+                    return visibleSnapshot!;
+                }
+            }
+
+            await ScriptExecutionOperations.CheckpointAsync(
                 context,
-                "UpgradeMonkeyPanel",
-                $"Failed to detect the upgrade panel near {FormatPoint(targetCoordinate)}.");
+                "UpgradeMonkeySelectRetry",
+                $"Selection attempt {selectionAttempt} timed out after {MonkeyPanelSelectionAttemptTimeoutMilliseconds} ms without detecting the panel. Re-selecting monkey.",
+                cancellationToken).ConfigureAwait(false);
+        }
     }
 
     public static async Task ExecuteSellMonkeyAsync(
@@ -673,6 +760,25 @@ internal static class ScriptInstructionHandlerSupport
         }
 
         return keys;
+    }
+
+    private static bool TryResolveCommonOperationIntervalMilliseconds(
+        ScriptExecutionOptions options,
+        out int commonIntervalMilliseconds)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+
+        if (options.IntervalStrategy == ScriptExecutionOperationIntervalStrategy.CommonOperationInterval)
+        {
+            commonIntervalMilliseconds = Math.Clamp(
+                options.CommonOperationIntervalMs,
+                CommonOperationIntervalMinimumMilliseconds,
+                CommonOperationIntervalMaximumMilliseconds);
+            return true;
+        }
+
+        commonIntervalMilliseconds = 0;
+        return false;
     }
 
     private static bool HasAdjacentMonkeyPanelInstructionWithSameTarget(

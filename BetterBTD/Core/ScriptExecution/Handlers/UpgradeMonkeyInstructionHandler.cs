@@ -8,7 +8,6 @@ namespace BetterBTD.Core.ScriptExecution.Handlers;
 public sealed class UpgradeMonkeyInstructionHandler : ScriptInstructionHandlerBase
 {
     internal const int UpgradePanelDetectionTimeoutMilliseconds = 10 * 60 * 1000;
-    internal const int DefaultUpgradeDetectionIntervalMilliseconds = 200;
     internal const int DefaultUpgradeOperationIntervalMilliseconds = 200;
 
     public override ScriptCommandType CommandType => ScriptCommandType.UpgradeMonkey;
@@ -39,8 +38,10 @@ public sealed class UpgradeMonkeyInstructionHandler : ScriptInstructionHandlerBa
         var upgradeCount = Math.Max(1, instruction.UpgradeCount);
         var targetLevel = monkeyState.GetExpectedUpgradeLevel(upgradePath) + upgradeCount;
         var upgradeDetectionEnabled = instruction.UpgradeDetectionEnabled ?? true;
-        var upgradeDetectionIntervalMilliseconds = instruction.UpgradeDetectionIntervalMilliseconds ?? DefaultUpgradeDetectionIntervalMilliseconds;
-        var upgradeOperationIntervalMilliseconds = instruction.UpgradeOperationIntervalMilliseconds ?? DefaultUpgradeOperationIntervalMilliseconds;
+        var upgradeOperationIntervalMilliseconds = ScriptInstructionHandlerSupport.ResolveOperationIntervalMilliseconds(
+            context.Options,
+            instruction.UpgradeOperationIntervalMilliseconds,
+            DefaultUpgradeOperationIntervalMilliseconds);
         var shouldSelectMonkey = ScriptInstructionHandlerSupport.ShouldSelectMonkeyForPanelInteraction(context);
         var shouldCloseMonkeyPanel = ScriptInstructionHandlerSupport.ShouldCloseMonkeyPanelAfterInstruction(context);
 
@@ -97,7 +98,6 @@ public sealed class UpgradeMonkeyInstructionHandler : ScriptInstructionHandlerBa
                 targetLevel,
                 shouldSelectMonkey,
                 upgradeDetectionEnabled,
-                upgradeDetectionIntervalMilliseconds,
                 upgradeOperationIntervalMilliseconds,
                 cancellationToken).ConfigureAwait(false);
         }
@@ -142,7 +142,6 @@ public sealed class UpgradeMonkeyInstructionHandler : ScriptInstructionHandlerBa
         int targetLevel,
         bool shouldSelectMonkey,
         bool upgradeDetectionEnabled,
-        int upgradeDetectionIntervalMilliseconds,
         int upgradeOperationIntervalMilliseconds,
         CancellationToken cancellationToken)
     {
@@ -183,7 +182,6 @@ public sealed class UpgradeMonkeyInstructionHandler : ScriptInstructionHandlerBa
             targetCoordinate,
             shouldSelectMonkey,
             true,
-            upgradeDetectionIntervalMilliseconds,
             upgradeOperationIntervalMilliseconds,
             cancellationToken).ConfigureAwait(false)
             ?? throw ScriptInstructionHandlerSupport.CreateExecutionException(
@@ -231,7 +229,7 @@ public sealed class UpgradeMonkeyInstructionHandler : ScriptInstructionHandlerBa
                     context,
                     targetCoordinate,
                     UpgradePanelDetectionTimeoutMilliseconds,
-                    upgradeDetectionIntervalMilliseconds,
+                    upgradeOperationIntervalMilliseconds,
                     cancellationToken).ConfigureAwait(false);
             }
 

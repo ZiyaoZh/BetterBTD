@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Threading;
 using BetterBTD.Models.ScriptEditor;
 using BetterBTD.Models.ScriptExecution;
 using BetterBTD.Services;
@@ -28,7 +29,9 @@ public sealed class ScriptExecutionWindowViewModel : ObservableObject
     private static readonly Brush CancelledTitleBrush = CreateBrush("#FFFFD39A");
 
     private readonly LocalizationService _localizationService;
+    private readonly Dispatcher _dispatcher;
     private readonly Func<ScriptExecutionWindowViewModel, int, Task> _startExecutionAsync;
+    private readonly object _progressDispatchSync = new();
     private readonly Action _requestStop;
 
     private string _windowTitle = string.Empty;
@@ -40,9 +43,14 @@ public sealed class ScriptExecutionWindowViewModel : ObservableObject
     private bool _isRunning;
     private ScriptExecutionStepItem? _focusedStep;
     private ScriptExecutionStepItem? _selectedStep;
+    private ScriptExecutionOperationIntervalStrategyItem? _selectedIntervalStrategy;
+    private int _commonOperationIntervalMs = 200;
     private int _activeStartStepIndex;
 
     private string _lastLoggedSignature = string.Empty;
+    private ScriptExecutionProgressSnapshot? _pendingProgressSnapshot;
+    private bool _isProgressFlushScheduled;
+    private bool _acceptProgressSnapshots;
 
     public ScriptExecutionWindowViewModel(
         LocalizationService localizationService,
@@ -53,6 +61,7 @@ public sealed class ScriptExecutionWindowViewModel : ObservableObject
         Action requestStop)
     {
         _localizationService = localizationService ?? throw new ArgumentNullException(nameof(localizationService));
+        _dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
         _startExecutionAsync = startExecutionAsync ?? throw new ArgumentNullException(nameof(startExecutionAsync));
         _requestStop = requestStop ?? throw new ArgumentNullException(nameof(requestStop));
 
@@ -65,6 +74,17 @@ public sealed class ScriptExecutionWindowViewModel : ObservableObject
         _windowTitle = $"{_localizationService.T("Editor.Runtime.WindowTitle")} - {_scriptDisplayName}";
         _statusText = _localizationService.T("Editor.Runtime.NotStarted");
         _currentInstructionText = _localizationService.T("Editor.Runtime.NotStarted");
+        IntervalStrategies.Add(new ScriptExecutionOperationIntervalStrategyItem
+        {
+            Strategy = ScriptExecutionOperationIntervalStrategy.InstructionCustom,
+            DisplayName = _localizationService.T("Editor.Runtime.IntervalStrategy.InstructionCustom")
+        });
+        IntervalStrategies.Add(new ScriptExecutionOperationIntervalStrategyItem
+        {
+            Strategy = ScriptExecutionOperationIntervalStrategy.CommonOperationInterval,
+            DisplayName = _localizationService.T("Editor.Runtime.IntervalStrategy.CommonOperationInterval")
+        });
+        _selectedIntervalStrategy = IntervalStrategies[0];
 
         StartCommand = new AsyncRelayCommand(StartExecutionAsync, CanStartExecution);
         StopCommand = new RelayCommand(StopExecution, CanStopExecution);
@@ -85,6 +105,8 @@ public sealed class ScriptExecutionWindowViewModel : ObservableObject
     public ObservableCollection<ScriptExecutionStepItem> Steps { get; } = [];
 
     public ObservableCollection<string> LogLines { get; } = [];
+
+    public ObservableCollection<ScriptExecutionOperationIntervalStrategyItem> IntervalStrategies { get; } = [];
 
     public IAsyncRelayCommand StartCommand { get; }
 
@@ -153,6 +175,33 @@ public sealed class ScriptExecutionWindowViewModel : ObservableObject
         set => SetProperty(ref _selectedStep, value);
     }
 
+    public ScriptExecutionOperationIntervalStrategyItem? SelectedIntervalStrategy
+    {
+        get => _selectedIntervalStrategy;
+        set
+        {
+            if (!SetProperty(ref _selectedIntervalStrategy, value))
+            {
+                return;
+            }
+
+            OnPropertyChanged(nameof(SelectedIntervalStrategyValue));
+            OnPropertyChanged(nameof(ShowCommonOperationInterval));
+        }
+    }
+
+    public ScriptExecutionOperationIntervalStrategy SelectedIntervalStrategyValue =>
+        SelectedIntervalStrategy?.Strategy ?? ScriptExecutionOperationIntervalStrategy.InstructionCustom;
+
+    public int CommonOperationIntervalMs
+    {
+        get => _commonOperationIntervalMs;
+        set => SetProperty(ref _commonOperationIntervalMs, Math.Clamp(value, 50, 1000));
+    }
+
+    public bool ShowCommonOperationInterval =>
+        SelectedIntervalStrategyValue == ScriptExecutionOperationIntervalStrategy.CommonOperationInterval;
+
     public string SequenceTitle => _localizationService.T("Editor.Runtime.Sequence");
 
     public string OutputTitle => _localizationService.T("Editor.Runtime.Output");
@@ -165,12 +214,17 @@ public sealed class ScriptExecutionWindowViewModel : ObservableObject
 
     public string StatusDetailLabel => _localizationService.T("Editor.Runtime.StatusDetail");
 
+    public string IntervalStrategyLabel => _localizationService.T("Editor.Runtime.IntervalStrategy");
+
+    public string CommonOperationIntervalLabel => _localizationService.T("Editor.Runtime.CommonOperationInterval");
+
     public string StartText => _localizationService.T("Editor.Debug.Run");
 
     public string StopText => _localizationService.T("Editor.Debug.Stop");
 
     public void MarkStarting(int startStepIndex)
     {
+        BeginAcceptingProgressSnapshots();
         _activeStartStepIndex = NormalizeStepIndex(startStepIndex);
         _lastLoggedSignature = string.Empty;
         SetAllStepsToPending();
@@ -185,6 +239,42 @@ public sealed class ScriptExecutionWindowViewModel : ObservableObject
                 _localizationService.T("Editor.Runtime.StartingFromStep"),
                 _activeStartStepIndex + 1));
         }
+    }
+
+    public void PostProgressSnapshot(ScriptExecutionProgressSnapshot snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+
+        bool shouldScheduleFlush = false;
+        lock (_progressDispatchSync)
+        {
+            if (!_acceptProgressSnapshots)
+            {
+                return;
+            }
+
+            _pendingProgressSnapshot = snapshot;
+            if (_isProgressFlushScheduled)
+            {
+                return;
+            }
+
+            _isProgressFlushScheduled = true;
+            shouldScheduleFlush = true;
+        }
+
+        if (!shouldScheduleFlush)
+        {
+            return;
+        }
+
+        if (_dispatcher.CheckAccess())
+        {
+            FlushPendingProgressSnapshots();
+            return;
+        }
+
+        _ = _dispatcher.InvokeAsync(FlushPendingProgressSnapshots, DispatcherPriority.Render);
     }
 
     public void ApplyProgressSnapshot(ScriptExecutionProgressSnapshot snapshot)
@@ -206,6 +296,7 @@ public sealed class ScriptExecutionWindowViewModel : ObservableObject
     {
         ArgumentNullException.ThrowIfNull(result);
 
+        StopAcceptingProgressSnapshots();
         IsRunning = false;
         UpdateStepsFromResult(result);
         FocusedStep = ResolveFocusedStep(ResolveResultFocusIndex(result));
@@ -233,6 +324,7 @@ public sealed class ScriptExecutionWindowViewModel : ObservableObject
     {
         ArgumentNullException.ThrowIfNull(exception);
 
+        StopAcceptingProgressSnapshots();
         IsRunning = false;
         StatusText = string.Format(_localizationService.T("Editor.Runtime.UnexpectedError"), exception.Message);
         CurrentInstructionText = StatusText;
@@ -287,6 +379,53 @@ public sealed class ScriptExecutionWindowViewModel : ObservableObject
     private bool CanStopExecution()
     {
         return IsRunning;
+    }
+
+    private void BeginAcceptingProgressSnapshots()
+    {
+        lock (_progressDispatchSync)
+        {
+            _acceptProgressSnapshots = true;
+            _pendingProgressSnapshot = null;
+            _isProgressFlushScheduled = false;
+        }
+    }
+
+    private void StopAcceptingProgressSnapshots()
+    {
+        lock (_progressDispatchSync)
+        {
+            _acceptProgressSnapshots = false;
+            _pendingProgressSnapshot = null;
+            _isProgressFlushScheduled = false;
+        }
+    }
+
+    private void FlushPendingProgressSnapshots()
+    {
+        while (true)
+        {
+            ScriptExecutionProgressSnapshot? snapshot;
+            lock (_progressDispatchSync)
+            {
+                if (!_acceptProgressSnapshots)
+                {
+                    _pendingProgressSnapshot = null;
+                    _isProgressFlushScheduled = false;
+                    return;
+                }
+
+                snapshot = _pendingProgressSnapshot;
+                _pendingProgressSnapshot = null;
+                if (snapshot is null)
+                {
+                    _isProgressFlushScheduled = false;
+                    return;
+                }
+            }
+
+            ApplyProgressSnapshot(snapshot);
+        }
     }
 
     private void UpdateStepsFromProgress(ScriptExecutionProgressSnapshot snapshot)
@@ -611,4 +750,11 @@ public sealed class ScriptExecutionStepItem : ObservableObject
         get => _titleWeight;
         set => SetProperty(ref _titleWeight, value);
     }
+}
+
+public sealed class ScriptExecutionOperationIntervalStrategyItem
+{
+    public required ScriptExecutionOperationIntervalStrategy Strategy { get; init; }
+
+    public required string DisplayName { get; init; }
 }

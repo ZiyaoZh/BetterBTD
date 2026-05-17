@@ -97,17 +97,15 @@ public sealed class ScriptInstructionInstance : ObservableObject
     private int _clickCount = 1;
     private int _clickIntervalMilliseconds = 80;
     private int _nextRoundSendCount = 1;
-    private int _nextRoundOperationIntervalMilliseconds = 100;
+    private int _nextRoundOperationIntervalMilliseconds = 200;
     private int _waitTimeMilliseconds = 1000;
     private bool _placementDetectionEnabled = true;
     private bool _placementFailureAdjustmentEnabled = true;
     private int _placementAttemptIntervalMilliseconds = 200;
     private int _placementAdjustmentAttemptIntervalMilliseconds = 200;
     private bool _upgradeDetectionEnabled = true;
-    private int _upgradeDetectionIntervalMilliseconds = 200;
     private int _upgradeOperationIntervalMilliseconds = 200;
     private bool _monkeyPanelDetectionEnabled = true;
-    private int _monkeyPanelDetectionIntervalMilliseconds = 200;
     private int _monkeyPanelOperationIntervalMilliseconds = 200;
     private bool _sellDetectionEnabled = true;
     private int _waitGoldAmount;
@@ -313,12 +311,6 @@ public sealed class ScriptInstructionInstance : ObservableObject
         set => SetProperty(ref _upgradeDetectionEnabled, value);
     }
 
-    public int UpgradeDetectionIntervalMilliseconds
-    {
-        get => _upgradeDetectionIntervalMilliseconds;
-        set => SetProperty(ref _upgradeDetectionIntervalMilliseconds, value < 0 ? 0 : value);
-    }
-
     public int UpgradeOperationIntervalMilliseconds
     {
         get => _upgradeOperationIntervalMilliseconds;
@@ -329,12 +321,6 @@ public sealed class ScriptInstructionInstance : ObservableObject
     {
         get => _monkeyPanelDetectionEnabled;
         set => SetProperty(ref _monkeyPanelDetectionEnabled, value);
-    }
-
-    public int MonkeyPanelDetectionIntervalMilliseconds
-    {
-        get => _monkeyPanelDetectionIntervalMilliseconds;
-        set => SetProperty(ref _monkeyPanelDetectionIntervalMilliseconds, value < 0 ? 0 : value);
     }
 
     public int MonkeyPanelOperationIntervalMilliseconds

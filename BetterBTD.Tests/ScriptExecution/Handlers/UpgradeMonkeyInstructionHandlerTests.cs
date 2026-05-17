@@ -59,7 +59,7 @@ public sealed class UpgradeMonkeyInstructionHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_TowerUpgrade_ReclicksUntilPanelVisibleThenUpgradesToTargetLevelAndClosesPanel()
+    public async Task HandleAsync_TowerUpgrade_PollsUntilPanelVisibleThenUpgradesToTargetLevelAndClosesPanel()
     {
         var input = new RecordingScriptInputService();
         var runtimeServices = new ScriptExecutionRuntimeServices
@@ -120,14 +120,12 @@ public sealed class UpgradeMonkeyInstructionHandlerTests
 
         await handler.HandleAsync(context, CancellationToken.None);
 
-        Assert.Equal(
-        [
-            new WpfPoint(120, 240),
-            new WpfPoint(120, 240)
-        ], input.Clicks.Select(x => x.Coordinate).ToArray());
+        var click = Assert.Single(input.Clicks);
+        Assert.Equal(new WpfPoint(120, 240), click.Coordinate);
         Assert.Single(input.PressedHotkeys);
         Assert.Equal(KeyId.Comma, input.PressedHotkeys[0].Key);
         Assert.Equal([KeyId.Escape], input.PressedKeys);
+        Assert.Equal(3, ((QueueGameStageStateService)runtimeServices.GameStageState).CaptureSnapshotCallCount);
     }
 
     [Fact]

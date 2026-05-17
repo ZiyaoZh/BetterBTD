@@ -5,7 +5,7 @@ namespace BetterBTD.Core.ScriptExecution.Handlers;
 
 public sealed class NextRoundInstructionHandler : ScriptInstructionHandlerBase
 {
-    internal const int DefaultOperationIntervalMilliseconds = 100;
+    internal const int DefaultOperationIntervalMilliseconds = 200;
 
     public override ScriptCommandType CommandType => ScriptCommandType.NextRound;
 
@@ -16,7 +16,10 @@ public sealed class NextRoundInstructionHandler : ScriptInstructionHandlerBase
             ? "PlayFastForward"
             : instruction.NextRoundAction.Trim();
         var nextRoundHotkey = ScriptExecutionKeyBindingResolver.ResolveNextRoundHotkey(nextRoundAction);
-        var operationIntervalMilliseconds = instruction.NextRoundOperationIntervalMilliseconds ?? DefaultOperationIntervalMilliseconds;
+        var operationIntervalMilliseconds = ScriptInstructionHandlerSupport.ResolveOperationIntervalMilliseconds(
+            context.Options,
+            instruction.NextRoundOperationIntervalMilliseconds,
+            DefaultOperationIntervalMilliseconds);
 
         switch (nextRoundAction)
         {

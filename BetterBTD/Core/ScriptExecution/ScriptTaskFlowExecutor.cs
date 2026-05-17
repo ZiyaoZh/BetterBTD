@@ -233,15 +233,7 @@ public sealed class ScriptTaskFlowExecutor
 
     private static int ResolveInstructionInterval(ScriptTaskFlowStep step, ScriptExecutionOptions options)
     {
-        ArgumentNullException.ThrowIfNull(step);
-        ArgumentNullException.ThrowIfNull(options);
-
-        if (options.OverrideInstructionIntervalMs.HasValue)
-        {
-            return Math.Max(0, options.OverrideInstructionIntervalMs.Value);
-        }
-
-        return Math.Max(0, step.Instruction.IntervalToNextInstructionMs);
+        return ScriptInstructionHandlerSupport.ResolveInstructionIntervalMilliseconds(step, options);
     }
 
     private static void ValidateRuntimePrerequisites(

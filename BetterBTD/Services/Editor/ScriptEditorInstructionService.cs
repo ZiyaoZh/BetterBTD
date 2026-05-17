@@ -135,10 +135,8 @@ public sealed class ScriptEditorInstructionService
             PlacementAttemptIntervalMilliseconds = instruction.PlacementAttemptIntervalMilliseconds,
             PlacementAdjustmentAttemptIntervalMilliseconds = instruction.PlacementAdjustmentAttemptIntervalMilliseconds,
             UpgradeDetectionEnabled = instruction.UpgradeDetectionEnabled,
-            UpgradeDetectionIntervalMilliseconds = instruction.UpgradeDetectionIntervalMilliseconds,
             UpgradeOperationIntervalMilliseconds = instruction.UpgradeOperationIntervalMilliseconds,
             MonkeyPanelDetectionEnabled = instruction.MonkeyPanelDetectionEnabled,
-            MonkeyPanelDetectionIntervalMilliseconds = instruction.MonkeyPanelDetectionIntervalMilliseconds,
             MonkeyPanelOperationIntervalMilliseconds = instruction.MonkeyPanelOperationIntervalMilliseconds,
             SellDetectionEnabled = instruction.SellDetectionEnabled,
             WaitGoldAmount = instruction.WaitGoldAmount,
@@ -227,16 +225,10 @@ public sealed class ScriptEditorInstructionService
             ? instruction.PlacementAdjustmentAttemptIntervalMilliseconds
             : document.PlacementAdjustmentAttemptIntervalMilliseconds.Value;
         instruction.UpgradeDetectionEnabled = document.UpgradeDetectionEnabled ?? instruction.UpgradeDetectionEnabled;
-        instruction.UpgradeDetectionIntervalMilliseconds = document.UpgradeDetectionIntervalMilliseconds is null or < 0
-            ? instruction.UpgradeDetectionIntervalMilliseconds
-            : document.UpgradeDetectionIntervalMilliseconds.Value;
         instruction.UpgradeOperationIntervalMilliseconds = document.UpgradeOperationIntervalMilliseconds is null or < 0
             ? instruction.UpgradeOperationIntervalMilliseconds
             : document.UpgradeOperationIntervalMilliseconds.Value;
         instruction.MonkeyPanelDetectionEnabled = document.MonkeyPanelDetectionEnabled ?? instruction.MonkeyPanelDetectionEnabled;
-        instruction.MonkeyPanelDetectionIntervalMilliseconds = document.MonkeyPanelDetectionIntervalMilliseconds is null or < 0
-            ? instruction.MonkeyPanelDetectionIntervalMilliseconds
-            : document.MonkeyPanelDetectionIntervalMilliseconds.Value;
         instruction.MonkeyPanelOperationIntervalMilliseconds = document.MonkeyPanelOperationIntervalMilliseconds is null or < 0
             ? instruction.MonkeyPanelOperationIntervalMilliseconds
             : document.MonkeyPanelOperationIntervalMilliseconds.Value;
@@ -303,10 +295,8 @@ public sealed class ScriptEditorInstructionService
             PlacementAttemptIntervalMilliseconds = source.PlacementAttemptIntervalMilliseconds,
             PlacementAdjustmentAttemptIntervalMilliseconds = source.PlacementAdjustmentAttemptIntervalMilliseconds,
             UpgradeDetectionEnabled = source.UpgradeDetectionEnabled,
-            UpgradeDetectionIntervalMilliseconds = source.UpgradeDetectionIntervalMilliseconds,
             UpgradeOperationIntervalMilliseconds = source.UpgradeOperationIntervalMilliseconds,
             MonkeyPanelDetectionEnabled = source.MonkeyPanelDetectionEnabled,
-            MonkeyPanelDetectionIntervalMilliseconds = source.MonkeyPanelDetectionIntervalMilliseconds,
             MonkeyPanelOperationIntervalMilliseconds = source.MonkeyPanelOperationIntervalMilliseconds,
             SellDetectionEnabled = source.SellDetectionEnabled,
             WaitGoldAmount = source.WaitGoldAmount,

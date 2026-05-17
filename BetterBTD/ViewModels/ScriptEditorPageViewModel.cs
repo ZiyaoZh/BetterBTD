@@ -386,10 +386,8 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
     public string PropertyPlacementAttemptIntervalMillisecondsText => _localizationService.T("Editor.Property.PlacementAttemptIntervalMilliseconds");
     public string PropertyPlacementAdjustmentAttemptIntervalMillisecondsText => _localizationService.T("Editor.Property.PlacementAdjustmentAttemptIntervalMilliseconds");
     public string PropertyUpgradeDetectionText => _localizationService.T("Editor.Property.UpgradeDetection");
-    public string PropertyUpgradeDetectionIntervalMillisecondsText => _localizationService.T("Editor.Property.UpgradeDetectionIntervalMilliseconds");
     public string PropertyUpgradeOperationIntervalMillisecondsText => _localizationService.T("Editor.Property.UpgradeOperationIntervalMilliseconds");
     public string PropertyMonkeyPanelDetectionText => _localizationService.T("Editor.Property.MonkeyPanelDetection");
-    public string PropertyMonkeyPanelDetectionIntervalMillisecondsText => _localizationService.T("Editor.Property.MonkeyPanelDetectionIntervalMilliseconds");
     public string PropertyMonkeyPanelOperationIntervalMillisecondsText => _localizationService.T("Editor.Property.MonkeyPanelOperationIntervalMilliseconds");
     public string PropertySellDetectionText => _localizationService.T("Editor.Property.SellDetection");
     public string PropertyClickIntervalMillisecondsText => _localizationService.T("Editor.Property.ClickIntervalMilliseconds");
@@ -721,17 +719,7 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         runtimeWindowViewModel.MarkStarting();
 
         EventHandler<ScriptExecutionProgressSnapshot> progressHandler = (_, snapshot) =>
-        {
-            if (Application.Current?.Dispatcher is null || Application.Current.Dispatcher.CheckAccess())
-            {
-                runtimeWindowViewModel.ApplyProgressSnapshot(snapshot);
-                return;
-            }
-
-            _ = Application.Current.Dispatcher.InvokeAsync(
-                () => runtimeWindowViewModel.ApplyProgressSnapshot(snapshot),
-                DispatcherPriority.Background);
-        };
+            runtimeWindowViewModel.PostProgressSnapshot(snapshot);
 
         _scriptTaskFlowExecutor.ProgressChanged += progressHandler;
 
@@ -967,17 +955,7 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         runtimeWindowViewModel.MarkStarting(startStepIndex);
 
         EventHandler<ScriptExecutionProgressSnapshot> progressHandler = (_, snapshot) =>
-        {
-            if (Application.Current?.Dispatcher is null || Application.Current.Dispatcher.CheckAccess())
-            {
-                runtimeWindowViewModel.ApplyProgressSnapshot(snapshot);
-                return;
-            }
-
-            _ = Application.Current.Dispatcher.InvokeAsync(
-                () => runtimeWindowViewModel.ApplyProgressSnapshot(snapshot),
-                DispatcherPriority.Background);
-        };
+            runtimeWindowViewModel.PostProgressSnapshot(snapshot);
 
         _scriptTaskFlowExecutor.ProgressChanged += progressHandler;
 
@@ -988,7 +966,9 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
                     taskFlow,
                     new ScriptExecutionOptions
                     {
-                        StartStepIndex = startStepIndex
+                        StartStepIndex = startStepIndex,
+                        IntervalStrategy = runtimeWindowViewModel.SelectedIntervalStrategyValue,
+                        CommonOperationIntervalMs = runtimeWindowViewModel.CommonOperationIntervalMs
                     },
                     _scriptExecutionCancellationTokenSource.Token)
                 .ConfigureAwait(true);
@@ -2033,10 +2013,8 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         OnPropertyChanged(nameof(PropertyPlacementAttemptIntervalMillisecondsText));
         OnPropertyChanged(nameof(PropertyPlacementAdjustmentAttemptIntervalMillisecondsText));
         OnPropertyChanged(nameof(PropertyUpgradeDetectionText));
-        OnPropertyChanged(nameof(PropertyUpgradeDetectionIntervalMillisecondsText));
         OnPropertyChanged(nameof(PropertyUpgradeOperationIntervalMillisecondsText));
         OnPropertyChanged(nameof(PropertyMonkeyPanelDetectionText));
-        OnPropertyChanged(nameof(PropertyMonkeyPanelDetectionIntervalMillisecondsText));
         OnPropertyChanged(nameof(PropertyMonkeyPanelOperationIntervalMillisecondsText));
         OnPropertyChanged(nameof(PropertySellDetectionText));
         OnPropertyChanged(nameof(PropertyClickIntervalMillisecondsText));

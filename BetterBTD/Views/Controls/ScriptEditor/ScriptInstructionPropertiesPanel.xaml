@@ -864,20 +864,6 @@
 
                                     <TextBlock Grid.Column="0"
                                                Style="{StaticResource AdvancedPropertyLabelStyle}"
-                                               Text="{Binding PropertyUpgradeDetectionIntervalMillisecondsText}" />
-                                    <ui:NumberBox Grid.Column="1"
-                                                  Style="{StaticResource AdvancedPropertyNumberBoxStyle}"
-                                                  Value="{Binding SelectedSequenceInstruction.UpgradeDetectionIntervalMilliseconds, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                </Grid>
-
-                                <Grid Style="{StaticResource AdvancedPropertyRowStyle}">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-
-                                    <TextBlock Grid.Column="0"
-                                               Style="{StaticResource AdvancedPropertyLabelStyle}"
                                                Text="{Binding PropertyUpgradeOperationIntervalMillisecondsText}" />
                                     <ui:NumberBox Grid.Column="1"
                                                   Style="{StaticResource AdvancedPropertyNumberBoxStyle}"
@@ -899,20 +885,6 @@
                                                      HorizontalAlignment="Right"
                                                      VerticalAlignment="Center"
                                                      IsChecked="{Binding SelectedSequenceInstruction.MonkeyPanelDetectionEnabled, Mode=TwoWay}" />
-                                </Grid>
-
-                                <Grid Style="{StaticResource AdvancedPropertyRowStyle}">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-
-                                    <TextBlock Grid.Column="0"
-                                               Style="{StaticResource AdvancedPropertyLabelStyle}"
-                                               Text="{Binding PropertyMonkeyPanelDetectionIntervalMillisecondsText}" />
-                                    <ui:NumberBox Grid.Column="1"
-                                                  Style="{StaticResource AdvancedPropertyNumberBoxStyle}"
-                                                  Value="{Binding SelectedSequenceInstruction.MonkeyPanelDetectionIntervalMilliseconds, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                 </Grid>
 
                                 <Grid Style="{StaticResource AdvancedPropertyRowStyle}">

@@ -23,11 +23,22 @@ public enum ScriptExecutionRunState
     Failed
 }
 
+public enum ScriptExecutionOperationIntervalStrategy
+{
+    InstructionCustom,
+    CommonOperationInterval
+}
+
 public sealed class ScriptExecutionOptions
 {
     public int StartStepIndex { get; init; }
 
     public int? OverrideInstructionIntervalMs { get; init; }
+
+    public ScriptExecutionOperationIntervalStrategy IntervalStrategy { get; init; } =
+        ScriptExecutionOperationIntervalStrategy.InstructionCustom;
+
+    public int CommonOperationIntervalMs { get; init; } = 200;
 
     public bool RequireCaptureService { get; init; } = true;
 
