@@ -14,6 +14,14 @@ namespace BetterBTD.Services.Tasks.Input;
 public sealed class ScriptInputSimulationService
 {
     private static readonly Lazy<ScriptInputSimulationService> InstanceHolder = new(() => new ScriptInputSimulationService());
+    private static readonly InputSimulationCommand[] ReleaseAllKeyCommands = Enum.GetValues<KeyId>()
+        .Where(static key => key is not (KeyId.None or KeyId.Unknown))
+        .Select(static key => new InputSimulationCommand
+        {
+            Type = InputSimulationCommandType.KeyUp,
+            Key = key
+        })
+        .ToArray();
     private const int DefaultClickHoldMilliseconds = 50;
     private const int DefaultDoubleClickIntervalMilliseconds = 80;
     private const int DefaultMouseMoveSettleMilliseconds = 24;
@@ -200,6 +208,11 @@ public sealed class ScriptInputSimulationService
         ArgumentNullException.ThrowIfNull(modifierKeys);
         ArgumentNullException.ThrowIfNull(keys);
         _dispatcher.Dispatch(InputSimulationCommandBuilder.BuildSimulateCombination(modifierKeys, keys));
+    }
+
+    public void ReleaseAllKeys()
+    {
+        _dispatcher.Dispatch(ReleaseAllKeyCommands);
     }
 
     public void PrepareTargetWindowForInput()

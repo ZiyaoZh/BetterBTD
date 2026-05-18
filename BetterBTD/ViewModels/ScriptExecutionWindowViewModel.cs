@@ -212,11 +212,7 @@ public sealed class ScriptExecutionWindowViewModel : ObservableObject
 
     public string CurrentInstructionLabel => _localizationService.T("Editor.Runtime.CurrentInstruction");
 
-    public string StatusDetailLabel => _localizationService.T("Editor.Runtime.StatusDetail");
-
     public string IntervalStrategyLabel => _localizationService.T("Editor.Runtime.IntervalStrategy");
-
-    public string CommonOperationIntervalLabel => _localizationService.T("Editor.Runtime.CommonOperationInterval");
 
     public string StartText => _localizationService.T("Editor.Debug.Run");
 

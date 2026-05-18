@@ -748,6 +748,7 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
     private void StopScriptExecution()
     {
         _scriptExecutionCancellationTokenSource?.Cancel();
+        _scriptInputSimulationService.ReleaseAllKeys();
     }
 
     private void ShowSaveError(Exception ex)

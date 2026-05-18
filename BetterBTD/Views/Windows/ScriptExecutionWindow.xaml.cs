@@ -14,12 +14,37 @@ namespace BetterBTD.Views.Windows;
 
 public partial class ScriptExecutionWindow : FluentWindow
 {
-    private const int HotkeyId = 0xB10;
+    private const int HotkeyIdBase = 0xB10;
     private const int WmHotkey = 0x0312;
+    private const uint ModAlt = 0x0001;
+    private const uint ModControl = 0x0002;
+    private const uint ModShift = 0x0004;
+    private const uint ModWin = 0x0008;
+    private static readonly uint[] HotkeyModifiers =
+    [
+        0,
+        ModShift,
+        ModControl,
+        ModAlt,
+        ModWin,
+        ModShift | ModControl,
+        ModShift | ModAlt,
+        ModShift | ModWin,
+        ModControl | ModAlt,
+        ModControl | ModWin,
+        ModAlt | ModWin,
+        ModShift | ModControl | ModAlt,
+        ModShift | ModControl | ModWin,
+        ModShift | ModAlt | ModWin,
+        ModControl | ModAlt | ModWin,
+        ModShift | ModControl | ModAlt | ModWin
+    ];
 
     private int _lastLogTextLength;
     private HwndSource? _hwndSource;
     private bool _isGlobalHotkeyRegistered;
+    private readonly HashSet<int> _registeredHotkeyIds = [];
+    private readonly HashSet<uint> _registeredHotkeyModifiers = [];
 
     public ScriptExecutionWindow(ScriptExecutionWindowViewModel viewModel)
     {
@@ -165,7 +190,13 @@ public partial class ScriptExecutionWindow : FluentWindow
 
     private async void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
-        if (_isGlobalHotkeyRegistered || (e.Key != Key.F10 && e.SystemKey != Key.F10))
+        if (!IsF10KeyEvent(e))
+        {
+            return;
+        }
+
+        if (_isGlobalHotkeyRegistered &&
+            _registeredHotkeyModifiers.Contains(ToNativeModifiers(Keyboard.Modifiers)))
         {
             return;
         }
@@ -176,7 +207,7 @@ public partial class ScriptExecutionWindow : FluentWindow
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
-        if (msg == WmHotkey && wParam.ToInt32() == HotkeyId)
+        if (msg == WmHotkey && _registeredHotkeyIds.Contains(wParam.ToInt32()))
         {
             handled = true;
             _ = Dispatcher.InvokeAsync(ToggleExecutionAsync);
@@ -194,17 +225,37 @@ public partial class ScriptExecutionWindow : FluentWindow
         }
 
         var virtualKey = (uint)KeyInterop.VirtualKeyFromKey(Key.F10);
-        if (RegisterHotKey(handle, HotkeyId, 0, virtualKey))
+        _registeredHotkeyIds.Clear();
+        _registeredHotkeyModifiers.Clear();
+
+        var firstErrorCode = 0;
+
+        for (var index = 0; index < HotkeyModifiers.Length; index++)
         {
-            _isGlobalHotkeyRegistered = true;
+            var hotkeyId = HotkeyIdBase + index;
+            var modifiers = HotkeyModifiers[index];
+            if (RegisterHotKey(handle, hotkeyId, modifiers, virtualKey))
+            {
+                _registeredHotkeyIds.Add(hotkeyId);
+                _registeredHotkeyModifiers.Add(modifiers);
+                continue;
+            }
+
+            if (firstErrorCode == 0)
+            {
+                firstErrorCode = Marshal.GetLastWin32Error();
+            }
+        }
+
+        _isGlobalHotkeyRegistered = _registeredHotkeyIds.Count > 0;
+        if (_isGlobalHotkeyRegistered)
+        {
             return;
         }
 
-        _isGlobalHotkeyRegistered = false;
-        var errorCode = Marshal.GetLastWin32Error();
         System.Windows.MessageBox.Show(
             this,
-            $"F10 global hotkey registration failed (Win32: {errorCode}). The hotkey may already be in use by another application.",
+            $"F10 global hotkey registration failed for all modifier combinations (Win32: {firstErrorCode}). The hotkey may already be in use by another application.",
             "BetterBTD",
             System.Windows.MessageBoxButton.OK,
             System.Windows.MessageBoxImage.Warning);
@@ -220,9 +271,14 @@ public partial class ScriptExecutionWindow : FluentWindow
         var handle = new WindowInteropHelper(this).Handle;
         if (handle != IntPtr.Zero)
         {
-            _ = UnregisterHotKey(handle, HotkeyId);
+            foreach (var hotkeyId in _registeredHotkeyIds)
+            {
+                _ = UnregisterHotKey(handle, hotkeyId);
+            }
         }
 
+        _registeredHotkeyIds.Clear();
+        _registeredHotkeyModifiers.Clear();
         _isGlobalHotkeyRegistered = false;
     }
 
@@ -292,5 +348,41 @@ public partial class ScriptExecutionWindow : FluentWindow
         }
 
         return null;
+    }
+
+    private static bool IsF10KeyEvent(KeyEventArgs e)
+    {
+        ArgumentNullException.ThrowIfNull(e);
+
+        return e.Key == Key.F10 ||
+               e.SystemKey == Key.F10 ||
+               e.ImeProcessedKey == Key.F10;
+    }
+
+    private static uint ToNativeModifiers(ModifierKeys modifiers)
+    {
+        var nativeModifiers = 0u;
+
+        if (modifiers.HasFlag(ModifierKeys.Alt))
+        {
+            nativeModifiers |= ModAlt;
+        }
+
+        if (modifiers.HasFlag(ModifierKeys.Control))
+        {
+            nativeModifiers |= ModControl;
+        }
+
+        if (modifiers.HasFlag(ModifierKeys.Shift))
+        {
+            nativeModifiers |= ModShift;
+        }
+
+        if (modifiers.HasFlag(ModifierKeys.Windows))
+        {
+            nativeModifiers |= ModWin;
+        }
+
+        return nativeModifiers;
     }
 }
