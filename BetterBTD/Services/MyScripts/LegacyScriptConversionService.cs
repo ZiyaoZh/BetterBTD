@@ -91,8 +91,6 @@ public sealed class LegacyScriptConversionService
                 ScriptVersion = string.IsNullOrWhiteSpace(_legacyScript.Metadata.Version)
                     ? ScriptDocumentFormat.DefaultScriptVersion
                     : _legacyScript.Metadata.Version,
-                Category = ScriptDocumentCategories.Custom,
-                Name = _legacyScript.Metadata.ScriptName ?? string.Empty,
                 Description = string.Empty,
                 Map = map.ToString(),
                 Difficulty = difficulty.ToString(),

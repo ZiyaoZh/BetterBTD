@@ -98,8 +98,6 @@ public sealed class ScriptDocumentService
         document.Instructions ??= [];
 
         document.Metadata.ScriptVersion = NormalizeScriptVersion(document.Metadata.ScriptVersion);
-        document.Metadata.Category = ScriptDocumentCategories.Normalize(document.Metadata.Category);
-        document.Metadata.Name = document.Metadata.Name?.Trim() ?? string.Empty;
         document.Metadata.Description = document.Metadata.Description?.Trim() ?? string.Empty;
         document.Metadata.Map = NormalizeOrDefault(document.Metadata.Map, GameMapType.MonkeyMeadow.ToString());
         document.Metadata.Difficulty = NormalizeOrDefault(document.Metadata.Difficulty, StageDifficulty.Medium.ToString());

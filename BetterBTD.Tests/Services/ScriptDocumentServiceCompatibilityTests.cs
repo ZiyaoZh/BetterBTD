@@ -14,10 +14,6 @@ public sealed class ScriptDocumentServiceCompatibilityTests
         {
             service.Save(filePath, new ScriptDocument
             {
-                Metadata = new ScriptMetadataDocument
-                {
-                    Name = "compat-current"
-                },
                 Instructions =
                 [
                     new ScriptInstructionDocument
@@ -29,10 +25,12 @@ public sealed class ScriptDocumentServiceCompatibilityTests
             });
 
             var result = service.LoadCompatible(filePath);
+            var json = File.ReadAllText(filePath);
 
             Assert.Equal(ScriptDocumentSourceKind.Current, result.SourceKind);
             Assert.Empty(result.Warnings);
-            Assert.Equal("compat-current", result.Document.Metadata.Name);
+            Assert.DoesNotContain("\"name\"", json, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("\"category\"", json, StringComparison.OrdinalIgnoreCase);
         }
         finally
         {
@@ -64,10 +62,6 @@ public sealed class ScriptDocumentServiceCompatibilityTests
         {
             service.Save(filePath, new ScriptDocument
             {
-                Metadata = new ScriptMetadataDocument
-                {
-                    Name = "optimized-save"
-                },
                 Instructions =
                 [
                     new ScriptInstructionDocument

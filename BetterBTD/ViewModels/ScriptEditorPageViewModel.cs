@@ -61,8 +61,6 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
 
     private string _scriptText = string.Empty;
     private string _scriptVersion = ScriptDocumentFormat.DefaultScriptVersion;
-    private string _scriptCategory = ScriptDocumentCategories.Collection;
-    private string _scriptName = string.Empty;
     private string _scriptDescription = string.Empty;
     private string _currentScriptFilePath = string.Empty;
     private GameMapType _selectedMap = GameMapType.MonkeyMeadow;
@@ -194,18 +192,6 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         set => SetProperty(ref _scriptVersion, NormalizeScriptVersion(value));
     }
 
-    public string ScriptCategory
-    {
-        get => _scriptCategory;
-        set => SetProperty(ref _scriptCategory, ScriptDocumentCategories.Normalize(value));
-    }
-
-    public string ScriptName
-    {
-        get => _scriptName;
-        set => SetProperty(ref _scriptName, value?.Trim() ?? string.Empty);
-    }
-
     public string ScriptDescription
     {
         get => _scriptDescription;
@@ -332,11 +318,6 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
     public string MetadataTagText => _localizationService.T("Editor.Metadata.Tag");
     public string MetadataMapPlaceholderText => _localizationService.T("Editor.Metadata.Map.Placeholder");
 
-    public string ScriptCategoryAllText => _localizationService.T("Editor.Category.All");
-    public string ScriptCategoryCollectionText => _localizationService.T("Editor.Category.Collection");
-    public string ScriptCategoryBlackBorderText => _localizationService.T("Editor.Category.BlackBorder");
-    public string ScriptCategoryRaceText => _localizationService.T("Editor.Category.Race");
-
     public string DebugOpenRuntimeText => _localizationService.LanguageCode.Equals("en-US", StringComparison.OrdinalIgnoreCase)
         ? "Open Runtime"
         : "打开运行界面";
@@ -417,8 +398,6 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
             Metadata = new ScriptMetadataDocument
             {
                 ScriptVersion = NormalizeScriptVersion(ScriptVersion),
-                Category = ScriptDocumentCategories.Normalize(ScriptCategory),
-                Name = ScriptName,
                 Description = ScriptDescription,
                 Map = SelectedMap.ToString(),
                 Difficulty = SelectedDifficultyOption?.Code ?? StageDifficulty.Medium.ToString(),
@@ -870,11 +849,6 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
 
     private string ResolveExecutionScriptDisplayName()
     {
-        if (!string.IsNullOrWhiteSpace(ScriptName))
-        {
-            return ScriptName;
-        }
-
         if (!string.IsNullOrWhiteSpace(CurrentScriptFilePath))
         {
             return Path.GetFileNameWithoutExtension(CurrentScriptFilePath);
@@ -1032,13 +1006,7 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
             return Path.GetFileName(CurrentScriptFilePath);
         }
 
-        var baseName = string.IsNullOrWhiteSpace(ScriptName) ? "Untitled Script" : ScriptName;
-        foreach (var invalidChar in Path.GetInvalidFileNameChars())
-        {
-            baseName = baseName.Replace(invalidChar, '_');
-        }
-
-        return $"{baseName}{ScriptFileExtension}";
+        return BuildUntitledFileName();
     }
 
     private static void ReplaceCollection<T>(ObservableCollection<T> collection, IEnumerable<T> items)
@@ -1437,8 +1405,6 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         metadata ??= new ScriptMetadataDocument();
 
         ScriptVersion = NormalizeScriptVersion(metadata.ScriptVersion);
-        ScriptCategory = ScriptDocumentCategories.Normalize(metadata.Category);
-        ScriptName = metadata.Name;
         ScriptDescription = metadata.Description;
 
         SelectedMap = Enum.TryParse<GameMapType>(metadata.Map, true, out var map)
@@ -1984,10 +1950,6 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         OnPropertyChanged(nameof(MetadataHeroText));
         OnPropertyChanged(nameof(MetadataTagText));
         OnPropertyChanged(nameof(MetadataMapPlaceholderText));
-        OnPropertyChanged(nameof(ScriptCategoryAllText));
-        OnPropertyChanged(nameof(ScriptCategoryCollectionText));
-        OnPropertyChanged(nameof(ScriptCategoryBlackBorderText));
-        OnPropertyChanged(nameof(ScriptCategoryRaceText));
         OnPropertyChanged(nameof(DebugOpenRuntimeText));
         OnPropertyChanged(nameof(DebugRunText));
         OnPropertyChanged(nameof(DebugStepText));

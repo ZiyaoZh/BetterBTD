@@ -9,11 +9,21 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
         <editorControls:ScriptEditorToolbar Grid.Row="0" />
         <editorControls:ScriptEditorMetadataPanel Grid.Row="1" />
-        <editorControls:ScriptEditorWorkspace Grid.Row="2" />
+        <GridSplitter Grid.Row="2"
+                      Height="1"
+                      Margin="0,2,0,2"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Center"
+                      Background="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                      ResizeDirection="Rows"
+                      ResizeBehavior="PreviousAndNext"
+                      ShowsPreview="False" />
+        <editorControls:ScriptEditorWorkspace Grid.Row="3" />
     </Grid>
 </Page>

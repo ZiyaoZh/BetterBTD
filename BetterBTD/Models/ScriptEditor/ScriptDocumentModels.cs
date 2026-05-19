@@ -9,19 +9,6 @@ public static class ScriptDocumentFormat
     public const string DefaultScriptVersion = "1.0.0";
 }
 
-public static class ScriptDocumentCategories
-{
-    public const string Collection = "Collection";
-    public const string BlackBorder = "BlackBorder";
-    public const string Race = "Race";
-    public const string Custom = "Custom";
-
-    public static string Normalize(string? value)
-    {
-        return string.IsNullOrWhiteSpace(value) ? Collection : value.Trim();
-    }
-}
-
 public sealed class ScriptDocument
 {
     public string Schema { get; set; } = ScriptDocumentFormat.Schema;
@@ -38,10 +25,6 @@ public sealed class ScriptDocument
 public sealed class ScriptMetadataDocument
 {
     public string ScriptVersion { get; set; } = ScriptDocumentFormat.DefaultScriptVersion;
-
-    public string Category { get; set; } = ScriptDocumentCategories.Collection;
-
-    public string Name { get; set; } = string.Empty;
 
     public string Description { get; set; } = string.Empty;
 

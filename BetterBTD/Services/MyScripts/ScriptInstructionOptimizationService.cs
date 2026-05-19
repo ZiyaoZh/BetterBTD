@@ -119,8 +119,6 @@ public sealed class ScriptInstructionOptimizationService
         return new ScriptMetadataDocument
         {
             ScriptVersion = metadata.ScriptVersion,
-            Category = metadata.Category,
-            Name = metadata.Name,
             Description = metadata.Description,
             Map = metadata.Map,
             Difficulty = metadata.Difficulty,

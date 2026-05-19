@@ -16,10 +16,6 @@ public sealed class ScriptEditorPageViewModelTests
         {
             viewModel.ImportScriptDocument(new ScriptDocument
             {
-                Metadata = new ScriptMetadataDocument
-                {
-                    Name = "save-refresh"
-                },
                 Instructions =
                 [
                     new ScriptInstructionDocument
