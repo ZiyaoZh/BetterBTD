@@ -41,6 +41,19 @@ public sealed class GameUiNavigator : IGameUiNavigator
                 Description = "Select the map category that contains the target map.",
                 ExpectedNextStates = [GameUiStateId.MapGrid, GameUiStateId.DifficultySelect]
             },
+            GameUiStateId.MapSearch => new GameUiNavigationStep
+            {
+                ActionKind = GameUiActionKind.Wait,
+                Description = "Wait for map search interaction to be implemented.",
+                PostActionDelayMs = 400,
+                ExpectedNextStates = [GameUiStateId.MapSearchResults, GameUiStateId.MapGrid]
+            },
+            GameUiStateId.MapSearchResults => new GameUiNavigationStep
+            {
+                ActionKind = GameUiActionKind.SelectMap,
+                Description = "Select the searched map entry.",
+                ExpectedNextStates = [GameUiStateId.DifficultySelect, GameUiStateId.EasyModeSelect, GameUiStateId.ModeSelect]
+            },
             GameUiStateId.MapGrid => new GameUiNavigationStep
             {
                 ActionKind = GameUiActionKind.SelectMap,
@@ -51,13 +64,37 @@ public sealed class GameUiNavigator : IGameUiNavigator
             {
                 ActionKind = GameUiActionKind.SelectDifficulty,
                 Description = "Select the target difficulty.",
-                ExpectedNextStates = [GameUiStateId.ModeSelect, GameUiStateId.Loading, GameUiStateId.InLevel]
+                ExpectedNextStates = [GameUiStateId.EasyModeSelect, GameUiStateId.MediumModeSelect, GameUiStateId.HardModeSelect, GameUiStateId.ModeSelect, GameUiStateId.Loading, GameUiStateId.InLevel]
+            },
+            GameUiStateId.EasyModeSelect => new GameUiNavigationStep
+            {
+                ActionKind = GameUiActionKind.SelectMode,
+                Description = "Select the target easy-mode variant.",
+                ExpectedNextStates = [GameUiStateId.Loading, GameUiStateId.InLevel]
+            },
+            GameUiStateId.MediumModeSelect => new GameUiNavigationStep
+            {
+                ActionKind = GameUiActionKind.SelectMode,
+                Description = "Select the target medium-mode variant.",
+                ExpectedNextStates = [GameUiStateId.Loading, GameUiStateId.InLevel]
+            },
+            GameUiStateId.HardModeSelect => new GameUiNavigationStep
+            {
+                ActionKind = GameUiActionKind.SelectMode,
+                Description = "Select the target hard-mode variant.",
+                ExpectedNextStates = [GameUiStateId.Loading, GameUiStateId.InLevel]
             },
             GameUiStateId.ModeSelect => new GameUiNavigationStep
             {
                 ActionKind = GameUiActionKind.SelectMode,
                 Description = "Select the target mode and enter the stage.",
                 ExpectedNextStates = [GameUiStateId.Loading, GameUiStateId.InLevel]
+            },
+            GameUiStateId.StageSettlement => new GameUiNavigationStep
+            {
+                ActionKind = GameUiActionKind.CollectReward,
+                Description = "Continue past the settlement screen.",
+                ExpectedNextStates = [GameUiStateId.Victory, GameUiStateId.Reward, GameUiStateId.MainMenu]
             },
             GameUiStateId.Loading => new GameUiNavigationStep
             {
@@ -89,6 +126,19 @@ public sealed class GameUiNavigator : IGameUiNavigator
                 ActionKind = GameUiActionKind.ConfirmDialog,
                 Description = "Confirm the blocking dialog.",
                 ExpectedNextStates = [GameUiStateId.MainMenu, GameUiStateId.MapGrid, GameUiStateId.Loading]
+            },
+            GameUiStateId.ChestOpened or
+            GameUiStateId.TwoChests or
+            GameUiStateId.ThreeChests or
+            GameUiStateId.LevelUp or
+            GameUiStateId.StageHint or
+            GameUiStateId.InstaMonkeyReward or
+            GameUiStateId.RaceResult or
+            GameUiStateId.BossResult => new GameUiNavigationStep
+            {
+                ActionKind = GameUiActionKind.CollectReward,
+                Description = "Dismiss the blocking overlay result screen.",
+                ExpectedNextStates = [GameUiStateId.MainMenu, GameUiStateId.EventMenu, GameUiStateId.InLevel]
             },
             GameUiStateId.InLevel => new GameUiNavigationStep
             {

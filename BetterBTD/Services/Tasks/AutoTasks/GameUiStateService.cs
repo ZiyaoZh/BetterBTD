@@ -12,14 +12,16 @@ public sealed class GameUiStateService : IGameUiStateService
 
     private readonly GameCaptureService _gameCaptureService;
     private readonly GameStageStateService _gameStageStateService;
+    private readonly GameUiDetectionConfigService _detectionConfigService;
     private readonly IReadOnlyList<IGameUiRecognizer> _recognizers;
 
     private GameUiStateService()
         : this(
             GameCaptureService.Instance,
             GameStageStateService.Instance,
+            GameUiDetectionConfigService.Instance,
             [
-                new InLevelGameUiRecognizer(),
+                new ConfiguredGameUiRecognizer(GameUiDetectionConfigService.Instance),
                 new UnknownGameUiRecognizer()
             ])
     {
@@ -28,10 +30,12 @@ public sealed class GameUiStateService : IGameUiStateService
     internal GameUiStateService(
         GameCaptureService gameCaptureService,
         GameStageStateService gameStageStateService,
+        GameUiDetectionConfigService detectionConfigService,
         IReadOnlyList<IGameUiRecognizer> recognizers)
     {
         _gameCaptureService = gameCaptureService ?? throw new ArgumentNullException(nameof(gameCaptureService));
         _gameStageStateService = gameStageStateService ?? throw new ArgumentNullException(nameof(gameStageStateService));
+        _detectionConfigService = detectionConfigService ?? throw new ArgumentNullException(nameof(detectionConfigService));
         _recognizers = recognizers?.OrderByDescending(static x => x.Priority).ToArray()
             ?? throw new ArgumentNullException(nameof(recognizers));
     }
@@ -55,6 +59,7 @@ public sealed class GameUiStateService : IGameUiStateService
         using (frame)
         {
             _ = _gameStageStateService.TryCaptureSnapshot(frame, out var stageState, out _);
+            _ = _detectionConfigService.Current;
 
             var context = new GameUiRecognitionContext
             {
@@ -95,23 +100,46 @@ public sealed class GameUiStateService : IGameUiStateService
     }
 }
 
-internal sealed class InLevelGameUiRecognizer : IGameUiRecognizer
+internal sealed class ConfiguredGameUiRecognizer : IGameUiRecognizer
 {
+    private readonly GameUiDetectionConfigService _detectionConfigService;
+
+    public ConfiguredGameUiRecognizer(GameUiDetectionConfigService detectionConfigService)
+    {
+        _detectionConfigService = detectionConfigService ?? throw new ArgumentNullException(nameof(detectionConfigService));
+    }
+
     public int Priority => 1000;
 
     public bool TryRecognize(GameUiRecognitionContext context, out GameUiSnapshot snapshot)
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        if (context.StageState?.IsInLevel == true)
+        var config = _detectionConfigService.Current;
+        foreach (var rule in config.Rules
+                     .Where(static x => x.IsEnabled)
+                     .OrderByDescending(static x => x.Priority))
         {
+            if (!GameUiDetectionRuleEvaluator.IsMatch(context.Frame, config, rule))
+            {
+                continue;
+            }
+
             snapshot = new GameUiSnapshot
             {
                 CapturedAt = context.CapturedAt,
-                State = GameUiStateId.InLevel,
+                State = rule.State,
                 Confidence = 1d,
                 StageState = context.StageState,
-                Summary = "Detected in-level HUD from stage-state snapshot."
+                Facts = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["ruleKey"] = rule.Key,
+                    ["displayName"] = rule.DisplayName,
+                    ["priority"] = rule.Priority
+                },
+                Summary = string.IsNullOrWhiteSpace(rule.DisplayName)
+                    ? $"Matched UI rule '{rule.Key}'."
+                    : $"Matched UI rule '{rule.DisplayName}' ({rule.Key})."
             };
 
             return true;
