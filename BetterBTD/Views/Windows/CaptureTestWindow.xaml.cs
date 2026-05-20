@@ -4,10 +4,14 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using BetterBTD.Helpers;
 using BetterBTD.Helpers.Extensions;
 using BetterBTD.Models;
+using BetterBTD.Models.AutoTasks;
 using BetterBTD.Models.ScriptExecution;
 using BetterBTD.Services;
+using BetterBTD.Services.Start.Capture;
+using BetterBTD.Services.Tasks.AutoTasks;
 using Fischless.GameCapture;
 using OpenCvSharp;
 using UiFluentWindow = Wpf.Ui.Controls.FluentWindow;
@@ -32,6 +36,8 @@ public partial class CaptureTestWindow : UiFluentWindow
 
     private readonly LocalizationService _localizationService = LocalizationService.Instance;
     private readonly GameStageStateService _gameStageStateService = GameStageStateService.Instance;
+    private readonly GameUiStateService _gameUiStateService = GameUiStateService.Instance;
+    private readonly GameWindowInfoService _gameWindowInfoService = GameWindowInfoService.Instance;
     private readonly CaptureTestStageStateDisplayService _captureTestStageStateDisplayService = CaptureTestStageStateDisplayService.Instance;
     private readonly Dictionary<string, PointGroupOverlayVisual> _pointGroupVisuals = new(StringComparer.Ordinal);
     private IGameCapture? _capture;
@@ -53,7 +59,9 @@ public partial class CaptureTestWindow : UiFluentWindow
     private bool _lastOcrFailed = true;
     private int _lastFrameWidth;
     private int _lastFrameHeight;
+    private nint _captureWindowHandle;
     private GameStageStateSnapshot? _lastStageStateSnapshot;
+    private GameUiSnapshot? _lastGameUiSnapshot;
     private ulong? _lastFrameSignature;
     private ulong _currentFrameSignature;
     private const double OverlayCrosshairLength = 10d;
@@ -76,6 +84,7 @@ public partial class CaptureTestWindow : UiFluentWindow
             throw new ArgumentException("The selected window handle is invalid.", nameof(hWnd));
         }
 
+        _captureWindowHandle = hWnd;
         _windowDisplayName = windowDisplayName;
         _captureModeName = options.CaptureModeName;
         ResetCaptureDiagnostics();
@@ -156,6 +165,7 @@ public partial class CaptureTestWindow : UiFluentWindow
             _lastFrameHeight = capturedFrame.Height;
             UpdateFrameDiagnostics(capturedFrame);
             RunStageStateCapture(capturedFrame);
+            RunGameUiStateCapture(capturedFrame);
 
             var transferStopwatch = Stopwatch.StartNew();
             if (_cachedFrameSize != capturedFrame.Size() || DisplayCaptureResultImage.Source is not WriteableBitmap bitmap)
@@ -289,9 +299,41 @@ public partial class CaptureTestWindow : UiFluentWindow
             failed,
             _lastOcrError,
             _lastStageStateSnapshot,
-            AverageMilliseconds(_ocrElapsedMilliseconds));
+            AverageMilliseconds(_ocrElapsedMilliseconds),
+            _lastGameUiSnapshot);
 
         StageStateDetailsTextBlock.Text = displayModel.DetailsText;
+    }
+
+    private void RunGameUiStateCapture(Mat capturedFrame)
+    {
+        try
+        {
+            _lastGameUiSnapshot = _gameUiStateService.CaptureSnapshot(
+                GetCaptureWindowInfo(capturedFrame),
+                capturedFrame,
+                _lastStageStateSnapshot);
+        }
+        catch
+        {
+            _lastGameUiSnapshot = null;
+        }
+    }
+
+    private GameWindowInfo GetCaptureWindowInfo(Mat capturedFrame)
+    {
+        if (_gameWindowInfoService.TryGetWindowInfo(_captureWindowHandle, out var windowInfo))
+        {
+            return windowInfo;
+        }
+
+        var fallbackBounds = new NativeWindowBounds(0, 0, Math.Max(1, capturedFrame.Width), Math.Max(1, capturedFrame.Height));
+        return new GameWindowInfo(
+            _captureWindowHandle,
+            _windowDisplayName ?? string.Empty,
+            fallbackBounds,
+            fallbackBounds,
+            1d);
     }
 
     private void UpdateOverlayRegions(int frameWidth, int frameHeight)
@@ -305,21 +347,29 @@ public partial class CaptureTestWindow : UiFluentWindow
         var overlayBounds = CalculateDisplayedFrameBounds(frameWidth, frameHeight, CaptureOverlayCanvas.ActualWidth, CaptureOverlayCanvas.ActualHeight);
         var overlayLayout = _gameStageStateService.GetCaptureOverlayLayout(frameWidth, frameHeight);
 
-        ApplyOverlayRegion(
-            GoldRegionRectangle,
-            GoldRegionLabelBorder,
-            overlayBounds,
-            overlayLayout.GoldRegion,
-            frameWidth,
-            frameHeight);
+        if (ShouldDisplayInLevelOverlays())
+        {
+            ApplyOverlayRegion(
+                GoldRegionRectangle,
+                GoldRegionLabelBorder,
+                overlayBounds,
+                overlayLayout.GoldRegion,
+                frameWidth,
+                frameHeight);
 
-        ApplyOverlayRegion(
-            RoundRegionRectangle,
-            RoundRegionLabelBorder,
-            overlayBounds,
-            overlayLayout.RoundRegion,
-            frameWidth,
-            frameHeight);
+            ApplyOverlayRegion(
+                RoundRegionRectangle,
+                RoundRegionLabelBorder,
+                overlayBounds,
+                overlayLayout.RoundRegion,
+                frameWidth,
+                frameHeight);
+        }
+        else
+        {
+            HideOverlayRegion(GoldRegionRectangle, GoldRegionLabelBorder);
+            HideOverlayRegion(RoundRegionRectangle, RoundRegionLabelBorder);
+        }
 
         ApplyOverlayPointGroups(
             overlayBounds,
@@ -364,6 +414,12 @@ public partial class CaptureTestWindow : UiFluentWindow
         Canvas.SetTop(labelBorder, Math.Max(displayedFrameBounds.Y, y - 28d));
     }
 
+    private static void HideOverlayRegion(Rectangle rectangle, Border labelBorder)
+    {
+        rectangle.Visibility = Visibility.Collapsed;
+        labelBorder.Visibility = Visibility.Collapsed;
+    }
+
     private void ApplyOverlayPointGroups(
         WpfRect displayedFrameBounds,
         IReadOnlyList<CaptureTestOverlayPointGroup> pointGroups,
@@ -374,6 +430,11 @@ public partial class CaptureTestWindow : UiFluentWindow
 
         foreach (var pointGroup in pointGroups)
         {
+            if (!ShouldDisplayPointGroup(pointGroup))
+            {
+                continue;
+            }
+
             activeGroupIds.Add(pointGroup.Id);
             ApplyOverlayPointGroup(displayedFrameBounds, pointGroup, frameWidth, frameHeight);
         }
@@ -385,6 +446,20 @@ public partial class CaptureTestWindow : UiFluentWindow
                 HidePointGroupVisual(entry.Value);
             }
         }
+    }
+
+    private bool ShouldDisplayPointGroup(CaptureTestOverlayPointGroup pointGroup)
+    {
+        return pointGroup.Id switch
+        {
+            "InLevel" => true,
+            _ => ShouldDisplayInLevelOverlays()
+        };
+    }
+
+    private bool ShouldDisplayInLevelOverlays()
+    {
+        return _lastStageStateSnapshot?.IsInLevel == true;
     }
 
     private void ApplyOverlayPointGroup(
@@ -552,10 +627,8 @@ public partial class CaptureTestWindow : UiFluentWindow
 
     private void HideOverlayRegions()
     {
-        GoldRegionRectangle.Visibility = Visibility.Collapsed;
-        GoldRegionLabelBorder.Visibility = Visibility.Collapsed;
-        RoundRegionRectangle.Visibility = Visibility.Collapsed;
-        RoundRegionLabelBorder.Visibility = Visibility.Collapsed;
+        HideOverlayRegion(GoldRegionRectangle, GoldRegionLabelBorder);
+        HideOverlayRegion(RoundRegionRectangle, RoundRegionLabelBorder);
 
         foreach (var pointGroupVisual in _pointGroupVisuals.Values)
         {
@@ -582,6 +655,7 @@ public partial class CaptureTestWindow : UiFluentWindow
         _lastFrameWidth = 0;
         _lastFrameHeight = 0;
         _lastStageStateSnapshot = null;
+        _lastGameUiSnapshot = null;
     }
 
     private void UpdateFrameDiagnostics(Mat capturedFrame)
@@ -651,6 +725,7 @@ public partial class CaptureTestWindow : UiFluentWindow
         _capture?.Stop();
         _capture?.Dispose();
         _capture = null;
+        _captureWindowHandle = nint.Zero;
         ResetCaptureDiagnostics();
         _captureStatsUpdateTimer.Stop();
         _ocrStatsUpdateTimer.Stop();

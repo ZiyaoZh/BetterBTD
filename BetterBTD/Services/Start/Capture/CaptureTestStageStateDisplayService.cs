@@ -1,4 +1,5 @@
 ﻿using BetterBTD.Models;
+using BetterBTD.Models.AutoTasks;
 using BetterBTD.Models.ScriptExecution;
 
 namespace BetterBTD.Services.Start.Capture;
@@ -19,12 +20,13 @@ public sealed class CaptureTestStageStateDisplayService
         bool failed,
         string? failureMessage,
         GameStageStateSnapshot? snapshot,
-        double averageReadMilliseconds)
+        double averageReadMilliseconds,
+        GameUiSnapshot? gameUiSnapshot = null)
     {
         ArgumentNullException.ThrowIfNull(localizationService);
 
         var summaryText = BuildSummaryText(localizationService, isAvailable, failed, failureMessage, averageReadMilliseconds);
-        var detailsText = BuildDetailsText(localizationService, snapshot);
+        var detailsText = BuildDetailsText(localizationService, snapshot, gameUiSnapshot);
 
         return new CaptureTestStageStateDisplayModel
         {
@@ -56,37 +58,67 @@ public sealed class CaptureTestStageStateDisplayService
         return $"{stageStateLabel}: {localizationService.T("CaptureTest.StatusOk")} | {averageLabel}: {averageReadMilliseconds:F2} ms";
     }
 
-    private static string BuildDetailsText(LocalizationService localizationService, GameStageStateSnapshot? snapshot)
+    private static string BuildDetailsText(
+        LocalizationService localizationService,
+        GameStageStateSnapshot? snapshot,
+        GameUiSnapshot? gameUiSnapshot)
     {
         ArgumentNullException.ThrowIfNull(localizationService);
+        var shouldDisplayInLevelValues = snapshot?.IsInLevel == true;
+        var details = new List<string>
+        {
+            $"{localizationService.T("CaptureTest.GameUi")}: {FormatGameUiState(localizationService, gameUiSnapshot?.State)}",
+            $"{localizationService.T("CaptureTest.InLevel")}: {FormatNullableBool(localizationService, snapshot?.IsInLevel)}"
+        };
 
-        return string.Join(" | ",
-        [
-            $"{localizationService.T("CaptureTest.InLevel")}: {FormatNullableBool(localizationService, snapshot?.IsInLevel)}",
-            $"{localizationService.T("CaptureTest.Gold")}: {FormatNullableInt(localizationService, snapshot?.Gold)}",
-            $"{localizationService.T("CaptureTest.Round")}: {FormatNullableInt(localizationService, snapshot?.Round)}",
-            $"{localizationService.T("CaptureTest.RightUpgradeVisible")}: {FormatNullableBool(localizationService, snapshot?.RightUpgradePanel.IsVisible)}",
-            $"{localizationService.T("CaptureTest.RightUpgradeLevels")}: {FormatPanelLevels(localizationService, snapshot?.RightUpgradePanel)}",
-            $"{localizationService.T("CaptureTest.LeftUpgradeVisible")}: {FormatNullableBool(localizationService, snapshot?.LeftUpgradePanel.IsVisible)}",
-            $"{localizationService.T("CaptureTest.LeftUpgradeLevels")}: {FormatPanelLevels(localizationService, snapshot?.LeftUpgradePanel)}",
-            $"{localizationService.T("CaptureTest.IsPlacingMonkey")}: {FormatNullableBool(localizationService, snapshot?.IsPlacingMonkey)}",
-            $"{localizationService.T("CaptureTest.CanPlaceHero")}: {FormatNullableBool(localizationService, snapshot?.CanPlaceHero)}",
-            $"{localizationService.T("CaptureTest.StageTarget")}: {FormatText(localizationService, snapshot?.StageTarget)}"
-        ]);
+        if (shouldDisplayInLevelValues)
+        {
+            details.Add($"{localizationService.T("CaptureTest.Gold")}: {FormatNullableInt(localizationService, snapshot?.Gold)}");
+            details.Add($"{localizationService.T("CaptureTest.Round")}: {FormatNullableInt(localizationService, snapshot?.Round)}");
+            details.Add($"{localizationService.T("CaptureTest.RightUpgradeVisible")}: {FormatNullableBool(localizationService, snapshot?.RightUpgradePanel.IsVisible)}");
+            details.Add($"{localizationService.T("CaptureTest.RightUpgradeLevels")}: {FormatPanelLevels(localizationService, snapshot?.RightUpgradePanel)}");
+            details.Add($"{localizationService.T("CaptureTest.LeftUpgradeVisible")}: {FormatNullableBool(localizationService, snapshot?.LeftUpgradePanel.IsVisible)}");
+            details.Add($"{localizationService.T("CaptureTest.LeftUpgradeLevels")}: {FormatPanelLevels(localizationService, snapshot?.LeftUpgradePanel)}");
+            details.Add($"{localizationService.T("CaptureTest.IsPlacingMonkey")}: {FormatNullableBool(localizationService, snapshot?.IsPlacingMonkey)}");
+            details.Add($"{localizationService.T("CaptureTest.CanPlaceHero")}: {FormatNullableBool(localizationService, snapshot?.CanPlaceHero)}");
+            details.Add($"{localizationService.T("CaptureTest.StageTarget")}: {FormatText(localizationService, snapshot?.StageTarget)}");
+        }
+
+        return string.Join(" | ", details);
     }
 
-    private static string FormatPanelLevels(LocalizationService localizationService, GameStageUpgradePanelState? panelState)
+    private static string FormatGameUiState(LocalizationService localizationService, GameUiStateId? state)
     {
         ArgumentNullException.ThrowIfNull(localizationService);
+        if (!state.HasValue)
+        {
+            return localizationService.T("CaptureTest.UnknownValue");
+        }
 
-        return $"{localizationService.T("CaptureTest.PathTop")}={FormatNullableInt(localizationService, panelState?.TopPathLevel)}/" +
-               $"{localizationService.T("CaptureTest.PathMiddle")}={FormatNullableInt(localizationService, panelState?.MiddlePathLevel)}/" +
-               $"{localizationService.T("CaptureTest.PathBottom")}={FormatNullableInt(localizationService, panelState?.BottomPathLevel)}";
+        var localizationKey = $"CaptureTest.GameUiState.{state.Value}";
+        var localizedText = localizationService.T(localizationKey);
+        return string.Equals(localizedText, localizationKey, StringComparison.Ordinal)
+            ? state.Value.ToString()
+            : localizedText;
     }
 
-    private static string FormatNullableBool(LocalizationService localizationService, bool? value)
+    private static string FormatPanelLevels(LocalizationService localizationService, GameStageUpgradePanelState? panelState, bool shouldDisplayValue = true)
     {
         ArgumentNullException.ThrowIfNull(localizationService);
+
+        return $"{localizationService.T("CaptureTest.PathTop")}={FormatNullableInt(localizationService, panelState?.TopPathLevel, shouldDisplayValue)}/" +
+               $"{localizationService.T("CaptureTest.PathMiddle")}={FormatNullableInt(localizationService, panelState?.MiddlePathLevel, shouldDisplayValue)}/" +
+               $"{localizationService.T("CaptureTest.PathBottom")}={FormatNullableInt(localizationService, panelState?.BottomPathLevel, shouldDisplayValue)}";
+    }
+
+    private static string FormatNullableBool(LocalizationService localizationService, bool? value, bool shouldDisplayValue = true)
+    {
+        ArgumentNullException.ThrowIfNull(localizationService);
+        if (!shouldDisplayValue)
+        {
+            return localizationService.T("CaptureTest.UnknownValue");
+        }
+
         if (!value.HasValue)
         {
             return localizationService.T("CaptureTest.UnknownValue");
@@ -97,15 +129,25 @@ public sealed class CaptureTestStageStateDisplayService
             : localizationService.T("CaptureTest.BoolFalse");
     }
 
-    private static string FormatNullableInt(LocalizationService localizationService, int? value)
+    private static string FormatNullableInt(LocalizationService localizationService, int? value, bool shouldDisplayValue = true)
     {
         ArgumentNullException.ThrowIfNull(localizationService);
+        if (!shouldDisplayValue)
+        {
+            return localizationService.T("CaptureTest.UnknownValue");
+        }
+
         return value?.ToString() ?? localizationService.T("CaptureTest.UnknownValue");
     }
 
-    private static string FormatText(LocalizationService localizationService, string? value)
+    private static string FormatText(LocalizationService localizationService, string? value, bool shouldDisplayValue = true)
     {
         ArgumentNullException.ThrowIfNull(localizationService);
+        if (!shouldDisplayValue)
+        {
+            return localizationService.T("CaptureTest.UnknownValue");
+        }
+
         return string.IsNullOrWhiteSpace(value) ? localizationService.T("CaptureTest.UnknownValue") : value;
     }
 }
