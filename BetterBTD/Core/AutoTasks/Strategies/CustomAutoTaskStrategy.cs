@@ -1,4 +1,5 @@
 using BetterBTD.Models.AutoTasks;
+using BetterBTD.Models.MyScripts;
 
 namespace BetterBTD.Core.AutoTasks.Strategies;
 
@@ -13,6 +14,7 @@ public sealed class CustomAutoTaskStrategy : StageNavigationAutoTaskStrategyBase
             Kind = Kind,
             StageTarget = state.Request.StageTarget,
             PreferredFilePath = state.Request.PreferredScriptPath,
+            SlotId = ManagedScriptSlotIdFactory.CreateCustomDefaultSlotId(),
             Description = "Resolve the preferred custom script for the selected stage."
         };
     }

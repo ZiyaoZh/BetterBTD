@@ -1,4 +1,5 @@
 using BetterBTD.Models.AutoTasks;
+using BetterBTD.Models.MyScripts;
 
 namespace BetterBTD.Core.AutoTasks.Strategies;
 
@@ -12,6 +13,7 @@ public sealed class RaceAutoTaskStrategy : StageNavigationAutoTaskStrategyBase
         {
             Kind = Kind,
             StageTarget = state.Request.StageTarget,
+            SlotId = ManagedScriptSlotIdFactory.CreateRaceCurrentSlotId(),
             RequiredTags = ["race"],
             Description = "Resolve a race-mode script for the selected activity."
         };

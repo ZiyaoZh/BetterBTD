@@ -1,20 +1,30 @@
+using System.IO;
 using BetterBTD.Core.AutoTasks.Runtime;
-using BetterBTD.Core.ScriptExecution;
 using BetterBTD.Models.AutoTasks;
+using BetterBTD.Models.MyScripts;
+using BetterBTD.Core.ScriptExecution;
 using BetterBTD.Models.ScriptExecution;
 
 namespace BetterBTD.Services.Tasks.AutoTasks;
 
-public sealed class UnresolvedAutoTaskScriptResolver : IAutoTaskScriptResolver
+public sealed class ManagedAutoTaskScriptResolver : IAutoTaskScriptResolver
 {
-    private static readonly Lazy<UnresolvedAutoTaskScriptResolver> InstanceHolder =
-        new(() => new UnresolvedAutoTaskScriptResolver());
+    private static readonly Lazy<ManagedAutoTaskScriptResolver> InstanceHolder =
+        new(() => new ManagedAutoTaskScriptResolver());
 
-    private UnresolvedAutoTaskScriptResolver()
+    private readonly ManagedScriptLibraryService _managedScriptLibraryService;
+
+    private ManagedAutoTaskScriptResolver()
+        : this(ManagedScriptLibraryService.Instance)
     {
     }
 
-    public static UnresolvedAutoTaskScriptResolver Instance => InstanceHolder.Value;
+    internal ManagedAutoTaskScriptResolver(ManagedScriptLibraryService managedScriptLibraryService)
+    {
+        _managedScriptLibraryService = managedScriptLibraryService ?? throw new ArgumentNullException(nameof(managedScriptLibraryService));
+    }
+
+    public static ManagedAutoTaskScriptResolver Instance => InstanceHolder.Value;
 
     public Task<AutoTaskScriptResolution> ResolveAsync(
         AutoTaskScriptQuery query,
@@ -26,12 +36,70 @@ public sealed class UnresolvedAutoTaskScriptResolver : IAutoTaskScriptResolver
 
         cancellationToken.ThrowIfCancellationRequested();
 
+        if (!string.IsNullOrWhiteSpace(query.PreferredFilePath) && File.Exists(query.PreferredFilePath))
+        {
+            return Task.FromResult(new AutoTaskScriptResolution
+            {
+                IsResolved = true,
+                Query = query,
+                FilePath = query.PreferredFilePath,
+                Message = "Resolved by preferred script path."
+            });
+        }
+
+        var resolvedSlotId = ResolveSlotId(query);
+        if (resolvedSlotId.Length > 0 &&
+            _managedScriptLibraryService.TryResolveSlotBinding(resolvedSlotId, out _, out var managedFilePath))
+        {
+            return Task.FromResult(new AutoTaskScriptResolution
+            {
+                IsResolved = true,
+                Query = query,
+                FilePath = managedFilePath,
+                Message = $"Resolved by managed script slot '{resolvedSlotId}'."
+            });
+        }
+
         return Task.FromResult(new AutoTaskScriptResolution
         {
             IsResolved = false,
             Query = query,
-            Message = "Auto-task script resolution has not been implemented yet."
+            Message = BuildUnresolvedMessage(query, resolvedSlotId)
         });
+    }
+
+    private static string ResolveSlotId(AutoTaskScriptQuery query)
+    {
+        if (!string.IsNullOrWhiteSpace(query.SlotId))
+        {
+            return query.SlotId.Trim();
+        }
+
+        return query.Kind switch
+        {
+            AutoTaskKind.Custom => ManagedScriptSlotIdFactory.CreateCustomDefaultSlotId(),
+            AutoTaskKind.BlackBorder when query.StageTarget is not null => ManagedScriptSlotIdFactory.CreateBlackBorderSlotId(
+                query.StageTarget.Map,
+                query.StageTarget.Difficulty,
+                query.StageTarget.Mode),
+            AutoTaskKind.Race => ManagedScriptSlotIdFactory.CreateRaceCurrentSlotId(),
+            _ => string.Empty
+        };
+    }
+
+    private static string BuildUnresolvedMessage(AutoTaskScriptQuery query, string slotId)
+    {
+        if (!string.IsNullOrWhiteSpace(query.PreferredFilePath))
+        {
+            return $"Preferred script path '{query.PreferredFilePath}' does not exist, and no managed binding was found.";
+        }
+
+        if (slotId.Length > 0)
+        {
+            return $"Managed script slot '{slotId}' is not configured.";
+        }
+
+        return "Auto-task script resolution could not determine a managed script slot yet.";
     }
 }
 
@@ -84,7 +152,7 @@ public static class AutoTaskRuntimeServiceFactory
             GameUiState = GameUiStateService.Instance,
             Navigator = GameUiNavigator.Instance,
             UiActionExecutor = GameUiActionExecutor.Instance,
-            ScriptResolver = UnresolvedAutoTaskScriptResolver.Instance,
+            ScriptResolver = ManagedAutoTaskScriptResolver.Instance,
             ScriptExecutor = ScriptTaskFlowAutoTaskScriptExecutorAdapter.Instance
         };
     }

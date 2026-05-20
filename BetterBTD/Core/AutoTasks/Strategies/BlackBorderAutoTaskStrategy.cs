@@ -1,4 +1,5 @@
 using BetterBTD.Models.AutoTasks;
+using BetterBTD.Models.MyScripts;
 
 namespace BetterBTD.Core.AutoTasks.Strategies;
 
@@ -12,6 +13,10 @@ public sealed class BlackBorderAutoTaskStrategy : StageNavigationAutoTaskStrateg
         {
             Kind = Kind,
             StageTarget = state.Request.StageTarget,
+            SlotId = ManagedScriptSlotIdFactory.CreateBlackBorderSlotId(
+                state.Request.StageTarget.Map,
+                state.Request.StageTarget.Difficulty,
+                state.Request.StageTarget.Mode),
             RequiredTags = ["black-border"],
             Description = "Resolve a black-border script for the selected stage."
         };

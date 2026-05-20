@@ -10,6 +10,7 @@ public sealed partial class LocalizationService
         BuildZhCnStartResources(),
         BuildZhCnCaptureTestResources(),
         BuildZhCnTasksResources(),
+        BuildZhCnLibraryResources(),
         BuildZhCnEditorResources(),
         BuildZhCnEditorPlacementResources(),
         BuildZhCnGameElementsResources());
@@ -19,6 +20,7 @@ public sealed partial class LocalizationService
         BuildEnUsStartResources(),
         BuildEnUsCaptureTestResources(),
         BuildEnUsTasksResources(),
+        BuildEnUsLibraryResources(),
         BuildEnUsEditorResources(),
         BuildEnUsEditorPlacementResources(),
         BuildEnUsGameElementsResources());

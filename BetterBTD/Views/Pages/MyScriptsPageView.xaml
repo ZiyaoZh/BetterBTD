@@ -1,42 +1,211 @@
 <Page x:Class="BetterBTD.Views.Pages.MyScriptsPageView"
+      x:Name="Root"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
       mc:Ignorable="d">
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Style="{StaticResource PageRootPanelStyle}">
-            <ItemsControl ItemsSource="{Binding Categories}">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <ui:CardControl Style="{StaticResource AppCardControlStyle}" Icon="{ui:SymbolIcon Folder24}">
-                            <ui:CardControl.Header>
-                                <Grid>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                    </Grid.RowDefinitions>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
+    <Grid Margin="32,24,32,24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
 
-                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding}" Style="{StaticResource CardTitleTextStyle}" />
-                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Manage scripts in this category." Margin="0,4,0,0" Style="{StaticResource CardDescriptionTextStyle}" />
-
-                                    <ui:Button Grid.Row="0"
-                                               Grid.RowSpan="2"
-                                               Grid.Column="1"
-                                               Margin="0,0,24,0"
-                                               Content="{Binding DataContext.EnterText, RelativeSource={RelativeSource AncestorType=Page}}"
-                                               Appearance="Secondary" />
-                                </Grid>
-                            </ui:CardControl.Header>
-                        </ui:CardControl>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
+        <StackPanel Grid.Row="0">
+            <TextBlock Text="{Binding Title}" Style="{StaticResource PageTitleTextStyle}" />
+            <TextBlock Margin="0,8,0,0"
+                       Text="{Binding Subtitle}"
+                       Style="{StaticResource PageDescriptionTextStyle}"
+                       TextWrapping="Wrap" />
         </StackPanel>
-    </ScrollViewer>
+
+        <ui:CardControl Grid.Row="1"
+                        Margin="0,24,0,24"
+                        Style="{StaticResource AppCardControlStyle}"
+                        Icon="{ui:SymbolIcon Folder24}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <StackPanel Orientation="Horizontal">
+                    <ui:Button Content="{Binding ImportText}"
+                               Command="{Binding ImportScriptCommand}" />
+                    <ui:Button Margin="12,0,0,0"
+                               Content="{Binding ExportText}"
+                               Command="{Binding ExportSelectedScriptCommand}"
+                               Appearance="Secondary" />
+                    <ui:Button Margin="12,0,0,0"
+                               Content="{Binding RemoveText}"
+                               Command="{Binding RemoveSelectedScriptCommand}"
+                               Appearance="Secondary" />
+                    <ui:Button Margin="12,0,0,0"
+                               Content="{Binding RefreshText}"
+                               Command="{Binding RefreshCommand}"
+                               Appearance="Secondary" />
+                </StackPanel>
+
+                <Grid Grid.Row="1" Margin="0,16,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                        <TextBlock Margin="0,0,0,6" Text="{Binding ScriptSearchLabel}" />
+                        <ui:TextBox PlaceholderText="{Binding ScriptSearchPlaceholder}"
+                                    Text="{Binding ScriptSearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Margin="0,0,12,0">
+                        <TextBlock Margin="0,0,0,6" Text="{Binding MapFilterLabel}" />
+                        <ComboBox ItemsSource="{Binding MapOptions}"
+                                  SelectedItem="{Binding SelectedMapOption, Mode=TwoWay}"
+                                  DisplayMemberPath="DisplayName" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2" Margin="0,0,12,0">
+                        <TextBlock Margin="0,0,0,6" Text="{Binding DifficultyFilterLabel}" />
+                        <ComboBox ItemsSource="{Binding DifficultyOptions}"
+                                  SelectedItem="{Binding SelectedDifficultyOption, Mode=TwoWay}"
+                                  DisplayMemberPath="DisplayName" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="3">
+                        <TextBlock Margin="0,0,0,6" Text="{Binding ModeFilterLabel}" />
+                        <ComboBox ItemsSource="{Binding ModeOptions}"
+                                  SelectedItem="{Binding SelectedModeOption, Mode=TwoWay}"
+                                  DisplayMemberPath="DisplayName" />
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </ui:CardControl>
+
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1.2*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <ui:CardControl Grid.Column="0"
+                            Margin="0,0,12,0"
+                            Style="{StaticResource AppCardControlStyle}"
+                            Icon="{ui:SymbolIcon Table24}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="{Binding ScriptsSectionTitle}" Style="{StaticResource CardTitleTextStyle}" />
+                    <TextBlock Grid.Row="1"
+                               Margin="0,8,0,16"
+                               Text="{Binding SelectedScriptSummary}"
+                               Style="{StaticResource CardDescriptionTextStyle}"
+                               TextWrapping="Wrap" />
+
+                    <DataGrid Grid.Row="2"
+                              ItemsSource="{Binding Scripts}"
+                              SelectedItem="{Binding SelectedScript, Mode=TwoWay}"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              IsReadOnly="True"
+                              RowHeaderWidth="0"
+                              GridLinesVisibility="None"
+                              BorderThickness="0">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="{Binding DataContext.NameColumnText, ElementName=Root}" Binding="{Binding DisplayName}" Width="1.3*" />
+                            <DataGridTextColumn Header="{Binding DataContext.MapColumnText, ElementName=Root}" Binding="{Binding MapDisplayName}" Width="1.2*" />
+                            <DataGridTextColumn Header="{Binding DataContext.DifficultyColumnText, ElementName=Root}" Binding="{Binding DifficultyDisplayName}" Width="0.9*" />
+                            <DataGridTextColumn Header="{Binding DataContext.ModeColumnText, ElementName=Root}" Binding="{Binding ModeDisplayName}" Width="1*" />
+                            <DataGridTextColumn Header="{Binding DataContext.TagsColumnText, ElementName=Root}" Binding="{Binding TagsText}" Width="1.3*" />
+                            <DataGridTextColumn Header="{Binding DataContext.BindingsColumnText, ElementName=Root}" Binding="{Binding BindingCountText}" Width="0.6*" />
+                            <DataGridTextColumn Header="{Binding DataContext.StateColumnText, ElementName=Root}" Binding="{Binding StateText}" Width="0.9*" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </ui:CardControl>
+
+            <ui:CardControl Grid.Column="1"
+                            Margin="12,0,0,0"
+                            Style="{StaticResource AppCardControlStyle}"
+                            Icon="{ui:SymbolIcon LinkSquare24}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0"
+                                   Text="{Binding SlotsSectionTitle}"
+                                   VerticalAlignment="Center"
+                                   Style="{StaticResource CardTitleTextStyle}" />
+
+                        <ui:Button Grid.Column="1"
+                                   Margin="12,0,0,0"
+                                   Content="{Binding BindText}"
+                                   Command="{Binding BindSelectedScriptToSlotCommand}"
+                                   Appearance="Secondary" />
+
+                        <ui:Button Grid.Column="2"
+                                   Margin="12,0,0,0"
+                                   Content="{Binding ClearBindingText}"
+                                   Command="{Binding ClearSelectedSlotBindingCommand}"
+                                   Appearance="Secondary" />
+                    </Grid>
+
+                    <Grid Grid.Row="1" Margin="0,16,0,16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                            <TextBlock Margin="0,0,0,6" Text="{Binding TaskKindFilterLabel}" />
+                            <ComboBox ItemsSource="{Binding TaskKindOptions}"
+                                      SelectedItem="{Binding SelectedTaskKindOption, Mode=TwoWay}"
+                                      DisplayMemberPath="DisplayName" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Margin="0,0,0,6" Text="{Binding SlotSearchLabel}" />
+                            <ui:TextBox Text="{Binding SlotSearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <DataGrid Grid.Row="2"
+                              ItemsSource="{Binding Slots}"
+                              SelectedItem="{Binding SelectedSlot, Mode=TwoWay}"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              IsReadOnly="True"
+                              RowHeaderWidth="0"
+                              GridLinesVisibility="None"
+                              BorderThickness="0">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="{Binding DataContext.GroupColumnText, ElementName=Root}" Binding="{Binding GroupDisplayName}" Width="1.3*" />
+                            <DataGridTextColumn Header="{Binding DataContext.SlotColumnText, ElementName=Root}" Binding="{Binding SlotDisplayName}" Width="1*" />
+                            <DataGridTextColumn Header="{Binding DataContext.BoundScriptColumnText, ElementName=Root}" Binding="{Binding BoundScriptDisplayName}" Width="1.2*" />
+                            <DataGridTextColumn Header="{Binding DataContext.StateColumnText, ElementName=Root}" Binding="{Binding StateText}" Width="0.9*" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </ui:CardControl>
+        </Grid>
+    </Grid>
 </Page>

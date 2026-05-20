@@ -170,6 +170,8 @@ public sealed class AutoTaskScriptQuery
 
     public string PreferredFilePath { get; init; } = string.Empty;
 
+    public string SlotId { get; init; } = string.Empty;
+
     public IReadOnlyList<string> RequiredTags { get; init; } = [];
 
     public string Description { get; init; } = string.Empty;
