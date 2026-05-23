@@ -43,8 +43,8 @@ public sealed class GameUiNavigator : IGameUiNavigator
             },
             GameUiStateId.MapSearch => new GameUiNavigationStep
             {
-                ActionKind = GameUiActionKind.Wait,
-                Description = "Wait for map search interaction to be implemented.",
+                ActionKind = GameUiActionKind.SelectMapCategory,
+                Description = "Advance the collection map search flow.",
                 PostActionDelayMs = 400,
                 ExpectedNextStates = [GameUiStateId.MapSearchResults, GameUiStateId.MapGrid]
             },
@@ -90,6 +90,36 @@ public sealed class GameUiNavigator : IGameUiNavigator
                 Description = "Select the target mode and enter the stage.",
                 ExpectedNextStates = [GameUiStateId.Loading, GameUiStateId.InLevel]
             },
+            GameUiStateId.HeroSelect => new GameUiNavigationStep
+            {
+                ActionKind = GameUiActionKind.SelectMode,
+                Description = "Resolve the collection hero selection flow.",
+                ExpectedNextStates = [GameUiStateId.EasyModeSelect, GameUiStateId.MediumModeSelect, GameUiStateId.HardModeSelect, GameUiStateId.InLevel]
+            },
+            GameUiStateId.CollectionEvent => new GameUiNavigationStep
+            {
+                ActionKind = GameUiActionKind.SelectMapCategory,
+                Description = "Advance from the collection event page into map search.",
+                ExpectedNextStates = [GameUiStateId.MapSearch, GameUiStateId.MapSearchResults, GameUiStateId.MapGrid]
+            },
+            GameUiStateId.CollectionEventClaimable => new GameUiNavigationStep
+            {
+                ActionKind = GameUiActionKind.CollectReward,
+                Description = "Claim the available collection reward chest.",
+                ExpectedNextStates = [GameUiStateId.CollectionEvent, GameUiStateId.TwoChests, GameUiStateId.ThreeChests]
+            },
+            GameUiStateId.StageSettings => new GameUiNavigationStep
+            {
+                ActionKind = GameUiActionKind.ConfirmDialog,
+                Description = "Exit the stage from the in-level menu.",
+                ExpectedNextStates = [GameUiStateId.MainMenu, GameUiStateId.InLevel]
+            },
+            GameUiStateId.StageChallengeWithHint => new GameUiNavigationStep
+            {
+                ActionKind = GameUiActionKind.ConfirmDialog,
+                Description = "Dismiss the stage challenge hint.",
+                ExpectedNextStates = [GameUiStateId.InLevel]
+            },
             GameUiStateId.StageSettlement => new GameUiNavigationStep
             {
                 ActionKind = GameUiActionKind.CollectReward,
@@ -134,7 +164,8 @@ public sealed class GameUiNavigator : IGameUiNavigator
             GameUiStateId.StageHint or
             GameUiStateId.InstaMonkeyReward or
             GameUiStateId.RaceResult or
-            GameUiStateId.BossResult => new GameUiNavigationStep
+            GameUiStateId.BossResult or
+            GameUiStateId.Returnable => new GameUiNavigationStep
             {
                 ActionKind = GameUiActionKind.CollectReward,
                 Description = "Dismiss the blocking overlay result screen.",

@@ -1,34 +1,213 @@
+using BetterBTD.Core.AutoTasks.Runtime;
 using BetterBTD.Models.AutoTasks;
+using BetterBTD.Models.GameElements;
 using BetterBTD.Models.MyScripts;
+using BetterBTD.Services.MyScripts;
+using BetterBTD.Services.Tasks.AutoTasks;
 
 namespace BetterBTD.Core.AutoTasks.Strategies;
 
-public sealed class CollectionAutoTaskStrategy : StageNavigationAutoTaskStrategyBase
+public sealed class CollectionAutoTaskStrategy : IAutoTaskStrategy
 {
-    public override AutoTaskKind Kind => AutoTaskKind.Collection;
+    private const int DefaultWaitDelayMs = 500;
 
-    protected override AutoTaskScriptQuery BuildScriptQuery(AutoTaskRuntimeState state)
+    private readonly ManagedAutoTaskScriptResolver _scriptResolver;
+    private readonly ScriptDocumentService _scriptDocumentService;
+
+    public CollectionAutoTaskStrategy()
+        : this(ManagedAutoTaskScriptResolver.Instance, ScriptDocumentService.Instance)
     {
-        var slotId = string.Empty;
-        if (ManagedScriptCollectionModeCatalog.TryNormalizeKey(state.Request.VariantKey, out var variantKey))
+    }
+
+    internal CollectionAutoTaskStrategy(
+        ManagedAutoTaskScriptResolver scriptResolver,
+        ScriptDocumentService scriptDocumentService)
+    {
+        _scriptResolver = scriptResolver ?? throw new ArgumentNullException(nameof(scriptResolver));
+        _scriptDocumentService = scriptDocumentService ?? throw new ArgumentNullException(nameof(scriptDocumentService));
+    }
+
+    public AutoTaskKind Kind => AutoTaskKind.Collection;
+
+    public async Task<AutoTaskDecision> DecideNextAsync(
+        AutoTaskRuntimeState state,
+        GameUiSnapshot snapshot,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(snapshot);
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (state.HasPendingScriptOutcome)
         {
-            slotId = ManagedScriptSlotIdFactory.CreateCollectionSlotId(variantKey, state.Request.StageTarget.Map);
+            return DecideAfterScriptExecution(state, snapshot);
         }
 
-        return new AutoTaskScriptQuery
+        if (snapshot.State == GameUiStateId.MapSearchResults)
         {
-            Kind = Kind,
-            StageTarget = state.Request.StageTarget,
-            VariantKey = state.Request.VariantKey,
-            SlotId = slotId,
-            RequiredTags = ["collection"],
-            Description = "Resolve a collection-farming script for the selected stage."
+            var preloadDecision = await TryPreloadScriptContextAsync(state, snapshot, cancellationToken).ConfigureAwait(false);
+            if (preloadDecision is not null)
+            {
+                return preloadDecision;
+            }
+        }
+
+        return snapshot.State switch
+        {
+            GameUiStateId.InLevel => TryBuildStartScriptDecision(state),
+            GameUiStateId.Loading => AutoTaskDecision.Wait(
+                "Waiting for the collection stage to finish loading.",
+                DefaultWaitDelayMs,
+                AutoTaskPhase.WaitingForLevelLoad),
+            GameUiStateId.MainMenu => AutoTaskDecision.Navigate(
+                "Open the collection stage flow from the main menu.",
+                state.Phase == AutoTaskPhase.AdvancingObjective
+                    ? AutoTaskPhase.PreparingStage
+                    : AutoTaskPhase.NavigatingToStage),
+            _ => AutoTaskDecision.Navigate(
+                "Advance the collection navigation flow.",
+                state.Phase == AutoTaskPhase.AdvancingObjective
+                    ? AutoTaskPhase.AdvancingObjective
+                    : AutoTaskPhase.NavigatingToStage)
         };
     }
 
-    protected override AutoTaskDecision DecideAfterScriptExecution(AutoTaskRuntimeState state, GameUiSnapshot snapshot)
+    private static AutoTaskDecision TryBuildStartScriptDecision(AutoTaskRuntimeState state)
+    {
+        if (!state.TryGetProperty<CollectionAutoTaskScriptContext>(CollectionAutoTaskStateKeys.ResolvedScriptContext, out var context))
+        {
+            return AutoTaskDecision.Fail("Collection script metadata was not loaded before entering the stage.");
+        }
+
+        return AutoTaskDecision.StartScript(
+            BuildExecutionQuery(state, context),
+            "Collection stage entry completed. Start the resolved collection script.",
+            AutoTaskPhase.ExecutingScript);
+    }
+
+    private async Task<AutoTaskDecision?> TryPreloadScriptContextAsync(
+        AutoTaskRuntimeState state,
+        GameUiSnapshot snapshot,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetRecognizedCollectionMap(snapshot, out var map))
+        {
+            return AutoTaskDecision.Wait(
+                "Waiting for collection map OCR to recognize the active expert map.",
+                DefaultWaitDelayMs,
+                AutoTaskPhase.NavigatingToStage);
+        }
+
+        if (state.TryGetProperty<CollectionAutoTaskScriptContext>(CollectionAutoTaskStateKeys.ResolvedScriptContext, out var existingContext) &&
+            existingContext.Map == map)
+        {
+            return null;
+        }
+
+        var query = BuildScriptQuery(state, map);
+        var resolution = await _scriptResolver.ResolveAsync(query, state, cancellationToken).ConfigureAwait(false);
+        if (!resolution.IsResolved || string.IsNullOrWhiteSpace(resolution.FilePath))
+        {
+            return AutoTaskDecision.Fail(
+                string.IsNullOrWhiteSpace(resolution.Message)
+                    ? $"Collection script binding for '{map}' is not configured."
+                    : resolution.Message);
+        }
+
+        var scriptDocument = _scriptDocumentService.LoadCompatible(resolution.FilePath).Document;
+        var context = new CollectionAutoTaskScriptContext
+        {
+            Map = map,
+            Difficulty = ParseEnum(scriptDocument.Metadata.Difficulty, StageDifficulty.Medium),
+            Mode = ParseEnum(scriptDocument.Metadata.Mode, StageMode.Standard),
+            Hero = ParseEnum(scriptDocument.Metadata.Hero, HeroType.Quincy),
+            FilePath = resolution.FilePath
+        };
+
+        state.RecordScriptResolution(resolution);
+        state.SetProperty(CollectionAutoTaskStateKeys.ResolvedScriptContext, context);
+        state.SetProperty(CollectionAutoTaskStateKeys.RecognizedMap, map);
+        state.SetProperty(CollectionAutoTaskStateKeys.HeroSelected, false);
+        state.SetProperty(CollectionAutoTaskStateKeys.MapSearchAttempts, 0);
+        return null;
+    }
+
+    private static AutoTaskScriptQuery BuildExecutionQuery(
+        AutoTaskRuntimeState state,
+        CollectionAutoTaskScriptContext context)
+    {
+        var stageTarget = new StageEntryTarget
+        {
+            Map = context.Map,
+            Difficulty = context.Difficulty,
+            Mode = context.Mode
+        };
+
+        return new AutoTaskScriptQuery
+        {
+            Kind = AutoTaskKind.Collection,
+            StageTarget = stageTarget,
+            VariantKey = state.Request.VariantKey,
+            PreferredFilePath = context.FilePath,
+            SlotId = BuildSlotId(state.Request.VariantKey, context.Map),
+            RequiredTags = ["collection"],
+            Description = "Resolve the preloaded collection script for execution."
+        };
+    }
+
+    private static AutoTaskScriptQuery BuildScriptQuery(AutoTaskRuntimeState state, GameMapType map)
+    {
+        var stageTarget = new StageEntryTarget
+        {
+            Map = map,
+            Difficulty = state.Request.StageTarget.Difficulty,
+            Mode = state.Request.StageTarget.Mode
+        };
+
+        return new AutoTaskScriptQuery
+        {
+            Kind = AutoTaskKind.Collection,
+            StageTarget = stageTarget,
+            VariantKey = state.Request.VariantKey,
+            SlotId = BuildSlotId(state.Request.VariantKey, map),
+            RequiredTags = ["collection"],
+            Description = "Resolve a collection-farming script for the recognized expert map."
+        };
+    }
+
+    private static string BuildSlotId(string variantKey, GameMapType map)
+    {
+        return ManagedScriptCollectionModeCatalog.TryNormalizeKey(variantKey, out var normalizedVariantKey)
+            ? ManagedScriptSlotIdFactory.CreateCollectionSlotId(normalizedVariantKey, map)
+            : string.Empty;
+    }
+
+    private static bool TryGetRecognizedCollectionMap(GameUiSnapshot snapshot, out GameMapType map)
+    {
+        if (snapshot.Facts.TryGetValue("collectionMap", out var rawMap) && rawMap is GameMapType typedMap)
+        {
+            map = typedMap;
+            return true;
+        }
+
+        map = default;
+        return false;
+    }
+
+    private static TEnum ParseEnum<TEnum>(string? value, TEnum fallback)
+        where TEnum : struct, Enum
+    {
+        return Enum.TryParse<TEnum>(value, ignoreCase: true, out var parsed)
+            ? parsed
+            : fallback;
+    }
+
+    private static AutoTaskDecision DecideAfterScriptExecution(AutoTaskRuntimeState state, GameUiSnapshot snapshot)
     {
         state.ClearPendingScriptOutcome();
-        return AutoTaskDecision.Fail("Collection task post-stage flow is not implemented yet.");
+        return AutoTaskDecision.Navigate(
+            "Collection script completed. Continue the reward and chest flow.",
+            AutoTaskPhase.AdvancingObjective);
     }
 }

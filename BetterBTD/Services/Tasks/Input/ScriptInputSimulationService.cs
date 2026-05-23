@@ -147,6 +147,11 @@ public sealed class ScriptInputSimulationService
         ClickMouseCore(button, clickCount, holdMilliseconds);
     }
 
+    public void ScrollMouseWheelVertical(int delta)
+    {
+        Simulation.SendInput.Mouse.VerticalScroll(delta);
+    }
+
     public void MouseDown(InputMouseButton button = InputMouseButton.LeftButton)
     {
         _dispatcher.Dispatch(

@@ -360,6 +360,8 @@ public sealed class AutoTaskExecutionResult
 
 public sealed class AutoTaskRuntimeState
 {
+    private readonly Dictionary<string, object?> _properties = new(StringComparer.OrdinalIgnoreCase);
+
     public AutoTaskRuntimeState(AutoTaskRequest request)
     {
         Request = request ?? throw new ArgumentNullException(nameof(request));
@@ -421,6 +423,32 @@ public sealed class AutoTaskRuntimeState
     public void ClearActiveScript()
     {
         ActiveScript = null;
+    }
+
+    public void SetProperty(string key, object? value)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(key);
+        _properties[key] = value;
+    }
+
+    public bool TryGetProperty<T>(string key, out T value)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(key);
+
+        if (_properties.TryGetValue(key, out var rawValue) && rawValue is T typedValue)
+        {
+            value = typedValue;
+            return true;
+        }
+
+        value = default!;
+        return false;
+    }
+
+    public void RemoveProperty(string key)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(key);
+        _properties.Remove(key);
     }
 }
 

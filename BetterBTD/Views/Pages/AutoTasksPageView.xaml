@@ -84,59 +84,16 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
 
-                                <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding DataContext.MapLabel, RelativeSource={RelativeSource AncestorType=Page}}" TextWrapping="Wrap" />
-                                <ui:TextBlock Grid.Row="1" Grid.Column="0" Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}" Text="{Binding DataContext.MapDescription, RelativeSource={RelativeSource AncestorType=Page}}" TextWrapping="Wrap" />
+                                <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding DataContext.CollectionOptionLabel, RelativeSource={RelativeSource AncestorType=Page}}" TextWrapping="Wrap" />
+                                <ui:TextBlock Grid.Row="1" Grid.Column="0" Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}" Text="{Binding DataContext.CollectionOptionDescription, RelativeSource={RelativeSource AncestorType=Page}}" TextWrapping="Wrap" />
                                 <ComboBox Grid.Row="0"
                                             Grid.RowSpan="2"
                                             Grid.Column="1"
-                                            Width="200"
+                                            Width="240"
                                             Margin="0,0,36,0"
-                                            ItemsSource="{Binding MapOptions}"
-                                            SelectedItem="{Binding SelectedMap, Mode=TwoWay}" />
-                            </Grid>
-
-                            <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
-                            <Grid Margin="16">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-
-                                <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding DataContext.DifficultyLabel, RelativeSource={RelativeSource AncestorType=Page}}" TextWrapping="Wrap" />
-                                <ui:TextBlock Grid.Row="1" Grid.Column="0" Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}" Text="{Binding DataContext.DifficultyDescription, RelativeSource={RelativeSource AncestorType=Page}}" TextWrapping="Wrap" />
-                                <ComboBox Grid.Row="0"
-                                            Grid.RowSpan="2"
-                                            Grid.Column="1"
-                                            Width="200"
-                                            Margin="0,0,36,0"
-                                            ItemsSource="{Binding DifficultyOptions}"
-                                            SelectedItem="{Binding SelectedDifficulty, Mode=TwoWay}" />
-                            </Grid>
-
-                            <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
-                            <Grid Margin="16">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-
-                                <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding DataContext.ModeLabel, RelativeSource={RelativeSource AncestorType=Page}}" TextWrapping="Wrap" />
-                                <ui:TextBlock Grid.Row="1" Grid.Column="0" Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}" Text="{Binding DataContext.ModeDescription, RelativeSource={RelativeSource AncestorType=Page}}" TextWrapping="Wrap" />
-                                <ComboBox Grid.Row="0"
-                                            Grid.RowSpan="2"
-                                            Grid.Column="1"
-                                            Width="200"
-                                            Margin="0,0,36,0"
-                                            ItemsSource="{Binding ModeOptions}"
-                                            SelectedItem="{Binding SelectedMode, Mode=TwoWay}" />
+                                            DisplayMemberPath="DisplayName"
+                                            ItemsSource="{Binding VariantOptions}"
+                                            SelectedItem="{Binding SelectedVariantOption, Mode=TwoWay}" />
                             </Grid>
                         </StackPanel>
                     </ui:CardExpander>

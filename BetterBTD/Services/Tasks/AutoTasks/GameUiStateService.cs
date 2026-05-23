@@ -1,6 +1,7 @@
 using BetterBTD.Core.AutoTasks.Runtime;
 using BetterBTD.Models;
 using BetterBTD.Models.AutoTasks;
+using BetterBTD.Models.GameElements;
 using BetterBTD.Models.ScriptExecution;
 using BetterBTD.Services.Start.Capture;
 using BetterBTD.Services.Tasks.CaptureAnalysis;
@@ -16,6 +17,7 @@ public sealed class GameUiStateService : IGameUiStateService
     private readonly GameCaptureService _gameCaptureService;
     private readonly GameStageStateService _gameStageStateService;
     private readonly GameUiDetectionConfigService _detectionConfigService;
+    private readonly GameUiNavigationOcrService _navigationOcrService;
     private readonly IReadOnlyList<IGameUiRecognizer> _recognizers;
     private readonly object _stabilizationSyncRoot = new();
     private GameUiStateId? _pendingUiState;
@@ -26,6 +28,7 @@ public sealed class GameUiStateService : IGameUiStateService
             GameCaptureService.Instance,
             GameStageStateService.Instance,
             GameUiDetectionConfigService.Instance,
+            GameUiNavigationOcrService.Instance,
             [
                 new ConfiguredGameUiRecognizer(GameUiDetectionConfigService.Instance),
                 new UnknownGameUiRecognizer()
@@ -37,11 +40,13 @@ public sealed class GameUiStateService : IGameUiStateService
         GameCaptureService gameCaptureService,
         GameStageStateService gameStageStateService,
         GameUiDetectionConfigService detectionConfigService,
+        GameUiNavigationOcrService navigationOcrService,
         IReadOnlyList<IGameUiRecognizer> recognizers)
     {
         _gameCaptureService = gameCaptureService ?? throw new ArgumentNullException(nameof(gameCaptureService));
         _gameStageStateService = gameStageStateService ?? throw new ArgumentNullException(nameof(gameStageStateService));
         _detectionConfigService = detectionConfigService ?? throw new ArgumentNullException(nameof(detectionConfigService));
+        _navigationOcrService = navigationOcrService ?? throw new ArgumentNullException(nameof(navigationOcrService));
         _recognizers = recognizers?.OrderByDescending(static x => x.Priority).ToArray()
             ?? throw new ArgumentNullException(nameof(recognizers));
     }
@@ -118,17 +123,17 @@ public sealed class GameUiStateService : IGameUiStateService
                     };
                 }
 
-                return ApplyStabilization(snapshot);
+                return ApplyStabilization(EnrichSnapshot(context, snapshot));
             }
         }
 
-        return ApplyStabilization(new GameUiSnapshot
+        return ApplyStabilization(EnrichSnapshot(context, new GameUiSnapshot
         {
             State = GameUiStateId.Unknown,
             Confidence = 0d,
             StageState = stageState,
             Summary = "No UI recognizer matched the current frame."
-        });
+        }));
     }
 
     private GameUiSnapshot ApplyStabilization(GameUiSnapshot snapshot)
@@ -165,6 +170,58 @@ public sealed class GameUiStateService : IGameUiStateService
             StageState = snapshot.StageState,
             Summary = $"UI state '{snapshot.State}' is pending confirmation ({stabilizedMilliseconds:F0}/{UiStateConfirmationWindow.TotalMilliseconds:F0} ms)."
         };
+    }
+
+    private GameUiSnapshot EnrichSnapshot(GameUiRecognitionContext context, GameUiSnapshot snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(snapshot);
+
+        var facts = snapshot.Facts.Count == 0
+            ? new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            : new Dictionary<string, object?>(snapshot.Facts, StringComparer.OrdinalIgnoreCase);
+
+        if (snapshot.State == GameUiStateId.MapSearchResults &&
+            TryRecognizeCollectionMap(context.Frame, out var collectionMap))
+        {
+            facts["collectionMap"] = collectionMap;
+        }
+
+        if (snapshot.State == GameUiStateId.Defeat &&
+            _navigationOcrService.TryLocateHomeButton(context.Frame, out var homeButtonPoint))
+        {
+            facts["homeButtonPoint1080p"] = homeButtonPoint;
+        }
+
+        if (facts.Count == snapshot.Facts.Count)
+        {
+            return snapshot;
+        }
+
+        return new GameUiSnapshot
+        {
+            CapturedAt = snapshot.CapturedAt,
+            State = snapshot.State,
+            Confidence = snapshot.Confidence,
+            StageState = snapshot.StageState,
+            Facts = facts,
+            Summary = snapshot.Summary
+        };
+    }
+
+    private bool TryRecognizeCollectionMap(Mat frame, out GameMapType map)
+    {
+        foreach (var expertMap in GameElementCatalog.Maps.Where(static definition => definition.Tier == MapDifficultyTier.Expert))
+        {
+            if (_navigationOcrService.TryLocateMap(frame, expertMap.Type, out _))
+            {
+                map = expertMap.Type;
+                return true;
+            }
+        }
+
+        map = default;
+        return false;
     }
 }
 

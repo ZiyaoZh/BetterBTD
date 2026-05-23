@@ -27,20 +27,32 @@ public partial class AutoTaskConfig : ObservableObject
     private int _operationIntervalMs = 200;
 
     [ObservableProperty]
-    private ObservableCollection<string> _mapOptions = [];
+    private bool _showStageTargetConfiguration = true;
 
     [ObservableProperty]
-    private string _selectedMap = string.Empty;
+    private bool _showCollectionVariantConfiguration;
 
     [ObservableProperty]
-    private ObservableCollection<string> _difficultyOptions = [];
+    private ObservableCollection<LanguageOption> _mapOptions = [];
 
     [ObservableProperty]
-    private string _selectedDifficulty = string.Empty;
+    private LanguageOption? _selectedMapOption;
 
     [ObservableProperty]
-    private ObservableCollection<string> _modeOptions = [];
+    private ObservableCollection<LanguageOption> _difficultyOptions = [];
 
     [ObservableProperty]
-    private string _selectedMode = string.Empty;
+    private LanguageOption? _selectedDifficultyOption;
+
+    [ObservableProperty]
+    private ObservableCollection<LanguageOption> _modeOptions = [];
+
+    [ObservableProperty]
+    private LanguageOption? _selectedModeOption;
+
+    [ObservableProperty]
+    private ObservableCollection<LanguageOption> _variantOptions = [];
+
+    [ObservableProperty]
+    private LanguageOption? _selectedVariantOption;
 }
