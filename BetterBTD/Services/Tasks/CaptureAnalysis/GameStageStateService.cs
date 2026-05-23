@@ -106,12 +106,12 @@ public sealed class GameStageStateService : IGameStageStateService
     ];
 
     private readonly GameCaptureService _gameCaptureService;
-    private readonly GameTargetOcrService _gameTargetOcrService;
+    private readonly GameStageChallengeOcrService _gameStageChallengeOcrService;
 
     private GameStageStateService()
     {
         _gameCaptureService = GameCaptureService.Instance;
-        _gameTargetOcrService = GameTargetOcrService.Instance;
+        _gameStageChallengeOcrService = GameStageChallengeOcrService.Instance;
     }
 
     public static GameStageStateService Instance => InstanceHolder.Value;
@@ -324,8 +324,8 @@ public sealed class GameStageStateService : IGameStageStateService
         using var goldCaptureRegion = new Mat(frame, captureRegions.GoldRegion);
         using var roundCaptureRegion = new Mat(frame, captureRegions.RoundRegion);
 
-        var hasGold = _gameTargetOcrService.TryReadGold(goldCaptureRegion, frame.Width, frame.Height, out var gold);
-        var hasRound = _gameTargetOcrService.TryReadRound(roundCaptureRegion, frame.Width, frame.Height, out var round);
+        var hasGold = _gameStageChallengeOcrService.TryReadGold(goldCaptureRegion, frame.Width, frame.Height, out var gold);
+        var hasRound = _gameStageChallengeOcrService.TryReadRound(roundCaptureRegion, frame.Width, frame.Height, out var round);
 
         snapshot = new GameStageStateSnapshot
         {
@@ -435,14 +435,14 @@ public sealed class GameStageStateService : IGameStageStateService
     {
         var captureRegions = GetCaptureRegions(frame.Width, frame.Height);
         using var goldCaptureRegion = new Mat(frame, captureRegions.GoldRegion);
-        return _gameTargetOcrService.TryReadGold(goldCaptureRegion, frame.Width, frame.Height, out var gold) ? gold : null;
+        return _gameStageChallengeOcrService.TryReadGold(goldCaptureRegion, frame.Width, frame.Height, out var gold) ? gold : null;
     }
 
     private int? ReadRound(Mat frame)
     {
         var captureRegions = GetCaptureRegions(frame.Width, frame.Height);
         using var roundCaptureRegion = new Mat(frame, captureRegions.RoundRegion);
-        return _gameTargetOcrService.TryReadRound(roundCaptureRegion, frame.Width, frame.Height, out var round) ? round : null;
+        return _gameStageChallengeOcrService.TryReadRound(roundCaptureRegion, frame.Width, frame.Height, out var round) ? round : null;
     }
 
     private static bool ReadUpgradePanelVisible(
