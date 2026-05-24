@@ -300,6 +300,8 @@ public sealed class AutoTaskProgressSnapshot
 
     public GameUiStateId CurrentUiState { get; set; } = GameUiStateId.Unknown;
 
+    public GameUiSnapshot? LastUiSnapshot { get; set; }
+
     public string CurrentCheckpoint { get; set; } = string.Empty;
 
     public int CurrentAttempt { get; set; }
@@ -307,6 +309,12 @@ public sealed class AutoTaskProgressSnapshot
     public bool IsPauseRequested { get; set; }
 
     public string ActiveScriptPath { get; set; } = string.Empty;
+
+    public string ActiveScriptDisplayName { get; set; } = string.Empty;
+
+    public IReadOnlyList<string> ActiveScriptSteps { get; set; } = Array.Empty<string>();
+
+    public ScriptExecutionProgressSnapshot? ActiveScriptProgress { get; set; }
 
     public int ConsecutiveNavigationFailures { get; set; }
 
@@ -324,10 +332,14 @@ public sealed class AutoTaskProgressSnapshot
             LastUpdatedAt = LastUpdatedAt,
             LoopIteration = LoopIteration,
             CurrentUiState = CurrentUiState,
+            LastUiSnapshot = LastUiSnapshot,
             CurrentCheckpoint = CurrentCheckpoint,
             CurrentAttempt = CurrentAttempt,
             IsPauseRequested = IsPauseRequested,
             ActiveScriptPath = ActiveScriptPath,
+            ActiveScriptDisplayName = ActiveScriptDisplayName,
+            ActiveScriptSteps = ActiveScriptSteps.Count == 0 ? Array.Empty<string>() : [.. ActiveScriptSteps],
+            ActiveScriptProgress = ActiveScriptProgress?.Clone(),
             ConsecutiveNavigationFailures = ConsecutiveNavigationFailures,
             Message = Message
         };

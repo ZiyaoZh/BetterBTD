@@ -9,6 +9,7 @@ using BetterBTD.Models.GameElements;
 using BetterBTD.Models.MyScripts;
 using BetterBTD.Services;
 using BetterBTD.Services.Shared;
+using BetterBTD.Views.Windows;
 
 namespace BetterBTD.ViewModels;
 
@@ -24,6 +25,8 @@ public sealed class AutoTasksPageViewModel : ObservableObject
     private readonly LocalizationService _localizationService;
     private readonly AppDialogService _appDialogService;
     private readonly AutoTaskCoordinator _autoTaskCoordinator;
+    private readonly Dictionary<string, TaskRuntimeWindow> _runtimeWindowsByTaskKey = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, TaskRuntimeWindowViewModel> _runtimeViewModelsByTaskKey = new(StringComparer.OrdinalIgnoreCase);
 
     private string _runningTaskKey = string.Empty;
 
@@ -93,31 +96,27 @@ public sealed class AutoTasksPageViewModel : ObservableObject
             return;
         }
 
-        _ = StartCollectionTaskAsync(task);
+        _ = OpenTaskRuntimeWindowAsync(task);
     }
 
-    private async Task StartCollectionTaskAsync(AutoTaskConfig task)
+    private async Task OpenTaskRuntimeWindowAsync(AutoTaskConfig task)
     {
-        try
-        {
-            var request = BuildCollectionRequest(task);
-            RunOnUiThread(() => SetRunningTask(task.Key));
+        var runtimeWindow = EnsureRuntimeWindow(task);
 
-            var result = await _autoTaskCoordinator.ExecuteAsync(request).ConfigureAwait(false);
-            if (result.Status == AutoTaskExecutionStatus.Failed)
+        RunOnUiThread(() =>
+        {
+            if (!runtimeWindow.IsVisible)
             {
-                ShowDialog(
-                    "Tasks.Dialog.ExecutionFailed.Title",
-                    result.Failure?.Message ?? result.Exception?.Message ?? "Auto task execution failed.");
+                runtimeWindow.Show();
             }
-        }
-        catch (Exception ex)
+
+            runtimeWindow.Activate();
+        });
+
+        if (runtimeWindow.DataContext is TaskRuntimeWindowViewModel viewModel &&
+            viewModel.StartCommand.CanExecute(null))
         {
-            ShowDialog("Tasks.Dialog.StartFailed.Title", ex.Message);
-        }
-        finally
-        {
-            RunOnUiThread(ClearRunningTask);
+            await viewModel.StartCommand.ExecuteAsync(null);
         }
     }
 
@@ -163,6 +162,11 @@ public sealed class AutoTasksPageViewModel : ObservableObject
             task.VariantOptions = new ObservableCollection<LanguageOption>(collectionVariantOptions);
             task.SelectedVariantOption = SelectOption(task.VariantOptions, previousVariantCode)
                 ?? task.VariantOptions.FirstOrDefault();
+
+            if (_runtimeViewModelsByTaskKey.TryGetValue(task.Key, out var runtimeViewModel))
+            {
+                runtimeViewModel.UpdateTaskMetadata(task.Title, BuildTaskRuntimeSummary(task));
+            }
         }
 
         OnPropertyChanged(nameof(TutorialLinkText));
@@ -232,6 +236,112 @@ public sealed class AutoTasksPageViewModel : ObservableObject
     private void ShowDialogByKey(string titleKey, string messageKey)
     {
         ShowDialog(titleKey, _localizationService.T(messageKey));
+    }
+
+    private TaskRuntimeWindow EnsureRuntimeWindow(AutoTaskConfig task)
+    {
+        if (_runtimeWindowsByTaskKey.TryGetValue(task.Key, out var existingWindow))
+        {
+            return existingWindow;
+        }
+
+        var runtimeViewModel = new TaskRuntimeWindowViewModel(
+            _localizationService,
+            task.Title,
+            BuildTaskRuntimeSummary(task),
+            task.OperationIntervalMs,
+            viewModel => StartCollectionTaskExecutionAsync(task, viewModel),
+            () => _autoTaskCoordinator.RequestStop());
+        var runtimeWindow = new TaskRuntimeWindow(runtimeViewModel);
+
+        var owner = Application.Current?.Windows
+            .OfType<Window>()
+            .FirstOrDefault(x => x.IsActive)
+            ?? Application.Current?.MainWindow;
+        if (owner is not null && !ReferenceEquals(owner, runtimeWindow))
+        {
+            runtimeWindow.Owner = owner;
+        }
+
+        runtimeWindow.Closed += OnTaskRuntimeWindowClosed;
+        _runtimeWindowsByTaskKey[task.Key] = runtimeWindow;
+        _runtimeViewModelsByTaskKey[task.Key] = runtimeViewModel;
+        return runtimeWindow;
+    }
+
+    private async Task StartCollectionTaskExecutionAsync(
+        AutoTaskConfig task,
+        TaskRuntimeWindowViewModel runtimeViewModel)
+    {
+        EventHandler<AutoTaskProgressSnapshot>? progressHandler = (_, snapshot) =>
+            runtimeViewModel.PostProgressSnapshot(snapshot);
+
+        try
+        {
+            task.OperationIntervalMs = runtimeViewModel.OperationIntervalMs;
+            var request = BuildCollectionRequest(task);
+
+            _autoTaskCoordinator.ProgressChanged += progressHandler;
+            RunOnUiThread(() => SetRunningTask(task.Key));
+
+            var result = await _autoTaskCoordinator.ExecuteAsync(request).ConfigureAwait(false);
+            RunOnUiThread(() => runtimeViewModel.ApplyResult(result));
+
+            if (result.Status == AutoTaskExecutionStatus.Failed)
+            {
+                ShowDialog(
+                    "Tasks.Dialog.ExecutionFailed.Title",
+                    result.Failure?.Message ?? result.Exception?.Message ?? "Auto task execution failed.");
+            }
+        }
+        catch (Exception ex)
+        {
+            RunOnUiThread(() => runtimeViewModel.ApplyUnexpectedException(ex));
+            ShowDialog("Tasks.Dialog.StartFailed.Title", ex.Message);
+        }
+        finally
+        {
+            _autoTaskCoordinator.ProgressChanged -= progressHandler;
+            RunOnUiThread(ClearRunningTask);
+        }
+    }
+
+    private string BuildTaskRuntimeSummary(AutoTaskConfig task)
+    {
+        ArgumentNullException.ThrowIfNull(task);
+
+        var parts = new List<string>();
+        if (!string.IsNullOrWhiteSpace(task.Description))
+        {
+            parts.Add(task.Description);
+        }
+
+        if (task.ShowCollectionVariantConfiguration && !string.IsNullOrWhiteSpace(task.SelectedVariantOption?.DisplayName))
+        {
+            parts.Add($"{CollectionOptionLabel}: {task.SelectedVariantOption!.DisplayName}");
+        }
+
+        return string.Join(" | ", parts);
+    }
+
+    private void OnTaskRuntimeWindowClosed(object? sender, EventArgs e)
+    {
+        if (sender is not TaskRuntimeWindow window)
+        {
+            return;
+        }
+
+        window.Closed -= OnTaskRuntimeWindowClosed;
+
+        var entry = _runtimeWindowsByTaskKey
+            .FirstOrDefault(pair => ReferenceEquals(pair.Value, window));
+        if (string.IsNullOrWhiteSpace(entry.Key))
+        {
+            return;
+        }
+
+        _runtimeWindowsByTaskKey.Remove(entry.Key);
+        _runtimeViewModelsByTaskKey.Remove(entry.Key);
     }
 
     private static LanguageOption? SelectOption(IEnumerable<LanguageOption> options, string? code)

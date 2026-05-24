@@ -130,6 +130,12 @@ public sealed class ScriptTaskFlowAutoTaskScriptExecutorAdapter : IAutoTaskScrip
 
     public static ScriptTaskFlowAutoTaskScriptExecutorAdapter Instance => InstanceHolder.Value;
 
+    public event EventHandler<ScriptExecutionProgressSnapshot>? ProgressChanged
+    {
+        add => _scriptTaskFlowExecutor.ProgressChanged += value;
+        remove => _scriptTaskFlowExecutor.ProgressChanged -= value;
+    }
+
     public bool IsRunning => _scriptTaskFlowExecutor.IsRunning;
 
     public bool RequestPause()

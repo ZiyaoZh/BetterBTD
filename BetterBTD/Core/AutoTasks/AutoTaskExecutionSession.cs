@@ -1,5 +1,6 @@
 using BetterBTD.Models.AutoTasks;
 using BetterBTD.Core.ScriptExecution;
+using BetterBTD.Models.ScriptExecution;
 
 namespace BetterBTD.Core.AutoTasks;
 
@@ -83,31 +84,59 @@ public sealed class AutoTaskExecutionSession
             resetPauseRequested: false);
     }
 
-    public void UpdateUiState(GameUiStateId uiState, string message)
+    public void UpdateUiSnapshot(GameUiSnapshot snapshot, string message)
     {
-        PublishUpdate(
-            null,
-            null,
-            uiState,
-            null,
-            0,
-            null,
-            message,
-            resetPauseRequested: false);
+        ArgumentNullException.ThrowIfNull(snapshot);
+
+        AutoTaskProgressSnapshot progressSnapshot;
+        lock (_syncRoot)
+        {
+            _progressSnapshot.CurrentUiState = snapshot.State;
+            _progressSnapshot.LastUiSnapshot = snapshot;
+            _progressSnapshot.Message = message;
+            _progressSnapshot.LastUpdatedAt = DateTimeOffset.UtcNow;
+            progressSnapshot = _progressSnapshot.Clone();
+        }
+
+        RaiseProgressChanged(progressSnapshot);
     }
 
-    public void UpdateActiveScript(string filePath, string message)
+    public void UpdateActiveScript(
+        string filePath,
+        string displayName,
+        IReadOnlyList<string> steps,
+        string message)
     {
+        ArgumentNullException.ThrowIfNull(steps);
+
         AutoTaskProgressSnapshot snapshot;
         lock (_syncRoot)
         {
             _progressSnapshot.ActiveScriptPath = filePath ?? string.Empty;
+            _progressSnapshot.ActiveScriptDisplayName = displayName ?? string.Empty;
+            _progressSnapshot.ActiveScriptSteps = steps.Count == 0 ? Array.Empty<string>() : [.. steps];
+            _progressSnapshot.ActiveScriptProgress = null;
             _progressSnapshot.Message = message;
             _progressSnapshot.LastUpdatedAt = DateTimeOffset.UtcNow;
             snapshot = _progressSnapshot.Clone();
         }
 
         RaiseProgressChanged(snapshot);
+    }
+
+    public void UpdateActiveScriptProgress(ScriptExecutionProgressSnapshot snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+
+        AutoTaskProgressSnapshot progressSnapshot;
+        lock (_syncRoot)
+        {
+            _progressSnapshot.ActiveScriptProgress = snapshot.Clone();
+            _progressSnapshot.LastUpdatedAt = DateTimeOffset.UtcNow;
+            progressSnapshot = _progressSnapshot.Clone();
+        }
+
+        RaiseProgressChanged(progressSnapshot);
     }
 
     public void UpdateNavigationFailures(int failureCount, string message)

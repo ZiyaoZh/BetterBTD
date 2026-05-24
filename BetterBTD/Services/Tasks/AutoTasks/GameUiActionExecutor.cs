@@ -113,6 +113,7 @@ public sealed class GameUiActionExecutor : IGameUiActionExecutor
             case GameUiStateId.BossResult:
                 return Click(step, new WpfPoint(960, 880), "Closed the boss result overlay.");
             case GameUiStateId.MapGrid:
+                return Click(step, new WpfPoint(80, 170), "Opened map select screen.");
             case GameUiStateId.CollectionEvent:
                 return Click(step, new WpfPoint(80, 55), "Returned from the current collection screen.");
             case GameUiStateId.CollectionEventClaimable:

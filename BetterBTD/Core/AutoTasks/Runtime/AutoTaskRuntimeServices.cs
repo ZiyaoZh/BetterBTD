@@ -63,6 +63,8 @@ public interface IAutoTaskScriptResolver
 
 public interface IAutoTaskScriptExecutor
 {
+    event EventHandler<ScriptExecutionProgressSnapshot>? ProgressChanged;
+
     bool IsRunning { get; }
 
     bool RequestPause();

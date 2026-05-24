@@ -263,6 +263,8 @@ public sealed class AutoTaskSkeletonTests
             _result = result;
         }
 
+        public event EventHandler<ScriptExecutionProgressSnapshot>? ProgressChanged;
+
         public List<string> ExecutedFilePaths { get; } = [];
 
         public bool IsRunning => false;
@@ -283,6 +285,12 @@ public sealed class AutoTaskSkeletonTests
             CancellationToken cancellationToken = default)
         {
             ExecutedFilePaths.Add(filePath);
+            ProgressChanged?.Invoke(this, new ScriptExecutionProgressSnapshot
+            {
+                CurrentStepIndex = 0,
+                LastCompletedStepIndex = -1,
+                RunState = ScriptExecutionRunState.Running
+            });
             return Task.FromResult(_result);
         }
     }
@@ -294,6 +302,8 @@ public sealed class AutoTaskSkeletonTests
 
         public TaskCompletionSource<bool> Started { get; } =
             new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public event EventHandler<ScriptExecutionProgressSnapshot>? ProgressChanged;
 
         public int PauseRequestCount { get; private set; }
 
@@ -320,6 +330,12 @@ public sealed class AutoTaskSkeletonTests
         {
             IsRunning = true;
             Started.TrySetResult(true);
+            ProgressChanged?.Invoke(this, new ScriptExecutionProgressSnapshot
+            {
+                CurrentStepIndex = 0,
+                LastCompletedStepIndex = -1,
+                RunState = ScriptExecutionRunState.Running
+            });
 
             try
             {

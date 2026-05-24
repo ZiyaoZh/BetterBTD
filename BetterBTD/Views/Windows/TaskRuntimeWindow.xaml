@@ -1,0 +1,351 @@
+<ui:FluentWindow x:Class="BetterBTD.Views.Windows.TaskRuntimeWindow"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 mc:Ignorable="d"
+                 Title="{Binding WindowTitle}"
+                 Width="440"
+                 Height="640"
+                 MinWidth="360"
+                 MinHeight="500"
+                 ExtendsContentIntoTitleBar="True"
+                 WindowBackdropType="Mica"
+                 WindowCornerPreference="Round"
+                 WindowStartupLocation="CenterOwner"
+                 PreviewKeyDown="OnPreviewKeyDown">
+    <ui:FluentWindow.Resources>
+        <Thickness x:Key="WindowContentPadding">16,12,16,16</Thickness>
+        <SolidColorBrush x:Key="RunningIndicatorBrush" Color="#FF5A66" />
+        <SolidColorBrush x:Key="SequenceSelectionBrush" Color="#FF8A63D2" />
+
+        <Style x:Key="FlatListBoxStyle" TargetType="ListBox">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Focusable" Value="True" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        </Style>
+
+        <Style x:Key="TransparentListBoxItemStyle" TargetType="ListBoxItem">
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <ContentPresenter />
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SelectableLogTextBoxStyle"
+               TargetType="TextBox"
+               BasedOn="{StaticResource DefaultTextBoxStyle}">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+        </Style>
+    </ui:FluentWindow.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <ui:TitleBar x:Name="RuntimeTitleBar"
+                     Grid.Row="0"
+                     Title="">
+            <ui:TitleBar.Icon>
+                <ui:SymbolIcon Symbol="PlayCircle24" />
+            </ui:TitleBar.Icon>
+        </ui:TitleBar>
+
+        <Grid Grid.Row="0"
+              Panel.ZIndex="1"
+              Margin="52,0,156,0"
+              VerticalAlignment="Stretch"
+              HorizontalAlignment="Stretch"
+              IsHitTestVisible="False">
+            <Border x:Name="WindowTitleViewport"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Stretch"
+                    ClipToBounds="True">
+                <TextBlock x:Name="WindowTitleTextBlock"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Left"
+                           FontSize="13"
+                           FontWeight="SemiBold"
+                           Text="{Binding WindowTitle}"
+                           TextWrapping="NoWrap"
+                           TextTrimming="CharacterEllipsis" />
+            </Border>
+        </Grid>
+
+        <Grid Grid.Row="1" Margin="{StaticResource WindowContentPadding}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="20" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="20" />
+                <RowDefinition Height="300" MinHeight="160" />
+                <RowDefinition Height="20" />
+                <RowDefinition Height="*" MinHeight="120" />
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0"
+                            Margin="0,0,12,0">
+                    <TextBlock FontSize="18"
+                               FontWeight="SemiBold"
+                               Text="{Binding TaskDisplayName}"
+                               TextWrapping="Wrap" />
+
+                    <TextBlock Margin="0,4,0,0"
+                               FontSize="12"
+                               Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                               Text="{Binding TaskSummaryText}"
+                               TextWrapping="Wrap" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="1"
+                            HorizontalAlignment="Right"
+                            Orientation="Horizontal">
+                    <ui:Button Margin="0,0,8,0"
+                               VerticalAlignment="Center"
+                               Appearance="Primary"
+                               Command="{Binding StartCommand}"
+                               Content="{Binding StartText}"
+                               Icon="{ui:SymbolIcon Play24}" />
+                    <ui:Button VerticalAlignment="Center"
+                               Appearance="Secondary"
+                               Command="{Binding StopCommand}"
+                               Content="{Binding StopText}"
+                               Icon="{ui:SymbolIcon Stop24}" />
+                </StackPanel>
+            </Grid>
+
+            <GridSplitter Grid.Row="1"
+                          Height="1"
+                          Margin="0,2,0,2"
+                          HorizontalAlignment="Stretch"
+                          VerticalAlignment="Center"
+                          Background="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                          ResizeDirection="Rows"
+                          ResizeBehavior="PreviousAndNext"
+                          ShowsPreview="False"
+                          IsEnabled="False"
+                          Focusable="False"
+                          Opacity="0.65" />
+
+            <Grid Grid.Row="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="16" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0"
+                           Style="{StaticResource CardTitleTextStyle}"
+                           Text="{Binding OperationIntervalLabel}"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Left"
+                           TextAlignment="Left" />
+
+                <Grid Grid.Column="2"
+                      VerticalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="80" />
+                    </Grid.ColumnDefinitions>
+
+                    <Slider Grid.Column="0"
+                            VerticalAlignment="Center"
+                            Minimum="20"
+                            Maximum="5000"
+                            TickFrequency="10"
+                            SmallChange="10"
+                            LargeChange="50"
+                            IsSnapToTickEnabled="True"
+                            IsEnabled="{Binding CanEditOperationInterval}"
+                            Value="{Binding OperationIntervalMs, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <TextBlock Grid.Column="1"
+                               Margin="12,0,0,0"
+                               VerticalAlignment="Center"
+                               TextAlignment="Right"
+                               Text="{Binding OperationIntervalMs, StringFormat={}{0} ms}" />
+                </Grid>
+            </Grid>
+
+            <GridSplitter Grid.Row="3"
+                          Height="1"
+                          Margin="0,2,0,2"
+                          HorizontalAlignment="Stretch"
+                          VerticalAlignment="Center"
+                          Background="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                          ResizeDirection="Rows"
+                          ResizeBehavior="PreviousAndNext"
+                          ShowsPreview="False"
+                          IsEnabled="False"
+                          Focusable="False"
+                          Opacity="0.65" />
+
+            <Grid Grid.Row="4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1.7*" />
+                    <ColumnDefinition Width="16" />
+                    <ColumnDefinition Width="1*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0"
+                           Grid.Column="0"
+                           Style="{StaticResource CardTitleTextStyle}"
+                           Text="{Binding SequenceTitle}"
+                           HorizontalAlignment="Left"
+                           TextAlignment="Left" />
+
+                <TextBlock Grid.Row="0"
+                           Grid.Column="2"
+                           Style="{StaticResource CardTitleTextStyle}"
+                           Text="{Binding StatusTitle}"
+                           HorizontalAlignment="Left"
+                           TextAlignment="Left" />
+
+                <ListBox x:Name="SequenceListBox"
+                         Grid.Row="1"
+                         Grid.Column="0"
+                         Margin="0,10,0,0"
+                         Style="{StaticResource FlatListBoxStyle}"
+                         ItemContainerStyle="{StaticResource TransparentListBoxItemStyle}"
+                         ItemsSource="{Binding Steps}"
+                         SelectedItem="{Binding SelectedStep, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                         SelectionChanged="OnSequenceListBoxSelectionChanged"
+                         HorizontalContentAlignment="Stretch"
+                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                         ScrollViewer.CanContentScroll="True"
+                         VirtualizingPanel.IsVirtualizing="True"
+                         VirtualizingPanel.ScrollUnit="Pixel"
+                         VirtualizingPanel.VirtualizationMode="Recycling">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Border Margin="0,0,0,8"
+                                    Padding="2"
+                                    CornerRadius="12">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="BorderBrush" Value="Transparent" />
+                                        <Setter Property="BorderThickness" Value="0" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsSelected}" Value="True">
+                                                <Setter Property="BorderBrush" Value="{StaticResource SequenceSelectionBrush}" />
+                                                <Setter Property="BorderThickness" Value="2" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+
+                                <Border Padding="10,8"
+                                        Background="{Binding CardBackgroundBrush}"
+                                        BorderBrush="{Binding CardBorderBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="10">
+                                    <DockPanel LastChildFill="True"
+                                               HorizontalAlignment="Stretch">
+                                        <Ellipse Width="8"
+                                                 Height="8"
+                                                 Margin="0,5,10,0"
+                                                 VerticalAlignment="Top"
+                                                 Fill="{StaticResource RunningIndicatorBrush}"
+                                                 Visibility="{Binding IsCurrent, Converter={StaticResource BoolToVisibilityConverter}}"
+                                                 DockPanel.Dock="Left" />
+
+                                        <TextBlock Foreground="{Binding TitleBrush}"
+                                                   FontWeight="{Binding TitleWeight}"
+                                                   Text="{Binding Title}"
+                                                   TextAlignment="Left"
+                                                   TextWrapping="Wrap"
+                                                   HorizontalAlignment="Left"
+                                                   VerticalAlignment="Top" />
+                                    </DockPanel>
+                                </Border>
+                            </Border>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <Grid Grid.Row="1"
+                      Grid.Column="2"
+                      Margin="0,10,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0"
+                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                               Text="{Binding StatusText}"
+                               TextAlignment="Left"
+                               TextWrapping="Wrap" />
+                </Grid>
+            </Grid>
+
+            <GridSplitter Grid.Row="5"
+                          Height="1"
+                          Margin="0,2,0,2"
+                          HorizontalAlignment="Stretch"
+                          VerticalAlignment="Center"
+                          Background="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                          ResizeDirection="Rows"
+                          ResizeBehavior="PreviousAndNext"
+                          ShowsPreview="True"
+                          Opacity="0.65" />
+
+            <Grid Grid.Row="6">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0"
+                           Style="{StaticResource CardTitleTextStyle}"
+                           Text="{Binding OutputTitle}"
+                           HorizontalAlignment="Left"
+                           TextAlignment="Left" />
+
+                <TextBox x:Name="LogTextBox"
+                         Grid.Row="1"
+                         Margin="0,10,0,0"
+                         Style="{StaticResource SelectableLogTextBoxStyle}"
+                         IsReadOnly="True"
+                         IsReadOnlyCaretVisible="True"
+                         AcceptsReturn="True"
+                         Text="{Binding LogText, Mode=OneWay}"
+                         FontFamily="Consolas"
+                         FontSize="12"
+                         Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                         TextAlignment="Left"
+                         TextWrapping="Wrap"
+                         VerticalScrollBarVisibility="Visible"
+                         HorizontalScrollBarVisibility="Disabled"
+                         Loaded="OnLogTextBoxLoaded"
+                         TextChanged="OnLogTextBoxTextChanged" />
+            </Grid>
+        </Grid>
+    </Grid>
+</ui:FluentWindow>

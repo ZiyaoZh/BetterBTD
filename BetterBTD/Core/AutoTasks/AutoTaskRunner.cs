@@ -1,3 +1,4 @@
+using System.IO;
 using BetterBTD.Core.AutoTasks.Runtime;
 using BetterBTD.Models.AutoTasks;
 using BetterBTD.Models.ScriptExecution;
@@ -9,21 +10,27 @@ public sealed class AutoTaskRunner
 {
     private readonly IAutoTaskStrategyRegistry _strategyRegistry;
     private readonly AutoTaskRuntimeServices _defaultRuntimeServices;
+    private readonly AutoTaskRuntimeScriptPreviewService _scriptPreviewService;
 
     private AutoTaskExecutionSession? _currentSession;
     private IAutoTaskScriptExecutor? _currentScriptExecutor;
 
     public AutoTaskRunner()
-        : this(AutoTaskStrategyRegistry.Instance, AutoTaskRuntimeServiceFactory.CreateDefault())
+        : this(
+            AutoTaskStrategyRegistry.Instance,
+            AutoTaskRuntimeServiceFactory.CreateDefault(),
+            AutoTaskRuntimeScriptPreviewService.Instance)
     {
     }
 
     internal AutoTaskRunner(
         IAutoTaskStrategyRegistry strategyRegistry,
-        AutoTaskRuntimeServices defaultRuntimeServices)
+        AutoTaskRuntimeServices defaultRuntimeServices,
+        AutoTaskRuntimeScriptPreviewService scriptPreviewService)
     {
         _strategyRegistry = strategyRegistry ?? throw new ArgumentNullException(nameof(strategyRegistry));
         _defaultRuntimeServices = defaultRuntimeServices ?? throw new ArgumentNullException(nameof(defaultRuntimeServices));
+        _scriptPreviewService = scriptPreviewService ?? throw new ArgumentNullException(nameof(scriptPreviewService));
     }
 
     public AutoTaskExecutionSession? CurrentSession => _currentSession;
@@ -81,7 +88,7 @@ public sealed class AutoTaskRunner
                     .ConfigureAwait(false);
 
                 state.RecordUiSnapshot(snapshot);
-                session.UpdateUiState(snapshot.State, $"Detected UI state '{snapshot.State}'.");
+                session.UpdateUiSnapshot(snapshot, $"Detected UI state '{snapshot.State}'.");
 
                 var decision = await strategy
                     .DecideNextAsync(state, snapshot, cancellationToken)
@@ -171,7 +178,13 @@ public sealed class AutoTaskRunner
                         }
 
                         state.RecordScriptResolution(scriptResolution);
-                        session.UpdateActiveScript(scriptResolution.FilePath, "Resolved auto-task script.");
+
+                        var scriptPreview = TryLoadScriptPreview(scriptResolution.FilePath);
+                        session.UpdateActiveScript(
+                            scriptResolution.FilePath,
+                            scriptPreview.DisplayName,
+                            scriptPreview.Steps,
+                            "Resolved auto-task script.");
 
                         var scriptExecutionOptions = new ScriptExecutionOptions
                         {
@@ -181,9 +194,22 @@ public sealed class AutoTaskRunner
                             RequireTargetWindow = true
                         };
 
-                        var scriptResult = await runtimeServices.ScriptExecutor
-                            .ExecuteAsync(scriptResolution.FilePath, scriptExecutionOptions, cancellationToken)
-                            .ConfigureAwait(false);
+                        EventHandler<ScriptExecutionProgressSnapshot>? scriptProgressHandler = (_, progressSnapshot) =>
+                            session.UpdateActiveScriptProgress(progressSnapshot);
+
+                        runtimeServices.ScriptExecutor.ProgressChanged += scriptProgressHandler;
+
+                        ScriptExecutionResult scriptResult;
+                        try
+                        {
+                            scriptResult = await runtimeServices.ScriptExecutor
+                                .ExecuteAsync(scriptResolution.FilePath, scriptExecutionOptions, cancellationToken)
+                                .ConfigureAwait(false);
+                        }
+                        finally
+                        {
+                            runtimeServices.ScriptExecutor.ProgressChanged -= scriptProgressHandler;
+                        }
 
                         if (scriptResult.Status == ScriptExecutionStatus.Cancelled)
                         {
@@ -261,6 +287,22 @@ public sealed class AutoTaskRunner
     private static int ResolveDelay(int delayMs, AutoTaskExecutionOptions options)
     {
         return delayMs > 0 ? delayMs : options.DefaultDecisionDelayMs;
+    }
+
+    private AutoTaskRuntimeScriptPreview TryLoadScriptPreview(string filePath)
+    {
+        try
+        {
+            return _scriptPreviewService.Load(filePath);
+        }
+        catch
+        {
+            return new AutoTaskRuntimeScriptPreview
+            {
+                DisplayName = Path.GetFileNameWithoutExtension(filePath),
+                Steps = Array.Empty<string>()
+            };
+        }
     }
 
     private static AutoTaskExecutionResult BuildFailedResult(
