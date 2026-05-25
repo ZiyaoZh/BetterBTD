@@ -13,6 +13,10 @@ public sealed class GameUiStateService : IGameUiStateService
 {
     private static readonly Lazy<GameUiStateService> InstanceHolder = new(() => new GameUiStateService());
     private static readonly TimeSpan UiStateConfirmationWindow = TimeSpan.FromMilliseconds(500);
+    private static readonly GameMapType[] CollectionExpertMaps = GameElementCatalog.Maps
+        .Where(static definition => definition.Tier == MapDifficultyTier.Expert)
+        .Select(static definition => definition.Type)
+        .ToArray();
 
     private readonly GameCaptureService _gameCaptureService;
     private readonly GameStageStateService _gameStageStateService;
@@ -182,9 +186,17 @@ public sealed class GameUiStateService : IGameUiStateService
             : new Dictionary<string, object?>(snapshot.Facts, StringComparer.OrdinalIgnoreCase);
 
         if (snapshot.State == GameUiStateId.MapSearchResults &&
-            TryRecognizeCollectionMap(context.Frame, out var collectionMap))
+            TryRecognizeCollectionMap(context.Frame, out var collectionMap, out var collectionMapMatches))
         {
-            facts["collectionMap"] = collectionMap;
+            if (collectionMapMatches.Count > 0)
+            {
+                facts["collectionMapMatches"] = collectionMapMatches;
+            }
+
+            if (collectionMap.HasValue)
+            {
+                facts["collectionMap"] = collectionMap.Value;
+            }
         }
 
         if (snapshot.State == GameUiStateId.Defeat &&
@@ -209,19 +221,25 @@ public sealed class GameUiStateService : IGameUiStateService
         };
     }
 
-    private bool TryRecognizeCollectionMap(Mat frame, out GameMapType map)
+    private bool TryRecognizeCollectionMap(
+        Mat frame,
+        out GameMapType? map,
+        out IReadOnlyList<MapTemplateMatchResult> candidateMatches)
     {
-        foreach (var expertMap in GameElementCatalog.Maps.Where(static definition => definition.Tier == MapDifficultyTier.Expert))
-        {
-            if (_navigationOcrService.TryLocateMap(frame, expertMap.Type, out _))
-            {
-                map = expertMap.Type;
-                return true;
-            }
-        }
+        var recognized = _navigationOcrService.TryLocateBestMap(
+            frame,
+            CollectionExpertMaps,
+            frame.Width,
+            frame.Height,
+            0,
+            0,
+            out var recognizedMap,
+            out _,
+            out _,
+            out candidateMatches);
 
-        map = default;
-        return false;
+        map = recognized ? recognizedMap : null;
+        return recognized || candidateMatches.Count > 0;
     }
 }
 

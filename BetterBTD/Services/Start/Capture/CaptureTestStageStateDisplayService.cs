@@ -1,5 +1,6 @@
 ﻿using BetterBTD.Models;
 using BetterBTD.Models.AutoTasks;
+using BetterBTD.Models.GameElements;
 using BetterBTD.Models.ScriptExecution;
 
 namespace BetterBTD.Services.Start.Capture;
@@ -84,7 +85,54 @@ public sealed class CaptureTestStageStateDisplayService
             details.Add($"{localizationService.T("CaptureTest.StageTarget")}: {FormatText(localizationService, snapshot?.StageTarget)}");
         }
 
+        var mapRecognitionText = FormatCollectionMapRecognition(localizationService, gameUiSnapshot);
+        if (!string.IsNullOrWhiteSpace(mapRecognitionText))
+        {
+            details.Add($"{localizationService.T("CaptureTest.MapRecognition")}: {mapRecognitionText}");
+        }
+
         return string.Join(" | ", details);
+    }
+
+    private static string FormatCollectionMapRecognition(
+        LocalizationService localizationService,
+        GameUiSnapshot? gameUiSnapshot)
+    {
+        ArgumentNullException.ThrowIfNull(localizationService);
+        if (gameUiSnapshot?.State != GameUiStateId.MapSearchResults)
+        {
+            return string.Empty;
+        }
+
+        if (!gameUiSnapshot.Facts.TryGetValue("collectionMapMatches", out var rawMatches) ||
+            rawMatches is not IReadOnlyList<MapTemplateMatchResult> matches ||
+            matches.Count == 0)
+        {
+            return localizationService.T("CaptureTest.UnknownValue");
+        }
+
+        GameMapType? recognizedMap = null;
+        if (gameUiSnapshot.Facts.TryGetValue("collectionMap", out var rawMap) && rawMap is GameMapType map)
+        {
+            recognizedMap = map;
+        }
+
+        var recognizedMatch = recognizedMap.HasValue
+            ? matches.FirstOrDefault(match => match.MapType == recognizedMap.Value)
+            : null;
+        var recognizedText = recognizedMap.HasValue
+            ? recognizedMatch is not null
+                ? $"{GameElementCatalog.GetMapDisplayName(recognizedMap.Value)} ({recognizedMatch.MatchInfo.Score:P2})"
+                : GameElementCatalog.GetMapDisplayName(recognizedMap.Value)
+            : localizationService.T("CaptureTest.UnknownValue");
+
+        var candidateText = string.Join(
+            ", ",
+            matches.Select(match => $"{GameElementCatalog.GetMapDisplayName(match.MapType)} {match.MatchInfo.Score:P2}"));
+
+        return string.IsNullOrWhiteSpace(candidateText)
+            ? recognizedText
+            : $"{recognizedText} -> {candidateText}";
     }
 
     private static string FormatGameUiState(LocalizationService localizationService, GameUiStateId? state)

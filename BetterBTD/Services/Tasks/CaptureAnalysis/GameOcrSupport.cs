@@ -149,6 +149,53 @@ internal static class GameOcrIconMatcher
         return false;
     }
 
+    internal static bool TryLocateBestTargetIcon<TCandidate>(
+        TemplateMatchService templateMatchService,
+        Mat captureRegion,
+        IReadOnlyList<CandidateTemplate<TCandidate>> templates,
+        IReadOnlyList<double> thresholds,
+        int frameWidth,
+        int frameHeight,
+        int captureOffsetX,
+        int captureOffsetY,
+        out TCandidate candidate,
+        out WpfPoint centerPoint1080p,
+        out TemplateMatchInfo matchInfo)
+    {
+        centerPoint1080p = default;
+        matchInfo = default;
+        candidate = default!;
+
+        GameOcrSupport.ValidateFrameSize(frameWidth, frameHeight);
+
+        if (templates.Count == 0)
+        {
+            return false;
+        }
+
+        var candidateMatches = BuildCandidateMatches(templateMatchService, captureRegion, templates);
+        foreach (var threshold in thresholds)
+        {
+            if (!TrySelectBestCandidateMatch(candidateMatches, threshold, out var matchedCandidate, out var localMatchInfo))
+            {
+                continue;
+            }
+
+            candidate = matchedCandidate;
+            matchInfo = new TemplateMatchInfo(
+                captureOffsetX + localMatchInfo.X,
+                captureOffsetY + localMatchInfo.Y,
+                localMatchInfo.Width,
+                localMatchInfo.Height,
+                localMatchInfo.Score,
+                localMatchInfo.Threshold);
+            centerPoint1080p = GameOcrSupport.ToReference1080p(matchInfo.Center, frameWidth, frameHeight);
+            return true;
+        }
+
+        return false;
+    }
+
     private static bool TryFindBestTemplateMatch(
         TemplateMatchService templateMatchService,
         Mat captureRegion,
@@ -175,6 +222,103 @@ internal static class GameOcrIconMatcher
             if (!found || candidate.Score > matchInfo.Score)
             {
                 matchInfo = candidate;
+                found = true;
+            }
+        }
+
+        return found;
+    }
+
+    internal static bool TryFindBestTemplateMatch<TCandidate>(
+        TemplateMatchService templateMatchService,
+        Mat captureRegion,
+        IReadOnlyList<CandidateTemplate<TCandidate>> templates,
+        double threshold,
+        out TCandidate candidate,
+        out TemplateMatchInfo matchInfo)
+    {
+        var candidateMatches = BuildCandidateMatches(templateMatchService, captureRegion, templates);
+        return TrySelectBestCandidateMatch(candidateMatches, threshold, out candidate, out matchInfo);
+    }
+
+    internal static IReadOnlyList<CandidateMatch<TCandidate>> BuildCandidateMatches<TCandidate>(
+        TemplateMatchService templateMatchService,
+        Mat captureRegion,
+        IReadOnlyList<CandidateTemplate<TCandidate>> templates)
+    {
+        var candidateMatches = new List<CandidateMatch<TCandidate>>(templates.Count);
+        foreach (var template in templates)
+        {
+            if (captureRegion.Width < template.Template.Width || captureRegion.Height < template.Template.Height)
+            {
+                continue;
+            }
+
+            var currentMatchInfo = templateMatchService.Match(
+                captureRegion,
+                template.Template.Image,
+                template.Template.Mask,
+                double.NegativeInfinity);
+            candidateMatches.Add(new CandidateMatch<TCandidate>(template.Candidate, currentMatchInfo));
+        }
+
+        return candidateMatches;
+    }
+
+    internal static bool TrySelectBestCandidateMatch<TCandidate>(
+        IReadOnlyList<CandidateMatch<TCandidate>> candidateMatches,
+        out TCandidate candidate,
+        out TemplateMatchInfo matchInfo)
+    {
+        candidate = default!;
+        matchInfo = default;
+        var found = false;
+
+        foreach (var candidateMatch in candidateMatches)
+        {
+            if (!candidateMatch.MatchInfo.IsMatch)
+            {
+                continue;
+            }
+
+            if (!found || candidateMatch.MatchInfo.Score > matchInfo.Score)
+            {
+                candidate = candidateMatch.Candidate;
+                matchInfo = candidateMatch.MatchInfo;
+                found = true;
+            }
+        }
+
+        return found;
+    }
+
+    internal static bool TrySelectBestCandidateMatch<TCandidate>(
+        IReadOnlyList<CandidateMatch<TCandidate>> candidateMatches,
+        double threshold,
+        out TCandidate candidate,
+        out TemplateMatchInfo matchInfo)
+    {
+        candidate = default!;
+        matchInfo = default;
+        var found = false;
+
+        foreach (var candidateMatch in candidateMatches)
+        {
+            if (candidateMatch.MatchInfo.Score < threshold)
+            {
+                continue;
+            }
+
+            if (!found || candidateMatch.MatchInfo.Score > matchInfo.Score)
+            {
+                candidate = candidateMatch.Candidate;
+                matchInfo = new TemplateMatchInfo(
+                    candidateMatch.MatchInfo.X,
+                    candidateMatch.MatchInfo.Y,
+                    candidateMatch.MatchInfo.Width,
+                    candidateMatch.MatchInfo.Height,
+                    candidateMatch.MatchInfo.Score,
+                    threshold);
                 found = true;
             }
         }
@@ -218,6 +362,32 @@ internal sealed class PreparedTemplate
     public int Width => Image.Width;
 
     public int Height => Image.Height;
+}
+
+internal sealed class CandidateTemplate<TCandidate>
+{
+    public CandidateTemplate(TCandidate candidate, PreparedTemplate template)
+    {
+        Candidate = candidate;
+        Template = template ?? throw new ArgumentNullException(nameof(template));
+    }
+
+    public TCandidate Candidate { get; }
+
+    public PreparedTemplate Template { get; }
+}
+
+internal sealed class CandidateMatch<TCandidate>
+{
+    public CandidateMatch(TCandidate candidate, TemplateMatchInfo matchInfo)
+    {
+        Candidate = candidate;
+        MatchInfo = matchInfo;
+    }
+
+    public TCandidate Candidate { get; }
+
+    public TemplateMatchInfo MatchInfo { get; }
 }
 
 internal sealed class RawTemplate
