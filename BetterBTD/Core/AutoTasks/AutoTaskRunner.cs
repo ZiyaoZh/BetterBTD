@@ -8,6 +8,8 @@ namespace BetterBTD.Core.AutoTasks;
 
 public sealed class AutoTaskRunner
 {
+    private const int CollectionScriptUiMonitorIntervalMs = 250;
+
     private readonly IAutoTaskStrategyRegistry _strategyRegistry;
     private readonly AutoTaskRuntimeServices _defaultRuntimeServices;
     private readonly AutoTaskRuntimeScriptPreviewService _scriptPreviewService;
@@ -65,6 +67,7 @@ public sealed class AutoTaskRunner
             string.IsNullOrWhiteSpace(request.Key) ? request.Kind.ToKey() : request.Key,
             request.Kind);
 
+        runtimeServices.GameUiState.ResetStabilizationState();
         _currentSession = session;
         _currentScriptExecutor = runtimeServices.ScriptExecutor;
 
@@ -200,10 +203,17 @@ public sealed class AutoTaskRunner
                         runtimeServices.ScriptExecutor.ProgressChanged += scriptProgressHandler;
 
                         ScriptExecutionResult scriptResult;
+                        GameUiSnapshot? scriptInterruptedSnapshot;
                         try
                         {
-                            scriptResult = await runtimeServices.ScriptExecutor
-                                .ExecuteAsync(scriptResolution.FilePath, scriptExecutionOptions, cancellationToken)
+                            (scriptResult, scriptInterruptedSnapshot) = await ExecuteScriptWithUiMonitoringAsync(
+                                    request,
+                                    state,
+                                    session,
+                                    runtimeServices,
+                                    scriptResolution.FilePath,
+                                    scriptExecutionOptions,
+                                    cancellationToken)
                                 .ConfigureAwait(false);
                         }
                         finally
@@ -213,6 +223,16 @@ public sealed class AutoTaskRunner
 
                         if (scriptResult.Status == ScriptExecutionStatus.Cancelled)
                         {
+                            if (scriptInterruptedSnapshot is not null && !cancellationToken.IsCancellationRequested)
+                            {
+                                state.RecordScriptExecutionResult(scriptResult);
+                                state.Phase = AutoTaskPhase.SettlingResult;
+                                session.MarkPhase(
+                                    state.Phase,
+                                    $"Detected collection result UI '{scriptInterruptedSnapshot.State}'. Stopped the running script and continued the stage result flow.");
+                                break;
+                            }
+
                             session.MarkCancelled(AutoTaskPhase.ExecutingScript, "Underlying script execution was cancelled.");
                             return new AutoTaskExecutionResult
                             {
@@ -279,6 +299,7 @@ public sealed class AutoTaskRunner
         }
         finally
         {
+            runtimeServices.GameUiState.ResetStabilizationState();
             _currentScriptExecutor = null;
             _currentSession = null;
         }
@@ -287,6 +308,71 @@ public sealed class AutoTaskRunner
     private static int ResolveDelay(int delayMs, AutoTaskExecutionOptions options)
     {
         return delayMs > 0 ? delayMs : options.DefaultDecisionDelayMs;
+    }
+
+    private static async Task<(ScriptExecutionResult Result, GameUiSnapshot? InterruptedSnapshot)> ExecuteScriptWithUiMonitoringAsync(
+        AutoTaskRequest request,
+        AutoTaskRuntimeState state,
+        AutoTaskExecutionSession session,
+        AutoTaskRuntimeServices runtimeServices,
+        string scriptFilePath,
+        ScriptExecutionOptions scriptExecutionOptions,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(session);
+        ArgumentNullException.ThrowIfNull(runtimeServices);
+        ArgumentException.ThrowIfNullOrWhiteSpace(scriptFilePath);
+        ArgumentNullException.ThrowIfNull(scriptExecutionOptions);
+
+        using var linkedScriptCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        var scriptTask = runtimeServices.ScriptExecutor.ExecuteAsync(
+            scriptFilePath,
+            scriptExecutionOptions,
+            linkedScriptCancellationSource.Token);
+
+        if (request.Kind != AutoTaskKind.Collection)
+        {
+            return (await scriptTask.ConfigureAwait(false), null);
+        }
+
+        GameUiSnapshot? interruptedSnapshot = null;
+        while (!scriptTask.IsCompleted)
+        {
+            var completedTask = await Task
+                .WhenAny(scriptTask, Task.Delay(CollectionScriptUiMonitorIntervalMs, cancellationToken))
+                .ConfigureAwait(false);
+
+            if (completedTask == scriptTask)
+            {
+                break;
+            }
+
+            var snapshot = await runtimeServices.GameUiState
+                .CaptureSnapshotAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            if (!ShouldInterruptCollectionScript(snapshot.State))
+            {
+                continue;
+            }
+
+            interruptedSnapshot = snapshot;
+            state.RecordUiSnapshot(snapshot);
+            session.UpdateUiSnapshot(
+                snapshot,
+                $"Detected collection result UI '{snapshot.State}' while the script was running.");
+            linkedScriptCancellationSource.Cancel();
+            break;
+        }
+
+        return (await scriptTask.ConfigureAwait(false), interruptedSnapshot);
+    }
+
+    private static bool ShouldInterruptCollectionScript(GameUiStateId state)
+    {
+        return state is GameUiStateId.Defeat or GameUiStateId.Victory or GameUiStateId.StageSettlement;
     }
 
     private AutoTaskRuntimeScriptPreview TryLoadScriptPreview(string filePath)

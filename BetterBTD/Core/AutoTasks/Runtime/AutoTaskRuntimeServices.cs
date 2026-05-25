@@ -27,6 +27,8 @@ public interface IGameUiRecognizer
 public interface IGameUiStateService
 {
     Task<GameUiSnapshot> CaptureSnapshotAsync(CancellationToken cancellationToken = default);
+
+    void ResetStabilizationState();
 }
 
 public interface IGameUiNavigator

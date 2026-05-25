@@ -39,6 +39,8 @@ public sealed class CollectionAutoTaskStrategy : IAutoTaskStrategy
 
         cancellationToken.ThrowIfCancellationRequested();
 
+        ResetScriptLifecycleForNextStageIfNeeded(state, snapshot);
+
         if (state.HasPendingScriptOutcome)
         {
             return DecideAfterScriptExecution(state, snapshot);
@@ -80,6 +82,24 @@ public sealed class CollectionAutoTaskStrategy : IAutoTaskStrategy
             return AutoTaskDecision.Fail("Collection script metadata was not loaded before entering the stage.");
         }
 
+        var runState = GetScriptRunState(state);
+        if (runState == CollectionAutoTaskScriptRunState.Running)
+        {
+            return AutoTaskDecision.Wait(
+                "Collection script is already running for the current stage.",
+                DefaultWaitDelayMs,
+                AutoTaskPhase.ExecutingScript);
+        }
+
+        if (runState == CollectionAutoTaskScriptRunState.FinishedCurrentStage)
+        {
+            return AutoTaskDecision.Wait(
+                "Collection script already finished for the current stage. Waiting for the result flow.",
+                DefaultWaitDelayMs,
+                AutoTaskPhase.SettlingResult);
+        }
+
+        SetScriptRunState(state, CollectionAutoTaskScriptRunState.Running);
         return AutoTaskDecision.StartScript(
             BuildExecutionQuery(state, context),
             "Collection stage entry completed. Start the resolved collection script.",
@@ -130,6 +150,7 @@ public sealed class CollectionAutoTaskStrategy : IAutoTaskStrategy
         state.SetProperty(CollectionAutoTaskStateKeys.RecognizedMap, map);
         state.SetProperty(CollectionAutoTaskStateKeys.HeroSelected, false);
         state.SetProperty(CollectionAutoTaskStateKeys.MapSearchAttempts, 0);
+        SetScriptRunState(state, CollectionAutoTaskScriptRunState.NotStarted);
         return null;
     }
 
@@ -206,8 +227,67 @@ public sealed class CollectionAutoTaskStrategy : IAutoTaskStrategy
     private static AutoTaskDecision DecideAfterScriptExecution(AutoTaskRuntimeState state, GameUiSnapshot snapshot)
     {
         state.ClearPendingScriptOutcome();
-        return AutoTaskDecision.Navigate(
-            "Collection script completed. Continue the reward and chest flow.",
-            AutoTaskPhase.AdvancingObjective);
+        state.ClearActiveScript();
+        SetScriptRunState(state, CollectionAutoTaskScriptRunState.FinishedCurrentStage);
+
+        return snapshot.State switch
+        {
+            GameUiStateId.InLevel or GameUiStateId.Loading => AutoTaskDecision.Wait(
+                "Collection script already finished for the current stage. Waiting for the result UI.",
+                DefaultWaitDelayMs,
+                AutoTaskPhase.SettlingResult),
+            GameUiStateId.Defeat => AutoTaskDecision.Navigate(
+                "Collection stage ended in defeat. Stop script handling and continue the defeat flow.",
+                AutoTaskPhase.AdvancingObjective),
+            _ => AutoTaskDecision.Navigate(
+                "Collection script completed. Continue the reward and chest flow.",
+                AutoTaskPhase.AdvancingObjective)
+        };
+    }
+
+    private static CollectionAutoTaskScriptRunState GetScriptRunState(AutoTaskRuntimeState state)
+    {
+        return state.TryGetProperty<CollectionAutoTaskScriptRunState>(CollectionAutoTaskStateKeys.ScriptRunState, out var runState)
+            ? runState
+            : CollectionAutoTaskScriptRunState.NotStarted;
+    }
+
+    private static void SetScriptRunState(
+        AutoTaskRuntimeState state,
+        CollectionAutoTaskScriptRunState runState)
+    {
+        state.SetProperty(CollectionAutoTaskStateKeys.ScriptRunState, runState);
+    }
+
+    private static void ResetScriptLifecycleForNextStageIfNeeded(
+        AutoTaskRuntimeState state,
+        GameUiSnapshot snapshot)
+    {
+        if (!ShouldResetScriptLifecycle(snapshot.State) ||
+            GetScriptRunState(state) == CollectionAutoTaskScriptRunState.NotStarted)
+        {
+            return;
+        }
+
+        state.ClearActiveScript();
+        SetScriptRunState(state, CollectionAutoTaskScriptRunState.NotStarted);
+    }
+
+    private static bool ShouldResetScriptLifecycle(GameUiStateId state)
+    {
+        return state is
+            GameUiStateId.MainMenu or
+            GameUiStateId.CollectionEvent or
+            GameUiStateId.CollectionEventClaimable or
+            GameUiStateId.MapSearch or
+            GameUiStateId.MapSearchResults or
+            GameUiStateId.MapGrid or
+            GameUiStateId.DifficultySelect or
+            GameUiStateId.EasyModeSelect or
+            GameUiStateId.MediumModeSelect or
+            GameUiStateId.HardModeSelect or
+            GameUiStateId.ModeSelect or
+            GameUiStateId.HeroSelect or
+            GameUiStateId.Returnable;
     }
 }

@@ -9,6 +9,14 @@ namespace BetterBTD.Tests.AutoTasks;
 
 public sealed class AutoTaskSkeletonTests
 {
+    [Fact]
+    public void AutoTaskExecutionOptions_UsesRaisedDefaultLoopLimit()
+    {
+        var options = new AutoTaskExecutionOptions();
+
+        Assert.Equal(10000, options.MaxLoopIterations);
+    }
+
     [Theory]
     [InlineData(GameUiStateId.MainMenu, GameUiActionKind.OpenMapSelection)]
     [InlineData(GameUiStateId.MapCategorySelect, GameUiActionKind.SelectMapCategory)]
@@ -114,6 +122,41 @@ public sealed class AutoTaskSkeletonTests
     }
 
     [Fact]
+    public async Task Runner_ResetsUiStateStabilization_BeforeAndAfterExecution()
+    {
+        var uiStateService = new QueueGameUiStateService(
+        [
+            new GameUiSnapshot { State = GameUiStateId.InLevel },
+            new GameUiSnapshot { State = GameUiStateId.InLevel }
+        ]);
+        var runtimeServices = new AutoTaskRuntimeServices
+        {
+            GameUiState = uiStateService,
+            Navigator = GameUiNavigator.Instance,
+            UiActionExecutor = new RecordingGameUiActionExecutor(),
+            ScriptResolver = new RecordingAutoTaskScriptResolver("custom-stage.json"),
+            ScriptExecutor = new RecordingAutoTaskScriptExecutor(CreateSuccessfulScriptResult())
+        };
+
+        var runner = new AutoTaskRunner();
+        var result = await runner.ExecuteAsync(
+            new AutoTaskRequest
+            {
+                Kind = AutoTaskKind.Custom,
+                StageTarget = CreateTarget(),
+                PreferredScriptPath = "custom-stage.json"
+            },
+            new AutoTaskExecutionOptions
+            {
+                RuntimeServices = runtimeServices,
+                MaxLoopIterations = 10
+            });
+
+        Assert.Equal(AutoTaskExecutionStatus.Completed, result.Status);
+        Assert.Equal(2, uiStateService.ResetCount);
+    }
+
+    [Fact]
     public async Task Runner_ForwardsPauseAndResume_ToUnderlyingScriptExecutor()
     {
         var uiStateService = new QueueGameUiStateService(
@@ -160,6 +203,94 @@ public sealed class AutoTaskSkeletonTests
         Assert.Equal(AutoTaskExecutionStatus.Completed, result.Status);
     }
 
+    [Fact]
+    public async Task Runner_InterruptsCollectionScript_WhenDefeatUiDetected()
+    {
+        var uiStateService = new QueueGameUiStateService(
+        [
+            new GameUiSnapshot { State = GameUiStateId.InLevel },
+            new GameUiSnapshot { State = GameUiStateId.Defeat },
+            new GameUiSnapshot { State = GameUiStateId.Defeat }
+        ]);
+        var strategy = new InterruptAwareCollectionStrategy();
+        var scriptExecutor = new BlockingAutoTaskScriptExecutor();
+
+        var runtimeServices = new AutoTaskRuntimeServices
+        {
+            GameUiState = uiStateService,
+            Navigator = GameUiNavigator.Instance,
+            UiActionExecutor = new RecordingGameUiActionExecutor(),
+            ScriptResolver = new RecordingAutoTaskScriptResolver("collection-stage.json"),
+            ScriptExecutor = scriptExecutor
+        };
+
+        var runner = new AutoTaskRunner(
+            new SingleStrategyRegistry(strategy),
+            runtimeServices,
+            AutoTaskRuntimeScriptPreviewService.Instance);
+
+        var result = await runner.ExecuteAsync(
+            new AutoTaskRequest
+            {
+                Kind = AutoTaskKind.Collection,
+                StageTarget = CreateTarget(),
+                PreferredScriptPath = "collection-stage.json"
+            },
+            new AutoTaskExecutionOptions
+            {
+                RuntimeServices = runtimeServices,
+                MaxLoopIterations = 10
+            });
+
+        Assert.Equal(AutoTaskExecutionStatus.Completed, result.Status);
+        Assert.True(scriptExecutor.CancellationObserved);
+        Assert.Equal(new[] { GameUiStateId.Defeat }, strategy.InterruptedSnapshots);
+    }
+
+    [Fact]
+    public async Task Runner_InterruptsCollectionScript_WhenSettlementUiDetected()
+    {
+        var uiStateService = new QueueGameUiStateService(
+        [
+            new GameUiSnapshot { State = GameUiStateId.InLevel },
+            new GameUiSnapshot { State = GameUiStateId.StageSettlement },
+            new GameUiSnapshot { State = GameUiStateId.StageSettlement }
+        ]);
+        var strategy = new InterruptAwareCollectionStrategy();
+        var scriptExecutor = new BlockingAutoTaskScriptExecutor();
+
+        var runtimeServices = new AutoTaskRuntimeServices
+        {
+            GameUiState = uiStateService,
+            Navigator = GameUiNavigator.Instance,
+            UiActionExecutor = new RecordingGameUiActionExecutor(),
+            ScriptResolver = new RecordingAutoTaskScriptResolver("collection-stage.json"),
+            ScriptExecutor = scriptExecutor
+        };
+
+        var runner = new AutoTaskRunner(
+            new SingleStrategyRegistry(strategy),
+            runtimeServices,
+            AutoTaskRuntimeScriptPreviewService.Instance);
+
+        var result = await runner.ExecuteAsync(
+            new AutoTaskRequest
+            {
+                Kind = AutoTaskKind.Collection,
+                StageTarget = CreateTarget(),
+                PreferredScriptPath = "collection-stage.json"
+            },
+            new AutoTaskExecutionOptions
+            {
+                RuntimeServices = runtimeServices,
+                MaxLoopIterations = 10
+            });
+
+        Assert.Equal(AutoTaskExecutionStatus.Completed, result.Status);
+        Assert.True(scriptExecutor.CancellationObserved);
+        Assert.Equal(new[] { GameUiStateId.StageSettlement }, strategy.InterruptedSnapshots);
+    }
+
     private static StageEntryTarget CreateTarget()
     {
         return new StageEntryTarget
@@ -185,6 +316,7 @@ public sealed class AutoTaskSkeletonTests
     {
         private readonly Queue<GameUiSnapshot> _snapshots;
         private GameUiSnapshot _lastSnapshot;
+        public int ResetCount { get; private set; }
 
         public QueueGameUiStateService(IEnumerable<GameUiSnapshot> snapshots)
         {
@@ -202,6 +334,11 @@ public sealed class AutoTaskSkeletonTests
             }
 
             return Task.FromResult(_lastSnapshot);
+        }
+
+        public void ResetStabilizationState()
+        {
+            ResetCount++;
         }
     }
 
@@ -309,6 +446,8 @@ public sealed class AutoTaskSkeletonTests
 
         public int ResumeCount { get; private set; }
 
+        public bool CancellationObserved { get; private set; }
+
         public bool IsRunning { get; private set; }
 
         public bool RequestPause()
@@ -341,6 +480,20 @@ public sealed class AutoTaskSkeletonTests
             {
                 return await _completion.Task.WaitAsync(cancellationToken);
             }
+            catch (OperationCanceledException)
+            {
+                CancellationObserved = true;
+                return new ScriptExecutionResult
+                {
+                    Status = ScriptExecutionStatus.Cancelled,
+                    ExecutedStepCount = 0,
+                    LastCompletedStepIndex = -1,
+                    FinalProgress = new ScriptExecutionProgressSnapshot
+                    {
+                        RunState = ScriptExecutionRunState.Cancelled
+                    }
+                };
+            }
             finally
             {
                 IsRunning = false;
@@ -350,6 +503,58 @@ public sealed class AutoTaskSkeletonTests
         public void Complete(ScriptExecutionResult result)
         {
             _completion.TrySetResult(result);
+        }
+    }
+
+    private sealed class InterruptAwareCollectionStrategy : IAutoTaskStrategy
+    {
+        public AutoTaskKind Kind => AutoTaskKind.Collection;
+
+        public List<GameUiStateId> InterruptedSnapshots { get; } = [];
+
+        public Task<AutoTaskDecision> DecideNextAsync(
+            AutoTaskRuntimeState state,
+            GameUiSnapshot snapshot,
+            CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (state.HasPendingScriptOutcome)
+            {
+                InterruptedSnapshots.Add(snapshot.State);
+                return Task.FromResult(AutoTaskDecision.Complete($"Handled collection result UI '{snapshot.State}'."));
+            }
+
+            if (snapshot.State == GameUiStateId.InLevel)
+            {
+                return Task.FromResult(AutoTaskDecision.StartScript(
+                    new AutoTaskScriptQuery
+                    {
+                        Kind = AutoTaskKind.Collection,
+                        StageTarget = state.Request.StageTarget,
+                        PreferredFilePath = "collection-stage.json",
+                        Description = "Start collection test script."
+                    },
+                    "Start collection test script."));
+            }
+
+            return Task.FromResult(AutoTaskDecision.Navigate("Advance collection test flow."));
+        }
+    }
+
+    private sealed class SingleStrategyRegistry : IAutoTaskStrategyRegistry
+    {
+        private readonly IAutoTaskStrategy _strategy;
+
+        public SingleStrategyRegistry(IAutoTaskStrategy strategy)
+        {
+            _strategy = strategy;
+        }
+
+        public IAutoTaskStrategy GetRequiredStrategy(AutoTaskKind kind)
+        {
+            Assert.Equal(_strategy.Kind, kind);
+            return _strategy;
         }
     }
 }

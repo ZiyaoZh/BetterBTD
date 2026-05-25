@@ -2,6 +2,13 @@ using BetterBTD.Models.GameElements;
 
 namespace BetterBTD.Models.AutoTasks;
 
+public enum CollectionAutoTaskScriptRunState
+{
+    NotStarted,
+    Running,
+    FinishedCurrentStage
+}
+
 public sealed class CollectionAutoTaskScriptContext
 {
     public required GameMapType Map { get; init; }
@@ -21,4 +28,5 @@ public static class CollectionAutoTaskStateKeys
     public const string RecognizedMap = "Collection.RecognizedMap";
     public const string HeroSelected = "Collection.HeroSelected";
     public const string MapSearchAttempts = "Collection.MapSearchAttempts";
+    public const string ScriptRunState = "Collection.ScriptRunState";
 }

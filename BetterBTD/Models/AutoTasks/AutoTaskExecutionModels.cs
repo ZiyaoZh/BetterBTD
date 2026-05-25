@@ -273,7 +273,7 @@ public sealed class AutoTaskDecision
 
 public sealed class AutoTaskExecutionOptions
 {
-    public int MaxLoopIterations { get; init; } = 2000;
+    public int MaxLoopIterations { get; init; } = 20000;
 
     public int MaxConsecutiveNavigationFailures { get; init; } = 5;
 
