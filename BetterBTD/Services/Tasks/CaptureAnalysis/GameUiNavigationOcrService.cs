@@ -219,7 +219,15 @@ public sealed class GameUiNavigationOcrService
 
         var rawCandidateMatches = GameOcrIconMatcher.BuildCandidateMatches(_templateMatchService, captureRegion, candidateTemplates);
         candidateMatches = rawCandidateMatches
-            .Select(static match => new MapTemplateMatchResult(match.Candidate, match.MatchInfo))
+            .Select(match => new MapTemplateMatchResult(
+                match.Candidate,
+                new TemplateMatchInfo(
+                    captureOffsetX + match.MatchInfo.X,
+                    captureOffsetY + match.MatchInfo.Y,
+                    match.MatchInfo.Width,
+                    match.MatchInfo.Height,
+                    match.MatchInfo.Score,
+                    match.MatchInfo.Threshold)))
             .OrderByDescending(static match => match.MatchInfo.Score)
             .ToArray();
 

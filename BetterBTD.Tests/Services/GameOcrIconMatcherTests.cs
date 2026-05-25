@@ -1,5 +1,6 @@
 using BetterBTD.Models;
 using BetterBTD.Services.Tasks.CaptureAnalysis;
+using OpenCvSharp;
 
 namespace BetterBTD.Tests.Services;
 
@@ -44,5 +45,16 @@ public sealed class GameOcrIconMatcherTests
         Assert.False(found);
         Assert.Null(candidate);
         Assert.Equal(default, matchInfo);
+    }
+
+    [Fact]
+    public void ScaleReferenceRect_ScalesExpertMapRegionToCurrentFrame()
+    {
+        var scaledRect = GameOcrSupport.ScaleReferenceRect(new Rect(360, 520, 360, 250), 1280, 720);
+
+        Assert.Equal(240, scaledRect.X);
+        Assert.Equal(347, scaledRect.Y);
+        Assert.Equal(240, scaledRect.Width);
+        Assert.Equal(166, scaledRect.Height);
     }
 }

@@ -28,6 +28,23 @@ internal static class GameOcrSupport
             point.Y * Reference1080p.Height / frameHeight);
     }
 
+    internal static OpenCvRect ScaleReferenceRect(OpenCvRect referenceRect, int frameWidth, int frameHeight)
+    {
+        ValidateFrameSize(frameWidth, frameHeight);
+
+        var x = (int)Math.Round(referenceRect.X / (double)Reference1080p.Width * frameWidth);
+        var y = (int)Math.Round(referenceRect.Y / (double)Reference1080p.Height * frameHeight);
+        var right = (int)Math.Round(referenceRect.Right / (double)Reference1080p.Width * frameWidth);
+        var bottom = (int)Math.Round(referenceRect.Bottom / (double)Reference1080p.Height * frameHeight);
+
+        x = Math.Clamp(x, 0, Math.Max(0, frameWidth - 1));
+        y = Math.Clamp(y, 0, Math.Max(0, frameHeight - 1));
+        right = Math.Clamp(right, x + 1, frameWidth);
+        bottom = Math.Clamp(bottom, y + 1, frameHeight);
+
+        return new OpenCvRect(x, y, right - x, bottom - y);
+    }
+
     internal static string BuildDigitAssetRootPath()
     {
         return Path.Combine(AppContext.BaseDirectory, "Assets", "OcrDigits");

@@ -6,6 +6,7 @@ using BetterBTD.Models.ScriptExecution;
 using BetterBTD.Services.Start.Capture;
 using BetterBTD.Services.Tasks.CaptureAnalysis;
 using OpenCvSharp;
+using OpenCvRect = OpenCvSharp.Rect;
 
 namespace BetterBTD.Services.Tasks.AutoTasks;
 
@@ -17,6 +18,7 @@ public sealed class GameUiStateService : IGameUiStateService
         .Where(static definition => definition.Tier == MapDifficultyTier.Expert)
         .Select(static definition => definition.Type)
         .ToArray();
+    private static readonly OpenCvRect CollectionExpertMapReferenceRegion = new(360, 520, 360, 250);
 
     private readonly GameCaptureService _gameCaptureService;
     private readonly GameStageStateService _gameStageStateService;
@@ -226,13 +228,16 @@ public sealed class GameUiStateService : IGameUiStateService
         out GameMapType? map,
         out IReadOnlyList<MapTemplateMatchResult> candidateMatches)
     {
+        var expertMapRegion = GameOcrSupport.ScaleReferenceRect(CollectionExpertMapReferenceRegion, frame.Width, frame.Height);
+        using var expertMapCapture = new Mat(frame, expertMapRegion);
+
         var recognized = _navigationOcrService.TryLocateBestMap(
-            frame,
+            expertMapCapture,
             CollectionExpertMaps,
             frame.Width,
             frame.Height,
-            0,
-            0,
+            expertMapRegion.X,
+            expertMapRegion.Y,
             out var recognizedMap,
             out _,
             out _,
