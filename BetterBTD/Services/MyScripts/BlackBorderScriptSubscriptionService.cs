@@ -94,7 +94,16 @@ public sealed class BlackBorderScriptSubscriptionService
 
         var manifestEntry = archive.CreateEntry(ManifestEntryName);
         using var writer = new StreamWriter(manifestEntry.Open());
-        writer.Write(JsonSerializer.Serialize(manifest, JsonOptions));
+        writer.Write(JsonSerializer.Serialize(new
+        {
+            manifest.Kind,
+            manifest.Version,
+            manifest.SubscriptionType,
+            manifest.MapCategory,
+            manifest.Map,
+            manifest.Scripts,
+            manifest.Bindings
+        }, JsonOptions));
     }
 
     public void Import(string sourceFilePath)

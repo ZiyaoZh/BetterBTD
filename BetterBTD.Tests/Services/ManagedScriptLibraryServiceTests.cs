@@ -3,6 +3,7 @@ using BetterBTD.Models.GameElements;
 using BetterBTD.Models.MyScripts;
 using BetterBTD.Models.ScriptEditor;
 using BetterBTD.Services.MyScripts;
+using System.IO.Compression;
 using System.Text.Json;
 
 namespace BetterBTD.Tests.Services;
@@ -512,6 +513,234 @@ public sealed class ManagedScriptLibraryServiceTests
 
             Assert.True(File.Exists(exportPackagePath));
             Assert.NotEqual("placeholder", File.ReadAllText(exportPackagePath));
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void BlackBorderSubscription_ExportImport_RestoresBindingsByScriptId()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), $"betterbtd-library-{Guid.NewGuid():N}");
+        var sourceDirectory = Path.Combine(rootDirectory, "source");
+        var exportPackagePath = Path.Combine(rootDirectory, "export", "blackborder.btdsub");
+
+        try
+        {
+            Directory.CreateDirectory(sourceDirectory);
+
+            var sourceScriptPath = Path.Combine(sourceDirectory, "blackborder-script.btd");
+            var sourceDocument = CreateDocument(
+                GameMapType.MonkeyMeadow,
+                StageDifficulty.Easy,
+                StageMode.Standard,
+                ["black-border"]);
+            ScriptDocumentService.Instance.Save(sourceScriptPath, sourceDocument);
+
+            var slotId = ManagedScriptSlotIdFactory.CreateBlackBorderSlotId(
+                GameMapType.MonkeyMeadow,
+                StageDifficulty.Easy,
+                StageMode.Standard);
+
+            var sourceService = new ManagedScriptLibraryService(
+                Path.Combine(rootDirectory, "managed-source"),
+                ScriptDocumentService.Instance,
+                ManagedScriptSlotCatalogService.Instance);
+            var sourceImported = sourceService.ImportScript(sourceScriptPath);
+            sourceService.SetBinding(slotId, sourceImported.ScriptId);
+
+            var subscriptionService = new BlackBorderScriptSubscriptionService(
+                sourceService,
+                ManagedScriptSlotCatalogService.Instance);
+            subscriptionService.Export(
+                exportPackagePath,
+                new BlackBorderSubscriptionDescriptor
+                {
+                    ExportType = BlackBorderSubscriptionExportType.SingleMap,
+                    Map = GameMapType.MonkeyMeadow
+                });
+
+            var targetService = new ManagedScriptLibraryService(
+                Path.Combine(rootDirectory, "managed-target"),
+                ScriptDocumentService.Instance,
+                ManagedScriptSlotCatalogService.Instance);
+            var targetSubscriptionService = new BlackBorderScriptSubscriptionService(
+                targetService,
+                ManagedScriptSlotCatalogService.Instance);
+            targetSubscriptionService.Import(exportPackagePath);
+
+            var resolved = targetService.TryResolveSlotBinding(slotId, out var resolvedScriptId, out var resolvedFilePath);
+            Assert.True(resolved);
+            Assert.False(string.IsNullOrWhiteSpace(resolvedScriptId));
+            Assert.True(File.Exists(resolvedFilePath));
+
+            var importedDocument = ScriptDocumentService.Instance.Load(resolvedFilePath);
+            Assert.Equal(sourceDocument.Metadata.ScriptId, importedDocument.Metadata.ScriptId);
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void BlackBorderBindingFile_UsesFlatBindingsShape()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), $"betterbtd-library-{Guid.NewGuid():N}");
+        var sourceFilePath = Path.Combine(rootDirectory, "source", "blackborder-flat.btd");
+
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(sourceFilePath)!);
+            ScriptDocumentService.Instance.Save(sourceFilePath, CreateDocument(
+                GameMapType.MonkeyMeadow,
+                StageDifficulty.Easy,
+                StageMode.Standard,
+                ["black-border"]));
+
+            var service = new ManagedScriptLibraryService(
+                Path.Combine(rootDirectory, "managed"),
+                ScriptDocumentService.Instance,
+                ManagedScriptSlotCatalogService.Instance);
+
+            var imported = service.ImportScript(sourceFilePath);
+            var slotId = ManagedScriptSlotIdFactory.CreateBlackBorderSlotId(
+                GameMapType.MonkeyMeadow,
+                StageDifficulty.Easy,
+                StageMode.Standard);
+            service.SetBinding(slotId, imported.ScriptId);
+
+            var bindingFilePath = service.GetTaskBindingFilePath(AutoTaskKind.BlackBorder);
+            var bindingJson = File.ReadAllText(bindingFilePath);
+            var bindingDocument = JsonSerializer.Deserialize<ManagedScriptTaskBindingDocument>(File.ReadAllText(bindingFilePath));
+
+            Assert.NotNull(bindingDocument);
+            Assert.True(bindingDocument.Bindings.TryGetValue(slotId, out var boundScriptId));
+            Assert.Equal(imported.ScriptId, boundScriptId);
+            Assert.Empty(bindingDocument.StageBindings);
+            Assert.DoesNotContain("StageBindings", bindingJson, StringComparison.Ordinal);
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void BlackBorderBindingFile_LegacyStageBindingsRemainReadable()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), $"betterbtd-library-{Guid.NewGuid():N}");
+        var sourceFilePath = Path.Combine(rootDirectory, "source", "blackborder-legacy.btd");
+
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(sourceFilePath)!);
+            var sourceDocument = CreateDocument(
+                GameMapType.MonkeyMeadow,
+                StageDifficulty.Easy,
+                StageMode.Standard,
+                ["black-border"]);
+            ScriptDocumentService.Instance.Save(sourceFilePath, sourceDocument);
+
+            var service = new ManagedScriptLibraryService(
+                Path.Combine(rootDirectory, "managed"),
+                ScriptDocumentService.Instance,
+                ManagedScriptSlotCatalogService.Instance);
+            var imported = service.ImportScript(sourceFilePath);
+
+            var slotId = ManagedScriptSlotIdFactory.CreateBlackBorderSlotId(
+                GameMapType.MonkeyMeadow,
+                StageDifficulty.Easy,
+                StageMode.Standard);
+            var bindingFilePath = service.GetTaskBindingFilePath(AutoTaskKind.BlackBorder);
+            Directory.CreateDirectory(Path.GetDirectoryName(bindingFilePath)!);
+            File.WriteAllText(bindingFilePath, $$"""
+            {
+              "Version": 2,
+              "StageBindings": {
+                "MonkeyMeadow": {
+                  "Easy": {
+                    "Standard": "{{imported.ScriptId}}"
+                  }
+                }
+              }
+            }
+            """);
+
+            var resolved = service.TryResolveSlotBinding(slotId, out var resolvedScriptId, out var resolvedFilePath);
+
+            Assert.True(resolved);
+            Assert.Equal(imported.ScriptId, resolvedScriptId);
+            Assert.True(File.Exists(resolvedFilePath));
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void BlackBorderSubscription_Export_UsesFlatBindingsShape()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), $"betterbtd-library-{Guid.NewGuid():N}");
+        var sourceDirectory = Path.Combine(rootDirectory, "source");
+        var exportPackagePath = Path.Combine(rootDirectory, "export", "blackborder-flat.btdsub");
+
+        try
+        {
+            Directory.CreateDirectory(sourceDirectory);
+
+            var sourceScriptPath = Path.Combine(sourceDirectory, "blackborder-script.btd");
+            ScriptDocumentService.Instance.Save(sourceScriptPath, CreateDocument(
+                GameMapType.MonkeyMeadow,
+                StageDifficulty.Easy,
+                StageMode.Standard,
+                ["black-border"]));
+
+            var sourceService = new ManagedScriptLibraryService(
+                Path.Combine(rootDirectory, "managed-source"),
+                ScriptDocumentService.Instance,
+                ManagedScriptSlotCatalogService.Instance);
+            var sourceImported = sourceService.ImportScript(sourceScriptPath);
+            var slotId = ManagedScriptSlotIdFactory.CreateBlackBorderSlotId(
+                GameMapType.MonkeyMeadow,
+                StageDifficulty.Easy,
+                StageMode.Standard);
+            sourceService.SetBinding(slotId, sourceImported.ScriptId);
+
+            var subscriptionService = new BlackBorderScriptSubscriptionService(
+                sourceService,
+                ManagedScriptSlotCatalogService.Instance);
+            subscriptionService.Export(
+                exportPackagePath,
+                new BlackBorderSubscriptionDescriptor
+                {
+                    ExportType = BlackBorderSubscriptionExportType.SingleMap,
+                    Map = GameMapType.MonkeyMeadow
+                });
+
+            using var archive = ZipFile.OpenRead(exportPackagePath);
+            var manifestEntry = archive.GetEntry("blackborder-subscription.json");
+            Assert.NotNull(manifestEntry);
+            using var reader = new StreamReader(manifestEntry.Open());
+            var manifestJson = reader.ReadToEnd();
+
+            Assert.Contains(slotId, manifestJson, StringComparison.Ordinal);
+            Assert.DoesNotContain("StageBindings", manifestJson, StringComparison.Ordinal);
         }
         finally
         {

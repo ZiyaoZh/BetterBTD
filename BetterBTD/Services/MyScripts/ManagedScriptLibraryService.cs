@@ -614,25 +614,14 @@ public sealed class ManagedScriptLibraryService
         EnsureStorage();
         NormalizeTaskBindingDocument(filePath, document);
 
-        ManagedScriptTaskBindingDocument persistedDocument;
-        if (IsBlackBorderBindingFile(filePath))
+        var persistedVersion = IsBlackBorderBindingFile(filePath)
+            ? Math.Max(document.Version, 2)
+            : document.Version;
+        var json = JsonSerializer.Serialize(new
         {
-            persistedDocument = new ManagedScriptTaskBindingDocument
-            {
-                Version = Math.Max(document.Version, 2),
-                StageBindings = BuildBlackBorderStageBindingsFromBindings(document.Bindings, includeAllSlots: true)
-            };
-        }
-        else
-        {
-            persistedDocument = new ManagedScriptTaskBindingDocument
-            {
-                Version = document.Version,
-                Bindings = new Dictionary<string, string>(document.Bindings, StringComparer.OrdinalIgnoreCase)
-            };
-        }
-
-        var json = JsonSerializer.Serialize(persistedDocument, JsonOptions);
+            Version = persistedVersion,
+            Bindings = new Dictionary<string, string>(document.Bindings, StringComparer.OrdinalIgnoreCase)
+        }, JsonOptions);
         File.WriteAllText(filePath, json);
     }
 
@@ -1024,17 +1013,6 @@ public sealed class ManagedScriptLibraryService
 
     private ManagedScriptTaskBindingDocument BuildTaskBindingTemplate(AutoTaskKind taskKind)
     {
-        if (taskKind == AutoTaskKind.BlackBorder)
-        {
-            return new ManagedScriptTaskBindingDocument
-            {
-                Version = 2,
-                StageBindings = BuildBlackBorderStageBindingsFromBindings(
-                    new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
-                    includeAllSlots: true)
-            };
-        }
-
         var bindings = _slotCatalogService
             .GetByTaskKind(taskKind)
             .OrderBy(slot => slot.GroupName, StringComparer.OrdinalIgnoreCase)
@@ -1046,7 +1024,7 @@ public sealed class ManagedScriptLibraryService
 
         return new ManagedScriptTaskBindingDocument
         {
-            Version = 1,
+            Version = taskKind == AutoTaskKind.BlackBorder ? 2 : 1,
             Bindings = bindings
         };
     }
@@ -1078,7 +1056,7 @@ public sealed class ManagedScriptLibraryService
         }
 
         document.Bindings = mergedBindings;
-        document.StageBindings = BuildBlackBorderStageBindingsFromBindings(document.Bindings, includeAllSlots: false);
+        document.StageBindings = new Dictionary<string, Dictionary<string, Dictionary<string, string>>>(StringComparer.OrdinalIgnoreCase);
     }
 
     private static Dictionary<string, string> NormalizeBindingDictionary(Dictionary<string, string>? bindings)
@@ -1177,65 +1155,6 @@ public sealed class ManagedScriptLibraryService
         }
 
         return bindings;
-    }
-
-    private Dictionary<string, Dictionary<string, Dictionary<string, string>>> BuildBlackBorderStageBindingsFromBindings(
-        IReadOnlyDictionary<string, string> bindings,
-        bool includeAllSlots)
-    {
-        var result = new Dictionary<string, Dictionary<string, Dictionary<string, string>>>(StringComparer.OrdinalIgnoreCase);
-        var slots = _slotCatalogService
-            .GetByTaskKind(AutoTaskKind.BlackBorder)
-            .Where(slot => slot.StageTarget is not null)
-            .OrderBy(slot => GetMapOrder(slot.StageTarget!.Map))
-            .ThenBy(slot => slot.StageTarget!.Difficulty)
-            .ThenBy(slot => slot.StageTarget!.Mode)
-            .ToList();
-
-        foreach (var slot in slots)
-        {
-            var target = slot.StageTarget!;
-            var scriptId = bindings.TryGetValue(slot.SlotId, out var boundScriptId)
-                ? boundScriptId?.Trim() ?? string.Empty
-                : string.Empty;
-            if (!includeAllSlots && !bindings.ContainsKey(slot.SlotId))
-            {
-                continue;
-            }
-
-            var mapKey = target.Map.ToString();
-            var difficultyKey = target.Difficulty.ToString();
-            var modeKey = target.Mode.ToString();
-
-            if (!result.TryGetValue(mapKey, out var difficulties))
-            {
-                difficulties = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
-                result[mapKey] = difficulties;
-            }
-
-            if (!difficulties.TryGetValue(difficultyKey, out var modes))
-            {
-                modes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                difficulties[difficultyKey] = modes;
-            }
-
-            modes[modeKey] = scriptId;
-        }
-
-        return result;
-    }
-
-    private static int GetMapOrder(GameMapType map)
-    {
-        for (var index = 0; index < GameElementCatalog.Maps.Count; index++)
-        {
-            if (GameElementCatalog.Maps[index].Type == map)
-            {
-                return index;
-            }
-        }
-
-        return int.MaxValue;
     }
 
     private bool TryGetDedicatedBindingFilePath(AutoTaskKind taskKind, out string filePath)
