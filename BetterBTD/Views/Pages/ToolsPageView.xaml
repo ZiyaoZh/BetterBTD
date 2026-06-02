@@ -66,10 +66,10 @@
                         <ui:NumberBox Grid.Row="0"
                                       Grid.RowSpan="2"
                                       Grid.Column="1"
-                                      Width="120"
+                                      Width="200"
                                       Margin="0,0,36,0"
                                       Minimum="1"
-                                      Maximum="999"
+                                      Maximum="{Binding MaxRound}"
                                       SmallChange="1"
                                       Value="{Binding StartRound, Mode=TwoWay}" />
                     </Grid>
@@ -94,10 +94,10 @@
                         <ui:NumberBox Grid.Row="0"
                                       Grid.RowSpan="2"
                                       Grid.Column="1"
-                                      Width="120"
+                                      Width="200"
                                       Margin="0,0,36,0"
                                       Minimum="1"
-                                      Maximum="999"
+                                      Maximum="{Binding MaxRound}"
                                       SmallChange="1"
                                       Value="{Binding EndRound, Mode=TwoWay}" />
                     </Grid>
