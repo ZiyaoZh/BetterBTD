@@ -468,10 +468,14 @@
                             AutoToolTipPlacement="TopLeft"
                             Maximum="{Binding ParagonSliderMaximum}"
                             Minimum="0"
+                            VerticalAlignment="Center"
                             Value="{Binding ParagonSliderCashInvestment, Mode=TwoWay}" />
                     <StackPanel Grid.Row="0"
                                 Grid.RowSpan="2"
                                 Grid.Column="2"
+                                Width="140"
+                                Margin="0,0,36,0"
+                                HorizontalAlignment="Right"
                                 VerticalAlignment="Center">
                         <ui:TextBlock HorizontalAlignment="Right" Text="{Binding ParagonSliderCashInvestment, StringFormat={}{0:N0}}" />
                         <ui:TextBlock Margin="0,6,0,0"
@@ -491,7 +495,7 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="220" />
-                        <ColumnDefinition Width="90" />
+                        <ColumnDefinition Width="140" />
                     </Grid.ColumnDefinitions>
 
                     <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding ParagonTierFiveCountLabel}" />
@@ -509,10 +513,12 @@
                             Maximum="12"
                             Minimum="3"
                             TickFrequency="1"
+                            VerticalAlignment="Center"
                             Value="{Binding ParagonTierFiveCount, Mode=TwoWay}" />
                     <ui:TextBlock Grid.Row="0"
                                   Grid.RowSpan="2"
                                   Grid.Column="2"
+                                  Margin="0,0,36,0"
                                   HorizontalAlignment="Right"
                                   VerticalAlignment="Center"
                                   Text="{Binding ParagonTierFiveCount, StringFormat={}{0:N0}}" />
@@ -527,7 +533,7 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="220" />
-                        <ColumnDefinition Width="90" />
+                        <ColumnDefinition Width="140" />
                     </Grid.ColumnDefinitions>
 
                     <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding ParagonUpgradeCountLabel}" />
@@ -545,10 +551,12 @@
                             Maximum="100"
                             Minimum="0"
                             TickFrequency="1"
+                            VerticalAlignment="Center"
                             Value="{Binding ParagonUpgradeCount, Mode=TwoWay}" />
                     <ui:TextBlock Grid.Row="0"
                                   Grid.RowSpan="2"
                                   Grid.Column="2"
+                                  Margin="0,0,36,0"
                                   HorizontalAlignment="Right"
                                   VerticalAlignment="Center"
                                   Text="{Binding ParagonUpgradeCount, StringFormat={}{0:N0}}" />
@@ -563,7 +571,7 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="220" />
-                        <ColumnDefinition Width="90" />
+                        <ColumnDefinition Width="140" />
                     </Grid.ColumnDefinitions>
 
                     <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding ParagonTotemCountLabel}" />
@@ -581,10 +589,12 @@
                             Maximum="100"
                             Minimum="0"
                             TickFrequency="1"
+                            VerticalAlignment="Center"
                             Value="{Binding ParagonTotemCount, Mode=TwoWay}" />
                     <ui:TextBlock Grid.Row="0"
                                   Grid.RowSpan="2"
                                   Grid.Column="2"
+                                  Margin="0,0,36,0"
                                   HorizontalAlignment="Right"
                                   VerticalAlignment="Center"
                                   Text="{Binding ParagonTotemCount, StringFormat={}{0:N0}}" />
@@ -647,7 +657,7 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="220" />
-                        <ColumnDefinition Width="90" />
+                        <ColumnDefinition Width="140" />
                     </Grid.ColumnDefinitions>
 
                     <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding ParagonStatsDegreeLabel}" />
@@ -665,10 +675,12 @@
                             Maximum="100"
                             Minimum="1"
                             TickFrequency="1"
+                            VerticalAlignment="Center"
                             Value="{Binding ParagonStatsDegree, Mode=TwoWay}" />
                     <ui:TextBlock Grid.Row="0"
                                   Grid.RowSpan="2"
                                   Grid.Column="2"
+                                  Margin="0,0,36,0"
                                   HorizontalAlignment="Right"
                                   VerticalAlignment="Center"
                                   Text="{Binding ParagonStatsDegree, StringFormat={}{0:N0}}" />
