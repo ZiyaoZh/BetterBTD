@@ -6,433 +6,904 @@
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
       mc:Ignorable="d">
     <StackPanel Margin="42,16,42,12">
-            <StackPanel Margin="0,0,0,16">
-                <ui:TextBlock FontSize="28" FontWeight="SemiBold" Text="{Binding PageTitle}" />
-                <ui:TextBlock Margin="0,6,0,0"
-                              Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
-                              Text="{Binding PageDescription}"
-                              TextWrapping="Wrap" />
+        <StackPanel Margin="0,0,0,16">
+            <ui:TextBlock FontSize="28" FontWeight="SemiBold" Text="{Binding PageTitle}" />
+            <ui:TextBlock Margin="0,6,0,0"
+                          Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                          Text="{Binding PageDescription}"
+                          TextWrapping="Wrap" />
+        </StackPanel>
+
+        <ui:CardExpander Margin="0,0,0,12"
+                         ContentPadding="0"
+                         Icon="{ui:SymbolIcon Table24}"
+                         IsExpanded="False">
+            <ui:CardExpander.Header>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding RoundCardTitle}" TextWrapping="Wrap" />
+                    <ui:TextBlock Grid.Row="1"
+                                  Grid.Column="0"
+                                  Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                  Text="{Binding RoundCardDescription}"
+                                  TextWrapping="Wrap" />
+                    <ui:Button Grid.Row="0"
+                               Grid.RowSpan="2"
+                               Grid.Column="1"
+                               Width="120"
+                               Margin="0,0,36,0"
+                               Command="{Binding CalculateRoundCommand}"
+                               Content="{Binding CalculateButtonText}" />
+                </Grid>
+            </ui:CardExpander.Header>
+
+            <StackPanel>
+                <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
+                <Grid Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding StartRoundLabel}" />
+                    <ui:TextBlock Grid.Row="1"
+                                  Grid.Column="0"
+                                  Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                  Text="{Binding StartRoundDescription}"
+                                  TextWrapping="Wrap" />
+                    <ui:NumberBox Grid.Row="0"
+                                  Grid.RowSpan="2"
+                                  Grid.Column="1"
+                                  Width="200"
+                                  Margin="0,0,36,0"
+                                  Maximum="{Binding MaxRound}"
+                                  Minimum="1"
+                                  SmallChange="1"
+                                  Value="{Binding StartRound, Mode=TwoWay}" />
+                </Grid>
+
+                <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
+                <Grid Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding EndRoundLabel}" />
+                    <ui:TextBlock Grid.Row="1"
+                                  Grid.Column="0"
+                                  Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                  Text="{Binding EndRoundDescription}"
+                                  TextWrapping="Wrap" />
+                    <ui:NumberBox Grid.Row="0"
+                                  Grid.RowSpan="2"
+                                  Grid.Column="1"
+                                  Width="200"
+                                  Margin="0,0,36,0"
+                                  Maximum="{Binding MaxRound}"
+                                  Minimum="1"
+                                  SmallChange="1"
+                                  Value="{Binding EndRound, Mode=TwoWay}" />
+                </Grid>
+
+                <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
+                <Grid Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <ui:TextBlock Grid.Row="0" FontWeight="SemiBold" Text="{Binding ResultSectionTitle}" />
+                    <ui:TextBlock Grid.Row="1"
+                                  Margin="0,6,0,0"
+                                  Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                  Text="{Binding RoundResultText}"
+                                  TextWrapping="Wrap" />
+                </Grid>
             </StackPanel>
+        </ui:CardExpander>
 
-            <ui:CardExpander Margin="0,0,0,12"
-                             ContentPadding="0"
-                             Icon="{ui:SymbolIcon Table24}"
-                             IsExpanded="False">
-                <ui:CardExpander.Header>
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
+        <ui:CardExpander Margin="0,0,0,12"
+                         ContentPadding="0"
+                         Icon="{ui:SymbolIcon Info24}"
+                         IsExpanded="False">
+            <ui:CardExpander.Header>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
 
-                        <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding RoundCardTitle}" TextWrapping="Wrap" />
-                        <ui:TextBlock Grid.Row="1"
-                                      Grid.Column="0"
-                                      Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
-                                      Text="{Binding RoundCardDescription}"
-                                      TextWrapping="Wrap" />
-                        <ui:Button Grid.Row="0"
-                                   Grid.RowSpan="2"
-                                   Grid.Column="1"
-                                   Width="120"
-                                   Margin="0,0,36,0"
-                                   Command="{Binding CalculateRoundCommand}"
-                                   Content="{Binding CalculateButtonText}" />
-                    </Grid>
-                </ui:CardExpander.Header>
+                    <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding HeroCardTitle}" TextWrapping="Wrap" />
+                    <ui:TextBlock Grid.Row="1"
+                                  Grid.Column="0"
+                                  Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                  Text="{Binding HeroCardDescription}"
+                                  TextWrapping="Wrap" />
+                    <ui:Button Grid.Row="0"
+                               Grid.RowSpan="2"
+                               Grid.Column="1"
+                               Width="120"
+                               Margin="0,0,36,0"
+                               Command="{Binding CalculateHeroCommand}"
+                               Content="{Binding CalculateButtonText}" />
+                </Grid>
+            </ui:CardExpander.Header>
 
-                <StackPanel>
-                    <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
-                    <Grid Margin="16">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
+            <StackPanel>
+                <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
+                <Grid Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
 
-                        <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding StartRoundLabel}" />
-                        <ui:TextBlock Grid.Row="1"
-                                      Grid.Column="0"
-                                      Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
-                                      Text="{Binding StartRoundDescription}"
-                                      TextWrapping="Wrap" />
-                        <ui:NumberBox Grid.Row="0"
-                                      Grid.RowSpan="2"
-                                      Grid.Column="1"
-                                      Width="200"
-                                      Margin="0,0,36,0"
-                                      Minimum="1"
-                                      Maximum="{Binding MaxRound}"
-                                      SmallChange="1"
-                                      Value="{Binding StartRound, Mode=TwoWay}" />
-                    </Grid>
+                    <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding HeroLabel}" />
+                    <ui:TextBlock Grid.Row="1"
+                                  Grid.Column="0"
+                                  Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                  Text="{Binding HeroDescription}"
+                                  TextWrapping="Wrap" />
+                    <ComboBox Grid.Row="0"
+                              Grid.RowSpan="2"
+                              Grid.Column="1"
+                              Width="220"
+                              Margin="0,0,36,0"
+                              DisplayMemberPath="DisplayName"
+                              ItemsSource="{Binding HeroOptions}"
+                              SelectedItem="{Binding SelectedHero, Mode=TwoWay}" />
+                </Grid>
 
-                    <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
-                    <Grid Margin="16">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
+                <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
+                <Grid Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
 
-                        <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding EndRoundLabel}" />
-                        <ui:TextBlock Grid.Row="1"
-                                      Grid.Column="0"
-                                      Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
-                                      Text="{Binding EndRoundDescription}"
-                                      TextWrapping="Wrap" />
-                        <ui:NumberBox Grid.Row="0"
-                                      Grid.RowSpan="2"
-                                      Grid.Column="1"
-                                      Width="200"
-                                      Margin="0,0,36,0"
-                                      Minimum="1"
-                                      Maximum="{Binding MaxRound}"
-                                      SmallChange="1"
-                                      Value="{Binding EndRound, Mode=TwoWay}" />
-                    </Grid>
-
-                    <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
-                    <Grid Margin="16">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <ui:TextBlock Grid.Row="0" FontWeight="SemiBold" Text="{Binding ResultSectionTitle}" />
-                        <ui:TextBlock Grid.Row="1"
-                                      Margin="0,6,0,0"
-                                      Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
-                                      Text="{Binding RoundResultText}"
-                                      TextWrapping="Wrap" />
-                    </Grid>
-                </StackPanel>
-            </ui:CardExpander>
-
-            <ui:CardExpander Margin="0,0,0,12"
-                             ContentPadding="0"
-                             Icon="{ui:SymbolIcon Info24}"
-                             IsExpanded="False">
-                <ui:CardExpander.Header>
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-
-                        <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding HeroCardTitle}" TextWrapping="Wrap" />
-                        <ui:TextBlock Grid.Row="1"
-                                      Grid.Column="0"
-                                      Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
-                                      Text="{Binding HeroCardDescription}"
-                                      TextWrapping="Wrap" />
-                        <ui:Button Grid.Row="0"
-                                   Grid.RowSpan="2"
-                                   Grid.Column="1"
-                                   Width="120"
-                                   Margin="0,0,36,0"
-                                   Command="{Binding CalculateHeroCommand}"
-                                   Content="{Binding CalculateButtonText}" />
-                    </Grid>
-                </ui:CardExpander.Header>
-
-                <StackPanel>
-                    <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
-                    <Grid Margin="16">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-
-                        <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding HeroLabel}" />
-                        <ui:TextBlock Grid.Row="1"
-                                      Grid.Column="0"
-                                      Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
-                                      Text="{Binding HeroDescription}"
-                                      TextWrapping="Wrap" />
-                        <ComboBox Grid.Row="0"
+                    <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding HeroPlacementRoundLabel}" />
+                    <ui:TextBlock Grid.Row="1"
+                                  Grid.Column="0"
+                                  Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                  Text="{Binding HeroPlacementRoundDescription}"
+                                  TextWrapping="Wrap" />
+                    <ui:NumberBox Grid.Row="0"
                                   Grid.RowSpan="2"
                                   Grid.Column="1"
-                                  Width="220"
+                                  Width="120"
                                   Margin="0,0,36,0"
-                                  DisplayMemberPath="DisplayName"
-                                  ItemsSource="{Binding HeroOptions}"
-                                  SelectedItem="{Binding SelectedHero, Mode=TwoWay}" />
-                    </Grid>
+                                  Maximum="999"
+                                  Minimum="1"
+                                  SmallChange="1"
+                                  Value="{Binding HeroPlacementRound, Mode=TwoWay}" />
+                </Grid>
 
-                    <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
-                    <Grid Margin="16">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
+                <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
+                <Grid Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
 
-                        <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding HeroPlacementRoundLabel}" />
-                        <ui:TextBlock Grid.Row="1"
-                                      Grid.Column="0"
-                                      Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
-                                      Text="{Binding HeroPlacementRoundDescription}"
-                                      TextWrapping="Wrap" />
-                        <ui:NumberBox Grid.Row="0"
-                                      Grid.RowSpan="2"
-                                      Grid.Column="1"
-                                      Width="120"
-                                      Margin="0,0,36,0"
-                                      Minimum="1"
-                                      Maximum="999"
-                                      SmallChange="1"
-                                      Value="{Binding HeroPlacementRound, Mode=TwoWay}" />
-                    </Grid>
+                    <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding HeroTargetRoundLabel}" />
+                    <ui:TextBlock Grid.Row="1"
+                                  Grid.Column="0"
+                                  Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                  Text="{Binding HeroTargetRoundDescription}"
+                                  TextWrapping="Wrap" />
+                    <ui:TextBox Grid.Row="0"
+                                Grid.RowSpan="2"
+                                Grid.Column="1"
+                                Width="120"
+                                Margin="0,0,36,0"
+                                Text="{Binding HeroTargetRound, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </Grid>
 
-                    <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
-                    <Grid Margin="16">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
+                <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
+                <Grid Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
 
-                        <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding HeroTargetRoundLabel}" />
-                        <ui:TextBlock Grid.Row="1"
-                                      Grid.Column="0"
-                                      Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
-                                      Text="{Binding HeroTargetRoundDescription}"
-                                      TextWrapping="Wrap" />
-                        <ui:TextBox Grid.Row="0"
-                                    Grid.RowSpan="2"
-                                    Grid.Column="1"
-                                    Width="120"
-                                    Margin="0,0,36,0"
-                                    Text="{Binding HeroTargetRound, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                    </Grid>
+                    <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding HeroTargetLevelLabel}" />
+                    <ui:TextBlock Grid.Row="1"
+                                  Grid.Column="0"
+                                  Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                  Text="{Binding HeroTargetLevelDescription}"
+                                  TextWrapping="Wrap" />
+                    <ui:TextBox Grid.Row="0"
+                                Grid.RowSpan="2"
+                                Grid.Column="1"
+                                Width="120"
+                                Margin="0,0,36,0"
+                                Text="{Binding HeroTargetLevel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </Grid>
 
-                    <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
-                    <Grid Margin="16">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
+                <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
+                <Grid Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <ui:TextBlock Grid.Row="0" FontWeight="SemiBold" Text="{Binding ResultSectionTitle}" />
+                    <ui:TextBlock Grid.Row="1"
+                                  Margin="0,6,0,0"
+                                  Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                  Text="{Binding HeroHintText}"
+                                  TextWrapping="Wrap" />
+                    <ui:TextBlock Grid.Row="2"
+                                  Margin="0,8,0,0"
+                                  Text="{Binding HeroResultText}"
+                                  TextWrapping="Wrap" />
+                </Grid>
+            </StackPanel>
+        </ui:CardExpander>
 
-                        <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding HeroTargetLevelLabel}" />
-                        <ui:TextBlock Grid.Row="1"
-                                      Grid.Column="0"
-                                      Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
-                                      Text="{Binding HeroTargetLevelDescription}"
-                                      TextWrapping="Wrap" />
-                        <ui:TextBox Grid.Row="0"
-                                    Grid.RowSpan="2"
-                                    Grid.Column="1"
-                                    Width="120"
-                                    Margin="0,0,36,0"
-                                    Text="{Binding HeroTargetLevel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                    </Grid>
+        <ui:CardExpander Margin="0,0,0,12"
+                         ContentPadding="0"
+                         Icon="{ui:SymbolIcon ArrowDownload24}"
+                         IsExpanded="False">
+            <ui:CardExpander.Header>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
 
-                    <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
-                    <Grid Margin="16">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <ui:TextBlock Grid.Row="0" FontWeight="SemiBold" Text="{Binding ResultSectionTitle}" />
-                        <ui:TextBlock Grid.Row="1"
-                                      Margin="0,6,0,0"
-                                      Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
-                                      Text="{Binding HeroHintText}"
-                                      TextWrapping="Wrap" />
-                        <ui:TextBlock Grid.Row="2"
-                                      Margin="0,8,0,0"
-                                      Text="{Binding HeroResultText}"
-                                      TextWrapping="Wrap" />
-                    </Grid>
-                </StackPanel>
-            </ui:CardExpander>
+                    <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding ParagonCardTitle}" TextWrapping="Wrap" />
+                    <ui:TextBlock Grid.Row="1"
+                                  Grid.Column="0"
+                                  Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                  Text="{Binding ParagonCardDescription}"
+                                  TextWrapping="Wrap" />
+                    <ui:Button Grid.Row="0"
+                               Grid.RowSpan="2"
+                               Grid.Column="1"
+                               Width="120"
+                               Margin="0,0,36,0"
+                               Command="{Binding CalculateParagonCommand}"
+                               Content="{Binding CalculateButtonText}" />
+                </Grid>
+            </ui:CardExpander.Header>
 
-            <ui:CardExpander Margin="0,0,0,12"
-                             ContentPadding="0"
-                             Icon="{ui:SymbolIcon ArrowDownload24}"
-                             IsExpanded="False">
-                <ui:CardExpander.Header>
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
+            <StackPanel>
+                <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
+                <Grid Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
 
-                        <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding ParagonCardTitle}" TextWrapping="Wrap" />
-                        <ui:TextBlock Grid.Row="1"
-                                      Grid.Column="0"
-                                      Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
-                                      Text="{Binding ParagonCardDescription}"
-                                      TextWrapping="Wrap" />
-                        <ui:Button Grid.Row="0"
-                                   Grid.RowSpan="2"
-                                   Grid.Column="1"
-                                   Width="120"
-                                   Margin="0,0,36,0"
-                                   Command="{Binding CalculateParagonCommand}"
-                                   Content="{Binding CalculateButtonText}" />
-                    </Grid>
-                </ui:CardExpander.Header>
+                    <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding ParagonMonkeyLabel}" />
+                    <ui:TextBlock Grid.Row="1"
+                                  Grid.Column="0"
+                                  Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                  Text="{Binding ParagonMonkeyDescription}"
+                                  TextWrapping="Wrap" />
+                    <ComboBox Grid.Row="0"
+                              Grid.RowSpan="2"
+                              Grid.Column="1"
+                              Width="220"
+                              Margin="0,0,36,0"
+                              DisplayMemberPath="DisplayName"
+                              ItemsSource="{Binding ParagonMonkeyOptions}"
+                              SelectedItem="{Binding SelectedParagonMonkey, Mode=TwoWay}" />
+                </Grid>
 
-                <StackPanel>
-                    <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
-                    <Grid Margin="16">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
+                <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
+                <Grid Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
 
-                        <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding ParagonMonkeyLabel}" />
-                        <ui:TextBlock Grid.Row="1"
-                                      Grid.Column="0"
-                                      Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
-                                      Text="{Binding ParagonMonkeyDescription}"
-                                      TextWrapping="Wrap" />
-                        <ComboBox Grid.Row="0"
+                    <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding ParagonDifficultyLabel}" />
+                    <ui:TextBlock Grid.Row="1"
+                                  Grid.Column="0"
+                                  Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                  Text="{Binding ParagonDifficultyDescription}"
+                                  TextWrapping="Wrap" />
+                    <ComboBox Grid.Row="0"
+                              Grid.RowSpan="2"
+                              Grid.Column="1"
+                              Width="220"
+                              Margin="0,0,36,0"
+                              DisplayMemberPath="DisplayName"
+                              ItemsSource="{Binding ParagonDifficultyOptions}"
+                              SelectedItem="{Binding SelectedParagonDifficulty, Mode=TwoWay}" />
+                </Grid>
+
+                <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
+                <Grid Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding ParagonTotalPopsLabel}" />
+                    <ui:TextBlock Grid.Row="1"
+                                  Grid.Column="0"
+                                  Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                  Text="{Binding ParagonTotalPopsDescription}"
+                                  TextWrapping="Wrap" />
+                    <ui:NumberBox Grid.Row="0"
                                   Grid.RowSpan="2"
                                   Grid.Column="1"
-                                  Width="220"
+                                  Width="180"
                                   Margin="0,0,36,0"
-                                  DisplayMemberPath="DisplayName"
-                                  ItemsSource="{Binding ParagonMonkeyOptions}"
-                                  SelectedItem="{Binding SelectedParagonMonkey, Mode=TwoWay}" />
-                    </Grid>
+                                  Minimum="0"
+                                  SmallChange="1000"
+                                  Value="{Binding ParagonTotalPops, Mode=TwoWay}" />
+                </Grid>
 
-                    <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
-                    <Grid Margin="16">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
+                <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
+                <Grid Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
 
-                        <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding ParagonTotalPopsLabel}" />
-                        <ui:TextBlock Grid.Row="1"
-                                      Grid.Column="0"
+                    <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding ParagonGeneratedCashLabel}" />
+                    <ui:TextBlock Grid.Row="1"
+                                  Grid.Column="0"
+                                  Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                  Text="{Binding ParagonGeneratedCashDescription}"
+                                  TextWrapping="Wrap" />
+                    <ui:NumberBox Grid.Row="0"
+                                  Grid.RowSpan="2"
+                                  Grid.Column="1"
+                                  Width="180"
+                                  Margin="0,0,36,0"
+                                  Minimum="0"
+                                  SmallChange="1000"
+                                  Value="{Binding ParagonGeneratedCash, Mode=TwoWay}" />
+                </Grid>
+
+                <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
+                <Grid Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding ParagonCashSpentLabel}" />
+                    <ui:TextBlock Grid.Row="1"
+                                  Grid.Column="0"
+                                  Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                  Text="{Binding ParagonCashSpentDescription}"
+                                  TextWrapping="Wrap" />
+                    <ui:NumberBox Grid.Row="0"
+                                  Grid.RowSpan="2"
+                                  Grid.Column="1"
+                                  Width="180"
+                                  Margin="0,0,36,0"
+                                  Minimum="0"
+                                  SmallChange="1000"
+                                  Value="{Binding ParagonCashSpent, Mode=TwoWay}" />
+                </Grid>
+
+                <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
+                <Grid Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="220" />
+                        <ColumnDefinition Width="180" />
+                    </Grid.ColumnDefinitions>
+
+                    <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding ParagonSliderCashInvestmentLabel}" />
+                    <ui:TextBlock Grid.Row="1"
+                                  Grid.Column="0"
+                                  Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                  Text="{Binding ParagonSliderCashInvestmentDescription}"
+                                  TextWrapping="Wrap" />
+                    <Slider Grid.Row="0"
+                            Grid.RowSpan="2"
+                            Grid.Column="1"
+                            Margin="0,0,16,0"
+                            AutoToolTipPlacement="TopLeft"
+                            Maximum="{Binding ParagonSliderMaximum}"
+                            Minimum="0"
+                            Value="{Binding ParagonSliderCashInvestment, Mode=TwoWay}" />
+                    <StackPanel Grid.Row="0"
+                                Grid.RowSpan="2"
+                                Grid.Column="2"
+                                VerticalAlignment="Center">
+                        <ui:TextBlock HorizontalAlignment="Right" Text="{Binding ParagonSliderCashInvestment, StringFormat={}{0:N0}}" />
+                        <ui:TextBlock Margin="0,6,0,0"
                                       Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
-                                      Text="{Binding ParagonTotalPopsDescription}"
+                                      Text="{Binding ParagonCostHintText}"
+                                      TextAlignment="Right"
                                       TextWrapping="Wrap" />
-                        <ui:NumberBox Grid.Row="0"
-                                      Grid.RowSpan="2"
-                                      Grid.Column="1"
-                                      Width="160"
-                                      Margin="0,0,36,0"
-                                      Minimum="0"
-                                      Maximum="999999999"
-                                      SmallChange="1000"
-                                      Value="{Binding ParagonTotalPops, Mode=TwoWay}" />
-                    </Grid>
+                    </StackPanel>
+                </Grid>
 
-                    <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
-                    <Grid Margin="16">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
+                <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
+                <Grid Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="220" />
+                        <ColumnDefinition Width="90" />
+                    </Grid.ColumnDefinitions>
 
-                        <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding ParagonUpgradeCountLabel}" />
-                        <ui:TextBlock Grid.Row="1"
-                                      Grid.Column="0"
-                                      Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
-                                      Text="{Binding ParagonUpgradeCountDescription}"
-                                      TextWrapping="Wrap" />
-                        <ui:NumberBox Grid.Row="0"
-                                      Grid.RowSpan="2"
-                                      Grid.Column="1"
-                                      Width="120"
-                                      Margin="0,0,36,0"
-                                      Minimum="0"
-                                      Maximum="999"
-                                      SmallChange="1"
-                                      Value="{Binding ParagonUpgradeCount, Mode=TwoWay}" />
-                    </Grid>
+                    <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding ParagonTierFiveCountLabel}" />
+                    <ui:TextBlock Grid.Row="1"
+                                  Grid.Column="0"
+                                  Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                  Text="{Binding ParagonTierFiveCountDescription}"
+                                  TextWrapping="Wrap" />
+                    <Slider Grid.Row="0"
+                            Grid.RowSpan="2"
+                            Grid.Column="1"
+                            Margin="0,0,16,0"
+                            AutoToolTipPlacement="TopLeft"
+                            IsSnapToTickEnabled="True"
+                            Maximum="12"
+                            Minimum="3"
+                            TickFrequency="1"
+                            Value="{Binding ParagonTierFiveCount, Mode=TwoWay}" />
+                    <ui:TextBlock Grid.Row="0"
+                                  Grid.RowSpan="2"
+                                  Grid.Column="2"
+                                  HorizontalAlignment="Right"
+                                  VerticalAlignment="Center"
+                                  Text="{Binding ParagonTierFiveCount, StringFormat={}{0:N0}}" />
+                </Grid>
 
-                    <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
-                    <Grid Margin="16">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
+                <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
+                <Grid Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="220" />
+                        <ColumnDefinition Width="90" />
+                    </Grid.ColumnDefinitions>
 
-                        <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding ParagonExtraCashLabel}" />
-                        <ui:TextBlock Grid.Row="1"
-                                      Grid.Column="0"
-                                      Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
-                                      Text="{Binding ParagonExtraCashDescription}"
-                                      TextWrapping="Wrap" />
-                        <ui:NumberBox Grid.Row="0"
-                                      Grid.RowSpan="2"
-                                      Grid.Column="1"
-                                      Width="160"
-                                      Margin="0,0,36,0"
-                                      Minimum="0"
-                                      Maximum="999999999"
-                                      SmallChange="1000"
-                                      Value="{Binding ParagonExtraCash, Mode=TwoWay}" />
-                    </Grid>
+                    <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding ParagonUpgradeCountLabel}" />
+                    <ui:TextBlock Grid.Row="1"
+                                  Grid.Column="0"
+                                  Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                  Text="{Binding ParagonUpgradeCountDescription}"
+                                  TextWrapping="Wrap" />
+                    <Slider Grid.Row="0"
+                            Grid.RowSpan="2"
+                            Grid.Column="1"
+                            Margin="0,0,16,0"
+                            AutoToolTipPlacement="TopLeft"
+                            IsSnapToTickEnabled="True"
+                            Maximum="100"
+                            Minimum="0"
+                            TickFrequency="1"
+                            Value="{Binding ParagonUpgradeCount, Mode=TwoWay}" />
+                    <ui:TextBlock Grid.Row="0"
+                                  Grid.RowSpan="2"
+                                  Grid.Column="2"
+                                  HorizontalAlignment="Right"
+                                  VerticalAlignment="Center"
+                                  Text="{Binding ParagonUpgradeCount, StringFormat={}{0:N0}}" />
+                </Grid>
 
-                    <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
-                    <Grid Margin="16">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <ui:TextBlock Grid.Row="0" FontWeight="SemiBold" Text="{Binding ResultSectionTitle}" />
-                        <ui:TextBlock Grid.Row="1"
-                                      Margin="0,6,0,0"
-                                      Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
-                                      Text="{Binding ParagonResultText}"
-                                      TextWrapping="Wrap" />
-                    </Grid>
-                </StackPanel>
-            </ui:CardExpander>
+                <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
+                <Grid Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="220" />
+                        <ColumnDefinition Width="90" />
+                    </Grid.ColumnDefinitions>
+
+                    <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding ParagonTotemCountLabel}" />
+                    <ui:TextBlock Grid.Row="1"
+                                  Grid.Column="0"
+                                  Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                  Text="{Binding ParagonTotemCountDescription}"
+                                  TextWrapping="Wrap" />
+                    <Slider Grid.Row="0"
+                            Grid.RowSpan="2"
+                            Grid.Column="1"
+                            Margin="0,0,16,0"
+                            AutoToolTipPlacement="TopLeft"
+                            IsSnapToTickEnabled="True"
+                            Maximum="100"
+                            Minimum="0"
+                            TickFrequency="1"
+                            Value="{Binding ParagonTotemCount, Mode=TwoWay}" />
+                    <ui:TextBlock Grid.Row="0"
+                                  Grid.RowSpan="2"
+                                  Grid.Column="2"
+                                  HorizontalAlignment="Right"
+                                  VerticalAlignment="Center"
+                                  Text="{Binding ParagonTotemCount, StringFormat={}{0:N0}}" />
+                </Grid>
+
+                <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
+                <Grid Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <ui:TextBlock Grid.Row="0" FontWeight="SemiBold" Text="{Binding ResultSectionTitle}" />
+                    <ui:TextBlock Grid.Row="1"
+                                  Margin="0,6,0,0"
+                                  Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                  Text="{Binding ParagonResultText}"
+                                  TextWrapping="Wrap" />
+                </Grid>
+            </StackPanel>
+        </ui:CardExpander>
+
+        <ui:CardExpander Margin="0,0,0,12"
+                         ContentPadding="0"
+                         Icon="{ui:SymbolIcon Table24}"
+                         IsExpanded="False">
+            <ui:CardExpander.Header>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding ParagonStatsCardTitle}" TextWrapping="Wrap" />
+                    <ui:TextBlock Grid.Row="1"
+                                  Grid.Column="0"
+                                  Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                  Text="{Binding ParagonStatsCardDescription}"
+                                  TextWrapping="Wrap" />
+                    <ui:Button Grid.Row="0"
+                               Grid.RowSpan="2"
+                               Grid.Column="1"
+                               Width="120"
+                               Margin="0,0,36,0"
+                               Command="{Binding CalculateParagonStatsCommand}"
+                               Content="{Binding CalculateButtonText}" />
+                </Grid>
+            </ui:CardExpander.Header>
+
+            <StackPanel>
+                <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
+                <Grid Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="220" />
+                        <ColumnDefinition Width="90" />
+                    </Grid.ColumnDefinitions>
+
+                    <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding ParagonStatsDegreeLabel}" />
+                    <ui:TextBlock Grid.Row="1"
+                                  Grid.Column="0"
+                                  Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                  Text="{Binding ParagonStatsDegreeDescription}"
+                                  TextWrapping="Wrap" />
+                    <Slider Grid.Row="0"
+                            Grid.RowSpan="2"
+                            Grid.Column="1"
+                            Margin="0,0,16,0"
+                            AutoToolTipPlacement="TopLeft"
+                            IsSnapToTickEnabled="True"
+                            Maximum="100"
+                            Minimum="1"
+                            TickFrequency="1"
+                            Value="{Binding ParagonStatsDegree, Mode=TwoWay}" />
+                    <ui:TextBlock Grid.Row="0"
+                                  Grid.RowSpan="2"
+                                  Grid.Column="2"
+                                  HorizontalAlignment="Right"
+                                  VerticalAlignment="Center"
+                                  Text="{Binding ParagonStatsDegree, StringFormat={}{0:N0}}" />
+                </Grid>
+
+                <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
+                <Grid Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding ParagonStatsAttackIntervalLabel}" />
+                    <ui:TextBlock Grid.Row="1"
+                                  Grid.Column="0"
+                                  Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                  Text="{Binding ParagonStatsAttackIntervalDescription}"
+                                  TextWrapping="Wrap" />
+                    <ui:NumberBox Grid.Row="0"
+                                  Grid.RowSpan="2"
+                                  Grid.Column="1"
+                                  Width="140"
+                                  Margin="0,0,36,0"
+                                  Minimum="0"
+                                  SmallChange="0.05"
+                                  Value="{Binding ParagonStatsAttackIntervalSeconds, Mode=TwoWay}" />
+                </Grid>
+
+                <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
+                <Grid Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding ParagonStatsPierceLabel}" />
+                    <ui:TextBlock Grid.Row="1"
+                                  Grid.Column="0"
+                                  Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                  Text="{Binding ParagonStatsPierceDescription}"
+                                  TextWrapping="Wrap" />
+                    <ui:NumberBox Grid.Row="0"
+                                  Grid.RowSpan="2"
+                                  Grid.Column="1"
+                                  Width="140"
+                                  Margin="0,0,36,0"
+                                  Minimum="0"
+                                  SmallChange="1"
+                                  Value="{Binding ParagonStatsPierce, Mode=TwoWay}" />
+                </Grid>
+
+                <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
+                <Grid Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding ParagonStatsBaseDamageLabel}" />
+                    <ui:TextBlock Grid.Row="1"
+                                  Grid.Column="0"
+                                  Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                  Text="{Binding ParagonStatsBaseDamageDescription}"
+                                  TextWrapping="Wrap" />
+                    <ui:NumberBox Grid.Row="0"
+                                  Grid.RowSpan="2"
+                                  Grid.Column="1"
+                                  Width="140"
+                                  Margin="0,0,36,0"
+                                  Minimum="0"
+                                  SmallChange="1"
+                                  Value="{Binding ParagonStatsBaseDamage, Mode=TwoWay}" />
+                </Grid>
+
+                <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
+                <Grid Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding ParagonStatsMoabDamageLabel}" />
+                    <ui:TextBlock Grid.Row="1"
+                                  Grid.Column="0"
+                                  Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                  Text="{Binding ParagonStatsMoabDamageDescription}"
+                                  TextWrapping="Wrap" />
+                    <ui:NumberBox Grid.Row="0"
+                                  Grid.RowSpan="2"
+                                  Grid.Column="1"
+                                  Width="140"
+                                  Margin="0,0,36,0"
+                                  Minimum="0"
+                                  SmallChange="1"
+                                  Value="{Binding ParagonStatsMoabDamageBonus, Mode=TwoWay}" />
+                </Grid>
+
+                <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
+                <Grid Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding ParagonStatsBossDamageLabel}" />
+                    <ui:TextBlock Grid.Row="1"
+                                  Grid.Column="0"
+                                  Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                  Text="{Binding ParagonStatsBossDamageDescription}"
+                                  TextWrapping="Wrap" />
+                    <ui:NumberBox Grid.Row="0"
+                                  Grid.RowSpan="2"
+                                  Grid.Column="1"
+                                  Width="140"
+                                  Margin="0,0,36,0"
+                                  Minimum="0"
+                                  SmallChange="1"
+                                  Value="{Binding ParagonStatsBossDamageBonus, Mode=TwoWay}" />
+                </Grid>
+
+                <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
+                <Grid Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding ParagonStatsOtherDamage1Label}" />
+                    <ui:TextBlock Grid.Row="1"
+                                  Grid.Column="0"
+                                  Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                  Text="{Binding ParagonStatsOtherDamage1Description}"
+                                  TextWrapping="Wrap" />
+                    <ui:NumberBox Grid.Row="0"
+                                  Grid.RowSpan="2"
+                                  Grid.Column="1"
+                                  Width="140"
+                                  Margin="0,0,36,0"
+                                  Minimum="0"
+                                  SmallChange="1"
+                                  Value="{Binding ParagonStatsOtherDamageBonus1, Mode=TwoWay}" />
+                </Grid>
+
+                <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
+                <Grid Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding ParagonStatsOtherDamage2Label}" />
+                    <ui:TextBlock Grid.Row="1"
+                                  Grid.Column="0"
+                                  Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                  Text="{Binding ParagonStatsOtherDamage2Description}"
+                                  TextWrapping="Wrap" />
+                    <ui:NumberBox Grid.Row="0"
+                                  Grid.RowSpan="2"
+                                  Grid.Column="1"
+                                  Width="140"
+                                  Margin="0,0,36,0"
+                                  Minimum="0"
+                                  SmallChange="1"
+                                  Value="{Binding ParagonStatsOtherDamageBonus2, Mode=TwoWay}" />
+                </Grid>
+
+                <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
+                <Grid Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding ParagonStatsOtherDamage3Label}" />
+                    <ui:TextBlock Grid.Row="1"
+                                  Grid.Column="0"
+                                  Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                  Text="{Binding ParagonStatsOtherDamage3Description}"
+                                  TextWrapping="Wrap" />
+                    <ui:NumberBox Grid.Row="0"
+                                  Grid.RowSpan="2"
+                                  Grid.Column="1"
+                                  Width="140"
+                                  Margin="0,0,36,0"
+                                  Minimum="0"
+                                  SmallChange="1"
+                                  Value="{Binding ParagonStatsOtherDamageBonus3, Mode=TwoWay}" />
+                </Grid>
+
+                <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
+                <Grid Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <ui:TextBlock Grid.Row="0" FontWeight="SemiBold" Text="{Binding ResultSectionTitle}" />
+                    <ui:TextBlock Grid.Row="1"
+                                  Margin="0,6,0,0"
+                                  Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                  Text="{Binding ParagonStatsResultText}"
+                                  TextWrapping="Wrap" />
+                </Grid>
+            </StackPanel>
+        </ui:CardExpander>
     </StackPanel>
 </Page>

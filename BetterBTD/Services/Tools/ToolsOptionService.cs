@@ -33,11 +33,11 @@ public sealed class ToolsOptionService
 
     public ToolOptionRefreshResult BuildParagonMonkeyOptions(string? selectedCode)
     {
-        var options = GameElementCatalog.MonkeyTowers
+        var options = ParagonToolCatalog.EligibleMonkeys
             .Select(monkey => new LanguageOption
             {
-                Code = monkey.Type.ToString(),
-                DisplayName = GameElementCatalog.GetMonkeyTowerDisplayName(monkey.Type)
+                Code = monkey.TowerType.ToString(),
+                DisplayName = GameElementCatalog.GetMonkeyTowerDisplayName(monkey.TowerType)
             })
             .ToArray();
 
@@ -45,6 +45,39 @@ public sealed class ToolsOptionService
         {
             Options = options,
             SelectedOption = SelectOption(options, selectedCode) ?? options.FirstOrDefault()
+        };
+    }
+
+    public ToolOptionRefreshResult BuildParagonDifficultyOptions(string? selectedCode)
+    {
+        var options = new[]
+        {
+            new LanguageOption
+            {
+                Code = "Easy",
+                DisplayName = LocalizationService.Instance.T("Tools.Paragon.Difficulty.Easy")
+            },
+            new LanguageOption
+            {
+                Code = "Medium",
+                DisplayName = LocalizationService.Instance.T("Tools.Paragon.Difficulty.Medium")
+            },
+            new LanguageOption
+            {
+                Code = "Hard",
+                DisplayName = LocalizationService.Instance.T("Tools.Paragon.Difficulty.Hard")
+            },
+            new LanguageOption
+            {
+                Code = "Impoppable",
+                DisplayName = LocalizationService.Instance.T("Tools.Paragon.Difficulty.Impoppable")
+            }
+        };
+
+        return new ToolOptionRefreshResult
+        {
+            Options = options,
+            SelectedOption = SelectOption(options, selectedCode) ?? options.ElementAtOrDefault(1) ?? options.FirstOrDefault()
         };
     }
 
