@@ -1,19 +1,19 @@
 using System.Collections.ObjectModel;
-using System.Globalization;
-using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using BetterBTD.Models;
-using BetterBTD.Models.GameElements;
-using BetterBTD.Models.Rounds;
-using BetterBTD.Services.Shared;
+using BetterBTD.Models.Tools;
+using BetterBTD.Services.Tools;
 
 namespace BetterBTD.ViewModels;
 
 public sealed class ToolsPageViewModel : ObservableObject
 {
     private readonly LocalizationService _localizationService;
-    private readonly RoundCatalogService _roundCatalogService;
+    private readonly ToolsOptionService _toolsOptionService;
+    private readonly RoundToolService _roundToolService;
+    private readonly HeroToolService _heroToolService;
+    private readonly ParagonToolService _paragonToolService;
 
     private int _startRound = 1;
     private int _endRound = 100;
@@ -28,17 +28,30 @@ public sealed class ToolsPageViewModel : ObservableObject
     private string _roundResultText = string.Empty;
     private string _heroResultText = string.Empty;
     private string _paragonResultText = string.Empty;
-    private int _maxRound;
+    private readonly int _maxRound;
 
     public ToolsPageViewModel()
-        : this(LocalizationService.Instance, RoundCatalogService.Instance)
+        : this(
+            LocalizationService.Instance,
+            ToolsOptionService.Instance,
+            RoundToolService.Instance,
+            HeroToolService.Instance,
+            ParagonToolService.Instance)
     {
     }
 
-    internal ToolsPageViewModel(LocalizationService localizationService, RoundCatalogService roundCatalogService)
+    internal ToolsPageViewModel(
+        LocalizationService localizationService,
+        ToolsOptionService toolsOptionService,
+        RoundToolService roundToolService,
+        HeroToolService heroToolService,
+        ParagonToolService paragonToolService)
     {
         _localizationService = localizationService ?? throw new ArgumentNullException(nameof(localizationService));
-        _roundCatalogService = roundCatalogService ?? throw new ArgumentNullException(nameof(roundCatalogService));
+        _toolsOptionService = toolsOptionService ?? throw new ArgumentNullException(nameof(toolsOptionService));
+        _roundToolService = roundToolService ?? throw new ArgumentNullException(nameof(roundToolService));
+        _heroToolService = heroToolService ?? throw new ArgumentNullException(nameof(heroToolService));
+        _paragonToolService = paragonToolService ?? throw new ArgumentNullException(nameof(paragonToolService));
 
         HeroOptions = [];
         ParagonMonkeyOptions = [];
@@ -48,9 +61,9 @@ public sealed class ToolsPageViewModel : ObservableObject
         CalculateParagonCommand = new RelayCommand(UpdateParagonResult);
 
         _localizationService.LanguageChanged += (_, _) => RefreshLocalizedContent();
-        _maxRound = TryLoadMaxRound();
-        _startRound = ClampRound(_startRound);
-        _endRound = ClampRound(_endRound);
+        _maxRound = _roundToolService.TryGetMaxRound();
+        _startRound = _roundToolService.NormalizeRound(_startRound, _maxRound);
+        _endRound = _roundToolService.NormalizeRound(_endRound, _maxRound);
         RefreshLocalizedContent();
     }
 
@@ -139,7 +152,7 @@ public sealed class ToolsPageViewModel : ObservableObject
         get => _startRound;
         set
         {
-            var normalized = ClampRound(value);
+            var normalized = _roundToolService.NormalizeRound(value, MaxRound);
             if (SetProperty(ref _startRound, normalized))
             {
                 UpdateRoundResult();
@@ -152,7 +165,7 @@ public sealed class ToolsPageViewModel : ObservableObject
         get => _endRound;
         set
         {
-            var normalized = ClampRound(value);
+            var normalized = _roundToolService.NormalizeRound(value, MaxRound);
             if (SetProperty(ref _endRound, normalized))
             {
                 UpdateRoundResult();
@@ -276,11 +289,8 @@ public sealed class ToolsPageViewModel : ObservableObject
 
     private void RefreshLocalizedContent()
     {
-        var selectedHeroCode = SelectedHero?.Code;
-        var selectedParagonCode = SelectedParagonMonkey?.Code;
-
-        RefreshHeroOptions(selectedHeroCode);
-        RefreshParagonMonkeyOptions(selectedParagonCode);
+        RefreshHeroOptions(SelectedHero?.Code);
+        RefreshParagonMonkeyOptions(SelectedParagonMonkey?.Code);
 
         OnPropertyChanged(nameof(PageTitle));
         OnPropertyChanged(nameof(PageDescription));
@@ -324,279 +334,65 @@ public sealed class ToolsPageViewModel : ObservableObject
 
     private void RefreshHeroOptions(string? selectedCode)
     {
-        HeroOptions.Clear();
-        foreach (var hero in GameElementCatalog.Heroes)
-        {
-            HeroOptions.Add(new LanguageOption
-            {
-                Code = hero.Type.ToString(),
-                DisplayName = GameElementCatalog.GetHeroDisplayName(hero.Type)
-            });
-        }
-
-        SelectedHero = SelectOption(HeroOptions, selectedCode) ?? HeroOptions.FirstOrDefault();
+        ApplyOptions(HeroOptions, _toolsOptionService.BuildHeroOptions(selectedCode), option => SelectedHero = option);
     }
 
     private void RefreshParagonMonkeyOptions(string? selectedCode)
     {
-        ParagonMonkeyOptions.Clear();
-        foreach (var monkey in GameElementCatalog.MonkeyTowers)
-        {
-            ParagonMonkeyOptions.Add(new LanguageOption
-            {
-                Code = monkey.Type.ToString(),
-                DisplayName = GameElementCatalog.GetMonkeyTowerDisplayName(monkey.Type)
-            });
-        }
-
-        SelectedParagonMonkey = SelectOption(ParagonMonkeyOptions, selectedCode) ?? ParagonMonkeyOptions.FirstOrDefault();
+        ApplyOptions(
+            ParagonMonkeyOptions,
+            _toolsOptionService.BuildParagonMonkeyOptions(selectedCode),
+            option => SelectedParagonMonkey = option);
     }
 
     private void UpdateRoundResult()
     {
-        if (MaxRound <= 0)
-        {
-            RoundResultText = string.Format(
-                _localizationService.T("Tools.Round.Result.LoadFailed"),
-                _localizationService.T("Tools.Round.Result.LoadFailedReason"));
-            return;
-        }
-
-        if (StartRound > EndRound)
-        {
-            RoundResultText = string.Format(
-                _localizationService.T("Tools.Round.Result.InvalidRange"),
-                MaxRound);
-            return;
-        }
-
-        try
-        {
-            var summary = _roundCatalogService.CalculateRange(StartRound, EndRound);
-            RoundResultText = BuildRoundResultText(summary);
-        }
-        catch (Exception ex) when (ex is InvalidOperationException or ArgumentOutOfRangeException)
-        {
-            RoundResultText = string.Format(
-                _localizationService.T("Tools.Round.Result.LoadFailed"),
-                ex.Message);
-        }
+        RoundResultText = _roundToolService.BuildResult(
+            new RoundToolRequest
+            {
+                StartRound = StartRound,
+                EndRound = EndRound
+            },
+            MaxRound);
     }
 
     private void UpdateHeroResult()
     {
-        var heroName = SelectedHero?.DisplayName ?? _localizationService.T("Tools.Hero.Hero");
-        var hasTargetRound = !string.IsNullOrWhiteSpace(HeroTargetRound);
-        var hasTargetLevel = !string.IsNullOrWhiteSpace(HeroTargetLevel);
-
-        if (hasTargetRound && hasTargetLevel)
+        HeroResultText = _heroToolService.BuildResult(new HeroToolRequest
         {
-            HeroResultText = _localizationService.T("Tools.Hero.Result.BothTargets");
-            return;
-        }
-
-        if (hasTargetRound)
-        {
-            HeroResultText = string.Format(
-                _localizationService.T("Tools.Hero.Result.TargetRound"),
-                heroName,
-                HeroPlacementRound,
-                HeroTargetRound.Trim());
-            return;
-        }
-
-        if (hasTargetLevel)
-        {
-            HeroResultText = string.Format(
-                _localizationService.T("Tools.Hero.Result.TargetLevel"),
-                heroName,
-                HeroPlacementRound,
-                HeroTargetLevel.Trim());
-            return;
-        }
-
-        HeroResultText = _localizationService.T("Tools.Hero.Result.NoTarget");
+            HeroDisplayName = SelectedHero?.DisplayName,
+            PlacementRound = HeroPlacementRound,
+            TargetRound = HeroTargetRound,
+            TargetLevel = HeroTargetLevel
+        });
     }
 
     private void UpdateParagonResult()
     {
-        var monkeyName = SelectedParagonMonkey?.DisplayName ?? _localizationService.T("Tools.Paragon.Monkey");
-        ParagonResultText = string.Format(
-            _localizationService.T("Tools.Paragon.ResultPlaceholder"),
-            monkeyName,
-            FormatWholeNumber(ParagonTotalPops),
-            ParagonUpgradeCount,
-            FormatWholeNumber(ParagonExtraCash));
+        ParagonResultText = _paragonToolService.BuildResult(new ParagonToolRequest
+        {
+            MonkeyDisplayName = SelectedParagonMonkey?.DisplayName,
+            TotalPops = ParagonTotalPops,
+            UpgradeCount = ParagonUpgradeCount,
+            ExtraCash = ParagonExtraCash
+        });
     }
 
-    private static LanguageOption? SelectOption(IEnumerable<LanguageOption> options, string? code)
+    private static void ApplyOptions(
+        ObservableCollection<LanguageOption> targetCollection,
+        ToolOptionRefreshResult refreshResult,
+        Action<LanguageOption?> applySelectedOption)
     {
-        if (string.IsNullOrWhiteSpace(code))
+        ArgumentNullException.ThrowIfNull(targetCollection);
+        ArgumentNullException.ThrowIfNull(refreshResult);
+        ArgumentNullException.ThrowIfNull(applySelectedOption);
+
+        targetCollection.Clear();
+        foreach (var option in refreshResult.Options)
         {
-            return null;
+            targetCollection.Add(option);
         }
 
-        return options.FirstOrDefault(option => string.Equals(option.Code, code, StringComparison.OrdinalIgnoreCase));
-    }
-
-    private static string FormatWholeNumber(double value)
-    {
-        return Math.Round(value).ToString("0");
-    }
-
-    private int TryLoadMaxRound()
-    {
-        try
-        {
-            return _roundCatalogService.GetMaxRound();
-        }
-        catch (Exception ex) when (ex is InvalidOperationException or IOException)
-        {
-            return 0;
-        }
-    }
-
-    private int ClampRound(int value)
-    {
-        if (MaxRound <= 0)
-        {
-            return Math.Max(1, value);
-        }
-
-        return Math.Clamp(value, 1, MaxRound);
-    }
-
-    private string BuildRoundResultText(RoundRangeSummary summary)
-    {
-        var topBloons = summary.BloonTotals
-            .Take(5)
-            .Select(bloon => string.Format(
-                _localizationService.T("Tools.Round.Result.TopBloonItem"),
-                GetBloonDisplayName(bloon.Type, bloon.IsCamo, bloon.IsRegrow, bloon.IsFortified),
-                FormatInteger(bloon.TotalCount)))
-            .ToArray();
-
-        return string.Join(
-            Environment.NewLine,
-            [
-                string.Format(
-                    _localizationService.T("Tools.Round.Result.Range"),
-                    summary.StartRound,
-                    summary.EndRound,
-                    summary.RoundCount),
-                string.Format(
-                    _localizationService.T("Tools.Round.Result.TotalCashReward"),
-                    FormatDecimal(summary.TotalCashReward)),
-                string.Format(
-                    _localizationService.T("Tools.Round.Result.TotalExperience"),
-                    FormatInteger(summary.TotalExperience)),
-                string.Format(
-                    _localizationService.T("Tools.Round.Result.TotalRbe"),
-                    FormatInteger(summary.TotalRbe)),
-                string.Format(
-                    _localizationService.T("Tools.Round.Result.TotalDuration"),
-                    FormatDuration(summary.TotalDurationSeconds)),
-                string.Format(
-                    _localizationService.T("Tools.Round.Result.AveragePerRound"),
-                    FormatDecimal(summary.TotalCashReward / summary.RoundCount),
-                    FormatDecimal(summary.TotalExperience / (double)summary.RoundCount),
-                    FormatDecimal(summary.TotalRbe / (double)summary.RoundCount),
-                    FormatDuration(summary.TotalDurationSeconds / summary.RoundCount)),
-                string.Format(
-                    _localizationService.T("Tools.Round.Result.PeakCashReward"),
-                    summary.PeakCashRewardRound.Round,
-                    FormatDecimal(summary.PeakCashRewardRound.Value)),
-                string.Format(
-                    _localizationService.T("Tools.Round.Result.PeakRbe"),
-                    summary.PeakRbeRound.Round,
-                    FormatInteger(summary.PeakRbeRound.Value)),
-                string.Format(
-                    _localizationService.T("Tools.Round.Result.PeakDuration"),
-                    summary.PeakDurationRound.Round,
-                    FormatDuration(summary.PeakDurationRound.Value)),
-                string.Format(
-                    _localizationService.T("Tools.Round.Result.TopBloons"),
-                    topBloons.Length == 0
-                        ? _localizationService.T("Tools.Round.Result.NoBloons")
-                        : string.Join(", ", topBloons))
-            ]);
-    }
-
-    private string GetBloonDisplayName(RoundBloonType type, bool isCamo, bool isRegrow, bool isFortified)
-    {
-        var baseName = _localizationService.T($"Tools.Round.BloonType.{type}");
-
-        if (_localizationService.LanguageCode.Equals("zh-CN", StringComparison.OrdinalIgnoreCase))
-        {
-            var zhPrefixes = new List<string>(3);
-            if (isCamo)
-            {
-                zhPrefixes.Add(_localizationService.T("Tools.Round.BloonModifier.Camo"));
-            }
-
-            if (isFortified)
-            {
-                zhPrefixes.Add(_localizationService.T("Tools.Round.BloonModifier.Fortified"));
-            }
-
-            if (isRegrow)
-            {
-                zhPrefixes.Add(_localizationService.T("Tools.Round.BloonModifier.Regrow"));
-            }
-
-            return string.Concat(zhPrefixes) + baseName;
-        }
-
-        var enPrefixes = new List<string>(3);
-        if (isFortified)
-        {
-            enPrefixes.Add(_localizationService.T("Tools.Round.BloonModifier.Fortified"));
-        }
-
-        if (isCamo)
-        {
-            enPrefixes.Add(_localizationService.T("Tools.Round.BloonModifier.Camo"));
-        }
-
-        if (isRegrow)
-        {
-            enPrefixes.Add(_localizationService.T("Tools.Round.BloonModifier.Regrow"));
-        }
-
-        enPrefixes.Add(baseName);
-        return string.Join(" ", enPrefixes);
-    }
-
-    private static string FormatDecimal(double value)
-    {
-        return value.ToString("N1", CultureInfo.CurrentCulture);
-    }
-
-    private static string FormatInteger(double value)
-    {
-        return value.ToString("N0", CultureInfo.CurrentCulture);
-    }
-
-    private static string FormatInteger(long value)
-    {
-        return value.ToString("N0", CultureInfo.CurrentCulture);
-    }
-
-    private string FormatDuration(double seconds)
-    {
-        var normalizedSeconds = Math.Max(0d, seconds);
-        var duration = TimeSpan.FromSeconds(normalizedSeconds);
-        if (normalizedSeconds >= 60d)
-        {
-            return string.Format(
-                _localizationService.T("Tools.Round.Result.DurationMinutesSeconds"),
-                (int)duration.TotalMinutes,
-                duration.Seconds,
-                duration.Milliseconds / 10);
-        }
-
-        return string.Format(
-            _localizationService.T("Tools.Round.Result.DurationSeconds"),
-            normalizedSeconds.ToString("N2", CultureInfo.CurrentCulture));
+        applySelectedOption(refreshResult.SelectedOption);
     }
 }
