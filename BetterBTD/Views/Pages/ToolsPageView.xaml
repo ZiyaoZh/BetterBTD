@@ -17,7 +17,7 @@
             <ui:CardExpander Margin="0,0,0,12"
                              ContentPadding="0"
                              Icon="{ui:SymbolIcon Table24}"
-                             IsExpanded="True">
+                             IsExpanded="False">
                 <ui:CardExpander.Header>
                     <Grid>
                         <Grid.RowDefinitions>
@@ -121,7 +121,7 @@
             <ui:CardExpander Margin="0,0,0,12"
                              ContentPadding="0"
                              Icon="{ui:SymbolIcon Info24}"
-                             IsExpanded="True">
+                             IsExpanded="False">
                 <ui:CardExpander.Header>
                     <Grid>
                         <Grid.RowDefinitions>
@@ -279,7 +279,7 @@
             <ui:CardExpander Margin="0,0,0,12"
                              ContentPadding="0"
                              Icon="{ui:SymbolIcon ArrowDownload24}"
-                             IsExpanded="True">
+                             IsExpanded="False">
                 <ui:CardExpander.Header>
                     <Grid>
                         <Grid.RowDefinitions>
