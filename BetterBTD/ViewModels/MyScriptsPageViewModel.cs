@@ -21,9 +21,15 @@ public sealed class MyScriptsPageViewModel : ObservableObject
     private readonly ManagedScriptLibraryService _managedScriptLibraryService;
 
     private List<ManagedScriptListItemViewModel> _allScripts = [];
+    private Task? _refreshTask;
     private bool _isUpdatingFilters;
     private bool _hasScripts;
+    private bool _isLoadingScripts;
     private bool _isImportingScripts;
+    private bool _hasLoadedScripts;
+    private double _loadingProgressValue;
+    private double _loadingProgressMaximum = 1d;
+    private string _loadingStatusText = string.Empty;
     private string _scriptSearchText = string.Empty;
     private ICascadingItem? _selectedMapItem;
     private LanguageOption? _selectedDifficultyOption;
@@ -40,19 +46,31 @@ public sealed class MyScriptsPageViewModel : ObservableObject
     private string _selectedScriptState = string.Empty;
 
     public MyScriptsPageViewModel(LocalizationService localizationService)
+        : this(localizationService, ManagedScriptLibraryService.Instance)
+    {
+    }
+
+    internal MyScriptsPageViewModel(
+        LocalizationService localizationService,
+        ManagedScriptLibraryService managedScriptLibraryService)
     {
         _localizationService = localizationService ?? throw new ArgumentNullException(nameof(localizationService));
+        _managedScriptLibraryService = managedScriptLibraryService ?? throw new ArgumentNullException(nameof(managedScriptLibraryService));
         _appDialogService = AppDialogService.Instance;
         _importProgressDialogService = ImportProgressDialogService.Instance;
-        _managedScriptLibraryService = ManagedScriptLibraryService.Instance;
 
-        RefreshCommand = new RelayCommand(Refresh);
+        RefreshCommand = new AsyncRelayCommand(RefreshAsync, CanRefresh);
         ImportScriptCommand = new AsyncRelayCommand(ImportScriptAsync, CanImportScript);
         ExportSelectedScriptCommand = new RelayCommand(ExportSelectedScript, CanExportSelectedScript);
         RemoveSelectedScriptCommand = new RelayCommand(RemoveSelectedScript, CanRemoveSelectedScript);
         CopySelectedScriptIdCommand = new RelayCommand(CopySelectedScriptId, CanCopySelectedScriptId);
 
-        _localizationService.LanguageChanged += (_, _) => RefreshLocalizedContent();
+        LoadingProgressMaximum = 1d;
+        LoadingProgressValue = 0d;
+        LoadingStatusText = _localizationService.T("Library.Loading.Message");
+        IsLoadingScripts = true;
+
+        _localizationService.LanguageChanged += (_, _) => OnLanguageChanged();
 
         RefreshLocalizedContent();
     }
@@ -65,7 +83,7 @@ public sealed class MyScriptsPageViewModel : ObservableObject
 
     public IReadOnlyList<ICascadingItem> MapItems => GameElementCascadingItems.MapItems;
 
-    public IRelayCommand RefreshCommand { get; }
+    public IAsyncRelayCommand RefreshCommand { get; }
 
     public IAsyncRelayCommand ImportScriptCommand { get; }
 
@@ -110,7 +128,54 @@ public sealed class MyScriptsPageViewModel : ObservableObject
     public bool HasScripts
     {
         get => _hasScripts;
-        private set => SetProperty(ref _hasScripts, value);
+        private set
+        {
+            if (!SetProperty(ref _hasScripts, value))
+            {
+                return;
+            }
+
+            OnPropertyChanged(nameof(ShowEmptyScriptsState));
+        }
+    }
+
+    public bool IsLoadingScripts
+    {
+        get => _isLoadingScripts;
+        private set
+        {
+            if (!SetProperty(ref _isLoadingScripts, value))
+            {
+                return;
+            }
+
+            OnPropertyChanged(nameof(ShowEmptyScriptsState));
+            RefreshCommand.NotifyCanExecuteChanged();
+            ImportScriptCommand.NotifyCanExecuteChanged();
+            ExportSelectedScriptCommand.NotifyCanExecuteChanged();
+            RemoveSelectedScriptCommand.NotifyCanExecuteChanged();
+            CopySelectedScriptIdCommand.NotifyCanExecuteChanged();
+        }
+    }
+
+    public bool ShowEmptyScriptsState => !IsLoadingScripts && !HasScripts;
+
+    public double LoadingProgressValue
+    {
+        get => _loadingProgressValue;
+        private set => SetProperty(ref _loadingProgressValue, value);
+    }
+
+    public double LoadingProgressMaximum
+    {
+        get => _loadingProgressMaximum;
+        private set => SetProperty(ref _loadingProgressMaximum, value);
+    }
+
+    public string LoadingStatusText
+    {
+        get => _loadingStatusText;
+        private set => SetProperty(ref _loadingStatusText, value);
     }
 
     public string SelectedScriptSummary => SelectedScript is null
@@ -283,12 +348,59 @@ public sealed class MyScriptsPageViewModel : ObservableObject
         private set => SetProperty(ref _selectedScriptState, value);
     }
 
-    private void Refresh()
+    public Task EnsureInitializedAsync()
     {
-        var snapshot = _managedScriptLibraryService.GetSnapshot();
-        _allScripts = snapshot.Scripts.Select(CreateScriptItem).ToList();
-        BuildFilterOptions();
-        RefreshFilteredScripts();
+        return _hasLoadedScripts ? Task.CompletedTask : RefreshAsync();
+    }
+
+    private async Task RefreshAsync()
+    {
+        if (_refreshTask is not null && !_refreshTask.IsCompleted)
+        {
+            await _refreshTask;
+            return;
+        }
+
+        var refreshTask = RefreshCoreAsync();
+        _refreshTask = refreshTask;
+
+        try
+        {
+            await refreshTask;
+        }
+        finally
+        {
+            if (ReferenceEquals(_refreshTask, refreshTask))
+            {
+                _refreshTask = null;
+            }
+        }
+    }
+
+    private async Task RefreshCoreAsync()
+    {
+        IsLoadingScripts = true;
+        LoadingProgressMaximum = 1d;
+        LoadingProgressValue = 0d;
+        LoadingStatusText = _localizationService.T("Library.Loading.Message");
+
+        try
+        {
+            var progress = new Progress<ManagedScriptLibraryLoadProgress>(UpdateLoadingProgress);
+            var snapshot = await Task.Run(() => _managedScriptLibraryService.GetSnapshot(progress));
+            _allScripts = snapshot.Scripts.Select(CreateScriptItem).ToList();
+            BuildFilterOptions();
+            RefreshFilteredScripts();
+            _hasLoadedScripts = true;
+        }
+        catch (Exception ex)
+        {
+            ShowError("Library.Dialog.RefreshError.Title", ex.Message);
+        }
+        finally
+        {
+            IsLoadingScripts = false;
+        }
     }
 
     private async Task ImportScriptAsync()
@@ -334,7 +446,7 @@ public sealed class MyScriptsPageViewModel : ObservableObject
                 await Task.Run(() => _managedScriptLibraryService.ImportScript(dialog.FileName));
             }
 
-            Refresh();
+            await RefreshAsync();
         }
         catch (Exception ex)
         {
@@ -349,12 +461,17 @@ public sealed class MyScriptsPageViewModel : ObservableObject
 
     private bool CanImportScript()
     {
-        return !_isImportingScripts;
+        return !_isImportingScripts && !IsLoadingScripts;
+    }
+
+    private bool CanRefresh()
+    {
+        return !_isImportingScripts && !IsLoadingScripts;
     }
 
     private bool CanExportSelectedScript()
     {
-        return SelectedScript is not null;
+        return !IsLoadingScripts && SelectedScript is not null;
     }
 
     private void ExportSelectedScript()
@@ -387,12 +504,12 @@ public sealed class MyScriptsPageViewModel : ObservableObject
 
     private bool CanRemoveSelectedScript()
     {
-        return SelectedScript is not null;
+        return !IsLoadingScripts && SelectedScript is not null;
     }
 
     private bool CanCopySelectedScriptId()
     {
-        return SelectedScript is not null && !string.IsNullOrWhiteSpace(SelectedScript.ScriptId);
+        return !IsLoadingScripts && SelectedScript is not null && !string.IsNullOrWhiteSpace(SelectedScript.ScriptId);
     }
 
     private void RemoveSelectedScript()
@@ -418,7 +535,7 @@ public sealed class MyScriptsPageViewModel : ObservableObject
         try
         {
             _managedScriptLibraryService.RemoveScript(SelectedScript.ScriptId);
-            Refresh();
+            _ = RefreshAsync();
         }
         catch (Exception ex)
         {
@@ -608,7 +725,10 @@ public sealed class MyScriptsPageViewModel : ObservableObject
 
     private void RefreshLocalizedContent()
     {
-        Refresh();
+        if (IsLoadingScripts)
+        {
+            LoadingStatusText = _localizationService.T("Library.Loading.Message");
+        }
 
         OnPropertyChanged(nameof(ImportText));
         OnPropertyChanged(nameof(ExportText));
@@ -625,6 +745,7 @@ public sealed class MyScriptsPageViewModel : ObservableObject
         OnPropertyChanged(nameof(ScriptsSectionText));
         OnPropertyChanged(nameof(PropertiesSectionText));
         OnPropertyChanged(nameof(EmptyScriptsText));
+        OnPropertyChanged(nameof(ShowEmptyScriptsState));
         OnPropertyChanged(nameof(VisibleScriptCountText));
         OnPropertyChanged(nameof(SelectedScriptSummary));
         OnPropertyChanged(nameof(HasSelectedScript));
@@ -638,6 +759,32 @@ public sealed class MyScriptsPageViewModel : ObservableObject
         OnPropertyChanged(nameof(PropertyTagsText));
         OnPropertyChanged(nameof(PropertyStateText));
         OnPropertyChanged(nameof(CopyScriptIdText));
+    }
+
+    private void OnLanguageChanged()
+    {
+        RefreshLocalizedContent();
+
+        if (_hasLoadedScripts)
+        {
+            _ = RefreshAsync();
+        }
+    }
+
+    private void UpdateLoadingProgress(ManagedScriptLibraryLoadProgress progress)
+    {
+        ArgumentNullException.ThrowIfNull(progress);
+
+        LoadingProgressMaximum = Math.Max(progress.TotalScriptCount, 1);
+        LoadingProgressValue = progress.TotalScriptCount == 0
+            ? 0
+            : Math.Min(progress.ProcessedScriptCount, progress.TotalScriptCount);
+        LoadingStatusText = progress.TotalScriptCount == 0
+            ? _localizationService.T("Library.Loading.Message")
+            : string.Format(
+                _localizationService.T("Library.Loading.Progress"),
+                progress.ProcessedScriptCount,
+                progress.TotalScriptCount);
     }
 
     private void ShowError(string titleKey, string message)

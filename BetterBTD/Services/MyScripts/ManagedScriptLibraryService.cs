@@ -92,13 +92,13 @@ public sealed class ManagedScriptLibraryService
         }
     }
 
-    public ManagedScriptLibrarySnapshot GetSnapshot()
+    public ManagedScriptLibrarySnapshot GetSnapshot(IProgress<ManagedScriptLibraryLoadProgress>? progress = null)
     {
         lock (_syncRoot)
         {
             var document = LoadManifest();
             MigrateDedicatedBindings(document);
-            RefreshCachedMetadata(document);
+            RefreshCachedMetadata(document, progress);
             SaveManifest(document);
             return BuildSnapshot(document);
         }
@@ -625,13 +625,29 @@ public sealed class ManagedScriptLibraryService
         File.WriteAllText(filePath, json);
     }
 
-    private void RefreshCachedMetadata(ManagedScriptLibraryDocument document)
+    private void RefreshCachedMetadata(
+        ManagedScriptLibraryDocument document,
+        IProgress<ManagedScriptLibraryLoadProgress>? progress = null)
     {
+        var totalScriptCount = document.Scripts.Count;
+        var processedScriptCount = 0;
+        progress?.Report(new ManagedScriptLibraryLoadProgress
+        {
+            TotalScriptCount = totalScriptCount,
+            ProcessedScriptCount = processedScriptCount
+        });
+
         foreach (var record in document.Scripts)
         {
             var storedFilePath = GetStoredFilePath(record);
             if (!File.Exists(storedFilePath))
             {
+                processedScriptCount++;
+                progress?.Report(new ManagedScriptLibraryLoadProgress
+                {
+                    TotalScriptCount = totalScriptCount,
+                    ProcessedScriptCount = processedScriptCount
+                });
                 continue;
             }
 
@@ -644,6 +660,12 @@ public sealed class ManagedScriptLibraryService
             record.Hero = scriptDocument.Metadata.Hero;
             record.Tags = [.. ScriptTagCatalog.NormalizeStoredTags(scriptDocument.Metadata.Tags)];
             record.UpdatedAt = File.GetLastWriteTimeUtc(storedFilePath);
+            processedScriptCount++;
+            progress?.Report(new ManagedScriptLibraryLoadProgress
+            {
+                TotalScriptCount = totalScriptCount,
+                ProcessedScriptCount = processedScriptCount
+            });
         }
     }
 
@@ -1075,6 +1097,17 @@ public sealed class ManagedScriptLibraryService
         document.Bindings = NormalizeBindingDictionary(document.Bindings);
         document.StageBindings = NormalizeStageBindingDictionary(document.StageBindings);
 
+        if (TryGetTaskKindForBindingFilePath(filePath, out var taskKind))
+        {
+            var templateBindings = BuildTaskBindingTemplate(taskKind).Bindings;
+            foreach (var binding in document.Bindings)
+            {
+                templateBindings[binding.Key] = binding.Value;
+            }
+
+            document.Bindings = templateBindings;
+        }
+
         if (!IsBlackBorderBindingFile(filePath))
         {
             return;
@@ -1205,6 +1238,41 @@ public sealed class ManagedScriptLibraryService
                 filePath = string.Empty;
                 return false;
         }
+    }
+
+    private bool TryGetTaskKindForBindingFilePath(string filePath, out AutoTaskKind taskKind)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
+
+        if (string.Equals(
+                Path.GetFullPath(filePath),
+                Path.GetFullPath(_blackBorderBindingsFilePath),
+                StringComparison.OrdinalIgnoreCase))
+        {
+            taskKind = AutoTaskKind.BlackBorder;
+            return true;
+        }
+
+        if (string.Equals(
+                Path.GetFullPath(filePath),
+                Path.GetFullPath(_collectionBindingsFilePath),
+                StringComparison.OrdinalIgnoreCase))
+        {
+            taskKind = AutoTaskKind.Collection;
+            return true;
+        }
+
+        if (string.Equals(
+                Path.GetFullPath(filePath),
+                Path.GetFullPath(_goldBalloonBindingsFilePath),
+                StringComparison.OrdinalIgnoreCase))
+        {
+            taskKind = AutoTaskKind.GoldBalloon;
+            return true;
+        }
+
+        taskKind = default;
+        return false;
     }
 
     private static void NormalizeRecord(ManagedScriptAssetRecord record)

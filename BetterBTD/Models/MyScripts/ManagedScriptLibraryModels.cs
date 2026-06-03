@@ -67,6 +67,13 @@ public sealed class ManagedScriptLibrarySnapshot
     public required IReadOnlyList<ManagedScriptSlotEntry> Slots { get; init; }
 }
 
+public sealed class ManagedScriptLibraryLoadProgress
+{
+    public required int TotalScriptCount { get; init; }
+
+    public required int ProcessedScriptCount { get; init; }
+}
+
 public sealed class ManagedScriptAssetEntry
 {
     public required string ScriptId { get; init; }

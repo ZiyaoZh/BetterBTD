@@ -182,6 +182,7 @@
                 <Grid MinHeight="0">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
@@ -199,7 +200,19 @@
                         </Border>
                     </DockPanel>
 
-                    <Grid Grid.Row="1"
+                    <StackPanel Grid.Row="1"
+                                Margin="0,16,0,0"
+                                Visibility="{Binding IsLoadingScripts, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock Style="{StaticResource CardDescriptionTextStyle}"
+                                   Text="{Binding LoadingStatusText}" />
+                        <ProgressBar Margin="0,10,0,0"
+                                     Height="6"
+                                     Minimum="0"
+                                     Maximum="{Binding LoadingProgressMaximum, Mode=OneWay}"
+                                     Value="{Binding LoadingProgressValue, Mode=OneWay}" />
+                    </StackPanel>
+
+                    <Grid Grid.Row="2"
                           Margin="0,16,0,0"
                           MinHeight="0">
                         <ListBox Style="{StaticResource FlatScriptListStyle}"
@@ -243,7 +256,7 @@
 
                         <StackPanel HorizontalAlignment="Center"
                                     VerticalAlignment="Center"
-                                    Visibility="{Binding HasScripts, Converter={StaticResource BooleanToVisibilityRevertConverter}}">
+                                    Visibility="{Binding ShowEmptyScriptsState, Converter={StaticResource BoolToVisibilityConverter}}">
                             <Border Width="60"
                                     Height="60"
                                     CornerRadius="20"

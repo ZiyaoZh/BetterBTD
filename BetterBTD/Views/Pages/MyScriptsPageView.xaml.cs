@@ -88,16 +88,26 @@ public partial class MyScriptsPageView : Page
         });
     }
 
-    private void OnLoaded(object sender, RoutedEventArgs e)
+    private async void OnLoaded(object sender, RoutedEventArgs e)
     {
         _hostWindow = Window.GetWindow(this);
         if (_hostWindow is null)
         {
+            if (DataContext is MyScriptsPageViewModel detachedViewModel)
+            {
+                await detachedViewModel.EnsureInitializedAsync();
+            }
+
             return;
         }
 
         _hostWindow.SizeChanged += OnHostWindowSizeChanged;
         UpdateMaxHeightFromHostWindow();
+
+        if (DataContext is MyScriptsPageViewModel viewModel)
+        {
+            await viewModel.EnsureInitializedAsync();
+        }
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)

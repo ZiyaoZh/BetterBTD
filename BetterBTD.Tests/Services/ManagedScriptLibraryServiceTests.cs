@@ -468,6 +468,75 @@ public sealed class ManagedScriptLibraryServiceTests
     }
 
     [Fact]
+    public void CollectionSubscription_Import_IntoEmptyLibrary_CreatesCompleteBindingTemplate()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), $"betterbtd-library-{Guid.NewGuid():N}");
+        var sourceDirectory = Path.Combine(rootDirectory, "source");
+        var exportPackagePath = Path.Combine(rootDirectory, "export", "collection-complete-template.btdsub");
+
+        try
+        {
+            Directory.CreateDirectory(sourceDirectory);
+
+            var sourceScriptPath = Path.Combine(sourceDirectory, "collection-script.btd");
+            var sourceDocument = CreateDocument(
+                GameMapType.DarkCastle,
+                StageDifficulty.Hard,
+                StageMode.CHIMPS,
+                ["collection"]);
+            ScriptDocumentService.Instance.Save(sourceScriptPath, sourceDocument);
+
+            var boundSlotId = ManagedScriptSlotIdFactory.CreateCollectionSlotId("simple", GameMapType.DarkCastle);
+
+            var sourceService = new ManagedScriptLibraryService(
+                Path.Combine(rootDirectory, "managed-source"),
+                ScriptDocumentService.Instance,
+                ManagedScriptSlotCatalogService.Instance);
+            var sourceImported = sourceService.ImportScript(sourceScriptPath);
+            sourceService.SetBinding(boundSlotId, sourceImported.ScriptId);
+
+            var sourceSubscriptionService = new CollectionScriptSubscriptionService(
+                sourceService,
+                ManagedScriptSlotCatalogService.Instance);
+            sourceSubscriptionService.Export(exportPackagePath);
+
+            var targetService = new ManagedScriptLibraryService(
+                Path.Combine(rootDirectory, "managed-target"),
+                ScriptDocumentService.Instance,
+                ManagedScriptSlotCatalogService.Instance);
+            var targetSubscriptionService = new CollectionScriptSubscriptionService(
+                targetService,
+                ManagedScriptSlotCatalogService.Instance);
+            targetSubscriptionService.Import(exportPackagePath);
+
+            var bindingFilePath = targetService.GetTaskBindingFilePath(AutoTaskKind.Collection);
+            var bindingDocument = JsonSerializer.Deserialize<ManagedScriptTaskBindingDocument>(File.ReadAllText(bindingFilePath));
+            Assert.NotNull(bindingDocument);
+
+            var expectedSlotIds = ManagedScriptSlotCatalogService.Instance
+                .GetByTaskKind(AutoTaskKind.Collection)
+                .Select(slot => slot.SlotId)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var actualSlotIds = bindingDocument.Bindings.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            Assert.Equal(expectedSlotIds.Count, bindingDocument.Bindings.Count);
+            Assert.True(expectedSlotIds.SetEquals(actualSlotIds));
+            Assert.Equal(sourceDocument.Metadata.ScriptId, bindingDocument.Bindings[boundSlotId]);
+
+            var unboundSlotId = expectedSlotIds.First(slotId => !string.Equals(slotId, boundSlotId, StringComparison.OrdinalIgnoreCase));
+            Assert.True(bindingDocument.Bindings.ContainsKey(unboundSlotId));
+            Assert.Equal(string.Empty, bindingDocument.Bindings[unboundSlotId]);
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public void BlackBorderSubscription_Export_OverwritesExistingFile()
     {
         var rootDirectory = Path.Combine(Path.GetTempPath(), $"betterbtd-library-{Guid.NewGuid():N}");
@@ -581,6 +650,87 @@ public sealed class ManagedScriptLibraryServiceTests
 
             var importedDocument = ScriptDocumentService.Instance.Load(resolvedFilePath);
             Assert.Equal(sourceDocument.Metadata.ScriptId, importedDocument.Metadata.ScriptId);
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void BlackBorderSubscription_Import_IntoEmptyLibrary_CreatesCompleteBindingTemplate()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), $"betterbtd-library-{Guid.NewGuid():N}");
+        var sourceDirectory = Path.Combine(rootDirectory, "source");
+        var exportPackagePath = Path.Combine(rootDirectory, "export", "blackborder-complete-template.btdsub");
+
+        try
+        {
+            Directory.CreateDirectory(sourceDirectory);
+
+            var sourceScriptPath = Path.Combine(sourceDirectory, "blackborder-script.btd");
+            var sourceDocument = CreateDocument(
+                GameMapType.MonkeyMeadow,
+                StageDifficulty.Easy,
+                StageMode.Standard,
+                ["black-border"]);
+            ScriptDocumentService.Instance.Save(sourceScriptPath, sourceDocument);
+
+            var boundSlotId = ManagedScriptSlotIdFactory.CreateBlackBorderSlotId(
+                GameMapType.MonkeyMeadow,
+                StageDifficulty.Easy,
+                StageMode.Standard);
+
+            var sourceService = new ManagedScriptLibraryService(
+                Path.Combine(rootDirectory, "managed-source"),
+                ScriptDocumentService.Instance,
+                ManagedScriptSlotCatalogService.Instance);
+            var sourceImported = sourceService.ImportScript(sourceScriptPath);
+            sourceService.SetBinding(boundSlotId, sourceImported.ScriptId);
+
+            var sourceSubscriptionService = new BlackBorderScriptSubscriptionService(
+                sourceService,
+                ManagedScriptSlotCatalogService.Instance);
+            sourceSubscriptionService.Export(
+                exportPackagePath,
+                new BlackBorderSubscriptionDescriptor
+                {
+                    ExportType = BlackBorderSubscriptionExportType.SingleMap,
+                    Map = GameMapType.MonkeyMeadow
+                });
+
+            var targetService = new ManagedScriptLibraryService(
+                Path.Combine(rootDirectory, "managed-target"),
+                ScriptDocumentService.Instance,
+                ManagedScriptSlotCatalogService.Instance);
+            var targetSubscriptionService = new BlackBorderScriptSubscriptionService(
+                targetService,
+                ManagedScriptSlotCatalogService.Instance);
+            targetSubscriptionService.Import(exportPackagePath);
+
+            var bindingFilePath = targetService.GetTaskBindingFilePath(AutoTaskKind.BlackBorder);
+            var bindingDocument = JsonSerializer.Deserialize<ManagedScriptTaskBindingDocument>(File.ReadAllText(bindingFilePath));
+            Assert.NotNull(bindingDocument);
+
+            var expectedSlotIds = ManagedScriptSlotCatalogService.Instance
+                .GetByTaskKind(AutoTaskKind.BlackBorder)
+                .Select(slot => slot.SlotId)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var actualSlotIds = bindingDocument.Bindings.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            Assert.Equal(expectedSlotIds.Count, bindingDocument.Bindings.Count);
+            Assert.True(expectedSlotIds.SetEquals(actualSlotIds));
+            Assert.Equal(sourceDocument.Metadata.ScriptId, bindingDocument.Bindings[boundSlotId]);
+
+            var unboundSlotId = ManagedScriptSlotIdFactory.CreateBlackBorderSlotId(
+                GameMapType.DarkCastle,
+                StageDifficulty.Hard,
+                StageMode.CHIMPS);
+            Assert.True(bindingDocument.Bindings.ContainsKey(unboundSlotId));
+            Assert.Equal(string.Empty, bindingDocument.Bindings[unboundSlotId]);
         }
         finally
         {
