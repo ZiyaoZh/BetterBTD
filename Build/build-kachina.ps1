@@ -36,7 +36,7 @@ if (Test-Path $customPanelPath) {
 }
 
 if ($null -ne $customMediaPath) {
-    $updaterBrandingArgs += @("-m", $customMediaPath)
+    $updaterBrandingArgs += @("-t", $customMediaPath)
 }
 
 if (-not (Test-Path $OutputDir)) {
