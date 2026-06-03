@@ -8,7 +8,7 @@
 		<LangVersion>12.0</LangVersion>
 		<UseWindowsForms>True</UseWindowsForms>
 		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-		<PlatformTarget>AnyCPU</PlatformTarget>
+		<PlatformTarget>x64</PlatformTarget>
     </PropertyGroup>
 
 	<ItemGroup>

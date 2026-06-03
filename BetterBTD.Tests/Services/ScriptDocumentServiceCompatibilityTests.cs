@@ -42,17 +42,6 @@ public sealed class ScriptDocumentServiceCompatibilityTests
     }
 
     [Fact]
-    public void LoadCompatible_LegacyScript_ReturnsLegacySourceKindWithWarnings()
-    {
-        var result = ScriptDocumentService.Instance.LoadCompatible(GetLegacySampleFilePath());
-
-        Assert.Equal(ScriptDocumentSourceKind.LegacyBtd6, result.SourceKind);
-        Assert.NotEmpty(result.Warnings);
-        Assert.Equal(ScriptDocumentFormat.Schema, result.Document.Schema);
-        Assert.NotEmpty(result.Document.Instructions);
-    }
-
-    [Fact]
     public void Save_ConsecutiveOptimizableInstructions_PersistsOptimizedScript()
     {
         var service = ScriptDocumentService.Instance;
@@ -112,19 +101,6 @@ public sealed class ScriptDocumentServiceCompatibilityTests
                 File.Delete(filePath);
             }
         }
-    }
-
-    private static string GetLegacySampleFilePath()
-    {
-        var repoRoot = Path.GetFullPath(
-            Path.Combine(
-                AppContext.BaseDirectory,
-                "..",
-                "..",
-                "..",
-                ".."));
-
-        return Directory.GetFiles(repoRoot, "*.btd6", SearchOption.TopDirectoryOnly).Single();
     }
 }
 

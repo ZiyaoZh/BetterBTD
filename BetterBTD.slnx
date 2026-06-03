@@ -1,22 +1,26 @@
 <Solution>
   <Project Path="Fischless.GameCapture/Fischless.GameCapture.csproj">
-    <Platform Project="x64" />
+    <Platform Solution="*|Any CPU" Project="x64" />
+    <Platform Solution="*|x64" Project="x64" />
   </Project>
   <Project Path="Fischless.HotkeyCapture/Fischless.HotkeyCapture.csproj">
-    <Platform Project="x64" />
+    <Platform Solution="*|Any CPU" Project="x64" />
+    <Platform Solution="*|x64" Project="x64" />
   </Project>
   <Project Path="Fischless.WindowsInput/Fischless.WindowsInput.csproj">
-    <Platform Project="x64" />
+    <Platform Solution="*|Any CPU" Project="x64" />
+    <Platform Solution="*|x64" Project="x64" />
   </Project>
   <Project Path="BetterBTD/BetterBTD.csproj">
+    <Platform Solution="*|Any CPU" Project="x64" />
     <Platform Solution="*|x64" Project="x64" />
-    <Platform Solution="Debug|Any CPU" Project="x64" />
   </Project>
   <Configurations>
     <Platform Name="Any CPU" />
     <Platform Name="x64" />
   </Configurations>
   <Project Path="BetterBTD.Tests/BetterBTD.Tests.csproj">
-    <Platform Solution="Release|x64" Project="x64" />
+    <Platform Solution="*|Any CPU" Project="x64" />
+    <Platform Solution="*|x64" Project="x64" />
   </Project>
 </Solution>

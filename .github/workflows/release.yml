@@ -54,13 +54,14 @@ jobs:
           dotnet build BetterBTD.slnx
           -c Release
           --no-restore
+          /p:Platform=x64
           /p:Version=${{ env.APP_VERSION }}
           /p:InformationalVersion=${{ env.APP_VERSION }}
           /p:AssemblyVersion=${{ env.FILE_VERSION }}
           /p:FileVersion=${{ env.FILE_VERSION }}
 
       - name: Test
-        run: dotnet test BetterBTD.slnx -c Release --no-build --verbosity normal
+        run: dotnet test BetterBTD.slnx -c Release --no-build --verbosity normal /p:Platform=x64
 
       - name: Publish App
         shell: pwsh
@@ -69,8 +70,8 @@ jobs:
             -c Release `
             -r win-x64 `
             --self-contained true `
-            --no-build `
             -o artifacts\publish\win-x64 `
+            /p:Platform=x64 `
             /p:Version=${env:APP_VERSION} `
             /p:InformationalVersion=${env:APP_VERSION} `
             /p:AssemblyVersion=${env:FILE_VERSION} `
