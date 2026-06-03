@@ -282,7 +282,7 @@ public sealed class GameUiDetectionConfigService
                 CreateRule("collection_event_gold", "收集活动界面", GameUiStateId.CollectionEvent, 615,
                     Eq(750, 60, "#FFD400"), Eq(1100, 60, "#FFD400")),
                 CreateRule("odyssey_start", "Odyssey start", GameUiStateId.OdysseyStart, 614,
-                    Eq(1760, 960, "#FFFFFF"), Eq(600, 70, "#AB927C"), Eq(1320, 70, "#AB927C"), Eq(1000, 940, "#1190FF")),
+                    Eq(1760, 960, "#FFFFFF"), Eq(600, 70, "#AB927C"), Eq(1320, 70, "#AB927C"), Eq(1900, 80, "#1190FF")),
                 CreateRule("odyssey_crew", "Odyssey crew", GameUiStateId.OdysseyCrew, 613,
                     Eq(330, 500, "#CBA774"), Eq(1360, 350, "#B4874F"), Eq(1360, 650, "#B4874F")),
                 CreateRule("odyssey_loading", "Odyssey loading", GameUiStateId.OdysseyLoading, 612,
