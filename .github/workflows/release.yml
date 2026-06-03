@@ -93,6 +93,9 @@ jobs:
           dnx vpk --version $env:VPK_VERSION -- pack `
             --packId BetterBTD `
             --packVersion $env:APP_VERSION `
+            --msi `
+            --msiVersion $env:FILE_VERSION `
+            --instLocation Either `
             --packDir artifacts\publish\win-x64 `
             --mainExe BetterBTD.exe `
             --packAuthors ZiyaoZh `
