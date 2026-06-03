@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -18,7 +17,6 @@ public sealed class SettingsPageViewModel : ObservableObject
     private readonly LocalizationService _localizationService;
     private readonly ThemeService _themeService;
     private readonly ApplicationUpdateService _applicationUpdateService;
-    private readonly AppDialogService _appDialogService;
 
     private LanguageOption? _selectedUiLanguage;
     private LanguageOption? _selectedGameLanguage;
@@ -36,7 +34,6 @@ public sealed class SettingsPageViewModel : ObservableObject
         _localizationService = LocalizationService.Instance;
         _themeService = ThemeService.Instance;
         _applicationUpdateService = ApplicationUpdateService.Instance;
-        _appDialogService = AppDialogService.Instance;
 
         UiLanguageOptions = [];
         GameLanguageOptions = [];
@@ -44,8 +41,7 @@ public sealed class SettingsPageViewModel : ObservableObject
 
         UpdateUiLanguageCommand = new RelayCommand(UpdateUiLanguage);
         OpenKeyBindingsWindowCommand = new RelayCommand(OpenKeyBindingsWindow);
-        CheckUpdateCommand = new AsyncRelayCommand(() => CheckForUpdatesAsync(includePrerelease: false));
-        CheckUpdateAlphaCommand = new AsyncRelayCommand(() => CheckForUpdatesAsync(includePrerelease: true));
+        CheckUpdateCommand = new RelayCommand(OpenUpdater);
         OpenAboutCommand = new RelayCommand(OpenAbout);
         SaveCommand = new RelayCommand(Save);
         ResetCommand = new RelayCommand(ResetDefaults);
@@ -129,9 +125,7 @@ public sealed class SettingsPageViewModel : ObservableObject
 
     public IRelayCommand OpenKeyBindingsWindowCommand { get; }
 
-    public IAsyncRelayCommand CheckUpdateCommand { get; }
-
-    public IAsyncRelayCommand CheckUpdateAlphaCommand { get; }
+    public IRelayCommand CheckUpdateCommand { get; }
 
     public IRelayCommand OpenAboutCommand { get; }
 
@@ -173,8 +167,6 @@ public sealed class SettingsPageViewModel : ObservableObject
     public string CardUpdateTitle => _localizationService.T("Settings.Card.Update.Title");
     public string CardUpdateDescription => _localizationService.T("Settings.Card.Update.Description");
     public string CheckUpdateText => _localizationService.T("Settings.CheckUpdate");
-    public string CheckUpdateAlphaTitle => _localizationService.T("Settings.CheckUpdateAlpha.Title");
-    public string CheckUpdateAlphaDescription => _localizationService.T("Settings.CheckUpdateAlpha.Description");
 
     public string CardAboutTitle => _localizationService.T("Settings.Card.About.Title");
     public string CardAboutDescription => _localizationService.T("Settings.Card.About.Description");
@@ -253,52 +245,16 @@ public sealed class SettingsPageViewModel : ObservableObject
         });
     }
 
-    private async Task CheckForUpdatesAsync(bool includePrerelease)
+    private void OpenUpdater()
     {
         try
         {
-            UpdateStatusText = includePrerelease
-                ? "Checking for the latest preview build..."
-                : "Checking for updates...";
-
-            var result = await _applicationUpdateService.CheckForUpdatesAsync(includePrerelease);
-            UpdateStatusText = result.Message;
-
-            if (result.State is ApplicationUpdateState.UpdateDownloaded or ApplicationUpdateState.UpdateReadyToApply)
-            {
-                var dialogResult = _appDialogService.Show(new AppDialogRequest
-                {
-                    Title = CardUpdateTitle,
-                    Message = result.Message,
-                    PrimaryButtonText = "Restart now",
-                    SecondaryButtonText = "Later"
-                });
-
-                if (dialogResult == AppDialogResult.Primary)
-                {
-                    _applicationUpdateService.ApplyUpdatesAndRestart(result.Release);
-                }
-
-                return;
-            }
-
-            _ = _appDialogService.Show(new AppDialogRequest
-            {
-                Title = CardUpdateTitle,
-                Message = result.Message,
-                PrimaryButtonText = "Close"
-            });
+            _applicationUpdateService.TryLaunchUpdater(out var message);
+            UpdateStatusText = message;
         }
         catch (Exception ex)
         {
-            UpdateStatusText = $"Update check failed: {ex.Message}";
-
-            _ = _appDialogService.Show(new AppDialogRequest
-            {
-                Title = CardUpdateTitle,
-                Message = UpdateStatusText,
-                PrimaryButtonText = "Close"
-            });
+            UpdateStatusText = $"Unable to open updater: {ex.Message}";
         }
     }
 
@@ -390,8 +346,6 @@ public sealed class SettingsPageViewModel : ObservableObject
         OnPropertyChanged(nameof(CardUpdateTitle));
         OnPropertyChanged(nameof(CardUpdateDescription));
         OnPropertyChanged(nameof(CheckUpdateText));
-        OnPropertyChanged(nameof(CheckUpdateAlphaTitle));
-        OnPropertyChanged(nameof(CheckUpdateAlphaDescription));
         OnPropertyChanged(nameof(CardAboutTitle));
         OnPropertyChanged(nameof(CardAboutDescription));
         OnPropertyChanged(nameof(OpenText));

@@ -23,7 +23,6 @@
     <PackageVersion Include="Vanara.PInvoke.SHCore" Version="5.0.4" />
     <PackageVersion Include="Vanara.PInvoke.User32" Version="5.0.4" />
     <PackageVersion Include="Vanara.Windows.Extensions" Version="5.0.4" />
-    <PackageVersion Include="Velopack" Version="1.1.1" />
     <PackageVersion Include="WPF-UI" Version="4.2.0" />
     <PackageVersion Include="WPF-UI.DependencyInjection" Version="4.2.0" />
     <PackageVersion Include="WPF-UI.Tray" Version="4.2.0" />

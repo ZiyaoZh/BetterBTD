@@ -10,7 +10,7 @@ permissions:
 
 env:
   DOTNET_VERSION: "8.0.x"
-  VPK_VERSION: "1.1.1"
+  KACHINA_BUILDER_URL: "https://github.com/YuehaiTeam/kachina-installer/releases/latest/download/kachina-builder.exe"
 
 jobs:
   release:
@@ -77,42 +77,29 @@ jobs:
             /p:AssemblyVersion=${env:FILE_VERSION} `
             /p:FileVersion=${env:FILE_VERSION}
 
-      - name: Download Previous Packages
-        continue-on-error: true
+      - name: Download Kachina Builder
         shell: pwsh
         run: |
-          dnx vpk --version $env:VPK_VERSION -- download github `
-            --repoUrl $env:REPO_URL `
-            --token ${{ secrets.GITHUB_TOKEN }} `
-            --outputDir artifacts\Releases `
-            --pre $env:IS_PRERELEASE
+          Invoke-WebRequest -Uri $env:KACHINA_BUILDER_URL -OutFile artifacts\kachina-builder.exe
 
       - name: Pack Release
         shell: pwsh
         run: |
-          dnx vpk --version $env:VPK_VERSION -- pack `
-            --packId BetterBTD `
-            --packVersion $env:APP_VERSION `
-            --msi `
-            --msiVersion $env:FILE_VERSION `
-            --instLocation Either `
-            --packDir artifacts\publish\win-x64 `
-            --mainExe BetterBTD.exe `
-            --packAuthors ZiyaoZh `
-            --packTitle BetterBTD `
-            --outputDir artifacts\Releases
+          .\Build\build-kachina.ps1 `
+            -BuilderPath artifacts\kachina-builder.exe `
+            -ConfigPath Build\kachina.config.json `
+            -InputDir artifacts\publish\win-x64 `
+            -Version $env:APP_VERSION `
+            -OutputDir artifacts\Releases
 
       - name: Upload Release
-        shell: pwsh
-        run: |
-          dnx vpk --version $env:VPK_VERSION -- upload github `
-            --repoUrl $env:REPO_URL `
-            --token ${{ secrets.GITHUB_TOKEN }} `
-            --outputDir artifacts\Releases `
-            --publish true `
-            --pre $env:IS_PRERELEASE `
-            --releaseName "BetterBTD $env:APP_VERSION" `
-            --tag $env:APP_TAG
+        uses: softprops/action-gh-release@v2
+        with:
+          prerelease: ${{ env.IS_PRERELEASE == 'true' }}
+          generate_release_notes: true
+          files: |
+            artifacts/Releases/BetterBTD.Install.exe
+            artifacts/Releases/BetterBTD.update.exe
 
       - name: Upload Workflow Artifacts
         uses: actions/upload-artifact@v4

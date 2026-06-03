@@ -1,26 +1,14 @@
 using System.Diagnostics;
+using System.IO;
 using System.Reflection;
-using Velopack;
-using Velopack.Sources;
 
 namespace BetterBTD.Services.Updates;
-
-public enum ApplicationUpdateState
-{
-    NotSupported,
-    NoUpdateAvailable,
-    UpdateReadyToApply,
-    UpdateDownloaded
-}
-
-public sealed record ApplicationUpdateResult(
-    ApplicationUpdateState State,
-    string Message,
-    VelopackAsset? Release = null);
 
 public sealed class ApplicationUpdateService
 {
     private const string RepositoryUrl = "https://github.com/ZiyaoZh/BetterBTD";
+    private const string ReleasesUrl = $"{RepositoryUrl}/releases/latest";
+    private const string UpdaterExecutableName = "BetterBTD.update.exe";
     private static readonly Lazy<ApplicationUpdateService> InstanceHolder = new(() => new ApplicationUpdateService());
 
     private ApplicationUpdateService()
@@ -31,67 +19,37 @@ public sealed class ApplicationUpdateService
 
     public string CurrentVersion
     {
-        get
-        {
-            var manager = CreateUpdateManager(includePrerelease: false);
-            var version = manager.CurrentVersion?.ToString();
-            return string.IsNullOrWhiteSpace(version) ? GetFallbackVersion() : version;
-        }
+        get => GetFallbackVersion();
     }
 
-    public async Task<ApplicationUpdateResult> CheckForUpdatesAsync(bool includePrerelease, CancellationToken cancellationToken = default)
+    public bool TryLaunchUpdater(out string message)
     {
-        var manager = CreateUpdateManager(includePrerelease);
-
-        if (!manager.IsInstalled && !manager.IsPortable)
+        var updaterPath = Path.Combine(AppContext.BaseDirectory, UpdaterExecutableName);
+        if (!File.Exists(updaterPath))
         {
-            return new ApplicationUpdateResult(
-                ApplicationUpdateState.NotSupported,
-                "Update checks are available only from an installed BetterBTD release.");
+            OpenLatestReleasePage();
+            message = "BetterBTD.update.exe was not found. Opened the latest release page instead.";
+            return false;
         }
 
-        if (manager.UpdatePendingRestart is { } pendingRelease)
+        Process.Start(new ProcessStartInfo
         {
-            return new ApplicationUpdateResult(
-                ApplicationUpdateState.UpdateReadyToApply,
-                $"Update {pendingRelease.Version} is ready to apply. Restart BetterBTD to finish the update.",
-                pendingRelease);
-        }
-
-        var update = await manager.CheckForUpdatesAsync();
-        if (update is null)
-        {
-            return new ApplicationUpdateResult(
-                ApplicationUpdateState.NoUpdateAvailable,
-                $"BetterBTD {CurrentVersion} is already up to date.");
-        }
-
-        await manager.DownloadUpdatesAsync(update, null, cancellationToken);
-
-        return new ApplicationUpdateResult(
-            ApplicationUpdateState.UpdateDownloaded,
-            $"Update {update.TargetFullRelease.Version} has been downloaded. Restart BetterBTD to apply it.",
-            update.TargetFullRelease);
-    }
-
-    public void ApplyUpdatesAndRestart(VelopackAsset? release = null)
-    {
-        var manager = CreateUpdateManager(includePrerelease: false);
-        manager.ApplyUpdatesAndRestart(release);
+            FileName = updaterPath,
+            WorkingDirectory = AppContext.BaseDirectory,
+            UseShellExecute = true
+        });
+        message = "Opened BetterBTD updater.";
+        return true;
     }
 
     public void OpenProjectHomePage()
     {
-        Process.Start(new ProcessStartInfo
-        {
-            FileName = RepositoryUrl,
-            UseShellExecute = true
-        });
+        OpenUrl(RepositoryUrl);
     }
 
-    private static UpdateManager CreateUpdateManager(bool includePrerelease)
+    public void OpenLatestReleasePage()
     {
-        return new UpdateManager(new GithubSource(RepositoryUrl, accessToken: null, prerelease: includePrerelease));
+        OpenUrl(ReleasesUrl);
     }
 
     private static string GetFallbackVersion()
@@ -105,5 +63,14 @@ public sealed class ApplicationUpdateService
         }
 
         return Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "dev";
+    }
+
+    private static void OpenUrl(string url)
+    {
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = url,
+            UseShellExecute = true
+        });
     }
 }

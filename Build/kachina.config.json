@@ -1,0 +1,14 @@
+{
+  "appName": "BetterBTD",
+  "publisher": "ZiyaoZh",
+  "regName": "BetterBTD",
+  "exeName": "BetterBTD.exe",
+  "uninstallName": "BetterBTD.uninst.exe",
+  "updaterName": "BetterBTD.update.exe",
+  "title": "BetterBTD",
+  "windowTitle": "BetterBTD Installer",
+  "description": "BetterBTD desktop installer and updater",
+  "mainFeature": "Install or update BetterBTD",
+  "programFilesPath": "BetterBTD",
+  "source": "https://github.com/ZiyaoZh/BetterBTD/releases/latest/download/BetterBTD.Install.exe"
+}
