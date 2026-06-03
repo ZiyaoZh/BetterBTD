@@ -20,7 +20,7 @@ public sealed class StartPageViewModel : ObservableObject
     private readonly AppDialogService _appDialogService;
 
     private bool _isCapturerRunning;
-    private string _selectedCaptureMode = "BitBlt";
+    private string _selectedCaptureMode = nameof(Fischless.GameCapture.CaptureModes.WindowsGraphicsCapture);
     private int _triggerIntervalMs = 50;
     private bool _linkedStartEnabled;
     private string _installPath = string.Empty;
@@ -345,7 +345,7 @@ public sealed class StartPageViewModel : ObservableObject
             if (string.IsNullOrWhiteSpace(configuredCaptureMode) ||
                 !CaptureModes.Contains(configuredCaptureMode))
             {
-                configuredCaptureMode = CaptureModes.FirstOrDefault() ?? "BitBlt";
+                configuredCaptureMode = CaptureModes.FirstOrDefault() ?? nameof(Fischless.GameCapture.CaptureModes.WindowsGraphicsCapture);
             }
 
             _selectedCaptureMode = configuredCaptureMode;

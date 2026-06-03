@@ -23,7 +23,16 @@ public sealed class GameCaptureService
     {
         _gameWindowInfoService = GameWindowInfoService.Instance;
         _templateMatchService = TemplateMatchService.Instance;
-        _availableCaptureModes = Array.AsReadOnly(GameCaptureFactory.ModeNames());
+        _availableCaptureModes = Array.AsReadOnly(
+            GameCaptureFactory
+                .ModeNames()
+                .OrderBy(modeName => modeName switch
+                {
+                    nameof(CaptureModes.WindowsGraphicsCapture) => 0,
+                    nameof(CaptureModes.BitBlt) => 1,
+                    _ => 2
+                })
+                .ToArray());
     }
 
     public static GameCaptureService Instance => InstanceHolder.Value;

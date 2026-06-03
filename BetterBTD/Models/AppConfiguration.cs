@@ -4,9 +4,9 @@ namespace BetterBTD.Models;
 
 public sealed class AppConfiguration
 {
-    public string MaskWindowTargetTitle { get; set; } = "testWindow";
+    public string MaskWindowTargetTitle { get; set; } = "BloonsTD6";
 
-    public string CaptureModeName { get; set; } = "BitBlt";
+    public string CaptureModeName { get; set; } = "WindowsGraphicsCapture";
 
     public bool AutoFixWin11BitBlt { get; set; }
 

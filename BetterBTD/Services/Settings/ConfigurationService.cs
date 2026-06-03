@@ -64,7 +64,7 @@ public sealed class ConfigurationService
             var config = JsonSerializer.Deserialize<AppConfiguration>(json) ?? new AppConfiguration();
             config.KeyBindings ??= new BetterBTD.Core.Config.KeyBindingsConfig();
             config.CaptureModeName = string.IsNullOrWhiteSpace(config.CaptureModeName)
-                ? "BitBlt"
+                ? nameof(Fischless.GameCapture.CaptureModes.WindowsGraphicsCapture)
                 : config.CaptureModeName;
             config.KeyboardMouseSimulationModeName =
                 KeyboardMouseSimulationModeExtensions.Parse(config.KeyboardMouseSimulationModeName).ToConfigurationValue();
