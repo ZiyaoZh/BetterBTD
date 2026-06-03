@@ -60,4 +60,8 @@ if ($LASTEXITCODE -ne 0) {
     throw "Kachina installer generation failed."
 }
 
+if (Test-Path $updaterPath) {
+    Remove-Item -LiteralPath $updaterPath -Force
+}
+
 Remove-Item -LiteralPath $tempDir -Recurse -Force

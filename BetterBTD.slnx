@@ -15,10 +15,6 @@
     <Platform Solution="*|Any CPU" Project="x64" />
     <Platform Solution="*|x64" Project="x64" />
   </Project>
-  <Project Path="BetterBTD.SetupBootstrapper/BetterBTD.SetupBootstrapper.csproj">
-    <Platform Solution="*|Any CPU" Project="Any CPU" />
-    <Platform Solution="*|x64" Project="Any CPU" />
-  </Project>
   <Configurations>
     <Platform Name="Any CPU" />
     <Platform Name="x64" />

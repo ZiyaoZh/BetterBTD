@@ -79,13 +79,6 @@ jobs:
 
           Get-ChildItem artifacts\publish\win-x64 -File -Filter *.pdb | Remove-Item -Force
 
-      - name: Build Setup Bootstrapper
-        shell: pwsh
-        run: |
-          dotnet publish BetterBTD.SetupBootstrapper\BetterBTD.SetupBootstrapper.csproj `
-            -c Release `
-            -o artifacts\bootstrapper
-
       - name: Download Kachina Builder
         shell: pwsh
         run: |
@@ -101,15 +94,12 @@ jobs:
             -Version $env:APP_VERSION `
             -OutputDir artifacts\Releases
 
-          Copy-Item artifacts\bootstrapper\BetterBTD.SetupBootstrapper.exe artifacts\Releases\BetterBTD.Setup.exe -Force
-
       - name: Upload Release
         uses: softprops/action-gh-release@v2
         with:
           prerelease: ${{ env.IS_PRERELEASE == 'true' }}
           generate_release_notes: true
           files: |
-            artifacts/Releases/BetterBTD.Setup.exe
             artifacts/Releases/BetterBTD.Install.exe
 
       - name: Upload Workflow Artifacts
