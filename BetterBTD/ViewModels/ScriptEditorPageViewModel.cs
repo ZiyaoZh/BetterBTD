@@ -21,6 +21,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GongSolutions.Wpf.DragDrop;
 using Microsoft.Win32;
+using Vanara.PInvoke;
 using Wpf.Ui.Violeta.Controls;
 
 namespace BetterBTD.ViewModels;
@@ -2022,19 +2023,23 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         var scriptRelativePoint = _coordinateTransformService.ToScriptCoordinate(referenceRelativePoint, windowInfo);
         var isInsideClientArea = _coordinateTransformService.GetReferenceBounds(windowInfo).Contains(cursorPosition);
 
-        UpdateCoordinateSelectionAnchor(windowInfo, clientRelativePoint, scriptRelativePoint, isInsideClientArea);
+        var sampledColorHex = TryGetScreenPixelColorHex(cursorPosition, out var screenPixelColorHex)
+            ? screenPixelColorHex
+            : "#000000";
+
+        UpdateCoordinateSelectionAnchor(windowInfo, clientRelativePoint, scriptRelativePoint, sampledColorHex, isInsideClientArea);
 
         var isRightMouseButtonDown = NativeWindowHelper.IsRightMouseButtonDown();
         if (isRightMouseButtonDown && !_wasRightMouseButtonDown && isInsideClientArea)
         {
-            CompleteCoordinateSelection(scriptRelativePoint.X, scriptRelativePoint.Y);
+            CompleteCoordinateSelection(scriptRelativePoint.X, scriptRelativePoint.Y, sampledColorHex);
             return;
         }
 
         _wasRightMouseButtonDown = isRightMouseButtonDown;
     }
 
-    private void UpdateCoordinateSelectionAnchor(GameWindowInfo windowInfo, Point clientRelativePoint, Point scriptRelativePoint, bool isInsideTargetWindow)
+    private void UpdateCoordinateSelectionAnchor(GameWindowInfo windowInfo, Point clientRelativePoint, Point scriptRelativePoint, string sampledColorHex, bool isInsideTargetWindow)
     {
         var strokeColor = isInsideTargetWindow ? CoordinateSelectionActiveColor : CoordinateSelectionInactiveColor;
         var hasAspectRatioWarning = !_coordinateTransformService.HasReferenceAspectRatio(windowInfo);
@@ -2047,7 +2052,8 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
             scriptRelativePoint.X.ToString("0.##"),
             scriptRelativePoint.Y.ToString("0.##"),
             clientRelativePoint.X.ToString("0.##"),
-            clientRelativePoint.Y.ToString("0.##"));
+            clientRelativePoint.Y.ToString("0.##"),
+            sampledColorHex);
 
         if (hasAspectRatioWarning)
         {
@@ -2085,7 +2091,7 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         });
     }
 
-    private void CompleteCoordinateSelection(double x, double y)
+    private void CompleteCoordinateSelection(double x, double y, string? sampledColorHex = null)
     {
         var instruction = _activeCoordinateSelectionInstruction;
         var selectionTarget = _activeCoordinateSelectionTarget;
@@ -2110,11 +2116,39 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
                 case CoordinateSelectionTarget.WaitColor:
                     instruction.WaitColorCoordinateX = x;
                     instruction.WaitColorCoordinateY = y;
+                    if (!string.IsNullOrWhiteSpace(sampledColorHex))
+                    {
+                        instruction.WaitColorHex = sampledColorHex;
+                    }
                     break;
             }
         });
 
         CancelCoordinateSelection();
+    }
+
+    private static bool TryGetScreenPixelColorHex(Point screenPoint, out string colorHex)
+    {
+        colorHex = string.Empty;
+
+        using User32.SafeReleaseHDC screenDc = User32.GetDC(IntPtr.Zero);
+        if (screenDc.IsInvalid)
+        {
+            return false;
+        }
+
+        var colorRef = Gdi32.GetPixel(
+            screenDc,
+            (int)Math.Round(screenPoint.X),
+            (int)Math.Round(screenPoint.Y));
+
+        if ((uint)colorRef == uint.MaxValue)
+        {
+            return false;
+        }
+
+        colorHex = $"#{colorRef.R:X2}{colorRef.G:X2}{colorRef.B:X2}";
+        return true;
     }
 
     private void ClearCoordinateSelectionPreview()
