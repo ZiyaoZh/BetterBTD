@@ -7,7 +7,7 @@
       xmlns:controls="clr-namespace:BetterBTD.Views.Controls"
       mc:Ignorable="d">
     <StackPanel Margin="42,16,42,12">
-        <Border Height="200" CornerRadius="8">
+        <Border Height="220" CornerRadius="8">
             <Border.ContextMenu>
                 <ContextMenu>
                     <ui:MenuItem Header="{Binding ChangeBannerText}" Command="{Binding ChangeBannerImageCommand}" Icon="{ui:SymbolIcon Image24}" />
@@ -17,10 +17,20 @@
             <Grid>
                 <Border ClipToBounds="True" CornerRadius="8">
                     <Border.Background>
-                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                            <GradientStop Color="#2A3E62" Offset="0" />
-                            <GradientStop Color="#1C2A42" Offset="0.6" />
-                            <GradientStop Color="#142033" Offset="1" />
+                        <ImageBrush ImageSource="pack://application:,,,/BetterBTD;component/Assets/Images/Start/EziliSmudgeCatBanner.jpg"
+                                    Stretch="UniformToFill"
+                                    AlignmentX="Center"
+                                    AlignmentY="Center" />
+                    </Border.Background>
+                </Border>
+
+                <Border ClipToBounds="True" CornerRadius="8">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
+                            <GradientStop Color="#CC0E1422" Offset="0" />
+                            <GradientStop Color="#880E1422" Offset="0.45" />
+                            <GradientStop Color="#220E1422" Offset="0.8" />
+                            <GradientStop Color="#000E1422" Offset="1" />
                         </LinearGradientBrush>
                     </Border.Background>
                     <Border.OpacityMask>
@@ -31,7 +41,7 @@
                     </Border.OpacityMask>
                 </Border>
 
-                <StackPanel Margin="52,0,0,26"
+                <StackPanel Margin="52,0,0,30"
                             HorizontalAlignment="Left"
                             VerticalAlignment="Bottom"
                             Background="Transparent">
