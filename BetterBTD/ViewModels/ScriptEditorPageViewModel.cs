@@ -1587,7 +1587,17 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
 
     private void DeleteSelectedSequenceInstructions(IList? selectedItems)
     {
-        var selectedInstructions = selectedItems?.OfType<ScriptInstructionInstance>().Distinct().ToList() ?? [];
+        var selectedInstructions = selectedItems?
+            .OfType<ScriptInstructionInstance>()
+            .Distinct()
+            .Select(instruction => new
+            {
+                Instruction = instruction,
+                Index = InstructionSequence.IndexOf(instruction)
+            })
+            .Where(item => item.Index >= 0)
+            .OrderBy(item => item.Index)
+            .ToList() ?? [];
         if (selectedInstructions.Count == 0)
         {
             return;
@@ -1595,12 +1605,21 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
 
         ExecuteTrackedSequenceMutation(() =>
         {
+            var nextSelectionIndex = selectedInstructions[0].Index;
+
             foreach (var instruction in selectedInstructions)
             {
-                InstructionSequence.Remove(instruction);
+                InstructionSequence.Remove(instruction.Instruction);
             }
 
-            SelectedSequenceInstruction = InstructionSequence.FirstOrDefault();
+            if (InstructionSequence.Count == 0)
+            {
+                SelectedSequenceInstruction = null;
+                return;
+            }
+
+            var resolvedSelectionIndex = Math.Min(nextSelectionIndex, InstructionSequence.Count - 1);
+            SelectedSequenceInstruction = InstructionSequence[resolvedSelectionIndex];
         });
     }
 
