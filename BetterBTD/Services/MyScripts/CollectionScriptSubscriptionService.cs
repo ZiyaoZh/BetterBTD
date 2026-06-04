@@ -93,7 +93,7 @@ public sealed class CollectionScriptSubscriptionService
         writer.Write(JsonSerializer.Serialize(manifest, JsonOptions));
     }
 
-    public void Import(string sourceFilePath)
+    public void Import(string sourceFilePath, IProgress<SubscriptionImportProgress>? progress = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sourceFilePath);
 
@@ -113,6 +113,11 @@ public sealed class CollectionScriptSubscriptionService
         }
 
         ValidateManifest(manifest);
+        progress?.Report(new SubscriptionImportProgress
+        {
+            ProcessedScriptCount = 0,
+            TotalScriptCount = manifest.Scripts.Count
+        });
 
         var importedScriptIdsByScriptId = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var tempRoot = Path.Combine(Path.GetTempPath(), $"betterbtd-collection-subscription-{Guid.NewGuid():N}");
@@ -137,6 +142,11 @@ public sealed class CollectionScriptSubscriptionService
                 }
 
                 importedScriptIdsByScriptId[script.ScriptId] = imported.ScriptId;
+                progress?.Report(new SubscriptionImportProgress
+                {
+                    ProcessedScriptCount = importedScriptIdsByScriptId.Count,
+                    TotalScriptCount = manifest.Scripts.Count
+                });
             }
 
             foreach (var binding in manifest.Bindings)

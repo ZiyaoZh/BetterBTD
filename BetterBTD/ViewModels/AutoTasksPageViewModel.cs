@@ -49,6 +49,7 @@ public sealed class AutoTasksPageViewModel : ObservableObject
 
     private readonly LocalizationService _localizationService;
     private readonly AppDialogService _appDialogService;
+    private readonly ImportProgressDialogService _importProgressDialogService;
     private readonly AutoTaskCoordinator _autoTaskCoordinator;
     private readonly ManagedScriptLibraryService _managedScriptLibraryService;
     private readonly CollectionScriptSubscriptionService _collectionScriptSubscriptionService;
@@ -84,6 +85,7 @@ public sealed class AutoTasksPageViewModel : ObservableObject
     {
         _localizationService = localizationService ?? throw new ArgumentNullException(nameof(localizationService));
         _appDialogService = appDialogService ?? throw new ArgumentNullException(nameof(appDialogService));
+        _importProgressDialogService = ImportProgressDialogService.Instance;
         _autoTaskCoordinator = autoTaskCoordinator ?? throw new ArgumentNullException(nameof(autoTaskCoordinator));
         _managedScriptLibraryService = managedScriptLibraryService ?? throw new ArgumentNullException(nameof(managedScriptLibraryService));
         _collectionScriptSubscriptionService = collectionScriptSubscriptionService ?? throw new ArgumentNullException(nameof(collectionScriptSubscriptionService));
@@ -138,6 +140,10 @@ public sealed class AutoTasksPageViewModel : ObservableObject
     public string ImportSubscriptionPackageText => _localizationService.T("Tasks.Import.SubscriptionPackage");
 
     public string ImportSingleScriptText => _localizationService.T("Tasks.Import.SingleScript");
+
+    public string ImportProgressTitle => _localizationService.T("Tasks.Dialog.ImportProgress.Title");
+
+    public string ImportSubscriptionProgressInitialMessage => _localizationService.T("Tasks.Dialog.ImportProgress.SubscriptionMessage.Initial");
 
     public string TutorialLinkText => _localizationService.T("Tasks.Tutorial");
 
@@ -493,6 +499,8 @@ public sealed class AutoTasksPageViewModel : ObservableObject
         OnPropertyChanged(nameof(ImportButtonText));
         OnPropertyChanged(nameof(ImportSubscriptionPackageText));
         OnPropertyChanged(nameof(ImportSingleScriptText));
+        OnPropertyChanged(nameof(ImportProgressTitle));
+        OnPropertyChanged(nameof(ImportSubscriptionProgressInitialMessage));
         OnPropertyChanged(nameof(TutorialLinkText));
         OnPropertyChanged(nameof(OperationIntervalLabel));
         OnPropertyChanged(nameof(OperationIntervalDescription));
@@ -880,25 +888,44 @@ public sealed class AutoTasksPageViewModel : ObservableObject
             return;
         }
 
+        using var progressDialog = _importProgressDialogService.Show(new ImportProgressDialogRequest
+        {
+            Title = ImportProgressTitle,
+            Message = ImportSubscriptionProgressInitialMessage,
+            ProgressValue = 0,
+            ProgressMaximum = 1,
+            IsIndeterminate = true
+        });
+
         await ExecuteAssetImportAsync(async () =>
         {
+            var progress = new Progress<SubscriptionImportProgress>(report =>
+            {
+                var total = Math.Max(report.TotalScriptCount, 1);
+                progressDialog.UpdateProgress(report.ProcessedScriptCount, total, isIndeterminate: false);
+                progressDialog.UpdateMessage(string.Format(
+                    _localizationService.T("Tasks.Dialog.ImportProgress.SubscriptionMessage"),
+                    report.ProcessedScriptCount,
+                    report.TotalScriptCount));
+            });
+
             await Task.Run(() =>
             {
                 if (BlackBorderScriptSubscriptionService.IsBlackBorderSubscriptionPackage(dialog.FileName))
                 {
-                    _blackBorderScriptSubscriptionService.Import(dialog.FileName);
+                    _blackBorderScriptSubscriptionService.Import(dialog.FileName, progress);
                     return;
                 }
 
                 if (GoldBalloonScriptSubscriptionService.IsGoldBalloonSubscriptionPackage(dialog.FileName))
                 {
-                    _goldBalloonScriptSubscriptionService.Import(dialog.FileName);
+                    _goldBalloonScriptSubscriptionService.Import(dialog.FileName, progress);
                     return;
                 }
 
                 if (CollectionScriptSubscriptionService.IsCollectionSubscriptionPackage(dialog.FileName))
                 {
-                    _collectionScriptSubscriptionService.Import(dialog.FileName);
+                    _collectionScriptSubscriptionService.Import(dialog.FileName, progress);
                     return;
                 }
 

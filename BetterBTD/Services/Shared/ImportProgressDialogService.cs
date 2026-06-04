@@ -8,6 +8,12 @@ public sealed class ImportProgressDialogRequest
     public string Title { get; init; } = string.Empty;
 
     public string Message { get; init; } = string.Empty;
+
+    public double ProgressValue { get; init; }
+
+    public double ProgressMaximum { get; init; }
+
+    public bool IsIndeterminate { get; init; } = true;
 }
 
 public sealed class ImportProgressDialogHandle : IDisposable
@@ -34,6 +40,22 @@ public sealed class ImportProgressDialogHandle : IDisposable
         }
 
         _ = _window.Dispatcher.InvokeAsync(() => _window.UpdateMessage(message));
+    }
+
+    public void UpdateProgress(double value, double maximum, bool isIndeterminate = false)
+    {
+        if (_isClosed)
+        {
+            return;
+        }
+
+        if (_window.Dispatcher.CheckAccess())
+        {
+            _window.UpdateProgress(value, maximum, isIndeterminate);
+            return;
+        }
+
+        _ = _window.Dispatcher.InvokeAsync(() => _window.UpdateProgress(value, maximum, isIndeterminate));
     }
 
     public void Close()

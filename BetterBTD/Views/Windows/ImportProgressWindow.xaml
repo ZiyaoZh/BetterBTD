@@ -35,7 +35,8 @@
                 <TextBlock x:Name="MessageTextBlock"
                            Style="{StaticResource CardTitleTextStyle}"
                            TextWrapping="Wrap" />
-                <ProgressBar Margin="0,16,0,0"
+                <ProgressBar x:Name="DialogProgressBar"
+                             Margin="0,16,0,0"
                              Height="6"
                              IsIndeterminate="True" />
             </StackPanel>
