@@ -131,6 +131,10 @@
                          VirtualizingPanel.IsVirtualizing="True"
                          VirtualizingPanel.VirtualizationMode="Recycling">
                     <ListBox.InputBindings>
+                        <KeyBinding Key="X"
+                                    Modifiers="Control"
+                                    Command="{Binding DataContext.CutSelectedSequenceInstructionsCommand, ElementName=InstructionSequenceListBox}"
+                                    CommandParameter="{Binding SelectedItems, ElementName=InstructionSequenceListBox}" />
                         <KeyBinding Key="C"
                                     Modifiers="Control"
                                     Command="{Binding DataContext.CopySelectedSequenceInstructionsCommand, ElementName=InstructionSequenceListBox}"
@@ -145,14 +149,21 @@
                     </ListBox.InputBindings>
                     <ListBox.ContextMenu>
                         <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                            <MenuItem Header="{Binding CutSelectedInstructionText}"
+                                      InputGestureText="Ctrl+X"
+                                      Command="{Binding CutSelectedSequenceInstructionsCommand}"
+                                      CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
                             <MenuItem Header="{Binding CopySelectedInstructionText}"
+                                      InputGestureText="Ctrl+C"
                                       Command="{Binding CopySelectedSequenceInstructionsCommand}"
                                       CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
                             <MenuItem Header="{Binding PasteInstructionText}"
+                                      InputGestureText="Ctrl+V"
                                       Command="{Binding PasteSequenceInstructionsCommand}"
                                       CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
                             <Separator />
                             <MenuItem Header="{Binding DeleteSelectedInstructionText}"
+                                      InputGestureText="Delete"
                                       Command="{Binding DeleteSelectedSequenceInstructionsCommand}"
                                       CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
                         </ContextMenu>

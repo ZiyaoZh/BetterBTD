@@ -127,6 +127,7 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
 
         AddInstructionToSequenceCommand = new RelayCommand<ScriptInstructionTemplate?>(AddInstructionToSequence);
         DeleteSelectedSequenceInstructionsCommand = new RelayCommand<IList?>(DeleteSelectedSequenceInstructions, CanDeleteSelectedSequenceInstructions);
+        CutSelectedSequenceInstructionsCommand = new RelayCommand<IList?>(CutSelectedSequenceInstructions, CanCutSelectedSequenceInstructions);
         CopySelectedSequenceInstructionsCommand = new RelayCommand<IList?>(CopySelectedSequenceInstructions, CanCopySelectedSequenceInstructions);
         PasteSequenceInstructionsCommand = new RelayCommand<IList?>(PasteSequenceInstructions, CanPasteSequenceInstructions);
         UndoSequenceCommand = new RelayCommand(UndoSequence, CanUndoSequence);
@@ -159,6 +160,7 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
 
     public IRelayCommand<ScriptInstructionTemplate?> AddInstructionToSequenceCommand { get; }
     public IRelayCommand<IList?> DeleteSelectedSequenceInstructionsCommand { get; }
+    public IRelayCommand<IList?> CutSelectedSequenceInstructionsCommand { get; }
     public IRelayCommand<IList?> CopySelectedSequenceInstructionsCommand { get; }
     public IRelayCommand<IList?> PasteSequenceInstructionsCommand { get; }
     public IRelayCommand UndoSequenceCommand { get; }
@@ -422,6 +424,7 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
     public string NonExecutableInstructionHintText => _localizationService.T("Editor.Property.NonExecutableHint");
     public string PropertyNotesText => _localizationService.T("Editor.Property.Notes");
     public string DeleteSelectedInstructionText => _localizationService.T("Editor.Command.DeleteSelected");
+    public string CutSelectedInstructionText => _localizationService.T("Editor.Command.CutSelected");
     public string CopySelectedInstructionText => _localizationService.T("Editor.Command.CopySelected");
     public string PasteInstructionText => _localizationService.T("Editor.Command.Paste");
     public bool IsPositionCoordinateSelectionActive => IsCoordinateSelectionActive(CoordinateSelectionTarget.Position);
@@ -1740,6 +1743,22 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
             : [];
     }
 
+    private void CutSelectedSequenceInstructions(IList? selectedItems)
+    {
+        if (!CanCutSelectedSequenceInstructions(selectedItems))
+        {
+            return;
+        }
+
+        CopySelectedSequenceInstructions(selectedItems);
+        DeleteSelectedSequenceInstructions(selectedItems);
+    }
+
+    private static bool CanCutSelectedSequenceInstructions(IList? selectedItems)
+    {
+        return CanCopySelectedSequenceInstructions(selectedItems);
+    }
+
     private void CopySelectedSequenceInstructions(IList? selectedItems)
     {
         var selectedInstructions = selectedItems?.OfType<ScriptInstructionInstance>().Distinct().ToList() ?? [];
@@ -2296,6 +2315,7 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         OnPropertyChanged(nameof(NonExecutableInstructionHintText));
         OnPropertyChanged(nameof(PropertyNotesText));
         OnPropertyChanged(nameof(DeleteSelectedInstructionText));
+        OnPropertyChanged(nameof(CutSelectedInstructionText));
         OnPropertyChanged(nameof(CopySelectedInstructionText));
         OnPropertyChanged(nameof(PasteInstructionText));
     }
