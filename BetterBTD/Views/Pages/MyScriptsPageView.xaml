@@ -50,6 +50,12 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <Style x:Key="ScriptPropertyRowBorderStyle" TargetType="Border">
+            <Setter Property="Padding" Value="12,10" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeColorSecondaryBrush}" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+        </Style>
     </Page.Resources>
 
     <Grid Margin="42,16,42,12">
@@ -286,147 +292,189 @@
                     <TextBlock Style="{StaticResource CardTitleTextStyle}"
                                Text="{Binding PropertiesSectionText}" />
 
-                    <ScrollViewer Grid.Row="1"
-                                  Margin="0,16,0,0"
-                                  MinHeight="0"
-                                  VerticalScrollBarVisibility="Auto"
-                                  Visibility="{Binding HasSelectedScript, Converter={StaticResource BoolToVisibilityConverter}}">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="116" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
+                    <Grid Grid.Row="1"
+                          Margin="0,16,0,0"
+                          MinHeight="0">
+                        <Border MinHeight="0"
+                                CornerRadius="8"
+                                BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                                BorderThickness="1"
+                                Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                                Visibility="{Binding HasSelectedScript, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <ScrollViewer MinHeight="0"
+                                          VerticalScrollBarVisibility="Auto">
+                                <StackPanel>
+                                    <Border Style="{StaticResource ScriptPropertyRowBorderStyle}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="108" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0"
+                                                       Margin="0,0,12,0"
+                                                       VerticalAlignment="Center"
+                                                       Style="{StaticResource CardDescriptionTextStyle}"
+                                                       Text="{Binding PropertyScriptIdText}" />
+                                            <ui:Button Grid.Column="1"
+                                                       HorizontalAlignment="Left"
+                                                       MinWidth="76"
+                                                       Padding="10,4"
+                                                       Appearance="Secondary"
+                                                       Command="{Binding CopySelectedScriptIdCommand}"
+                                                       Content="{Binding CopyScriptIdText}"
+                                                       Icon="{ui:SymbolIcon Copy24}" />
+                                        </Grid>
+                                    </Border>
 
-                            <TextBlock Grid.Row="0"
-                                       Grid.Column="0"
-                                       Margin="0,0,12,12"
-                                       VerticalAlignment="Top"
-                                       Style="{StaticResource CardDescriptionTextStyle}"
-                                       Text="{Binding PropertyScriptIdText}" />
-                            <Grid Grid.Row="0"
-                                  Grid.Column="1"
-                                  Margin="0,0,0,12">
-                                <ui:Button HorizontalAlignment="Left"
-                                           MinWidth="76"
-                                           Padding="10,4"
-                                           Appearance="Secondary"
-                                           Command="{Binding CopySelectedScriptIdCommand}"
-                                           Content="{Binding CopyScriptIdText}"
-                                           Icon="{ui:SymbolIcon Copy24}" />
-                            </Grid>
+                                    <Border Style="{StaticResource ScriptPropertyRowBorderStyle}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="108" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0"
+                                                       Margin="0,0,12,0"
+                                                       VerticalAlignment="Top"
+                                                       Style="{StaticResource CardDescriptionTextStyle}"
+                                                       Text="{Binding PropertyNameText}" />
+                                            <TextBlock Grid.Column="1"
+                                                       Text="{Binding SelectedScriptName}"
+                                                       TextWrapping="Wrap" />
+                                        </Grid>
+                                    </Border>
 
-                            <TextBlock Grid.Row="1"
-                                       Grid.Column="0"
-                                       Margin="0,0,12,12"
-                                       VerticalAlignment="Top"
-                                       Style="{StaticResource CardDescriptionTextStyle}"
-                                       Text="{Binding PropertyNameText}" />
-                            <TextBlock Grid.Row="1"
-                                       Grid.Column="1"
-                                       Margin="0,0,0,12"
-                                       Text="{Binding SelectedScriptName}"
-                                       TextWrapping="Wrap" />
+                                    <Border Style="{StaticResource ScriptPropertyRowBorderStyle}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="108" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0"
+                                                       Margin="0,0,12,0"
+                                                       VerticalAlignment="Top"
+                                                       Style="{StaticResource CardDescriptionTextStyle}"
+                                                       Text="{Binding PropertyDescriptionText}" />
+                                            <TextBlock Grid.Column="1"
+                                                       Text="{Binding SelectedScriptDescription}"
+                                                       TextWrapping="Wrap" />
+                                        </Grid>
+                                    </Border>
 
-                            <TextBlock Grid.Row="2"
-                                       Grid.Column="0"
-                                       Margin="0,0,12,12"
-                                       VerticalAlignment="Top"
-                                       Style="{StaticResource CardDescriptionTextStyle}"
-                                       Text="{Binding PropertyDescriptionText}" />
-                            <TextBlock Grid.Row="2"
-                                       Grid.Column="1"
-                                       Margin="0,0,0,12"
-                                       Text="{Binding SelectedScriptDescription}"
-                                       TextWrapping="Wrap" />
+                                    <Border Style="{StaticResource ScriptPropertyRowBorderStyle}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="108" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0"
+                                                       Margin="0,0,12,0"
+                                                       VerticalAlignment="Top"
+                                                       Style="{StaticResource CardDescriptionTextStyle}"
+                                                       Text="{Binding PropertyHeroText}" />
+                                            <TextBlock Grid.Column="1"
+                                                       Text="{Binding SelectedScriptHero}"
+                                                       TextWrapping="Wrap" />
+                                        </Grid>
+                                    </Border>
 
-                            <TextBlock Grid.Row="3"
-                                       Grid.Column="0"
-                                       Margin="0,0,12,12"
-                                       Style="{StaticResource CardDescriptionTextStyle}"
-                                       Text="{Binding PropertyHeroText}" />
-                            <TextBlock Grid.Row="3"
-                                       Grid.Column="1"
-                                       Margin="0,0,0,12"
-                                       Text="{Binding SelectedScriptHero}"
-                                       TextWrapping="Wrap" />
+                                    <Border Style="{StaticResource ScriptPropertyRowBorderStyle}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="108" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0"
+                                                       Margin="0,0,12,0"
+                                                       VerticalAlignment="Top"
+                                                       Style="{StaticResource CardDescriptionTextStyle}"
+                                                       Text="{Binding PropertyMapText}" />
+                                            <TextBlock Grid.Column="1"
+                                                       Text="{Binding SelectedScriptMap}"
+                                                       TextWrapping="Wrap" />
+                                        </Grid>
+                                    </Border>
 
-                            <TextBlock Grid.Row="4"
-                                       Grid.Column="0"
-                                       Margin="0,0,12,12"
-                                       Style="{StaticResource CardDescriptionTextStyle}"
-                                       Text="{Binding PropertyMapText}" />
-                            <TextBlock Grid.Row="4"
-                                       Grid.Column="1"
-                                       Margin="0,0,0,12"
-                                       Text="{Binding SelectedScriptMap}"
-                                       TextWrapping="Wrap" />
+                                    <Border Style="{StaticResource ScriptPropertyRowBorderStyle}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="108" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0"
+                                                       Margin="0,0,12,0"
+                                                       VerticalAlignment="Top"
+                                                       Style="{StaticResource CardDescriptionTextStyle}"
+                                                       Text="{Binding PropertyDifficultyText}" />
+                                            <TextBlock Grid.Column="1"
+                                                       Text="{Binding SelectedScriptDifficulty}"
+                                                       TextWrapping="Wrap" />
+                                        </Grid>
+                                    </Border>
 
-                            <TextBlock Grid.Row="5"
-                                       Grid.Column="0"
-                                       Margin="0,0,12,12"
-                                       Style="{StaticResource CardDescriptionTextStyle}"
-                                       Text="{Binding PropertyDifficultyText}" />
-                            <TextBlock Grid.Row="5"
-                                       Grid.Column="1"
-                                       Margin="0,0,0,12"
-                                       Text="{Binding SelectedScriptDifficulty}"
-                                       TextWrapping="Wrap" />
+                                    <Border Style="{StaticResource ScriptPropertyRowBorderStyle}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="108" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0"
+                                                       Margin="0,0,12,0"
+                                                       VerticalAlignment="Top"
+                                                       Style="{StaticResource CardDescriptionTextStyle}"
+                                                       Text="{Binding PropertyModeText}" />
+                                            <TextBlock Grid.Column="1"
+                                                       Text="{Binding SelectedScriptMode}"
+                                                       TextWrapping="Wrap" />
+                                        </Grid>
+                                    </Border>
 
-                            <TextBlock Grid.Row="6"
-                                       Grid.Column="0"
-                                       Margin="0,0,12,12"
-                                       Style="{StaticResource CardDescriptionTextStyle}"
-                                       Text="{Binding PropertyModeText}" />
-                            <TextBlock Grid.Row="6"
-                                       Grid.Column="1"
-                                       Margin="0,0,0,12"
-                                       Text="{Binding SelectedScriptMode}"
-                                       TextWrapping="Wrap" />
+                                    <Border Style="{StaticResource ScriptPropertyRowBorderStyle}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="108" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0"
+                                                       Margin="0,0,12,0"
+                                                       VerticalAlignment="Top"
+                                                       Style="{StaticResource CardDescriptionTextStyle}"
+                                                       Text="{Binding PropertyTagsText}" />
+                                            <TextBlock Grid.Column="1"
+                                                       Text="{Binding SelectedScriptTags}"
+                                                       TextWrapping="Wrap" />
+                                        </Grid>
+                                    </Border>
 
-                            <TextBlock Grid.Row="7"
-                                       Grid.Column="0"
-                                       Margin="0,0,12,12"
-                                       Style="{StaticResource CardDescriptionTextStyle}"
-                                       Text="{Binding PropertyTagsText}" />
-                            <TextBlock Grid.Row="7"
-                                       Grid.Column="1"
-                                       Margin="0,0,0,12"
-                                       Text="{Binding SelectedScriptTags}"
-                                       TextWrapping="Wrap" />
+                                    <Border Padding="12,10"
+                                            BorderThickness="0">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="108" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0"
+                                                       Margin="0,0,12,0"
+                                                       VerticalAlignment="Top"
+                                                       Style="{StaticResource CardDescriptionTextStyle}"
+                                                       Text="{Binding PropertyStateText}" />
+                                            <TextBlock Grid.Column="1"
+                                                       Text="{Binding SelectedScriptState}"
+                                                       TextWrapping="Wrap" />
+                                        </Grid>
+                                    </Border>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Border>
 
-                            <TextBlock Grid.Row="8"
-                                       Grid.Column="0"
-                                       Margin="0,0,12,12"
-                                       Style="{StaticResource CardDescriptionTextStyle}"
-                                       Text="{Binding PropertyStateText}" />
-                            <TextBlock Grid.Row="8"
-                                       Grid.Column="1"
-                                       Margin="0,0,0,12"
-                                       Text="{Binding SelectedScriptState}"
-                                       TextWrapping="Wrap" />
-                        </Grid>
-                    </ScrollViewer>
-
-                    <StackPanel Grid.Row="1"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                Visibility="{Binding HasSelectedScript, Converter={StaticResource BooleanToVisibilityRevertConverter}}">
-                        <TextBlock HorizontalAlignment="Center"
-                                   Style="{StaticResource PageDescriptionTextStyle}"
-                                   Text="{Binding SelectedScriptSummary}"
-                                   TextAlignment="Center" />
-                    </StackPanel>
+                        <StackPanel HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Visibility="{Binding HasSelectedScript, Converter={StaticResource BooleanToVisibilityRevertConverter}}">
+                            <TextBlock HorizontalAlignment="Center"
+                                       Style="{StaticResource PageDescriptionTextStyle}"
+                                       Text="{Binding SelectedScriptSummary}"
+                                       TextAlignment="Center" />
+                        </StackPanel>
+                    </Grid>
                 </Grid>
             </ui:CardControl>
         </Grid>
