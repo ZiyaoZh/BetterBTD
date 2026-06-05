@@ -45,6 +45,8 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
 
     private readonly LocalizationService _localizationService;
     private readonly AppDialogService _appDialogService;
+    private readonly ConfigurationService _configurationService;
+    private readonly GameCaptureService _gameCaptureService;
     private readonly MaskWindowService _maskWindowService;
     private readonly CoordinateTransformService _coordinateTransformService;
     private readonly ScriptDocumentService _scriptDocumentService;
@@ -98,6 +100,8 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
     {
         _localizationService = localizationService;
         _appDialogService = AppDialogService.Instance;
+        _configurationService = ConfigurationService.Instance;
+        _gameCaptureService = GameCaptureService.Instance;
         _maskWindowService = MaskWindowService.Instance;
         _coordinateTransformService = CoordinateTransformService.Instance;
         _scriptDocumentService = ScriptDocumentService.Instance;
@@ -1160,6 +1164,7 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         ScriptTaskFlow taskFlow;
         try
         {
+            EnsureCaptureServiceRunning();
             taskFlow = _scriptTaskFlowService.Build(scriptDocumentSnapshot, sourceFilePath);
             _scriptInputSimulationService.PrepareTargetWindowForInput();
         }
@@ -1210,6 +1215,58 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
             _scriptExecutionCancellationTokenSource = null;
             IsScriptExecutionRunning = false;
         }
+    }
+
+    private void EnsureCaptureServiceRunning()
+    {
+        if (_gameCaptureService.IsRunning)
+        {
+            if (!_maskWindowService.IsRunning)
+            {
+                _maskWindowService.Start();
+                _maskWindowService.RefreshNow();
+            }
+
+            return;
+        }
+
+        var captureOptions = BuildCaptureOptions();
+        _gameCaptureService.Configure(captureOptions);
+
+        if (!_gameCaptureService.TryStart(captureOptions, out _))
+        {
+            throw new InvalidOperationException(BuildCaptureStartupFailureMessage());
+        }
+
+        _maskWindowService.Start();
+        _maskWindowService.RefreshNow();
+    }
+
+    private GameCaptureOptions BuildCaptureOptions()
+    {
+        var configuration = _configurationService.Current;
+        var configuredCaptureMode = configuration.CaptureModeName;
+        if (string.IsNullOrWhiteSpace(configuredCaptureMode) ||
+            !_gameCaptureService.AvailableCaptureModes.Any(mode =>
+                string.Equals(mode, configuredCaptureMode, StringComparison.OrdinalIgnoreCase)))
+        {
+            configuredCaptureMode = _gameCaptureService.AvailableCaptureModes.FirstOrDefault()
+                ?? nameof(Fischless.GameCapture.CaptureModes.WindowsGraphicsCapture);
+        }
+
+        return new GameCaptureOptions
+        {
+            CaptureModeName = configuredCaptureMode,
+            AutoFixWin11BitBlt = configuration.AutoFixWin11BitBlt
+        };
+    }
+
+    private string BuildCaptureStartupFailureMessage()
+    {
+        var windowTitle = _gameCaptureService.TargetWindowTitle;
+        return string.IsNullOrWhiteSpace(windowTitle)
+            ? "未找到目标窗口。请先启动游戏，或在开始页面手动选择捕获窗口。"
+            : $"未找到目标窗口“{windowTitle}”。请先启动游戏，或在开始页面手动选择捕获窗口。";
     }
 
     private void OnScriptExecutionWindowClosed(object? sender, EventArgs e)
