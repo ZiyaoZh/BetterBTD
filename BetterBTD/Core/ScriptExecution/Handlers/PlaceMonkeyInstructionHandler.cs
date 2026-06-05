@@ -22,8 +22,14 @@ public sealed class PlaceMonkeyInstructionHandler : ScriptInstructionHandlerBase
         var placementHotkey = ScriptExecutionKeyBindingResolver.ResolvePlacementHotkey(selectionCode);
         var placementDetectionEnabled = instruction.PlacementDetectionEnabled ?? true;
         var placementFailureAdjustmentEnabled = instruction.PlacementFailureAdjustmentEnabled ?? true;
-        var placementAttemptIntervalMilliseconds = instruction.PlacementAttemptIntervalMilliseconds ?? 200;
-        var placementAdjustmentAttemptIntervalMilliseconds = instruction.PlacementAdjustmentAttemptIntervalMilliseconds ?? 200;
+        var placementAttemptIntervalMilliseconds = ScriptInstructionHandlerSupport.ResolveOperationIntervalMilliseconds(
+            context.Options,
+            instruction.PlacementAttemptIntervalMilliseconds,
+            defaultIntervalMilliseconds: 200);
+        var placementAdjustmentAttemptIntervalMilliseconds = ScriptInstructionHandlerSupport.ResolveOperationIntervalMilliseconds(
+            context.Options,
+            instruction.PlacementAdjustmentAttemptIntervalMilliseconds,
+            defaultIntervalMilliseconds: 200);
 
         await ScriptInstructionHandlerSupport.CancelPlacementModeIfActiveAsync(context, cancellationToken).ConfigureAwait(false);
 
