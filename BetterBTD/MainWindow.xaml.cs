@@ -1,6 +1,7 @@
 using System;
 using System.Windows;
 using System.Windows.Threading;
+using BetterBTD.Services.Updates;
 using BetterBTD.ViewModels;
 using Wpf.Ui.Controls;
 
@@ -11,6 +12,8 @@ namespace BetterBTD
     /// </summary>
     public partial class MainWindow : FluentWindow
     {
+        private bool _hasCheckedForStartupUpdates;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -18,9 +21,28 @@ namespace BetterBTD
             ContentRendered += MainWindow_ContentRendered;
         }
 
-        private void MainWindow_ContentRendered(object sender, EventArgs e)
+        private void MainWindow_ContentRendered(object? sender, EventArgs e)
         {
+            if (_hasCheckedForStartupUpdates)
+            {
+                return;
+            }
+
+            _hasCheckedForStartupUpdates = true;
             RootNavigation.Navigate(typeof(Views.Pages.StartPageView));
+            _ = Dispatcher.InvokeAsync(CheckForUpdatesOnStartupAsync, DispatcherPriority.Background);
+        }
+
+        private async Task CheckForUpdatesOnStartupAsync()
+        {
+            try
+            {
+                await ApplicationUpdateService.Instance.CheckAndPromptForUpdateAsync(silentIfUpToDate: true);
+            }
+            catch
+            {
+                // Startup update checks should not block application use.
+            }
         }
 
         public void NavigateToScriptEditor(string scriptFilePath)

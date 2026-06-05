@@ -41,7 +41,7 @@ public sealed class SettingsPageViewModel : ObservableObject
 
         UpdateUiLanguageCommand = new RelayCommand(UpdateUiLanguage);
         OpenKeyBindingsWindowCommand = new RelayCommand(OpenKeyBindingsWindow);
-        CheckUpdateCommand = new RelayCommand(OpenUpdater);
+        CheckUpdateCommand = new AsyncRelayCommand(CheckForUpdatesAsync);
         OpenAboutCommand = new RelayCommand(OpenAbout);
         SaveCommand = new RelayCommand(Save);
         ResetCommand = new RelayCommand(ResetDefaults);
@@ -125,7 +125,7 @@ public sealed class SettingsPageViewModel : ObservableObject
 
     public IRelayCommand OpenKeyBindingsWindowCommand { get; }
 
-    public IRelayCommand CheckUpdateCommand { get; }
+    public IAsyncRelayCommand CheckUpdateCommand { get; }
 
     public IRelayCommand OpenAboutCommand { get; }
 
@@ -245,16 +245,15 @@ public sealed class SettingsPageViewModel : ObservableObject
         });
     }
 
-    private void OpenUpdater()
+    private async Task CheckForUpdatesAsync()
     {
         try
         {
-            _applicationUpdateService.TryLaunchUpdater(out var message);
-            UpdateStatusText = message;
+            UpdateStatusText = await _applicationUpdateService.CheckAndPromptForUpdateAsync(silentIfUpToDate: false);
         }
         catch (Exception ex)
         {
-            UpdateStatusText = $"Unable to open updater: {ex.Message}";
+            UpdateStatusText = $"Unable to check for updates: {ex.Message}";
         }
     }
 

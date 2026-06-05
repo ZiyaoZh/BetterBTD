@@ -5,9 +5,9 @@
                  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                  xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
                  mc:Ignorable="d"
-                 Width="460"
-                 MinWidth="460"
-                 MaxWidth="560"
+                 Width="640"
+                 MinWidth="560"
+                 MaxWidth="860"
                  SizeToContent="Height"
                  ResizeMode="NoResize"
                  ShowInTaskbar="False"
@@ -31,11 +31,12 @@
         <ui:CardControl Grid.Row="1"
                         Margin="24,16,24,0"
                         Style="{StaticResource AppCardControlStyle}">
-            <StackPanel>
+            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                          MaxHeight="420">
                 <TextBlock x:Name="MessageTextBlock"
                            Style="{StaticResource CardTitleTextStyle}"
                            TextWrapping="Wrap" />
-            </StackPanel>
+            </ScrollViewer>
         </ui:CardControl>
 
         <StackPanel Grid.Row="2"
