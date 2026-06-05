@@ -10,6 +10,7 @@ public sealed class PlaceMonkeyInstructionHandler : ScriptInstructionHandlerBase
 {
     internal const int PlacementModeActivationTimeoutMilliseconds = 10 * 60 * 1000;
     internal const int PlacementModeActivationPollIntervalMilliseconds = 100;
+    internal const int HeroPlacementModeActivationAttemptTimeoutMilliseconds = 1000;
 
     public override ScriptCommandType CommandType => ScriptCommandType.PlaceMonkey;
 
@@ -130,29 +131,12 @@ public sealed class PlaceMonkeyInstructionHandler : ScriptInstructionHandlerBase
             },
             cancellationToken).ConfigureAwait(false);
 
-        await ScriptExecutionOperations.CheckpointAsync(
+        await WaitForHeroPlacementModeActiveAsync(
             context,
-            "PlaceMonkeySelect",
-            $"Hero placement is available. Sending hotkey '{placementHotkey.DisplayName}' for '{selectionCode}'.",
-            cancellationToken).ConfigureAwait(false);
-
-        ScriptExecutionOperations.PressHotkey(context, placementHotkey, cancellationToken);
-
-        await ScriptExecutionOperations.WaitUntilAsync(
-            context,
-            new ScriptWaitOptions
-            {
-                TimeoutMilliseconds = PlacementModeActivationTimeoutMilliseconds,
-                PollIntervalMilliseconds = placementAttemptIntervalMilliseconds,
-                Description = "hero placement mode active"
-            },
-            async innerToken =>
-            {
-                var snapshot = await context.RuntimeServices.GameStageState
-                    .CaptureSnapshotAsync(innerToken)
-                    .ConfigureAwait(false);
-                return snapshot?.IsPlacingMonkey == true;
-            },
+            placementHotkey,
+            selectionCode,
+            attempt,
+            placementAttemptIntervalMilliseconds,
             cancellationToken).ConfigureAwait(false);
 
         await ScriptExecutionOperations.CheckpointAsync(
@@ -308,6 +292,70 @@ public sealed class PlaceMonkeyInstructionHandler : ScriptInstructionHandlerBase
         }
 
         return postClickSnapshot?.IsPlacingMonkey == false;
+    }
+
+    private static async Task WaitForHeroPlacementModeActiveAsync(
+        ScriptInstructionExecutionContext context,
+        HotkeyBinding placementHotkey,
+        string selectionCode,
+        int attempt,
+        int placementAttemptIntervalMilliseconds,
+        CancellationToken cancellationToken)
+    {
+        var startedAt = DateTimeOffset.UtcNow;
+        var activationAttempt = 0;
+
+        while (true)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var elapsedOverallMilliseconds = (DateTimeOffset.UtcNow - startedAt).TotalMilliseconds;
+            if (elapsedOverallMilliseconds >= PlacementModeActivationTimeoutMilliseconds)
+            {
+                throw ScriptInstructionHandlerSupport.CreateExecutionException(
+                    context,
+                    "PlaceMonkeySelect",
+                    $"Failed to activate hero placement mode for '{selectionCode}' within {PlacementModeActivationTimeoutMilliseconds} ms.",
+                    attempt);
+            }
+
+            activationAttempt++;
+
+            await ScriptExecutionOperations.CheckpointAsync(
+                context,
+                "PlaceMonkeySelect",
+                activationAttempt == 1
+                    ? $"Placement attempt {attempt}: sending hotkey '{placementHotkey.DisplayName}' for '{selectionCode}'."
+                    : $"Placement attempt {attempt}: hero placement mode did not activate within {HeroPlacementModeActivationAttemptTimeoutMilliseconds} ms. Resending hotkey '{placementHotkey.DisplayName}' for '{selectionCode}' (activation attempt {activationAttempt}).",
+                cancellationToken).ConfigureAwait(false);
+
+            ScriptExecutionOperations.PressHotkey(context, placementHotkey, cancellationToken);
+
+            try
+            {
+                await ScriptExecutionOperations.WaitUntilAsync(
+                    context,
+                    new ScriptWaitOptions
+                    {
+                        TimeoutMilliseconds = HeroPlacementModeActivationAttemptTimeoutMilliseconds,
+                        PollIntervalMilliseconds = placementAttemptIntervalMilliseconds,
+                        Description = "hero placement mode active"
+                    },
+                    async innerToken =>
+                    {
+                        var snapshot = await context.RuntimeServices.GameStageState
+                            .CaptureSnapshotAsync(innerToken)
+                            .ConfigureAwait(false);
+                        return snapshot?.IsPlacingMonkey == true;
+                    },
+                    cancellationToken).ConfigureAwait(false);
+
+                return;
+            }
+            catch (ScriptExecutionException ex) when (ScriptInstructionHandlerSupport.IsWaitTimeout(ex))
+            {
+            }
+        }
     }
 
     private static void MarkPlaced(
