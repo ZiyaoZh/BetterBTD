@@ -14,11 +14,11 @@
     {
       "id": "github",
       "name": "GitHub",
-      "uri": "https://github.com/ZiyaoZh/BetterBTD/releases/latest/download/BetterBTD.Install.exe"
+      "uri": "plugin-github+https://github.com/ZiyaoZh/BetterBTD/releases/download/${version}/BetterBTD.Install.exe"
     },
     {
       "id": "china",
-      "name": "China Mirror",
+      "name": "Gitee",
       "uri": "https://gitee.com/ldcz1037/BetterBTD/releases/download/latest/BetterBTD.Install.exe"
     }
   ]

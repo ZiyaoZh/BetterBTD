@@ -10,7 +10,7 @@ permissions:
 
 env:
   DOTNET_VERSION: "8.0.x"
-  KACHINA_BUILDER_URL: "https://github.com/YuehaiTeam/kachina-installer/releases/latest/download/kachina-builder.exe"
+  KACHINA_BUILDER_URL: "https://github.com/ZiyaoZh/kachina-installer/releases/latest/download/kachina-builder.exe"
 
 jobs:
   release:
