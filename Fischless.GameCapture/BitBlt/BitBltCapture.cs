@@ -68,9 +68,9 @@ public class BitBltCapture : IGameCapture
 
         try
         {
-            // 窗口状态变化可能会导致会话失效
-            // 失败重试不应导致每一帧都重建 GDI 资源，否则测试窗口会持续抖动分配
-            if (_session is not null && _session.Invalid)
+            // 窗口状态变化可能会导致会话失效。失败后重建会话，避免 GDI
+            // 会话进入长期返回旧内容/失败内容的状态。
+            if (_session is not null && (_session.Invalid || _lastCaptureFailed))
             {
                 _session.Dispose();
                 _session = null;

@@ -9,7 +9,7 @@ using Device = SharpDX.Direct3D11.Device;
 
 namespace Fischless.GameCapture.DwmSharedSurface;
 
-public partial class SharedSurfaceCapture : IGameCapture
+public partial class SharedSurfaceCapture : IGameCapture, IGameCaptureFrameMetadataProvider
 {
     // 窗口句柄
     private nint _hWnd;
@@ -28,6 +28,9 @@ public partial class SharedSurfaceCapture : IGameCapture
     // Surface 大小
     private int _surfaceWidth;
     private int _surfaceHeight;
+    private ulong? _lastNativeUpdateId;
+    private long _sourceFrameSequence;
+    private long _lastFrameCapturedAtUnixMs;
 
     public bool IsCapturing { get; private set; }
 
@@ -90,7 +93,7 @@ public partial class SharedSurfaceCapture : IGameCapture
                 return null;
             }
 
-            if (!DwmGetDxSharedSurface(_hWnd, out var phSurface, out _, out _, out _, out _))
+            if (!DwmGetDxSharedSurface(_hWnd, out var phSurface, out _, out _, out _, out var updateId))
             {
                 return null;
             }
@@ -101,6 +104,12 @@ public partial class SharedSurfaceCapture : IGameCapture
 
             try
             {
+                var nativeUpdateId = unchecked((ulong)updateId);
+                if (_lastNativeUpdateId == nativeUpdateId && Interlocked.Read(ref _sourceFrameSequence) > 0)
+                {
+                    return null;
+                }
+
                 using var surfaceTexture = _d3dDevice.OpenSharedResource<Texture2D>(phSurface);
 
                 if (_stagingTexture == null || _surfaceWidth != surfaceTexture.Description.Width ||
@@ -118,6 +127,13 @@ public partial class SharedSurfaceCapture : IGameCapture
 
                 _stagingTexture ??= Direct3D11Helper.CreateStagingTexture(_d3dDevice, _surfaceWidth, _surfaceHeight, _region);
                 var mat = _stagingTexture.CreateMat(_d3dDevice, surfaceTexture, _region);
+                if (mat is not null && !mat.Empty())
+                {
+                    _lastNativeUpdateId = nativeUpdateId;
+                    Volatile.Write(ref _lastFrameCapturedAtUnixMs, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+                    Interlocked.Increment(ref _sourceFrameSequence);
+                }
+
                 return mat;
             }
             catch (SharpDXException e)
@@ -141,6 +157,29 @@ public partial class SharedSurfaceCapture : IGameCapture
             _d3dDevice = null;
             _hWnd = 0;
             IsCapturing = false;
+            _lastNativeUpdateId = null;
+            Interlocked.Exchange(ref _sourceFrameSequence, 0);
+            Volatile.Write(ref _lastFrameCapturedAtUnixMs, 0);
+        }
+    }
+
+    public bool TryGetFrameMetadata(out GameCaptureFrameMetadata metadata)
+    {
+        lock (LockObject)
+        {
+            var sequence = Interlocked.Read(ref _sourceFrameSequence);
+            var capturedAtUnixMs = Volatile.Read(ref _lastFrameCapturedAtUnixMs);
+            if (sequence <= 0 || capturedAtUnixMs <= 0)
+            {
+                metadata = default;
+                return false;
+            }
+
+            metadata = new GameCaptureFrameMetadata(
+                sequence,
+                DateTimeOffset.FromUnixTimeMilliseconds(capturedAtUnixMs),
+                _lastNativeUpdateId);
+            return true;
         }
     }
 }

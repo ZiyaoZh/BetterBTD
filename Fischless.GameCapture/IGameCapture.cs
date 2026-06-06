@@ -12,3 +12,13 @@ public interface IGameCapture : IDisposable
 
     public void Stop();
 }
+
+public readonly record struct GameCaptureFrameMetadata(
+    long SourceSequence,
+    DateTimeOffset CapturedAt,
+    ulong? NativeUpdateId = null);
+
+public interface IGameCaptureFrameMetadataProvider
+{
+    bool TryGetFrameMetadata(out GameCaptureFrameMetadata metadata);
+}

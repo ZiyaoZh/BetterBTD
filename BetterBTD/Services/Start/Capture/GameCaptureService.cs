@@ -1,4 +1,5 @@
 ﻿using BetterBTD.Models;
+using BetterBTD.Services.Diagnostics;
 using Fischless.GameCapture;
 using OpenCvSharp;
 
@@ -8,18 +9,33 @@ public sealed class GameCaptureService
 {
     private const int MinimumCaptureIntervalMs = 10;
     private const int MaximumCaptureIntervalMs = 2000;
+    private const int CaptureLoopStopTimeoutMs = 1000;
+    private const int MinimumFreshFrameAgeMs = 1500;
+    private const int MaximumFreshFrameAgeMs = 5000;
+    private const int MinimumRecoveryFrameAgeMs = 2000;
+    private const int MaximumRecoveryFrameAgeMs = 5000;
 
     private static readonly Lazy<GameCaptureService> InstanceHolder = new(() => new GameCaptureService());
 
     private readonly object _syncRoot = new();
     private readonly GameWindowInfoService _gameWindowInfoService;
     private readonly TemplateMatchService _templateMatchService;
+    private readonly GameCaptureDiagnosticsService _diagnosticsService;
     private readonly IReadOnlyList<string> _availableCaptureModes;
 
     private IGameCapture? _gameCapture;
     private CancellationTokenSource? _captureLoopCancellationSource;
     private Task? _captureLoopTask;
     private Mat? _latestFrame;
+    private long _captureAttemptSequence;
+    private long _publishedFrameSequence;
+    private long _latestFrameSequence;
+    private long _latestSourceSequence;
+    private DateTimeOffset _latestFrameCapturedAt = DateTimeOffset.MinValue;
+    private DateTimeOffset _latestFramePublishedAt = DateTimeOffset.MinValue;
+    private ulong _latestFrameFingerprint;
+    private int _sameFingerprintPublishStreak;
+    private bool _recoveryRequested;
     private GameCaptureOptions _currentOptions = new();
     private nint _currentWindowHandle;
     private string _currentWindowTitle = string.Empty;
@@ -29,14 +45,17 @@ public sealed class GameCaptureService
     {
         _gameWindowInfoService = GameWindowInfoService.Instance;
         _templateMatchService = TemplateMatchService.Instance;
+        _diagnosticsService = GameCaptureDiagnosticsService.Instance;
         _availableCaptureModes = Array.AsReadOnly(
             GameCaptureFactory
                 .ModeNames()
                 .OrderBy(modeName => modeName switch
                 {
                     nameof(CaptureModes.WindowsGraphicsCapture) => 0,
-                    nameof(CaptureModes.BitBlt) => 1,
-                    _ => 2
+                    nameof(CaptureModes.WindowsGraphicsCaptureHdr) => 1,
+                    nameof(CaptureModes.BitBlt) => 10,
+                    nameof(CaptureModes.DwmGetDxSharedSurface) => 20,
+                    _ => 100
                 })
                 .ToArray());
     }
@@ -204,6 +223,8 @@ public sealed class GameCaptureService
             _captureLoopCancellationSource = null;
             _captureLoopTask = null;
             _latestFrame = null;
+            ResetLatestFrameStateUnderLock();
+            _recoveryRequested = false;
             _currentWindowHandle = nint.Zero;
             _currentWindowTitle = string.Empty;
             shouldRaiseEvent = _isRunning;
@@ -211,14 +232,25 @@ public sealed class GameCaptureService
         }
 
         captureLoopCancellationSource?.Cancel();
-        WaitForCaptureLoopToStop(captureLoopTask);
-        captureLoopCancellationSource?.Dispose();
         latestFrameToDispose?.Dispose();
-        captureToDispose?.Dispose();
+        var stopped = WaitForCaptureLoopToStop(
+            captureLoopTask,
+            TimeSpan.FromMilliseconds(CaptureLoopStopTimeoutMs));
+        _diagnosticsService.StopSession(stopped ? "Stopped" : "Stop timed out; cleanup moved to background.");
+
+        if (stopped)
+        {
+            captureLoopCancellationSource?.Dispose();
+            captureToDispose?.Dispose();
+        }
+        else
+        {
+            _ = Task.Run(() => CleanupTimedOutCapture(captureToDispose, captureLoopCancellationSource, captureLoopTask));
+        }
 
         if (shouldRaiseEvent)
         {
-            RunningStateChanged?.Invoke(this, false);
+            RaiseRunningStateChanged(false);
         }
     }
 
@@ -240,16 +272,40 @@ public sealed class GameCaptureService
     public bool TryCaptureFrame(out Mat frame)
     {
         frame = null!;
+        long frameSequence;
+        DateTimeOffset publishedAt;
+        int width;
+        int height;
+        ulong fingerprint;
+        var shouldRecordFailure = false;
         lock (_syncRoot)
         {
-            if (!_isRunning || _latestFrame is null || _latestFrame.Empty())
+            var latestFrame = _latestFrame;
+            if (!_isRunning || latestFrame is null || latestFrame.Empty())
             {
+                shouldRecordFailure = true;
+            }
+            else if (DateTimeOffset.UtcNow - _latestFramePublishedAt > ResolveFreshFrameMaxAge(_currentOptions))
+            {
+                shouldRecordFailure = true;
+            }
+
+            if (shouldRecordFailure)
+            {
+                _diagnosticsService.RecordFrameRequestFailed(_isRunning, latestFrame is not null && !latestFrame.Empty());
                 return false;
             }
 
-            frame = _latestFrame.Clone();
-            return true;
+            frameSequence = _latestFrameSequence;
+            publishedAt = _latestFramePublishedAt;
+            width = latestFrame!.Width;
+            height = latestFrame.Height;
+            fingerprint = _latestFrameFingerprint;
+            frame = latestFrame.Clone();
         }
+
+        _diagnosticsService.RecordFrameServed(frameSequence, publishedAt, width, height, fingerprint);
+        return true;
     }
 
     public bool TryCaptureFrame(out GameWindowInfo windowInfo, out Mat frame)
@@ -372,6 +428,7 @@ public sealed class GameCaptureService
         try
         {
             capture.Start(windowInfo.Handle, CreateCaptureSettings(normalizedOptions));
+            _diagnosticsService.StartSession(windowInfo, normalizedOptions);
             captureLoopTask = Task.Factory.StartNew(
                 () => RunCaptureLoop(capture, normalizedOptions, captureLoopCancellationSource.Token),
                 captureLoopCancellationSource.Token,
@@ -383,6 +440,10 @@ public sealed class GameCaptureService
                 _gameCapture = capture;
                 _captureLoopCancellationSource = captureLoopCancellationSource;
                 _captureLoopTask = captureLoopTask;
+                _captureAttemptSequence = 0;
+                _publishedFrameSequence = 0;
+                ResetLatestFrameStateUnderLock();
+                _recoveryRequested = false;
                 _currentOptions = normalizedOptions with { };
                 _currentWindowHandle = windowInfo.Handle;
                 _currentWindowTitle = windowInfo.Title;
@@ -393,7 +454,8 @@ public sealed class GameCaptureService
         catch
         {
             captureLoopCancellationSource.Cancel();
-            WaitForCaptureLoopToStop(captureLoopTask);
+            WaitForCaptureLoopToStop(captureLoopTask, TimeSpan.FromMilliseconds(CaptureLoopStopTimeoutMs));
+            _diagnosticsService.StopSession("Start failed.");
             captureLoopCancellationSource.Dispose();
             capture.Dispose();
             throw;
@@ -401,8 +463,26 @@ public sealed class GameCaptureService
 
         if (shouldRaiseEvent)
         {
-            RunningStateChanged?.Invoke(this, true);
+            RaiseRunningStateChanged(true);
         }
+    }
+
+    private void RaiseRunningStateChanged(bool isRunning)
+    {
+        var handler = RunningStateChanged;
+        if (handler is null)
+        {
+            return;
+        }
+
+        var dispatcher = System.Windows.Application.Current?.Dispatcher;
+        if (dispatcher is not null && !dispatcher.CheckAccess())
+        {
+            dispatcher.BeginInvoke(() => handler(this, isRunning));
+            return;
+        }
+
+        handler(this, isRunning);
     }
 
     private static CaptureModes ParseCaptureMode(string captureModeName)
@@ -430,73 +510,172 @@ public sealed class GameCaptureService
         CancellationToken cancellationToken)
     {
         var captureInterval = TimeSpan.FromMilliseconds(options.CaptureIntervalMs);
+        _diagnosticsService.RecordCaptureLoopStarted();
 
-        while (!cancellationToken.IsCancellationRequested)
+        try
         {
-            Mat? capturedFrame = null;
-            try
+            while (!cancellationToken.IsCancellationRequested)
             {
-                capturedFrame = capture.Capture();
-            }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-            {
-                break;
-            }
-            catch
-            {
-                ClearLatestFrame(capture);
-            }
-
-            if (capturedFrame is not null)
-            {
-                if (capturedFrame.Empty())
+                var attemptId = Interlocked.Increment(ref _captureAttemptSequence);
+                _diagnosticsService.BeginCaptureAttempt(attemptId);
+                var captureStopwatch = System.Diagnostics.Stopwatch.StartNew();
+                Mat? capturedFrame = null;
+                try
                 {
-                    capturedFrame.Dispose();
-                    ClearLatestFrame(capture);
+                    capturedFrame = capture.Capture();
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    captureStopwatch.Stop();
+                    _diagnosticsService.RecordCaptureAttemptCancelled(attemptId, captureStopwatch.Elapsed);
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    captureStopwatch.Stop();
+                    _diagnosticsService.RecordCaptureAttemptFaulted(attemptId, captureStopwatch.Elapsed, ex);
+                    ClearLatestFrame(capture, "Capture attempt faulted.");
+                }
+
+                if (capturedFrame is not null)
+                {
+                    captureStopwatch.Stop();
+                    if (capturedFrame.Empty())
+                    {
+                        _diagnosticsService.RecordCaptureAttemptReturnedEmptyFrame(
+                            attemptId,
+                            captureStopwatch.Elapsed,
+                            capturedFrame.Width,
+                            capturedFrame.Height);
+                        capturedFrame.Dispose();
+                        ClearLatestFrame(capture, "Capture returned empty frame.");
+                    }
+                    else
+                    {
+                        PublishLatestFrame(capture, capturedFrame, attemptId, captureStopwatch.Elapsed, options);
+                    }
                 }
                 else
                 {
-                    PublishLatestFrame(capture, capturedFrame);
+                    captureStopwatch.Stop();
+                    _diagnosticsService.RecordCaptureAttemptReturnedNull(attemptId, captureStopwatch.Elapsed);
+                }
+
+                try
+                {
+                    Task.Delay(captureInterval, cancellationToken).GetAwaiter().GetResult();
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    break;
                 }
             }
-            else
-            {
-                ClearLatestFrame(capture);
-            }
-
-            try
-            {
-                Task.Delay(captureInterval, cancellationToken).GetAwaiter().GetResult();
-            }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-            {
-                break;
-            }
+        }
+        finally
+        {
+            _diagnosticsService.RecordCaptureLoopStopped();
         }
     }
 
-    private void PublishLatestFrame(IGameCapture capture, Mat capturedFrame)
+    private void PublishLatestFrame(
+        IGameCapture capture,
+        Mat capturedFrame,
+        long attemptId,
+        TimeSpan captureElapsed,
+        GameCaptureOptions options)
     {
         ArgumentNullException.ThrowIfNull(capture);
         ArgumentNullException.ThrowIfNull(capturedFrame);
 
-        Mat? previousFrame;
+        var fingerprint = GameCaptureDiagnosticsService.CalculateFingerprint(capturedFrame);
+        var publishedAt = DateTimeOffset.UtcNow;
+        var hasSourceMetadata = TryGetFrameMetadata(capture, out var sourceMetadata);
+        var sourceSequence = hasSourceMetadata ? sourceMetadata.SourceSequence : 0;
+        var capturedAt = hasSourceMetadata ? sourceMetadata.CapturedAt : publishedAt;
+        var discardReason = string.Empty;
+        long frameSequence = 0;
+        Mat? previousFrame = null;
+        var discarded = false;
+        var shouldRecover = false;
+        var published = false;
         lock (_syncRoot)
         {
             if (!ReferenceEquals(_gameCapture, capture))
             {
-                capturedFrame.Dispose();
-                return;
+                discardReason = "Capture instance is no longer active.";
+                discarded = true;
+            }
+            else
+            {
+                var isFirstFrame = _latestFrame is null || _latestFrameSequence <= 0;
+                var sourceAdvanced = hasSourceMetadata && sourceSequence != _latestSourceSequence;
+                var fingerprintChanged = isFirstFrame || fingerprint != _latestFrameFingerprint;
+                var shouldPublish = isFirstFrame || (hasSourceMetadata ? sourceAdvanced : fingerprintChanged);
+                if (!shouldPublish)
+                {
+                    discardReason = hasSourceMetadata
+                        ? $"Source sequence unchanged ({sourceSequence})."
+                        : "Frame fingerprint unchanged.";
+                    discarded = true;
+                    shouldRecover = hasSourceMetadata &&
+                                    !_recoveryRequested &&
+                                    _latestFramePublishedAt != DateTimeOffset.MinValue &&
+                                    DateTimeOffset.UtcNow - _latestFramePublishedAt > ResolveRecoveryFrameMaxAge(options);
+                }
+
+                if (!discarded)
+                {
+                    previousFrame = _latestFrame;
+                    _latestFrame = capturedFrame;
+                    frameSequence = ++_publishedFrameSequence;
+                    _latestFrameSequence = frameSequence;
+                    _latestSourceSequence = sourceSequence;
+                    _latestFrameCapturedAt = capturedAt;
+                    _latestFramePublishedAt = publishedAt;
+                    _sameFingerprintPublishStreak = fingerprintChanged ? 1 : _sameFingerprintPublishStreak + 1;
+                    _latestFrameFingerprint = fingerprint;
+                    published = true;
+                }
             }
 
-            previousFrame = _latestFrame;
-            _latestFrame = capturedFrame;
+            if (shouldRecover)
+            {
+                _recoveryRequested = true;
+            }
+        }
+
+        if (discarded)
+        {
+            capturedFrame.Dispose();
+            _diagnosticsService.RecordCaptureAttemptDiscarded(attemptId, captureElapsed, discardReason);
+            if (shouldRecover)
+            {
+                ScheduleCaptureRecovery(capture, discardReason);
+            }
+
+            return;
+        }
+
+        if (!published)
+        {
+            capturedFrame.Dispose();
+            _diagnosticsService.RecordCaptureAttemptDiscarded(attemptId, captureElapsed, "Frame was not published.");
+            return;
         }
 
         previousFrame?.Dispose();
+        _diagnosticsService.RecordFramePublished(
+            attemptId,
+            frameSequence,
+            publishedAt,
+            capturedFrame.Width,
+            capturedFrame.Height,
+            fingerprint,
+            captureElapsed,
+            options.CaptureIntervalMs);
     }
 
-    private void ClearLatestFrame(IGameCapture capture)
+    private void ClearLatestFrame(IGameCapture capture, string reason)
     {
         ArgumentNullException.ThrowIfNull(capture);
 
@@ -510,21 +689,42 @@ public sealed class GameCaptureService
 
             frameToDispose = _latestFrame;
             _latestFrame = null;
+            ResetLatestFrameStateUnderLock();
         }
 
         frameToDispose?.Dispose();
+        _diagnosticsService.RecordLatestFrameCleared(reason);
     }
 
-    private static void WaitForCaptureLoopToStop(Task? captureLoopTask)
+    private static bool WaitForCaptureLoopToStop(Task? captureLoopTask, TimeSpan timeout)
     {
         if (captureLoopTask is null)
         {
-            return;
+            return true;
         }
 
         try
         {
-            captureLoopTask.GetAwaiter().GetResult();
+            return captureLoopTask.Wait(timeout);
+        }
+        catch (OperationCanceledException)
+        {
+            return true;
+        }
+        catch (AggregateException aggregateException) when (aggregateException.InnerExceptions.All(static ex => ex is OperationCanceledException))
+        {
+            return true;
+        }
+    }
+
+    private static void CleanupTimedOutCapture(
+        IGameCapture? capture,
+        CancellationTokenSource? cancellationTokenSource,
+        Task? captureLoopTask)
+    {
+        try
+        {
+            captureLoopTask?.GetAwaiter().GetResult();
         }
         catch (OperationCanceledException)
         {
@@ -532,6 +732,99 @@ public sealed class GameCaptureService
         catch (AggregateException aggregateException) when (aggregateException.InnerExceptions.All(static ex => ex is OperationCanceledException))
         {
         }
+        finally
+        {
+            cancellationTokenSource?.Dispose();
+            capture?.Dispose();
+        }
+    }
+
+    private static bool TryGetFrameMetadata(
+        IGameCapture capture,
+        out GameCaptureFrameMetadata metadata)
+    {
+        if (capture is IGameCaptureFrameMetadataProvider metadataProvider &&
+            metadataProvider.TryGetFrameMetadata(out metadata) &&
+            metadata.SourceSequence > 0)
+        {
+            return true;
+        }
+
+        metadata = default;
+        return false;
+    }
+
+    private static TimeSpan ResolveFreshFrameMaxAge(GameCaptureOptions options)
+    {
+        var captureInterval = Math.Clamp(options.CaptureIntervalMs, MinimumCaptureIntervalMs, MaximumCaptureIntervalMs);
+        var maxAgeMilliseconds = Math.Clamp(
+            captureInterval * 5,
+            MinimumFreshFrameAgeMs,
+            MaximumFreshFrameAgeMs);
+        return TimeSpan.FromMilliseconds(maxAgeMilliseconds);
+    }
+
+    private static TimeSpan ResolveRecoveryFrameMaxAge(GameCaptureOptions options)
+    {
+        var captureInterval = Math.Clamp(options.CaptureIntervalMs, MinimumCaptureIntervalMs, MaximumCaptureIntervalMs);
+        var maxAgeMilliseconds = Math.Clamp(
+            captureInterval * 20,
+            MinimumRecoveryFrameAgeMs,
+            MaximumRecoveryFrameAgeMs);
+        return TimeSpan.FromMilliseconds(maxAgeMilliseconds);
+    }
+
+    private void ScheduleCaptureRecovery(IGameCapture capture, string reason)
+    {
+        nint windowHandle;
+        GameCaptureOptions options;
+        lock (_syncRoot)
+        {
+            if (!ReferenceEquals(_gameCapture, capture))
+            {
+                return;
+            }
+
+            windowHandle = _currentWindowHandle;
+            options = _currentOptions with { };
+        }
+
+        if (windowHandle == nint.Zero)
+        {
+            return;
+        }
+
+        _diagnosticsService.RecordLatestFrameCleared($"Capture recovery scheduled | reason={reason}");
+        _ = Task.Run(() =>
+        {
+            try
+            {
+                if (!TryStart(windowHandle, out _, options))
+                {
+                    lock (_syncRoot)
+                    {
+                        _recoveryRequested = false;
+                    }
+                }
+            }
+            catch
+            {
+                lock (_syncRoot)
+                {
+                    _recoveryRequested = false;
+                }
+            }
+        });
+    }
+
+    private void ResetLatestFrameStateUnderLock()
+    {
+        _latestFrameSequence = 0;
+        _latestSourceSequence = 0;
+        _latestFrameCapturedAt = DateTimeOffset.MinValue;
+        _latestFramePublishedAt = DateTimeOffset.MinValue;
+        _latestFrameFingerprint = 0;
+        _sameFingerprintPublishStreak = 0;
     }
 
     private static GameCaptureOptions NormalizeOptions(GameCaptureOptions options)
@@ -569,4 +862,3 @@ public sealed class GameCaptureService
         return true;
     }
 }
-

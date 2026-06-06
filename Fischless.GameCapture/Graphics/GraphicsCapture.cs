@@ -12,14 +12,23 @@ using SharpDX.D3DCompiler;
 
 namespace Fischless.GameCapture.Graphics;
 
-public class GraphicsCapture(bool captureHdr = false) : IGameCapture
+public class GraphicsCapture(bool captureHdr = false) : IGameCapture, IGameCaptureFrameMetadataProvider
 {
+    private static readonly TimeSpan FrameLockTimeout = TimeSpan.FromMilliseconds(50);
+    private static readonly TimeSpan StartQueueTimeout = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan StopQueueTimeout = TimeSpan.FromSeconds(2);
+    private static readonly TimeSpan StopLockTimeout = TimeSpan.FromSeconds(1);
+
+    private readonly object _lifecycleLock = new();
     private nint _hWnd;
 
     private Direct3D11CaptureFramePool? _captureFramePool;
     private GraphicsCaptureItem? _captureItem;
 
     private GraphicsCaptureSession? _captureSession;
+    private Windows.System.DispatcherQueueController? _dispatcherQueueController;
+    private Windows.System.DispatcherQueue? _dispatcherQueue;
+    private int _dispatcherThreadId;
 
     private IDirect3DDevice? _d3dDevice;
 
@@ -47,6 +56,8 @@ public class GraphicsCapture(bool captureHdr = false) : IGameCapture
     private long _lastFrameTime;
 
     private readonly Stopwatch _frameTimer = new();
+    private long _sourceFrameSequence;
+    private long _lastFrameCapturedAtUnixMs;
 
     public void Dispose()
     {
@@ -55,6 +66,68 @@ public class GraphicsCapture(bool captureHdr = false) : IGameCapture
     }
 
     public void Start(nint hWnd, Dictionary<string, object>? settings = null)
+    {
+        Stop();
+
+        var controller = Windows.System.DispatcherQueueController.CreateOnDedicatedThread();
+        var dispatcherQueue = controller.DispatcherQueue;
+        Exception? startException = null;
+        using var started = new ManualResetEventSlim(false);
+
+        lock (_lifecycleLock)
+        {
+            _dispatcherQueueController = controller;
+            _dispatcherQueue = dispatcherQueue;
+            _dispatcherThreadId = 0;
+        }
+
+        if (!dispatcherQueue.TryEnqueue(() =>
+            {
+                try
+                {
+                    _dispatcherThreadId = Environment.CurrentManagedThreadId;
+                    StartCore(hWnd);
+                }
+                catch (Exception ex)
+                {
+                    try
+                    {
+                        StopCore();
+                    }
+                    catch (Exception stopException)
+                    {
+                        Debug.WriteLine(stopException);
+                    }
+
+                    startException = ex;
+                }
+                finally
+                {
+                    started.Set();
+                }
+            }))
+        {
+            ClearDispatcherQueueState(controller);
+            _ = controller.ShutdownQueueAsync();
+            throw new InvalidOperationException("Failed to initialize capture dispatcher queue.");
+        }
+
+        if (!started.Wait(StartQueueTimeout))
+        {
+            ClearDispatcherQueueState(controller);
+            _ = controller.ShutdownQueueAsync();
+            throw new TimeoutException("Timed out while initializing graphics capture on the dispatcher queue.");
+        }
+
+        if (startException is not null)
+        {
+            ClearDispatcherQueueState(controller);
+            _ = controller.ShutdownQueueAsync();
+            throw startException;
+        }
+    }
+
+    private void StartCore(nint hWnd)
     {
         _hWnd = hWnd;
 
@@ -183,8 +256,7 @@ public class GraphicsCapture(bool captureHdr = false) : IGameCapture
 
     private void OnFrameArrived(Direct3D11CaptureFramePool sender, object args)
     {
-        // 使用写锁更新最新帧
-        _frameAccessLock.EnterWriteLock();
+        Mat? nextFrame = null;
         try
         {
             if (_hWnd == 0)
@@ -235,28 +307,57 @@ public class GraphicsCapture(bool captureHdr = false) : IGameCapture
                 var d3dDevice = surfaceTexture.Device;
 
                 _stagingTexture ??= Direct3D11Helper.CreateStagingTexture(d3dDevice, frame.ContentSize.Width, frame.ContentSize.Height, _region);
-                var mat = _stagingTexture.CreateMat(d3dDevice, sourceTexture, _region);
-
-                // 释放之前的帧，然后更新
-                _latestFrame?.Dispose();
-                _latestFrame = mat;
+                nextFrame = _stagingTexture.CreateMat(d3dDevice, sourceTexture, _region);
+                if (nextFrame is null || nextFrame.Empty())
+                {
+                    nextFrame?.Dispose();
+                    nextFrame = null;
+                    return;
+                }
             }
             catch (SharpDXException e)
             {
                 Debug.WriteLine($"SharpDXException: {e.Descriptor}");
-                _latestFrame = null;
+                nextFrame?.Dispose();
+                nextFrame = null;
+                return;
+            }
+
+            if (!_frameAccessLock.TryEnterWriteLock(FrameLockTimeout))
+            {
+                nextFrame.Dispose();
+                nextFrame = null;
+                return;
+            }
+
+            try
+            {
+                // 只在交换最新帧时持锁，避免消费者克隆 Mat 时阻塞 WGC 回调线程。
+                _latestFrame?.Dispose();
+                _latestFrame = nextFrame;
+                nextFrame = null;
+                Volatile.Write(ref _lastFrameCapturedAtUnixMs, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+                Interlocked.Increment(ref _sourceFrameSequence);
+            }
+            finally
+            {
+                _frameAccessLock.ExitWriteLock();
             }
         }
         finally
         {
-            _frameAccessLock.ExitWriteLock();
+            nextFrame?.Dispose();
         }
     }
 
     public Mat? Capture()
     {
         // 使用读锁获取最新帧
-        _frameAccessLock.EnterReadLock();
+        if (!_frameAccessLock.TryEnterReadLock(FrameLockTimeout))
+        {
+            return null;
+        }
+
         try
         {
             // 返回最新帧的副本（这里我们必须克隆，因为Mat是不线程安全的）
@@ -270,29 +371,139 @@ public class GraphicsCapture(bool captureHdr = false) : IGameCapture
 
     public void Stop()
     {
-        _frameAccessLock.EnterWriteLock();
+        Windows.System.DispatcherQueueController? controller;
+        Windows.System.DispatcherQueue? dispatcherQueue;
+        int dispatcherThreadId;
+
+        lock (_lifecycleLock)
+        {
+            controller = _dispatcherQueueController;
+            dispatcherQueue = _dispatcherQueue;
+            dispatcherThreadId = _dispatcherThreadId;
+            _dispatcherQueueController = null;
+            _dispatcherQueue = null;
+            _dispatcherThreadId = 0;
+        }
+
+        if (controller is null || dispatcherQueue is null)
+        {
+            StopCore();
+            return;
+        }
+
+        if (dispatcherThreadId != 0 && Environment.CurrentManagedThreadId == dispatcherThreadId)
+        {
+            StopCore();
+            _ = controller.ShutdownQueueAsync();
+            return;
+        }
+
+        using var stopped = new ManualResetEventSlim(false);
+        Exception? stopException = null;
+
+        if (dispatcherQueue.TryEnqueue(() =>
+            {
+                try
+                {
+                    StopCore();
+                }
+                catch (Exception ex)
+                {
+                    stopException = ex;
+                }
+                finally
+                {
+                    stopped.Set();
+                }
+            }))
+        {
+            _ = stopped.Wait(StopQueueTimeout);
+        }
+
+        _ = controller.ShutdownQueueAsync();
+
+        if (stopException is not null)
+        {
+            Debug.WriteLine(stopException);
+        }
+    }
+
+    private void StopCore()
+    {
+        _hWnd = 0;
+        IsCapturing = false;
+
+        if (_captureItem is not null)
+        {
+            _captureItem.Closed -= CaptureItemOnClosed;
+        }
+
+        if (_captureFramePool is not null)
+        {
+            _captureFramePool.FrameArrived -= OnFrameArrived;
+        }
+
+        _captureSession?.Dispose();
+        _captureSession = null;
+        _captureFramePool?.Dispose();
+        _captureFramePool = null;
+        _captureItem = null;
+        _stagingTexture?.Dispose();
+        _stagingTexture = null;
+        _hdrOutputTexture?.Dispose();
+        _hdrOutputTexture = null;
+        _hdrComputeShader?.Dispose();
+        _hdrComputeShader = null;
+        _d3dDevice?.Dispose();
+        _d3dDevice = null;
+        Interlocked.Exchange(ref _sourceFrameSequence, 0);
+        Volatile.Write(ref _lastFrameCapturedAtUnixMs, 0);
+
+        if (!_frameAccessLock.TryEnterWriteLock(StopLockTimeout))
+        {
+            return;
+        }
+
         try
         {
-            _captureSession?.Dispose();
-            _captureSession = null;
-            _captureFramePool?.Dispose();
-            _captureFramePool = null;
-            _captureItem = null;
-            _stagingTexture?.Dispose();
-            _stagingTexture = null;
-            _hdrOutputTexture?.Dispose();
-            _hdrOutputTexture = null;
-            _hdrComputeShader?.Dispose();
-            _hdrComputeShader = null;
-            _d3dDevice?.Dispose();
-            _d3dDevice = null;
-            _hWnd = 0;
-            IsCapturing = false;
+            _latestFrame?.Dispose();
+            _latestFrame = null;
         }
         finally
         {
             _frameAccessLock.ExitWriteLock();
         }
+    }
+
+    private void ClearDispatcherQueueState(Windows.System.DispatcherQueueController controller)
+    {
+        lock (_lifecycleLock)
+        {
+            if (!ReferenceEquals(_dispatcherQueueController, controller))
+            {
+                return;
+            }
+
+            _dispatcherQueueController = null;
+            _dispatcherQueue = null;
+            _dispatcherThreadId = 0;
+        }
+    }
+
+    public bool TryGetFrameMetadata(out GameCaptureFrameMetadata metadata)
+    {
+        var sequence = Interlocked.Read(ref _sourceFrameSequence);
+        var capturedAtUnixMs = Volatile.Read(ref _lastFrameCapturedAtUnixMs);
+        if (sequence <= 0 || capturedAtUnixMs <= 0)
+        {
+            metadata = default;
+            return false;
+        }
+
+        metadata = new GameCaptureFrameMetadata(
+            sequence,
+            DateTimeOffset.FromUnixTimeMilliseconds(capturedAtUnixMs));
+        return true;
     }
 
     private void CaptureItemOnClosed(GraphicsCaptureItem sender, object args)
