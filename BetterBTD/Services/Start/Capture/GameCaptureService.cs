@@ -6,6 +6,9 @@ namespace BetterBTD.Services.Start.Capture;
 
 public sealed class GameCaptureService
 {
+    private const int MinimumCaptureIntervalMs = 10;
+    private const int MaximumCaptureIntervalMs = 2000;
+
     private static readonly Lazy<GameCaptureService> InstanceHolder = new(() => new GameCaptureService());
 
     private readonly object _syncRoot = new();
@@ -14,6 +17,9 @@ public sealed class GameCaptureService
     private readonly IReadOnlyList<string> _availableCaptureModes;
 
     private IGameCapture? _gameCapture;
+    private CancellationTokenSource? _captureLoopCancellationSource;
+    private Task? _captureLoopTask;
+    private Mat? _latestFrame;
     private GameCaptureOptions _currentOptions = new();
     private nint _currentWindowHandle;
     private string _currentWindowTitle = string.Empty;
@@ -82,7 +88,7 @@ public sealed class GameCaptureService
 
         lock (_syncRoot)
         {
-            _currentOptions = options with { };
+            _currentOptions = NormalizeOptions(options);
         }
     }
 
@@ -178,6 +184,9 @@ public sealed class GameCaptureService
     public void Stop()
     {
         IGameCapture? captureToDispose;
+        CancellationTokenSource? captureLoopCancellationSource;
+        Task? captureLoopTask;
+        Mat? latestFrameToDispose;
         var shouldRaiseEvent = false;
 
         lock (_syncRoot)
@@ -188,13 +197,23 @@ public sealed class GameCaptureService
             }
 
             captureToDispose = _gameCapture;
+            captureLoopCancellationSource = _captureLoopCancellationSource;
+            captureLoopTask = _captureLoopTask;
+            latestFrameToDispose = _latestFrame;
             _gameCapture = null;
+            _captureLoopCancellationSource = null;
+            _captureLoopTask = null;
+            _latestFrame = null;
             _currentWindowHandle = nint.Zero;
             _currentWindowTitle = string.Empty;
             shouldRaiseEvent = _isRunning;
             _isRunning = false;
         }
 
+        captureLoopCancellationSource?.Cancel();
+        WaitForCaptureLoopToStop(captureLoopTask);
+        captureLoopCancellationSource?.Dispose();
+        latestFrameToDispose?.Dispose();
         captureToDispose?.Dispose();
 
         if (shouldRaiseEvent)
@@ -221,32 +240,16 @@ public sealed class GameCaptureService
     public bool TryCaptureFrame(out Mat frame)
     {
         frame = null!;
-
-        IGameCapture? capture;
         lock (_syncRoot)
         {
-            if (!_isRunning || _gameCapture is null)
+            if (!_isRunning || _latestFrame is null || _latestFrame.Empty())
             {
                 return false;
             }
 
-            capture = _gameCapture;
+            frame = _latestFrame.Clone();
+            return true;
         }
-
-        var capturedFrame = capture.Capture();
-        if (capturedFrame is null)
-        {
-            return false;
-        }
-
-        if (capturedFrame.Empty())
-        {
-            capturedFrame.Dispose();
-            return false;
-        }
-
-        frame = capturedFrame;
-        return true;
     }
 
     public bool TryCaptureFrame(out GameWindowInfo windowInfo, out Mat frame)
@@ -357,20 +360,30 @@ public sealed class GameCaptureService
     {
         ArgumentNullException.ThrowIfNull(options);
 
-        var capture = GameCaptureFactory.Create(ParseCaptureMode(options.CaptureModeName));
+        Stop();
 
-        IGameCapture? previousCapture = null;
+        var normalizedOptions = NormalizeOptions(options);
+        var capture = GameCaptureFactory.Create(ParseCaptureMode(options.CaptureModeName));
+        var captureLoopCancellationSource = new CancellationTokenSource();
+        Task? captureLoopTask = null;
+
         var shouldRaiseEvent = false;
 
         try
         {
-            capture.Start(windowInfo.Handle, CreateCaptureSettings(options));
+            capture.Start(windowInfo.Handle, CreateCaptureSettings(normalizedOptions));
+            captureLoopTask = Task.Factory.StartNew(
+                () => RunCaptureLoop(capture, normalizedOptions, captureLoopCancellationSource.Token),
+                captureLoopCancellationSource.Token,
+                TaskCreationOptions.LongRunning,
+                TaskScheduler.Default);
 
             lock (_syncRoot)
             {
-                previousCapture = _gameCapture;
                 _gameCapture = capture;
-                _currentOptions = options with { };
+                _captureLoopCancellationSource = captureLoopCancellationSource;
+                _captureLoopTask = captureLoopTask;
+                _currentOptions = normalizedOptions with { };
                 _currentWindowHandle = windowInfo.Handle;
                 _currentWindowTitle = windowInfo.Title;
                 shouldRaiseEvent = !_isRunning && capture.IsCapturing;
@@ -379,11 +392,12 @@ public sealed class GameCaptureService
         }
         catch
         {
+            captureLoopCancellationSource.Cancel();
+            WaitForCaptureLoopToStop(captureLoopTask);
+            captureLoopCancellationSource.Dispose();
             capture.Dispose();
             throw;
         }
-
-        previousCapture?.Dispose();
 
         if (shouldRaiseEvent)
         {
@@ -407,6 +421,126 @@ public sealed class GameCaptureService
         return new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase)
         {
             ["autoFixWin11BitBlt"] = options.AutoFixWin11BitBlt
+        };
+    }
+
+    private void RunCaptureLoop(
+        IGameCapture capture,
+        GameCaptureOptions options,
+        CancellationToken cancellationToken)
+    {
+        var captureInterval = TimeSpan.FromMilliseconds(options.CaptureIntervalMs);
+
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            Mat? capturedFrame = null;
+            try
+            {
+                capturedFrame = capture.Capture();
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                break;
+            }
+            catch
+            {
+                ClearLatestFrame(capture);
+            }
+
+            if (capturedFrame is not null)
+            {
+                if (capturedFrame.Empty())
+                {
+                    capturedFrame.Dispose();
+                    ClearLatestFrame(capture);
+                }
+                else
+                {
+                    PublishLatestFrame(capture, capturedFrame);
+                }
+            }
+            else
+            {
+                ClearLatestFrame(capture);
+            }
+
+            try
+            {
+                Task.Delay(captureInterval, cancellationToken).GetAwaiter().GetResult();
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                break;
+            }
+        }
+    }
+
+    private void PublishLatestFrame(IGameCapture capture, Mat capturedFrame)
+    {
+        ArgumentNullException.ThrowIfNull(capture);
+        ArgumentNullException.ThrowIfNull(capturedFrame);
+
+        Mat? previousFrame;
+        lock (_syncRoot)
+        {
+            if (!ReferenceEquals(_gameCapture, capture))
+            {
+                capturedFrame.Dispose();
+                return;
+            }
+
+            previousFrame = _latestFrame;
+            _latestFrame = capturedFrame;
+        }
+
+        previousFrame?.Dispose();
+    }
+
+    private void ClearLatestFrame(IGameCapture capture)
+    {
+        ArgumentNullException.ThrowIfNull(capture);
+
+        Mat? frameToDispose;
+        lock (_syncRoot)
+        {
+            if (!ReferenceEquals(_gameCapture, capture))
+            {
+                return;
+            }
+
+            frameToDispose = _latestFrame;
+            _latestFrame = null;
+        }
+
+        frameToDispose?.Dispose();
+    }
+
+    private static void WaitForCaptureLoopToStop(Task? captureLoopTask)
+    {
+        if (captureLoopTask is null)
+        {
+            return;
+        }
+
+        try
+        {
+            captureLoopTask.GetAwaiter().GetResult();
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (AggregateException aggregateException) when (aggregateException.InnerExceptions.All(static ex => ex is OperationCanceledException))
+        {
+        }
+    }
+
+    private static GameCaptureOptions NormalizeOptions(GameCaptureOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+
+        return options with
+        {
+            CaptureIntervalMs = Math.Clamp(options.CaptureIntervalMs, MinimumCaptureIntervalMs, MaximumCaptureIntervalMs)
         };
     }
 

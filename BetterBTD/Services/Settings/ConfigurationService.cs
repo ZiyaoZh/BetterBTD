@@ -35,6 +35,7 @@ public sealed class ConfigurationService
 
         Current.MaskWindowTargetTitle = configuration.MaskWindowTargetTitle;
         Current.CaptureModeName = configuration.CaptureModeName;
+        Current.CaptureIntervalMs = Math.Clamp(configuration.CaptureIntervalMs, 10, 2000);
         Current.AutoFixWin11BitBlt = configuration.AutoFixWin11BitBlt;
         Current.LanguageCode = configuration.LanguageCode;
         Current.ThemeMode = configuration.ThemeMode;
@@ -66,6 +67,7 @@ public sealed class ConfigurationService
             config.CaptureModeName = string.IsNullOrWhiteSpace(config.CaptureModeName)
                 ? nameof(Fischless.GameCapture.CaptureModes.WindowsGraphicsCapture)
                 : config.CaptureModeName;
+            config.CaptureIntervalMs = Math.Clamp(config.CaptureIntervalMs <= 0 ? 50 : config.CaptureIntervalMs, 10, 2000);
             config.KeyboardMouseSimulationModeName =
                 KeyboardMouseSimulationModeExtensions.Parse(config.KeyboardMouseSimulationModeName).ToConfigurationValue();
             return config;

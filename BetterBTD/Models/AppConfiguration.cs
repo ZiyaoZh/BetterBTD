@@ -8,6 +8,8 @@ public sealed class AppConfiguration
 
     public string CaptureModeName { get; set; } = "WindowsGraphicsCapture";
 
+    public int CaptureIntervalMs { get; set; } = 50;
+
     public bool AutoFixWin11BitBlt { get; set; }
 
     public string LanguageCode { get; set; } = "zh-CN";

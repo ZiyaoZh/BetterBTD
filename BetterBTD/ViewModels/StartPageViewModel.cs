@@ -101,7 +101,22 @@ public sealed class StartPageViewModel : ObservableObject
     public int TriggerIntervalMs
     {
         get => _triggerIntervalMs;
-        set => SetProperty(ref _triggerIntervalMs, value);
+        set
+        {
+            var normalizedValue = Math.Clamp(value, 10, 2000);
+            if (!SetProperty(ref _triggerIntervalMs, normalizedValue))
+            {
+                return;
+            }
+
+            PersistConfiguration(config => config.CaptureIntervalMs = normalizedValue);
+            _gameCaptureService.Configure(BuildCaptureOptions());
+
+            if (_gameCaptureService.IsRunning)
+            {
+                RestartCapture();
+            }
+        }
     }
 
     public bool LinkedStartEnabled
@@ -331,6 +346,7 @@ public sealed class StartPageViewModel : ObservableObject
         return new GameCaptureOptions
         {
             CaptureModeName = SelectedCaptureMode,
+            CaptureIntervalMs = TriggerIntervalMs,
             AutoFixWin11BitBlt = AutoFixWin11BitBlt
         };
     }
@@ -349,6 +365,7 @@ public sealed class StartPageViewModel : ObservableObject
             }
 
             _selectedCaptureMode = configuredCaptureMode;
+            _triggerIntervalMs = Math.Clamp(configuration.CaptureIntervalMs <= 0 ? 50 : configuration.CaptureIntervalMs, 10, 2000);
             _autoFixWin11BitBlt = configuration.AutoFixWin11BitBlt;
             _gameCaptureService.Configure(BuildCaptureOptions());
         }

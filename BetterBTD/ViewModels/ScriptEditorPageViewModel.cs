@@ -1257,6 +1257,7 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         return new GameCaptureOptions
         {
             CaptureModeName = configuredCaptureMode,
+            CaptureIntervalMs = Math.Clamp(configuration.CaptureIntervalMs <= 0 ? 50 : configuration.CaptureIntervalMs, 10, 2000),
             AutoFixWin11BitBlt = configuration.AutoFixWin11BitBlt
         };
     }
