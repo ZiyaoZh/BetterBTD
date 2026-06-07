@@ -1,0 +1,309 @@
+<ui:FluentWindow x:Class="BetterBTD.Views.Windows.Btd6SaveViewerWindow"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 xmlns:viewModels="clr-namespace:BetterBTD.ViewModels"
+                 mc:Ignorable="d"
+                 Title="{Binding WindowTitle}"
+                 Width="1180"
+                 Height="720"
+                 MinWidth="920"
+                 MinHeight="560"
+                 ExtendsContentIntoTitleBar="True"
+                 WindowBackdropType="Mica"
+                 WindowCornerPreference="Round"
+                 WindowStartupLocation="CenterOwner">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <ui:TitleBar Grid.Row="0"
+                     Title="{Binding WindowTitle}">
+            <ui:TitleBar.Icon>
+                <ui:SymbolIcon Symbol="DocumentEdit24" />
+            </ui:TitleBar.Icon>
+        </ui:TitleBar>
+
+        <ui:Border Grid.Row="1"
+                   Margin="24,14,24,10"
+                   Padding="16"
+                   Background="{DynamicResource CardBackground}"
+                   BorderBrush="{DynamicResource CardBorderBrush}"
+                   BorderThickness="1"
+                   CornerRadius="8">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0">
+                    <ui:TextBlock FontWeight="SemiBold"
+                                  Text="{Binding LoadedFileLabel}" />
+                    <ui:TextBlock Margin="0,4,0,0"
+                                  Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                  Text="{Binding DisplayFilePath}"
+                                  TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+
+                <ui:Button Grid.Column="1"
+                           MinWidth="104"
+                           Margin="12,0,0,0"
+                           Command="{Binding OpenFileCommand}"
+                           Content="{Binding OpenFileText}" />
+                <ui:Button Grid.Column="2"
+                           MinWidth="88"
+                           Margin="8,0,0,0"
+                           Command="{Binding ReloadCommand}"
+                           Content="{Binding ReloadText}" />
+                <ui:Button Grid.Column="3"
+                           MinWidth="112"
+                           Margin="8,0,0,0"
+                           Command="{Binding ExportJsonCommand}"
+                           Content="{Binding ExportJsonText}" />
+            </Grid>
+        </ui:Border>
+
+        <ui:Border Grid.Row="2"
+                   Margin="24,0,24,10"
+                   Padding="0"
+                   Background="{DynamicResource CardBackground}"
+                   BorderBrush="{DynamicResource CardBorderBrush}"
+                   BorderThickness="1"
+                   CornerRadius="8">
+            <Grid>
+                <Grid Visibility="{Binding HasDocument, Converter={StaticResource BooleanToVisibilityRevertConverter}}">
+                    <StackPanel HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Width="420">
+                        <ui:SymbolIcon HorizontalAlignment="Center"
+                                       FontSize="36"
+                                       Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                       Symbol="DocumentEdit24" />
+                        <ui:TextBlock Margin="0,14,0,0"
+                                      HorizontalAlignment="Center"
+                                      FontSize="18"
+                                      FontWeight="SemiBold"
+                                      Text="{Binding EmptyStateTitle}" />
+                        <ui:TextBlock Margin="0,8,0,0"
+                                      Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                      Text="{Binding EmptyStateDescription}"
+                                      TextAlignment="Center"
+                                      TextWrapping="Wrap" />
+                    </StackPanel>
+                </Grid>
+
+                <TabControl Visibility="{Binding HasDocument, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <TabItem Header="{Binding SummaryTabText}">
+                        <ScrollViewer Padding="18"
+                                      VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding SummaryItems}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <UniformGrid Columns="3" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <ui:Border Margin="0,0,10,10"
+                                                   Padding="14,12"
+                                                   Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                                                   BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                                                   BorderThickness="1"
+                                                   CornerRadius="8">
+                                            <StackPanel>
+                                                <ui:TextBlock Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                                              Text="{Binding Label}" />
+                                                <ui:TextBlock Margin="0,6,0,0"
+                                                              FontSize="15"
+                                                              FontWeight="SemiBold"
+                                                              Text="{Binding Value}"
+                                                              TextTrimming="CharacterEllipsis"
+                                                              ToolTip="{Binding Value}" />
+                                            </StackPanel>
+                                        </ui:Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </TabItem>
+
+                    <TabItem Header="{Binding TreeTabText}">
+                        <Grid Margin="18">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="2*" />
+                                <ColumnDefinition Width="16" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <ui:TextBox Grid.Row="0"
+                                        Grid.Column="0"
+                                        Margin="0,0,0,10"
+                                        PlaceholderText="{Binding SearchPlaceholderText}"
+                                        Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                            <ui:TextBlock Grid.Row="0"
+                                          Grid.Column="2"
+                                          Margin="0,0,0,10"
+                                          VerticalAlignment="Center"
+                                          Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                          Text="{Binding SearchResultsText}" />
+
+                            <ui:Border Grid.Row="1"
+                                       Grid.Column="0"
+                                       Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                                       BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                                       BorderThickness="1"
+                                       CornerRadius="8">
+                                <TreeView Padding="8"
+                                          Background="Transparent"
+                                          BorderThickness="0"
+                                          ItemsSource="{Binding JsonNodes}"
+                                          SelectedItemChanged="OnJsonTreeSelectedItemChanged"
+                                          VirtualizingStackPanel.IsVirtualizing="True"
+                                          VirtualizingStackPanel.VirtualizationMode="Recycling">
+                                    <TreeView.ItemTemplate>
+                                        <HierarchicalDataTemplate DataType="{x:Type viewModels:Btd6SaveJsonNodeViewModel}"
+                                                                  ItemsSource="{Binding Children}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock FontWeight="SemiBold"
+                                                           Text="{Binding Name}" />
+                                                <TextBlock Margin="8,0,0,0"
+                                                           Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                                           Text="{Binding Type}" />
+                                                <TextBlock Margin="8,0,0,0"
+                                                           Text="{Binding ValuePreview}"
+                                                           TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+                                        </HierarchicalDataTemplate>
+                                    </TreeView.ItemTemplate>
+                                </TreeView>
+                            </ui:Border>
+
+                            <Grid Grid.Row="1"
+                                  Grid.Column="2">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+
+                                <ui:Border Grid.Row="0"
+                                           Padding="14"
+                                           Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                                           BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                                           BorderThickness="1"
+                                           CornerRadius="8">
+                                    <StackPanel>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <ui:TextBlock Grid.Column="0"
+                                                          FontWeight="SemiBold"
+                                                          Text="{Binding SelectedNodeTitle}" />
+                                            <ui:Button Grid.Column="1"
+                                                       MinWidth="88"
+                                                       Command="{Binding CopySelectedNodeCommand}"
+                                                       Content="{Binding CopySelectedText}" />
+                                        </Grid>
+
+                                        <ui:TextBlock Margin="0,12,0,0"
+                                                      Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                                      Text="{Binding SelectedNodePathLabel}" />
+                                        <TextBox Margin="0,4,0,0"
+                                                 IsReadOnly="True"
+                                                 Text="{Binding SelectedNode.Path, Mode=OneWay}"
+                                                 TextWrapping="Wrap" />
+
+                                        <ui:TextBlock Margin="0,12,0,0"
+                                                      Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                                      Text="{Binding SelectedNodeTypeLabel}" />
+                                        <TextBox Margin="0,4,0,0"
+                                                 IsReadOnly="True"
+                                                 Text="{Binding SelectedNode.Type, Mode=OneWay}" />
+
+                                        <ui:TextBlock Margin="0,12,0,0"
+                                                      Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                                      Text="{Binding SelectedNodeValueLabel}" />
+                                        <TextBox Margin="0,4,0,0"
+                                                 MinHeight="72"
+                                                 IsReadOnly="True"
+                                                 Text="{Binding SelectedNode.ValuePreview, Mode=OneWay}"
+                                                 TextWrapping="Wrap"
+                                                 VerticalScrollBarVisibility="Auto" />
+                                    </StackPanel>
+                                </ui:Border>
+
+                                <ui:Border Grid.Row="1"
+                                           Margin="0,12,0,0"
+                                           Padding="10"
+                                           Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                                           BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                                           BorderThickness="1"
+                                           CornerRadius="8">
+                                    <ListBox Background="Transparent"
+                                             BorderThickness="0"
+                                             ItemsSource="{Binding SearchResults}">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Margin="0,0,0,8">
+                                                    <TextBlock FontWeight="SemiBold"
+                                                               Text="{Binding Path}"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               ToolTip="{Binding Path}" />
+                                                    <TextBlock Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                                               Text="{Binding ValuePreview}"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               ToolTip="{Binding ValuePreview}" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                </ui:Border>
+                            </Grid>
+                        </Grid>
+                    </TabItem>
+
+                    <TabItem Header="{Binding RawJsonTabText}">
+                        <TextBox Margin="18"
+                                 AcceptsReturn="True"
+                                 AcceptsTab="True"
+                                 FontFamily="Consolas"
+                                 FontSize="13"
+                                 HorizontalScrollBarVisibility="Auto"
+                                 IsReadOnly="True"
+                                 Text="{Binding RawJsonText}"
+                                 TextWrapping="NoWrap"
+                                 VerticalScrollBarVisibility="Auto"
+                                 />
+                    </TabItem>
+                </TabControl>
+            </Grid>
+        </ui:Border>
+
+        <StatusBar Grid.Row="3"
+                   MinHeight="0"
+                   Padding="10,2">
+            <StatusBarItem>
+                <ui:SymbolIcon Foreground="{DynamicResource TextFillColorSecondaryBrush}" Symbol="Info24" />
+            </StatusBarItem>
+            <StatusBarItem Margin="6,0,0,0">
+                <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                           Text="{Binding StatusText}" />
+            </StatusBarItem>
+        </StatusBar>
+    </Grid>
+</ui:FluentWindow>

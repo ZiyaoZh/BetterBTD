@@ -16,6 +16,55 @@
 
         <ui:CardExpander Margin="0,0,0,12"
                          ContentPadding="0"
+                         Icon="{ui:SymbolIcon DocumentEdit24}"
+                         IsExpanded="False">
+            <ui:CardExpander.Header>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding SaveViewerCardTitle}" TextWrapping="Wrap" />
+                    <ui:TextBlock Grid.Row="1"
+                                  Grid.Column="0"
+                                  Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                  Text="{Binding SaveViewerCardDescription}"
+                                  TextWrapping="Wrap" />
+                    <ui:Button Grid.Row="0"
+                               Grid.RowSpan="2"
+                               Grid.Column="1"
+                               Width="120"
+                               Margin="0,0,36,0"
+                               Command="{Binding OpenSaveViewerCommand}"
+                               Content="{Binding OpenButtonText}" />
+                </Grid>
+            </ui:CardExpander.Header>
+
+            <StackPanel>
+                <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
+                <Grid Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <ui:TextBlock Grid.Row="0" FontWeight="SemiBold" Text="{Binding SaveViewerCardDetailTitle}" />
+                    <ui:TextBlock Grid.Row="1"
+                                  Margin="0,6,36,0"
+                                  Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                  Text="{Binding SaveViewerCardDetailDescription}"
+                                  TextWrapping="Wrap" />
+                </Grid>
+            </StackPanel>
+        </ui:CardExpander>
+
+        <ui:CardExpander Margin="0,0,0,12"
+                         ContentPadding="0"
                          Icon="{ui:SymbolIcon Table24}"
                          IsExpanded="False">
             <ui:CardExpander.Header>

@@ -5,6 +5,8 @@ using CommunityToolkit.Mvvm.Input;
 using BetterBTD.Models;
 using BetterBTD.Models.Tools;
 using BetterBTD.Services.Tools;
+using BetterBTD.Views.Windows;
+using System.Windows;
 
 namespace BetterBTD.ViewModels;
 
@@ -82,6 +84,7 @@ public sealed class ToolsPageViewModel : ObservableObject
         CalculateHeroCommand = new RelayCommand(UpdateHeroResult);
         CalculateParagonCommand = new RelayCommand(UpdateParagonResult);
         CalculateParagonStatsCommand = new RelayCommand(UpdateParagonStatsResult);
+        OpenSaveViewerCommand = new RelayCommand(OpenSaveViewer);
 
         _localizationService.LanguageChanged += (_, _) => RefreshLocalizedContent();
         _maxRound = _roundToolService.TryGetMaxRound();
@@ -104,6 +107,8 @@ public sealed class ToolsPageViewModel : ObservableObject
 
     public IRelayCommand CalculateParagonStatsCommand { get; }
 
+    public IRelayCommand OpenSaveViewerCommand { get; }
+
     public string PageTitle => _localizationService.T("Tools.PageTitle");
 
     public string PageDescription => _localizationService.T("Tools.PageDescription");
@@ -117,6 +122,16 @@ public sealed class ToolsPageViewModel : ObservableObject
     public string ResultSectionDescription => _localizationService.T("Tools.Section.ResultDescription");
 
     public string CalculateButtonText => _localizationService.T("Tools.Action.Calculate");
+
+    public string OpenButtonText => _localizationService.T("Tools.Action.Open");
+
+    public string SaveViewerCardTitle => _localizationService.T("Tools.SaveViewer.CardTitle");
+
+    public string SaveViewerCardDescription => _localizationService.T("Tools.SaveViewer.CardDescription");
+
+    public string SaveViewerCardDetailTitle => _localizationService.T("Tools.SaveViewer.CardDetailTitle");
+
+    public string SaveViewerCardDetailDescription => _localizationService.T("Tools.SaveViewer.CardDetailDescription");
 
     public string RoundCardTitle => _localizationService.T("Tools.Round.Title");
 
@@ -579,6 +594,11 @@ public sealed class ToolsPageViewModel : ObservableObject
         OnPropertyChanged(nameof(ResultSectionTitle));
         OnPropertyChanged(nameof(ResultSectionDescription));
         OnPropertyChanged(nameof(CalculateButtonText));
+        OnPropertyChanged(nameof(OpenButtonText));
+        OnPropertyChanged(nameof(SaveViewerCardTitle));
+        OnPropertyChanged(nameof(SaveViewerCardDescription));
+        OnPropertyChanged(nameof(SaveViewerCardDetailTitle));
+        OnPropertyChanged(nameof(SaveViewerCardDetailDescription));
         OnPropertyChanged(nameof(RoundCardTitle));
         OnPropertyChanged(nameof(RoundCardDescription));
         OnPropertyChanged(nameof(StartRoundLabel));
@@ -642,6 +662,17 @@ public sealed class ToolsPageViewModel : ObservableObject
         UpdateHeroResult();
         UpdateParagonResult();
         UpdateParagonStatsResult();
+    }
+
+    private static void OpenSaveViewer()
+    {
+        var window = new Btd6SaveViewerWindow(new Btd6SaveViewerWindowViewModel());
+        var owner = Application.Current?.Windows
+            .OfType<Window>()
+            .FirstOrDefault(currentWindow => currentWindow.IsActive);
+
+        window.Owner = owner ?? Application.Current?.MainWindow;
+        window.Show();
     }
 
     private void RefreshHeroOptions(string? selectedCode)
