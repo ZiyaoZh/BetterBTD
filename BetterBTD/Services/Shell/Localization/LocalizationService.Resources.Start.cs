@@ -38,17 +38,18 @@ public sealed partial class LocalizationService
         ["Start.LinkedStartTitle"] = "同时启动游戏",
         ["Start.LinkedStartDescription"] = "启动截图器时如果游戏未启动，将自动尝试启动。",
         ["Start.InstallPathTitle"] = "游戏安装位置",
-        ["Start.InstallPathDescription"] = "联动启动会使用该路径。",
-        ["Start.StartArgsTitle"] = "启动参数",
-        ["Start.StartArgsDescription"] = "不清楚参数用途时建议保持为空。",
-        ["Start.OpenDoc"] = "打开文档",
-        ["Start.AutoEnterGameTitle"] = "自动进入游戏",
-        ["Start.AutoEnterGameDescription"] = "游戏启动后自动执行进入流程。",
-        ["Start.StartWithCmdTitle"] = "使用 CMD 启动游戏",
-        ["Start.StartWithCmdDescription"] = "遇到启动兼容问题时可尝试开启。",
-        ["Start.RecordGameTimeTitle"] = "记录游戏时间",
-        ["Start.RecordGameTimeDescription"] = "启动后同步记录时长。",
-        ["Start.Browse"] = "浏览"
+        ["Start.InstallPathDescription"] = "选择包含 BloonsTD6.exe 或 BloonsTD6-Epic.exe 的目录。",
+        ["Start.Browse"] = "浏览",
+        ["Start.SelectInstallPathDialogTitle"] = "选择游戏安装位置",
+        ["Start.GameLaunch.AlreadyRunning"] = "游戏已经在运行。",
+        ["Start.GameLaunch.Started"] = "游戏已启动。",
+        ["Start.GameLaunch.WindowTimeout"] = "已尝试启动游戏，但 {0:F0} 秒内没有找到游戏窗口。",
+        ["Start.GameLaunch.CommandSent"] = "游戏启动命令已发送。",
+        ["Start.GameLaunch.StartFailed"] = "启动游戏失败：{0}",
+        ["Start.GameLaunch.PathRequired"] = "请先选择游戏安装位置。",
+        ["Start.GameLaunch.PathNotExecutable"] = "选择的游戏路径不是可执行文件。",
+        ["Start.GameLaunch.InstallPathMissing"] = "游戏安装位置不存在。",
+        ["Start.GameLaunch.ExecutableNotFound"] = "没有在游戏安装位置找到 BloonsTD6.exe 或 BloonsTD6-Epic.exe。"
     };
 
     private static Dictionary<string, string> BuildEnUsStartResources() => new(StringComparer.OrdinalIgnoreCase)
@@ -84,16 +85,17 @@ public sealed partial class LocalizationService
         ["Start.LinkedStartTitle"] = "Launch Game Together",
         ["Start.LinkedStartDescription"] = "When starting capturer, launch game automatically if needed.",
         ["Start.InstallPathTitle"] = "Game Install Path",
-        ["Start.InstallPathDescription"] = "Linked startup uses this path.",
-        ["Start.StartArgsTitle"] = "Startup Arguments",
-        ["Start.StartArgsDescription"] = "Leave empty if you are unsure.",
-        ["Start.OpenDoc"] = "Open doc",
-        ["Start.AutoEnterGameTitle"] = "Auto Enter Game",
-        ["Start.AutoEnterGameDescription"] = "Run enter-game steps automatically after launch.",
-        ["Start.StartWithCmdTitle"] = "Start Game with CMD",
-        ["Start.StartWithCmdDescription"] = "Enable this when startup compatibility issues occur.",
-        ["Start.RecordGameTimeTitle"] = "Record Game Time",
-        ["Start.RecordGameTimeDescription"] = "Track playtime after launch.",
-        ["Start.Browse"] = "Browse"
+        ["Start.InstallPathDescription"] = "Select the folder containing BloonsTD6.exe or BloonsTD6-Epic.exe.",
+        ["Start.Browse"] = "Browse",
+        ["Start.SelectInstallPathDialogTitle"] = "Select Game Install Path",
+        ["Start.GameLaunch.AlreadyRunning"] = "Game is already running.",
+        ["Start.GameLaunch.Started"] = "Game has started.",
+        ["Start.GameLaunch.WindowTimeout"] = "Tried to launch the game, but no game window was found within {0:F0} seconds.",
+        ["Start.GameLaunch.CommandSent"] = "Game launch command was sent.",
+        ["Start.GameLaunch.StartFailed"] = "Failed to launch game: {0}",
+        ["Start.GameLaunch.PathRequired"] = "Select the game install path first.",
+        ["Start.GameLaunch.PathNotExecutable"] = "The selected game path is not an executable file.",
+        ["Start.GameLaunch.InstallPathMissing"] = "The game install path does not exist.",
+        ["Start.GameLaunch.ExecutableNotFound"] = "BloonsTD6.exe or BloonsTD6-Epic.exe was not found in the game install path."
     };
 }

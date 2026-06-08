@@ -1,21 +1,28 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using BetterBTD.Helpers;
 using BetterBTD.Models;
 using BetterBTD.Services;
+using BetterBTD.Services.Start;
 using BetterBTD.Views.Windows;
 using Fischless.GameCapture.BitBlt;
+using Microsoft.Win32;
 
 namespace BetterBTD.ViewModels;
 
 public sealed class StartPageViewModel : ObservableObject
 {
+    private static readonly TimeSpan LinkedStartWindowWaitTimeout = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan LinkedStartWindowPollInterval = TimeSpan.FromMilliseconds(500);
+
     private readonly LocalizationService _localizationService;
     private readonly MaskWindowService _maskWindowService;
     private readonly GameCaptureService _gameCaptureService;
+    private readonly GameLaunchService _gameLaunchService;
     private readonly ConfigurationService _configurationService;
     private readonly AppDialogService _appDialogService;
 
@@ -24,10 +31,6 @@ public sealed class StartPageViewModel : ObservableObject
     private int _triggerIntervalMs = 50;
     private bool _linkedStartEnabled;
     private string _installPath = string.Empty;
-    private string _startArguments = string.Empty;
-    private bool _autoEnterGameEnabled;
-    private bool _startGameWithCmd;
-    private bool _recordGameTimeEnabled;
     private bool _autoFixWin11BitBlt;
     private bool _isLoadingConfiguration;
 
@@ -36,6 +39,7 @@ public sealed class StartPageViewModel : ObservableObject
         _localizationService = localizationService;
         _maskWindowService = maskWindowService;
         _gameCaptureService = GameCaptureService.Instance;
+        _gameLaunchService = GameLaunchService.Instance;
         _configurationService = ConfigurationService.Instance;
         _appDialogService = AppDialogService.Instance;
 
@@ -45,15 +49,14 @@ public sealed class StartPageViewModel : ObservableObject
         CaptureModes = new ObservableCollection<string>(_gameCaptureService.AvailableCaptureModes);
 
         OpenTutorialCommand = new RelayCommand(OpenTutorial);
-        StartCaptureCommand = new RelayCommand(StartCapture);
+        StartCaptureCommand = new AsyncRelayCommand(StartCaptureAsync);
         StopCaptureCommand = new RelayCommand(StopCapture);
         ChangeBannerImageCommand = new RelayCommand(() => { });
         ResetBannerImageCommand = new RelayCommand(() => { });
         StartCaptureTestCommand = new RelayCommand(StartCaptureTest);
         ManualPickWindowCommand = new RelayCommand(ManualPickWindow);
         OpenDisplayAdvancedGraphicsSettingsCommand = new RelayCommand(OpenDisplayAdvancedGraphicsSettings);
-        OpenGameCommandLineDocumentCommand = new RelayCommand(OpenTutorial);
-        SelectInstallPathCommand = new RelayCommand(() => { });
+        SelectInstallPathCommand = new RelayCommand(SelectInstallPath);
 
         LoadConfiguration();
         IsCapturerRunning = _gameCaptureService.IsRunning;
@@ -62,14 +65,13 @@ public sealed class StartPageViewModel : ObservableObject
     public ObservableCollection<string> CaptureModes { get; }
 
     public IRelayCommand OpenTutorialCommand { get; }
-    public IRelayCommand StartCaptureCommand { get; }
+    public IAsyncRelayCommand StartCaptureCommand { get; }
     public IRelayCommand StopCaptureCommand { get; }
     public IRelayCommand ChangeBannerImageCommand { get; }
     public IRelayCommand ResetBannerImageCommand { get; }
     public IRelayCommand StartCaptureTestCommand { get; }
     public IRelayCommand ManualPickWindowCommand { get; }
     public IRelayCommand OpenDisplayAdvancedGraphicsSettingsCommand { get; }
-    public IRelayCommand OpenGameCommandLineDocumentCommand { get; }
     public IRelayCommand SelectInstallPathCommand { get; }
 
     public bool IsCapturerRunning
@@ -122,37 +124,31 @@ public sealed class StartPageViewModel : ObservableObject
     public bool LinkedStartEnabled
     {
         get => _linkedStartEnabled;
-        set => SetProperty(ref _linkedStartEnabled, value);
+        set
+        {
+            if (!SetProperty(ref _linkedStartEnabled, value))
+            {
+                return;
+            }
+
+            PersistConfiguration(config => config.LaunchGameWithCapturer = value);
+        }
     }
 
     public string InstallPath
     {
         get => _installPath;
-        set => SetProperty(ref _installPath, value);
-    }
+        set
+        {
+            var normalizedValue = value?.Trim() ?? string.Empty;
+            if (!SetProperty(ref _installPath, normalizedValue))
+            {
+                return;
+            }
 
-    public string StartArguments
-    {
-        get => _startArguments;
-        set => SetProperty(ref _startArguments, value);
-    }
-
-    public bool AutoEnterGameEnabled
-    {
-        get => _autoEnterGameEnabled;
-        set => SetProperty(ref _autoEnterGameEnabled, value);
-    }
-
-    public bool StartGameWithCmd
-    {
-        get => _startGameWithCmd;
-        set => SetProperty(ref _startGameWithCmd, value);
-    }
-
-    public bool RecordGameTimeEnabled
-    {
-        get => _recordGameTimeEnabled;
-        set => SetProperty(ref _recordGameTimeEnabled, value);
+            OnPropertyChanged(nameof(InstallPathDisplayText));
+            PersistConfiguration(config => config.GameInstallPath = normalizedValue);
+        }
     }
 
     public bool AutoFixWin11BitBlt
@@ -207,16 +203,11 @@ public sealed class StartPageViewModel : ObservableObject
     public string LinkedStartDescription => _localizationService.T("Start.LinkedStartDescription");
     public string InstallPathTitle => _localizationService.T("Start.InstallPathTitle");
     public string InstallPathDescription => _localizationService.T("Start.InstallPathDescription");
-    public string StartArgsTitle => _localizationService.T("Start.StartArgsTitle");
-    public string StartArgsDescription => _localizationService.T("Start.StartArgsDescription");
-    public string OpenDocText => _localizationService.T("Start.OpenDoc");
-    public string AutoEnterGameTitle => _localizationService.T("Start.AutoEnterGameTitle");
-    public string AutoEnterGameDescription => _localizationService.T("Start.AutoEnterGameDescription");
-    public string StartWithCmdTitle => _localizationService.T("Start.StartWithCmdTitle");
-    public string StartWithCmdDescription => _localizationService.T("Start.StartWithCmdDescription");
-    public string RecordGameTimeTitle => _localizationService.T("Start.RecordGameTimeTitle");
-    public string RecordGameTimeDescription => _localizationService.T("Start.RecordGameTimeDescription");
+    public string InstallPathDisplayText => string.IsNullOrWhiteSpace(InstallPath)
+        ? InstallPathDescription
+        : InstallPath;
     public string BrowseText => _localizationService.T("Start.Browse");
+    public string SelectInstallPathDialogTitle => _localizationService.T("Start.SelectInstallPathDialogTitle");
 
     private void OpenTutorial()
     {
@@ -233,13 +224,35 @@ public sealed class StartPageViewModel : ObservableObject
         });
     }
 
-    private void StartCapture()
+    private async Task StartCaptureAsync()
     {
-        _gameCaptureService.Configure(BuildCaptureOptions());
+        var options = BuildCaptureOptions();
+        _gameCaptureService.Configure(options);
 
-        if (!_gameCaptureService.TryStart(BuildCaptureOptions(), out _))
+        if (LinkedStartEnabled)
         {
-            ShowTargetWindowNotFoundDialog();
+            var launchResult = await _gameLaunchService.EnsureGameStartedAsync(
+                InstallPath,
+                LinkedStartWindowWaitTimeout,
+                LinkedStartWindowPollInterval);
+            if (!launchResult.Success)
+            {
+                ShowErrorDialog("启动游戏失败", launchResult.Message);
+                return;
+            }
+        }
+
+        try
+        {
+            if (!_gameCaptureService.TryStart(options, out _))
+            {
+                ShowTargetWindowNotFoundDialog();
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowErrorDialog("启动截图器失败", ex.Message);
             return;
         }
 
@@ -316,6 +329,28 @@ public sealed class StartPageViewModel : ObservableObject
         });
     }
 
+    private void SelectInstallPath()
+    {
+        var dialog = new OpenFolderDialog
+        {
+            Title = SelectInstallPathDialogTitle
+        };
+
+        var initialDirectory = ResolveInitialDirectory(InstallPath);
+        if (!string.IsNullOrWhiteSpace(initialDirectory))
+        {
+            dialog.InitialDirectory = initialDirectory;
+        }
+
+        var owner = GetActiveWindow();
+        if (dialog.ShowDialog(owner) != true)
+        {
+            return;
+        }
+
+        InstallPath = dialog.FolderName;
+    }
+
     private void OnGameCaptureRunningStateChanged(object? sender, bool isRunning)
     {
         if (!isRunning)
@@ -366,6 +401,8 @@ public sealed class StartPageViewModel : ObservableObject
 
             _selectedCaptureMode = configuredCaptureMode;
             _triggerIntervalMs = Math.Clamp(configuration.CaptureIntervalMs <= 0 ? 50 : configuration.CaptureIntervalMs, 10, 2000);
+            _linkedStartEnabled = configuration.LaunchGameWithCapturer;
+            _installPath = configuration.GameInstallPath?.Trim() ?? string.Empty;
             _autoFixWin11BitBlt = configuration.AutoFixWin11BitBlt;
             _gameCaptureService.Configure(BuildCaptureOptions());
         }
@@ -415,6 +452,27 @@ public sealed class StartPageViewModel : ObservableObject
             .FirstOrDefault(window => window.IsActive) ?? Application.Current?.MainWindow;
     }
 
+    private static string? ResolveInitialDirectory(string installPath)
+    {
+        var normalizedPath = Environment.ExpandEnvironmentVariables(installPath?.Trim() ?? string.Empty);
+        if (string.IsNullOrWhiteSpace(normalizedPath))
+        {
+            return null;
+        }
+
+        if (Directory.Exists(normalizedPath))
+        {
+            return normalizedPath;
+        }
+
+        if (File.Exists(normalizedPath))
+        {
+            return Path.GetDirectoryName(normalizedPath);
+        }
+
+        return null;
+    }
+
     private void RaiseLocalizedProperties()
     {
         OnPropertyChanged(nameof(HeroImageTitle));
@@ -449,15 +507,8 @@ public sealed class StartPageViewModel : ObservableObject
         OnPropertyChanged(nameof(LinkedStartDescription));
         OnPropertyChanged(nameof(InstallPathTitle));
         OnPropertyChanged(nameof(InstallPathDescription));
-        OnPropertyChanged(nameof(StartArgsTitle));
-        OnPropertyChanged(nameof(StartArgsDescription));
-        OnPropertyChanged(nameof(OpenDocText));
-        OnPropertyChanged(nameof(AutoEnterGameTitle));
-        OnPropertyChanged(nameof(AutoEnterGameDescription));
-        OnPropertyChanged(nameof(StartWithCmdTitle));
-        OnPropertyChanged(nameof(StartWithCmdDescription));
-        OnPropertyChanged(nameof(RecordGameTimeTitle));
-        OnPropertyChanged(nameof(RecordGameTimeDescription));
+        OnPropertyChanged(nameof(InstallPathDisplayText));
         OnPropertyChanged(nameof(BrowseText));
+        OnPropertyChanged(nameof(SelectInstallPathDialogTitle));
     }
 }

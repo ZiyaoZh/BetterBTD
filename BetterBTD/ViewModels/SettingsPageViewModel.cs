@@ -239,6 +239,8 @@ public sealed class SettingsPageViewModel : ObservableObject
             CaptureModeName = current.CaptureModeName,
             CaptureIntervalMs = current.CaptureIntervalMs,
             AutoFixWin11BitBlt = current.AutoFixWin11BitBlt,
+            LaunchGameWithCapturer = current.LaunchGameWithCapturer,
+            GameInstallPath = current.GameInstallPath,
             LanguageCode = SelectedUiLanguage?.Code ?? "zh-CN",
             ThemeMode = SelectedTheme?.Code ?? "Dark",
             GameLanguageCode = SelectedGameLanguage?.Code ?? "zh-CN",

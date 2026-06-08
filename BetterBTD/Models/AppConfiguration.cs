@@ -13,6 +13,10 @@ public sealed class AppConfiguration
 
     public bool AutoFixWin11BitBlt { get; set; }
 
+    public bool LaunchGameWithCapturer { get; set; }
+
+    public string GameInstallPath { get; set; } = string.Empty;
+
     public string LanguageCode { get; set; } = "zh-CN";
 
     public string ThemeMode { get; set; } = "Dark";

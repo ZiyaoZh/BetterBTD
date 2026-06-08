@@ -38,6 +38,8 @@ public sealed class ConfigurationService
         Current.CaptureModeName = configuration.CaptureModeName;
         Current.CaptureIntervalMs = Math.Clamp(configuration.CaptureIntervalMs, 10, 2000);
         Current.AutoFixWin11BitBlt = configuration.AutoFixWin11BitBlt;
+        Current.LaunchGameWithCapturer = configuration.LaunchGameWithCapturer;
+        Current.GameInstallPath = NormalizeGameInstallPath(configuration.GameInstallPath);
         Current.LanguageCode = configuration.LanguageCode;
         Current.ThemeMode = configuration.ThemeMode;
         Current.GameLanguageCode = configuration.GameLanguageCode;
@@ -94,6 +96,7 @@ public sealed class ConfigurationService
                 ? nameof(Fischless.GameCapture.CaptureModes.WindowsGraphicsCapture)
                 : config.CaptureModeName;
             config.CaptureIntervalMs = Math.Clamp(config.CaptureIntervalMs <= 0 ? 50 : config.CaptureIntervalMs, 10, 2000);
+            config.GameInstallPath = NormalizeGameInstallPath(config.GameInstallPath);
             config.KeyboardMouseSimulationModeName =
                 KeyboardMouseSimulationModeExtensions.Parse(config.KeyboardMouseSimulationModeName).ToConfigurationValue();
             config.ScriptExecutionIntervalStrategyName = NormalizeScriptExecutionIntervalStrategyName(
@@ -128,6 +131,11 @@ public sealed class ConfigurationService
     private static int NormalizeScriptExecutionCommonOperationInterval(int intervalMs)
     {
         return Math.Clamp(intervalMs <= 0 ? 200 : intervalMs, 50, 1000);
+    }
+
+    private static string NormalizeGameInstallPath(string? installPath)
+    {
+        return installPath?.Trim() ?? string.Empty;
     }
 }
 

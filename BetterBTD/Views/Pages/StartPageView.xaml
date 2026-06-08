@@ -205,86 +205,8 @@
                     </Grid.ColumnDefinitions>
 
                     <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding InstallPathTitle}" TextWrapping="Wrap" />
-                    <ui:TextBlock Grid.Row="1" Grid.Column="0" Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}" Text="{Binding InstallPath}" TextWrapping="Wrap" />
+                    <ui:TextBlock Grid.Row="1" Grid.Column="0" Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}" Text="{Binding InstallPathDisplayText}" TextWrapping="Wrap" />
                     <ui:Button Grid.Row="0" Grid.RowSpan="2" Grid.Column="1" Margin="0,0,36,0" Command="{Binding SelectInstallPathCommand}" Content="{Binding BrowseText}" />
-                </Grid>
-
-                <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
-                <Grid Margin="16">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-
-                    <StackPanel Grid.Column="0" VerticalAlignment="Top">
-                        <ui:TextBlock FontWeight="SemiBold" TextWrapping="Wrap">
-                            <Run Text="{Binding StartArgsTitle, Mode=OneWay}" />
-                            <ui:HyperlinkButton Margin="4,0,0,0" Padding="0" Command="{Binding OpenGameCommandLineDocumentCommand}" Cursor="Hand">
-                                <ui:HyperlinkButton.Content>
-                                    <TextBlock FontSize="11" Text="{Binding OpenDocText}" />
-                                </ui:HyperlinkButton.Content>
-                            </ui:HyperlinkButton>
-                        </ui:TextBlock>
-
-                        <ui:TextBlock Margin="0,4,0,0" Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}" Text="{Binding StartArgsDescription}" TextWrapping="Wrap" />
-                    </StackPanel>
-
-                    <ui:TextBox Grid.Column="1"
-                                Width="300"
-                                Margin="0,0,36,0"
-                                VerticalAlignment="Top"
-                                PlaceholderText="-screen-width 1920"
-                                Text="{Binding StartArguments, Mode=TwoWay}"
-                                TextWrapping="Wrap"
-                                AcceptsReturn="True" />
-                </Grid>
-
-                <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
-                <Grid Margin="16">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-
-                    <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding AutoEnterGameTitle}" TextWrapping="Wrap" />
-                    <ui:TextBlock Grid.Row="1" Grid.Column="0" Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}" Text="{Binding AutoEnterGameDescription}" TextWrapping="Wrap" />
-                    <ui:ToggleSwitch Grid.Row="0" Grid.RowSpan="2" Grid.Column="1" Margin="0,0,36,0" IsChecked="{Binding AutoEnterGameEnabled, Mode=TwoWay}" />
-                </Grid>
-
-                <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
-                <Grid Margin="16">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-
-                    <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding StartWithCmdTitle}" TextWrapping="Wrap" />
-                    <ui:TextBlock Grid.Row="1" Grid.Column="0" Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}" Text="{Binding StartWithCmdDescription}" TextWrapping="Wrap" />
-                    <ui:ToggleSwitch Grid.Row="0" Grid.RowSpan="2" Grid.Column="1" Margin="0,0,36,0" IsChecked="{Binding StartGameWithCmd, Mode=TwoWay}" />
-                </Grid>
-
-                <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
-                <Grid Margin="16">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-
-                    <ui:TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding RecordGameTimeTitle}" TextWrapping="Wrap" />
-                    <ui:TextBlock Grid.Row="1" Grid.Column="0" Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}" Text="{Binding RecordGameTimeDescription}" TextWrapping="Wrap" />
-                    <ui:ToggleSwitch Grid.Row="0" Grid.RowSpan="2" Grid.Column="1" Margin="0,0,36,0" IsChecked="{Binding RecordGameTimeEnabled, Mode=TwoWay}" />
                 </Grid>
             </StackPanel>
         </ui:CardExpander>
