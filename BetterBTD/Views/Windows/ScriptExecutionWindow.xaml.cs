@@ -41,6 +41,7 @@ public partial class ScriptExecutionWindow : FluentWindow
     ];
 
     private int _lastLogTextLength;
+    private bool _isFocusedStepScrollScheduled;
     private HwndSource? _hwndSource;
     private bool _isGlobalHotkeyRegistered;
     private readonly HashSet<int> _registeredHotkeyIds = [];
@@ -128,13 +129,7 @@ public partial class ScriptExecutionWindow : FluentWindow
             return;
         }
 
-        _ = Dispatcher.BeginInvoke(() =>
-        {
-            if (viewModel.FocusedStep is not null)
-            {
-                ScrollItemIntoPreferredView(SequenceListBox, viewModel.FocusedStep);
-            }
-        }, DispatcherPriority.Background);
+        ScheduleFocusedStepScroll(viewModel);
     }
 
     private void OnLogTextBoxLoaded(object sender, RoutedEventArgs e)
@@ -301,9 +296,29 @@ public partial class ScriptExecutionWindow : FluentWindow
         }
     }
 
+    private void ScheduleFocusedStepScroll(ScriptExecutionWindowViewModel viewModel)
+    {
+        if (_isFocusedStepScrollScheduled)
+        {
+            return;
+        }
+
+        _isFocusedStepScrollScheduled = true;
+        _ = Dispatcher.BeginInvoke(() =>
+        {
+            _isFocusedStepScrollScheduled = false;
+            if (!ReferenceEquals(DataContext, viewModel) ||
+                viewModel.FocusedStep is null)
+            {
+                return;
+            }
+
+            ScrollItemIntoPreferredView(SequenceListBox, viewModel.FocusedStep);
+        }, DispatcherPriority.Background);
+    }
+
     private static void ScrollItemIntoPreferredView(ListBox listBox, object item)
     {
-        listBox.UpdateLayout();
         listBox.ScrollIntoView(item);
         listBox.UpdateLayout();
 

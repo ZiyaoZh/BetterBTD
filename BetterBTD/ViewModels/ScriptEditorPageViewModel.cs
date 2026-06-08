@@ -1199,16 +1199,15 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
 
         try
         {
-            var result = await _scriptTaskFlowExecutor
-                .ExecuteAsync(
-                    taskFlow,
-                    new ScriptExecutionOptions
-                    {
-                        StartStepIndex = startStepIndex,
-                        IntervalStrategy = runtimeWindowViewModel.SelectedIntervalStrategyValue,
-                        CommonOperationIntervalMs = runtimeWindowViewModel.CommonOperationIntervalMs
-                    },
-                    _scriptExecutionCancellationTokenSource.Token)
+            var executionOptions = new ScriptExecutionOptions
+            {
+                StartStepIndex = startStepIndex,
+                IntervalStrategy = runtimeWindowViewModel.SelectedIntervalStrategyValue,
+                CommonOperationIntervalMs = runtimeWindowViewModel.CommonOperationIntervalMs
+            };
+            var cancellationToken = _scriptExecutionCancellationTokenSource.Token;
+            var result = await Task
+                .Run(() => _scriptTaskFlowExecutor.ExecuteAsync(taskFlow, executionOptions, cancellationToken))
                 .ConfigureAwait(true);
 
             runtimeWindowViewModel.ApplyResult(result);

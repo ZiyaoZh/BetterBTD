@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Text;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -13,6 +14,7 @@ namespace BetterBTD.ViewModels;
 public sealed class ScriptExecutionWindowViewModel : ObservableObject
 {
     private const int MaxDisplayedLogLines = 400;
+    private const int MaxRuntimeLogEntriesPerFlush = 32;
 
     private static readonly Brush PendingStateBrush = CreateBrush("#FF8A93A6");
     private static readonly Brush RunningStateBrush = CreateBrush("#FF57A6FF");
@@ -57,7 +59,11 @@ public sealed class ScriptExecutionWindowViewModel : ObservableObject
     private string _runtimeLogFilePath = string.Empty;
     private ScriptExecutionProgressSnapshot? _pendingProgressSnapshot;
     private bool _isProgressFlushScheduled;
+    private bool _isRuntimeLogFlushScheduled;
     private bool _acceptProgressSnapshots;
+    private int _lastVisualCurrentStepIndex = -1;
+    private int _lastVisualLastCompletedStepIndex = -1;
+    private bool _hasProgressVisualState;
 
     public ScriptExecutionWindowViewModel(
         LocalizationService localizationService,
@@ -284,13 +290,7 @@ public sealed class ScriptExecutionWindowViewModel : ObservableObject
             return;
         }
 
-        if (_dispatcher.CheckAccess())
-        {
-            FlushPendingProgressSnapshots();
-            return;
-        }
-
-        _ = _dispatcher.InvokeAsync(FlushPendingProgressSnapshots, DispatcherPriority.Render);
+        ScheduleProgressFlush();
     }
 
     public void PostRuntimeLogEntry(ScriptExecutionRuntimeLogEntry entry)
@@ -301,20 +301,15 @@ public sealed class ScriptExecutionWindowViewModel : ObservableObject
         lock (_runtimeLogDispatchSync)
         {
             _pendingRuntimeLogEntries.Enqueue(entry);
-            if (_pendingRuntimeLogEntries.Count == 1)
+            if (!_isRuntimeLogFlushScheduled)
             {
+                _isRuntimeLogFlushScheduled = true;
                 shouldScheduleFlush = true;
             }
         }
 
         if (!shouldScheduleFlush)
         {
-            return;
-        }
-
-        if (_dispatcher.CheckAccess())
-        {
-            FlushPendingRuntimeLogEntries();
             return;
         }
 
@@ -457,91 +452,184 @@ public sealed class ScriptExecutionWindowViewModel : ObservableObject
         lock (_runtimeLogDispatchSync)
         {
             _pendingRuntimeLogEntries.Clear();
+            _isRuntimeLogFlushScheduled = false;
         }
     }
 
     private void FlushPendingProgressSnapshots()
     {
-        while (true)
+        ScriptExecutionProgressSnapshot? snapshot;
+        lock (_progressDispatchSync)
         {
-            ScriptExecutionProgressSnapshot? snapshot;
-            lock (_progressDispatchSync)
+            if (!_acceptProgressSnapshots)
             {
-                if (!_acceptProgressSnapshots)
-                {
-                    _pendingProgressSnapshot = null;
-                    _isProgressFlushScheduled = false;
-                    return;
-                }
-
-                snapshot = _pendingProgressSnapshot;
                 _pendingProgressSnapshot = null;
-                if (snapshot is null)
-                {
-                    _isProgressFlushScheduled = false;
-                    return;
-                }
+                _isProgressFlushScheduled = false;
+                return;
             }
 
-            ApplyProgressSnapshot(snapshot);
+            snapshot = _pendingProgressSnapshot;
+            _pendingProgressSnapshot = null;
+            if (snapshot is null)
+            {
+                _isProgressFlushScheduled = false;
+                return;
+            }
         }
+
+        ApplyProgressSnapshot(snapshot);
+
+        lock (_progressDispatchSync)
+        {
+            if (!_acceptProgressSnapshots)
+            {
+                _pendingProgressSnapshot = null;
+                _isProgressFlushScheduled = false;
+                return;
+            }
+
+            if (_pendingProgressSnapshot is null)
+            {
+                _isProgressFlushScheduled = false;
+                return;
+            }
+        }
+
+        ScheduleProgressFlush();
     }
 
     private void FlushPendingRuntimeLogEntries()
     {
-        while (true)
+        var processedCount = 0;
+        var changed = false;
+
+        while (processedCount < MaxRuntimeLogEntriesPerFlush)
         {
             ScriptExecutionRuntimeLogEntry? entry = null;
             lock (_runtimeLogDispatchSync)
             {
                 if (_pendingRuntimeLogEntries.Count == 0)
                 {
-                    return;
+                    break;
                 }
 
                 entry = _pendingRuntimeLogEntries.Dequeue();
             }
 
-            ApplyRuntimeLogEntry(entry);
+            changed |= ApplyRuntimeLogEntry(entry, rebuildDisplayedLogs: false);
+            processedCount++;
         }
+
+        if (changed)
+        {
+            RebuildDisplayedLogs();
+        }
+
+        lock (_runtimeLogDispatchSync)
+        {
+            if (_pendingRuntimeLogEntries.Count == 0)
+            {
+                _isRuntimeLogFlushScheduled = false;
+                return;
+            }
+        }
+
+        _ = _dispatcher.InvokeAsync(FlushPendingRuntimeLogEntries, DispatcherPriority.Background);
+    }
+
+    private void ScheduleProgressFlush()
+    {
+        _ = _dispatcher.InvokeAsync(FlushPendingProgressSnapshots, DispatcherPriority.Background);
     }
 
     private void UpdateStepsFromProgress(ScriptExecutionProgressSnapshot snapshot)
     {
+        if (Steps.Count == 0)
+        {
+            ResetStepProgressTracking();
+            return;
+        }
+
+        var clampedLastCompletedStepIndex = Math.Clamp(snapshot.LastCompletedStepIndex, -1, Steps.Count - 1);
+        var clampedCurrentStepIndex = snapshot.CurrentStepIndex >= 0 && snapshot.CurrentStepIndex < Steps.Count
+            ? snapshot.CurrentStepIndex
+            : -1;
+
+        if (!_hasProgressVisualState ||
+            clampedLastCompletedStepIndex < _lastVisualLastCompletedStepIndex)
+        {
+            UpdateAllStepsFromProgress(snapshot);
+            StoreStepProgressTracking(clampedCurrentStepIndex, clampedLastCompletedStepIndex);
+            return;
+        }
+
+        ApplyStepVisualFromProgress(_lastVisualCurrentStepIndex, snapshot);
+
+        var firstNewCompletedStepIndex = Math.Max(0, _lastVisualLastCompletedStepIndex + 1);
+        for (var index = firstNewCompletedStepIndex; index <= clampedLastCompletedStepIndex; index++)
+        {
+            if (index != _lastVisualCurrentStepIndex)
+            {
+                ApplyStepVisualFromProgress(index, snapshot);
+            }
+        }
+
+        if (clampedCurrentStepIndex != _lastVisualCurrentStepIndex &&
+            (clampedCurrentStepIndex < firstNewCompletedStepIndex ||
+             clampedCurrentStepIndex > clampedLastCompletedStepIndex))
+        {
+            ApplyStepVisualFromProgress(clampedCurrentStepIndex, snapshot);
+        }
+
+        StoreStepProgressTracking(clampedCurrentStepIndex, clampedLastCompletedStepIndex);
+    }
+
+    private void UpdateAllStepsFromProgress(ScriptExecutionProgressSnapshot snapshot)
+    {
         for (var index = 0; index < Steps.Count; index++)
         {
-            if (index <= snapshot.LastCompletedStepIndex)
-            {
-                ApplyStepVisual(
-                    Steps[index],
-                    _localizationService.T("Editor.Runtime.Step.Completed"),
-                    CompletedStateBrush,
-                    CompletedCardBrush,
-                    isCurrent: false,
-                    CompletedTitleBrush);
-                continue;
-            }
+            ApplyStepVisualFromProgress(index, snapshot);
+        }
+    }
 
-            if (index == snapshot.CurrentStepIndex)
-            {
-                ApplyStepVisual(
-                    Steps[index],
-                    ResolveRunningStepState(snapshot.RunState),
-                    RunningStateBrush,
-                    RunningCardBrush,
-                    isCurrent: true,
-                    RunningTitleBrush);
-                continue;
-            }
+    private void ApplyStepVisualFromProgress(int index, ScriptExecutionProgressSnapshot snapshot)
+    {
+        if (index < 0 || index >= Steps.Count)
+        {
+            return;
+        }
 
+        if (index <= snapshot.LastCompletedStepIndex)
+        {
             ApplyStepVisual(
                 Steps[index],
-                _localizationService.T("Editor.Runtime.Step.Pending"),
-                PendingStateBrush,
-                PendingCardBrush,
+                _localizationService.T("Editor.Runtime.Step.Completed"),
+                CompletedStateBrush,
+                CompletedCardBrush,
                 isCurrent: false,
-                PendingTitleBrush);
+                CompletedTitleBrush);
+            return;
         }
+
+        if (index == snapshot.CurrentStepIndex)
+        {
+            ApplyStepVisual(
+                Steps[index],
+                ResolveRunningStepState(snapshot.RunState),
+                RunningStateBrush,
+                RunningCardBrush,
+                isCurrent: true,
+                RunningTitleBrush);
+            return;
+        }
+
+        ApplyStepVisual(
+            Steps[index],
+            _localizationService.T("Editor.Runtime.Step.Pending"),
+            PendingStateBrush,
+            PendingCardBrush,
+            isCurrent: false,
+            PendingTitleBrush);
     }
 
     private void UpdateStepsFromResult(ScriptExecutionResult result)
@@ -610,6 +698,8 @@ public sealed class ScriptExecutionWindowViewModel : ObservableObject
                 isCurrent: false,
                 PendingTitleBrush);
         }
+
+        ResetStepProgressTracking();
     }
 
     private void ApplyStepVisual(
@@ -701,7 +791,7 @@ public sealed class ScriptExecutionWindowViewModel : ObservableObject
         AppendLog($"{snapshot.RunState} | {stepText} | {commandText} | {checkpointText}{attemptText}{messageText}");
     }
 
-    private void ApplyRuntimeLogEntry(ScriptExecutionRuntimeLogEntry entry)
+    private bool ApplyRuntimeLogEntry(ScriptExecutionRuntimeLogEntry entry, bool rebuildDisplayedLogs = true)
     {
         ArgumentNullException.ThrowIfNull(entry);
 
@@ -711,11 +801,12 @@ public sealed class ScriptExecutionWindowViewModel : ObservableObject
             prefix = $"{prefix} [{entry.Level}]";
         }
 
-        AppendLog(
+        return AppendLog(
             $"{prefix} {entry.Message}",
             entry.Timestamp,
             entry.AggregationKey,
-            entry.ReplaceExisting);
+            entry.ReplaceExisting,
+            rebuildDisplayedLogs);
     }
 
     private void EnsureRuntimeLogPathLogged(ScriptExecutionProgressSnapshot snapshot)
@@ -739,15 +830,16 @@ public sealed class ScriptExecutionWindowViewModel : ObservableObject
         LogText = string.Empty;
     }
 
-    private void AppendLog(
+    private bool AppendLog(
         string message,
         DateTimeOffset? timestamp = null,
         string? aggregationKey = null,
-        bool replaceExisting = false)
+        bool replaceExisting = false,
+        bool rebuildDisplayedLogs = true)
     {
         if (string.IsNullOrWhiteSpace(message))
         {
-            return;
+            return false;
         }
 
         var normalizedTimestamp = timestamp ?? DateTimeOffset.Now;
@@ -765,8 +857,12 @@ public sealed class ScriptExecutionWindowViewModel : ObservableObject
                 }
 
                 _displayLogLines[index] = new ScriptExecutionDisplayLogLine(aggregationKey, lineText);
-                RebuildDisplayedLogs();
-                return;
+                if (rebuildDisplayedLogs)
+                {
+                    RebuildDisplayedLogs();
+                }
+
+                return true;
             }
         }
 
@@ -776,18 +872,46 @@ public sealed class ScriptExecutionWindowViewModel : ObservableObject
             _displayLogLines.RemoveAt(0);
         }
 
-        RebuildDisplayedLogs();
+        if (rebuildDisplayedLogs)
+        {
+            RebuildDisplayedLogs();
+        }
+
+        return true;
     }
 
     private void RebuildDisplayedLogs()
     {
         LogLines.Clear();
+        var builder = new StringBuilder();
         foreach (var line in _displayLogLines)
         {
             LogLines.Add(line.Text);
+            if (builder.Length > 0)
+            {
+                builder.AppendLine();
+            }
+
+            builder.Append(line.Text);
         }
 
-        LogText = string.Join(Environment.NewLine, _displayLogLines.Select(static line => line.Text));
+        LogText = builder.ToString();
+    }
+
+    private void StoreStepProgressTracking(
+        int currentStepIndex,
+        int lastCompletedStepIndex)
+    {
+        _lastVisualCurrentStepIndex = currentStepIndex;
+        _lastVisualLastCompletedStepIndex = lastCompletedStepIndex;
+        _hasProgressVisualState = true;
+    }
+
+    private void ResetStepProgressTracking()
+    {
+        _lastVisualCurrentStepIndex = -1;
+        _lastVisualLastCompletedStepIndex = -1;
+        _hasProgressVisualState = false;
     }
 
     private static bool IsCheckpointHandledByRuntimeLogger(string? checkpoint)
