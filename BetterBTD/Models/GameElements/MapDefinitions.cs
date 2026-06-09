@@ -97,7 +97,8 @@ public enum GameMapType
     DarkCastle,
     MuddyPuddles,
     Ouch,
-    TrickyTracks
+    TrickyTracks,
+    SkullTweak
 }
 
 public enum StageDifficulty

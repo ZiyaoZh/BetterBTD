@@ -231,6 +231,7 @@ public static class GameElementCatalog
         new(GameMapType.Hedge, MapDifficultyTier.Beginner, "GameElements.Map.Hedge"),
         new(GameMapType.EndOfTheRoad, MapDifficultyTier.Beginner, "GameElements.Map.EndOfTheRoad"),
         new(GameMapType.Logs, MapDifficultyTier.Beginner, "GameElements.Map.Logs"),
+        new(GameMapType.SkullTweak, MapDifficultyTier.Beginner, "GameElements.Map.SkullTweak"),
 
         // Intermediate
         new(GameMapType.SulfurSprings, MapDifficultyTier.Intermediate, "GameElements.Map.SulfurSprings"),
