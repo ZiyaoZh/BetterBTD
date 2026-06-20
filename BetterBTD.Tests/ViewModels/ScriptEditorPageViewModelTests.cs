@@ -147,6 +147,70 @@ public sealed class ScriptEditorPageViewModelTests
     }
 
     [Fact]
+    public void SaveScriptDocument_ToDifferentPath_AssignsNewScriptIdAndDoesNotOverwriteOriginalManagedScript()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), $"betterbtd-editor-tests-{Guid.NewGuid():N}");
+        var originalFilePath = Path.Combine(rootDirectory, "external", "original-script.btd");
+        var savedAsFilePath = Path.Combine(rootDirectory, "external", "saved-as-script.btd");
+        var managedRootDirectory = Path.Combine(rootDirectory, "managed");
+        var libraryService = new ManagedScriptLibraryService(
+            managedRootDirectory,
+            ScriptDocumentService.Instance,
+            ManagedScriptSlotCatalogService.Instance);
+        var viewModel = new ScriptEditorPageViewModel(LocalizationService.Instance, libraryService);
+
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(originalFilePath)!);
+            ScriptDocumentService.Instance.Save(originalFilePath, new ScriptDocument
+            {
+                Metadata = new ScriptMetadataDocument
+                {
+                    Description = "original"
+                }
+            });
+
+            var originalImported = libraryService.ImportScript(originalFilePath);
+            viewModel.LoadScriptDocument(originalImported.StoredFilePath);
+            viewModel.ScriptDescription = "saved-as";
+
+            viewModel.SaveScriptDocument(savedAsFilePath);
+
+            var originalDocument = ScriptDocumentService.Instance.Load(originalFilePath);
+            var savedAsDocument = ScriptDocumentService.Instance.Load(savedAsFilePath);
+            var snapshotAfterSaveAs = libraryService.GetSnapshot();
+
+            Assert.NotEqual(originalDocument.Metadata.ScriptId, savedAsDocument.Metadata.ScriptId);
+            Assert.Equal(2, snapshotAfterSaveAs.Scripts.Count);
+            Assert.Contains(snapshotAfterSaveAs.Scripts, script =>
+                script.ScriptId == originalDocument.Metadata.ScriptId &&
+                script.Description == "original");
+            Assert.Contains(snapshotAfterSaveAs.Scripts, script =>
+                script.ScriptId == savedAsDocument.Metadata.ScriptId &&
+                script.Description == "saved-as");
+
+            var reimportedSavedAs = libraryService.ImportScript(savedAsFilePath);
+            var snapshotAfterReimport = libraryService.GetSnapshot();
+
+            Assert.Equal(savedAsDocument.Metadata.ScriptId, reimportedSavedAs.ScriptId);
+            Assert.Equal(2, snapshotAfterReimport.Scripts.Count);
+            Assert.Contains(snapshotAfterReimport.Scripts, script =>
+                script.ScriptId == originalDocument.Metadata.ScriptId &&
+                script.Description == "original");
+            Assert.Contains(snapshotAfterReimport.Scripts, script =>
+                script.ScriptId == savedAsDocument.Metadata.ScriptId &&
+                script.Description == "saved-as");
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public void AddScriptTagCommand_ResolvesBuiltInAliasAndKeepsCustomTags()
     {
         var viewModel = new ScriptEditorPageViewModel(LocalizationService.Instance);

@@ -485,6 +485,15 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         var previousFilePath = CurrentScriptFilePath;
         var previousManagedScriptId = _managedScriptId;
         var previousManagedScriptDisplayName = _managedScriptDisplayName;
+        var isSaveAsToDifferentPath =
+            !string.IsNullOrWhiteSpace(previousFilePath) &&
+            !AreSameFilePath(filePath, previousFilePath);
+
+        if (isSaveAsToDifferentPath)
+        {
+            AssignNewScriptId();
+        }
+
         var optimizedDocument = _scriptInstructionOptimizationService.OptimizeDocument(ExportScriptDocument());
         _scriptDocumentService.Save(filePath, optimizedDocument);
         ImportScriptDocument(optimizedDocument);
@@ -807,7 +816,6 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
 
         try
         {
-            AssignNewScriptId();
             SaveScriptDocument(dialog.FileName);
             return true;
         }
