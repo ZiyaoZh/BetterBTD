@@ -211,6 +211,40 @@ public sealed class ScriptEditorPageViewModelTests
     }
 
     [Fact]
+    public void AddTargetedMonkeyInstruction_DefaultsToLastMonkeyObject()
+    {
+        var viewModel = new ScriptEditorPageViewModel(LocalizationService.Instance);
+        viewModel.ImportScriptDocument(new ScriptDocument
+        {
+            Instructions =
+            [
+                new ScriptInstructionDocument
+                {
+                    CommandType = ScriptCommandType.PlaceMonkey.ToString(),
+                    MonkeyBindingId = "first-bind",
+                    MonkeyObjectId = "DartMonkey:1",
+                    SelectedMonkeyTower = "Tower:DartMonkey"
+                },
+                new ScriptInstructionDocument
+                {
+                    CommandType = ScriptCommandType.PlaceMonkey.ToString(),
+                    MonkeyBindingId = "second-bind",
+                    MonkeyObjectId = "BoomerangMonkey:1",
+                    SelectedMonkeyTower = "Tower:BoomerangMonkey"
+                }
+            ]
+        });
+        var upgradeTemplate = viewModel.InstructionLibrary.Single(x => x.Type == ScriptCommandType.UpgradeMonkey);
+
+        viewModel.AddInstructionToSequenceCommand.Execute(upgradeTemplate);
+
+        var addedInstruction = viewModel.InstructionSequence.Last();
+        Assert.Equal(ScriptCommandType.UpgradeMonkey, addedInstruction.Type);
+        Assert.Equal("second-bind", addedInstruction.TargetMonkeyBindingId);
+        Assert.Equal("BoomerangMonkey:1", addedInstruction.TargetMonkeyObjectId);
+    }
+
+    [Fact]
     public void AddScriptTagCommand_ResolvesBuiltInAliasAndKeepsCustomTags()
     {
         var viewModel = new ScriptEditorPageViewModel(LocalizationService.Instance);

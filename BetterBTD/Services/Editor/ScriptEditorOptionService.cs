@@ -28,8 +28,8 @@ public sealed class ScriptEditorOptionService
             ],
             SwitchDirectionOptions =
             [
-                new LanguageOption { Code = SwitchDirectionType.Right.ToString(), DisplayName = localizationService.T("Editor.Property.SwitchDirection.Right") },
-                new LanguageOption { Code = SwitchDirectionType.Left.ToString(), DisplayName = localizationService.T("Editor.Property.SwitchDirection.Left") }
+                new LanguageOption { Code = SwitchDirectionType.Left.ToString(), DisplayName = localizationService.T("Editor.Property.SwitchDirection.Left") },
+                new LanguageOption { Code = SwitchDirectionType.Right.ToString(), DisplayName = localizationService.T("Editor.Property.SwitchDirection.Right") }
             ],
             MonkeyAbilityOptions =
             [

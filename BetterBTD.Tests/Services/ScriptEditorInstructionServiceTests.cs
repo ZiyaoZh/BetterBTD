@@ -158,6 +158,18 @@ public sealed class ScriptEditorInstructionServiceTests
         }
     }
 
+    [Fact]
+    public void CreateInstructionInstance_SwitchMonkeyTarget_DefaultsToLeft()
+    {
+        var service = ScriptEditorInstructionService.Instance;
+        var template = service.CreateInstructionLibrary().Single(x => x.Type == ScriptCommandType.SwitchMonkeyTarget);
+
+        var instruction = service.CreateInstructionInstance(template, string.Empty, string.Empty, string.Empty);
+
+        Assert.Equal(SwitchDirectionType.Left, instruction.SwitchDirection);
+        Assert.Equal(1, instruction.SwitchCount);
+    }
+
     [Theory]
     [InlineData(ScriptCommandType.SwitchMonkeyTarget)]
     [InlineData(ScriptCommandType.SetMonkeyAbility)]
@@ -220,5 +232,29 @@ public sealed class ScriptEditorInstructionServiceTests
             string.Empty);
 
         Assert.Equal(340, instruction.MonkeyPanelOperationIntervalMilliseconds);
+    }
+
+    [Fact]
+    public void CreateInstructionInstanceFromDocument_SwitchMonkeyTarget_PreservesStoredRightDirection()
+    {
+        var service = ScriptEditorInstructionService.Instance;
+        var templates = service.CreateInstructionLibrary().ToDictionary(x => x.Type);
+        var document = new ScriptInstructionDocument
+        {
+            CommandType = ScriptCommandType.SwitchMonkeyTarget.ToString(),
+            SwitchDirection = SwitchDirectionType.Right.ToString(),
+            SwitchCount = 2
+        };
+
+        var instruction = service.CreateInstructionInstanceFromDocument(
+            document,
+            new Dictionary<string, ScriptMonkeyObjectDocument>(),
+            templates,
+            string.Empty,
+            string.Empty,
+            string.Empty);
+
+        Assert.Equal(SwitchDirectionType.Right, instruction.SwitchDirection);
+        Assert.Equal(2, instruction.SwitchCount);
     }
 }

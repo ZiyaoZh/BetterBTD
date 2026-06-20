@@ -116,7 +116,7 @@ public sealed class ScriptInstructionInstance : ObservableObject
     private double _waitColorCoordinateY;
     private UpgradePathType _upgradePath = UpgradePathType.Top;
     private int _upgradeCount = 1;
-    private SwitchDirectionType _switchDirection = SwitchDirectionType.Right;
+    private SwitchDirectionType _switchDirection = SwitchDirectionType.Left;
     private int _switchCount = 1;
     private MonkeyAbilityType _selectedAbility = MonkeyAbilityType.Ability1;
     private bool _requiresAbilityCoordinate;

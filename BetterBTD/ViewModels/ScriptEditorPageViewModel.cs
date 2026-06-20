@@ -473,7 +473,7 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
                 x,
                 monkeyObjectsByBindingId,
                 templatesByType,
-                MonkeyObjectOptions.FirstOrDefault()?.Code ?? string.Empty,
+                ResolveDefaultMonkeyObjectCode(),
                 InventoryOptions.FirstOrDefault()?.Code ?? string.Empty,
                 ActivatedAbilityOptions.FirstOrDefault()?.Code ?? string.Empty))
             .ToList();
@@ -1727,12 +1727,17 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
     {
         var instruction = _scriptEditorInstructionService.CreateInstructionInstance(
             template,
-            MonkeyObjectOptions.FirstOrDefault()?.Code ?? string.Empty,
+            ResolveDefaultMonkeyObjectCode(),
             InventoryOptions.FirstOrDefault()?.Code ?? string.Empty,
             ActivatedAbilityOptions.FirstOrDefault()?.Code ?? string.Empty);
         instruction.TargetMonkeyObjectId = ResolveTargetMonkeyObjectKey(instruction);
         _scriptEditorSequenceService.UpdateInstructionDisplayName(instruction, InstructionSequence, _localizationService);
         return instruction;
+    }
+
+    private string ResolveDefaultMonkeyObjectCode()
+    {
+        return MonkeyObjectOptions.LastOrDefault()?.Code ?? string.Empty;
     }
 
     private void ApplyScriptMetadata(ScriptMetadataDocument? metadata)
