@@ -61,7 +61,13 @@ internal sealed class BlackBorderGameUiActionHandler : AutoTaskGameUiActionHandl
             case GameUiStateId.StageSettings:
                 return ExecuteStageSettings(step, state);
             case GameUiStateId.Victory:
-                return Click(step, new WpfPoint(720, 850), "Confirmed the black border stage victory result.");
+                return await ExecuteHomeButtonClickAsync(
+                        step,
+                        snapshot,
+                        "black border victory screen",
+                        "Returned to the main menu from the black border victory screen.",
+                        cancellationToken)
+                    .ConfigureAwait(false);
             case GameUiStateId.StageSettlement:
                 return Click(step, new WpfPoint(960, 910), "Advanced past the stage settlement screen.");
             case GameUiStateId.LevelUp:

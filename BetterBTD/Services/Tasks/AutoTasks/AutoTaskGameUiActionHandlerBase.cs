@@ -114,9 +114,27 @@ internal abstract class AutoTaskGameUiActionHandlerBase : IGameUiTaskActionHandl
         GameUiSnapshot snapshot,
         CancellationToken cancellationToken)
     {
+        return await ExecuteHomeButtonClickAsync(
+                step,
+                snapshot,
+                "defeat screen",
+                "Returned to the main menu after defeat.",
+                cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    protected async Task<GameUiActionExecutionResult> ExecuteHomeButtonClickAsync(
+        GameUiNavigationStep step,
+        GameUiSnapshot snapshot,
+        string screenDescription,
+        string successMessage,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
         if (TryGetHomeButtonPoint(snapshot, out var homeButtonPoint))
         {
-            return Click(step, homeButtonPoint, "Returned to the main menu after defeat.");
+            return Click(step, homeButtonPoint, successMessage);
         }
 
         if (!GameCaptureService.TryCaptureFrame(out _, out var frame))
@@ -124,7 +142,7 @@ internal abstract class AutoTaskGameUiActionHandlerBase : IGameUiTaskActionHandl
             return new GameUiActionExecutionResult
             {
                 Succeeded = false,
-                Message = "Failed to capture the defeat screen for home button recognition.",
+                Message = $"Failed to capture the {screenDescription} for home button recognition.",
                 RecommendedDelayMs = step.PostActionDelayMs
             };
         }
@@ -133,15 +151,16 @@ internal abstract class AutoTaskGameUiActionHandlerBase : IGameUiTaskActionHandl
         {
             if (NavigationOcrService.TryLocateHomeButton(frame, out var recognizedHomeButtonPoint))
             {
-                return Click(step, recognizedHomeButtonPoint, "Returned to the main menu after defeat.");
+                return Click(step, recognizedHomeButtonPoint, successMessage);
             }
         }
 
         await Task.Yield();
+        cancellationToken.ThrowIfCancellationRequested();
         return new GameUiActionExecutionResult
         {
             Succeeded = false,
-            Message = "Failed to locate the defeat home button.",
+            Message = $"Failed to locate the {screenDescription} home button.",
             RecommendedDelayMs = step.PostActionDelayMs
         };
     }
