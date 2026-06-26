@@ -56,6 +56,34 @@ internal static class BlackBorderBadgeDetection
         return true;
     }
 
+    public static IReadOnlyList<BlackBorderBadgeState> AnalyzeMapAreaBadges(Mat frame, int mapAreaId)
+    {
+        ArgumentNullException.ThrowIfNull(frame);
+
+        if (frame.Empty() || mapAreaId is < 0 or > 5)
+        {
+            return [];
+        }
+
+        var states = new List<BlackBorderBadgeState>(BadgeDefinitions.Count);
+        foreach (var definition in BadgeDefinitions)
+        {
+            var badgePoint = CalculateBadgePoint(definition, mapAreaId);
+            var pixelX = ScaleReferenceCoordinate(badgePoint.X, ReferenceWidth, frame.Width);
+            var pixelY = ScaleReferenceCoordinate(badgePoint.Y, ReferenceHeight, frame.Height);
+            var pixel = frame.Get<Vec3b>(pixelY, pixelX);
+            var isAcquired = !definition.UnacquiredColors.Any(color => IsColorMatch(pixel, color));
+
+            states.Add(new BlackBorderBadgeState(
+                definition.Difficulty,
+                definition.Mode,
+                isAcquired,
+                badgePoint));
+        }
+
+        return states;
+    }
+
     public static bool TryGetMapAreaId(WpfPoint mapCenterPoint1080p, out int mapAreaId)
     {
         var x = mapCenterPoint1080p.X;
@@ -157,3 +185,9 @@ internal static class BlackBorderBadgeDetection
         int BaseY,
         IReadOnlyList<int> UnacquiredColors);
 }
+
+internal sealed record BlackBorderBadgeState(
+    StageDifficulty Difficulty,
+    StageMode Mode,
+    bool IsAcquired,
+    WpfPoint ReferencePoint1080p);

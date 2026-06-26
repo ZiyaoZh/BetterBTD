@@ -8,6 +8,7 @@ using BetterBTD.Helpers;
 using BetterBTD.Helpers.Extensions;
 using BetterBTD.Models;
 using BetterBTD.Models.AutoTasks;
+using BetterBTD.Models.GameElements;
 using BetterBTD.Models.ScriptExecution;
 using BetterBTD.Services;
 using BetterBTD.Services.Start.Capture;
@@ -34,12 +35,20 @@ public partial class CaptureTestWindow : UiFluentWindow
         public required string LabelKey { get; set; }
     }
 
+    private sealed class MapBadgeOverlayVisual
+    {
+        public required Border PanelBorder { get; init; }
+
+        public required TextBlock TextBlock { get; init; }
+    }
+
     private readonly LocalizationService _localizationService = LocalizationService.Instance;
     private readonly GameStageStateService _gameStageStateService = GameStageStateService.Instance;
     private readonly GameUiStateService _gameUiStateService = GameUiStateService.Instance;
     private readonly GameWindowInfoService _gameWindowInfoService = GameWindowInfoService.Instance;
     private readonly CaptureTestStageStateDisplayService _captureTestStageStateDisplayService = CaptureTestStageStateDisplayService.Instance;
     private readonly Dictionary<string, PointGroupOverlayVisual> _pointGroupVisuals = new(StringComparer.Ordinal);
+    private readonly Dictionary<int, MapBadgeOverlayVisual> _mapBadgeVisuals = [];
     private IGameCapture? _capture;
     private Size _cachedFrameSize;
     private readonly Stopwatch _captureStatsUpdateTimer = new();
@@ -66,6 +75,15 @@ public partial class CaptureTestWindow : UiFluentWindow
     private ulong _currentFrameSignature;
     private const double OverlayCrosshairLength = 10d;
     private const double OverlayCrosshairGap = 4d;
+    private static readonly WpfPoint[] MapBadgePanelReferencePoints =
+    [
+        new(310, 235),
+        new(733, 235),
+        new(1156, 235),
+        new(310, 548),
+        new(733, 548),
+        new(1156, 548)
+    ];
 
     public CaptureTestWindow()
     {
@@ -183,7 +201,7 @@ public partial class CaptureTestWindow : UiFluentWindow
 
             UpdateStatsText(failed: false, width: capturedFrame.Width, height: capturedFrame.Height);
             UpdateOcrStatsText(_lastOcrFailed);
-            UpdateOverlayRegions(capturedFrame.Width, capturedFrame.Height);
+            UpdateOverlayRegions(capturedFrame);
         }
     }
 
@@ -336,8 +354,10 @@ public partial class CaptureTestWindow : UiFluentWindow
             1d);
     }
 
-    private void UpdateOverlayRegions(int frameWidth, int frameHeight)
+    private void UpdateOverlayRegions(Mat capturedFrame)
     {
+        var frameWidth = capturedFrame.Width;
+        var frameHeight = capturedFrame.Height;
         if (frameWidth <= 0 || frameHeight <= 0 || CaptureOverlayCanvas.ActualWidth <= 0 || CaptureOverlayCanvas.ActualHeight <= 0)
         {
             HideOverlayRegions();
@@ -376,6 +396,8 @@ public partial class CaptureTestWindow : UiFluentWindow
             overlayLayout.PointGroups,
             frameWidth,
             frameHeight);
+
+        ApplyMapBadgeOverlays(capturedFrame, overlayBounds);
     }
 
     private static WpfRect CalculateDisplayedFrameBounds(int frameWidth, int frameHeight, double containerWidth, double containerHeight)
@@ -460,6 +482,11 @@ public partial class CaptureTestWindow : UiFluentWindow
     private bool ShouldDisplayInLevelOverlays()
     {
         return _lastStageStateSnapshot?.IsInLevel == true;
+    }
+
+    private bool ShouldDisplayMapBadgeOverlays()
+    {
+        return _lastGameUiSnapshot?.State is GameUiStateId.MapCategorySelect or GameUiStateId.MapGrid;
     }
 
     private void ApplyOverlayPointGroup(
@@ -581,6 +608,13 @@ public partial class CaptureTestWindow : UiFluentWindow
             displayedFrameBounds.Y + point.Y * scaleY);
     }
 
+    private static WpfPoint MapReferencePoint(WpfRect displayedFrameBounds, WpfPoint referencePoint1080p)
+    {
+        return new WpfPoint(
+            displayedFrameBounds.X + referencePoint1080p.X / 1920d * displayedFrameBounds.Width,
+            displayedFrameBounds.Y + referencePoint1080p.Y / 1080d * displayedFrameBounds.Height);
+    }
+
     private static WpfPoint CalculatePointGroupLabelLocation(WpfRect displayedFrameBounds, WpfPoint anchor, double labelWidth, double labelHeight)
     {
         var x = anchor.X + 12d;
@@ -625,6 +659,144 @@ public partial class CaptureTestWindow : UiFluentWindow
         pointGroupVisual.LabelBorder.Visibility = Visibility.Collapsed;
     }
 
+    private void ApplyMapBadgeOverlays(Mat capturedFrame, WpfRect displayedFrameBounds)
+    {
+        if (!ShouldDisplayMapBadgeOverlays())
+        {
+            HideMapBadgeOverlays();
+            return;
+        }
+
+        for (var mapAreaId = 0; mapAreaId < MapBadgePanelReferencePoints.Length; mapAreaId++)
+        {
+            var badgeStates = BlackBorderBadgeDetection.AnalyzeMapAreaBadges(capturedFrame, mapAreaId);
+            var visual = EnsureMapBadgeVisual(mapAreaId);
+            visual.TextBlock.Text = FormatMapBadgeOverlayText(mapAreaId, badgeStates);
+            visual.PanelBorder.Background = new SolidColorBrush(GetMapBadgePanelColor(badgeStates));
+            visual.PanelBorder.BorderBrush = new SolidColorBrush(GetMapBadgePanelStrokeColor(badgeStates));
+            visual.PanelBorder.Visibility = Visibility.Visible;
+            visual.PanelBorder.Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
+
+            var panelLocation = MapReferencePoint(displayedFrameBounds, MapBadgePanelReferencePoints[mapAreaId]);
+            var panelWidth = visual.PanelBorder.DesiredSize.Width;
+            var panelHeight = visual.PanelBorder.DesiredSize.Height;
+            var x = Math.Clamp(
+                panelLocation.X,
+                displayedFrameBounds.Left,
+                Math.Max(displayedFrameBounds.Left, displayedFrameBounds.Right - panelWidth));
+            var y = Math.Clamp(
+                panelLocation.Y,
+                displayedFrameBounds.Top,
+                Math.Max(displayedFrameBounds.Top, displayedFrameBounds.Bottom - panelHeight));
+
+            Canvas.SetLeft(visual.PanelBorder, x);
+            Canvas.SetTop(visual.PanelBorder, y);
+        }
+    }
+
+    private MapBadgeOverlayVisual EnsureMapBadgeVisual(int mapAreaId)
+    {
+        if (_mapBadgeVisuals.TryGetValue(mapAreaId, out var visual))
+        {
+            return visual;
+        }
+
+        var textBlock = new TextBlock
+        {
+            Foreground = Brushes.White,
+            FontFamily = new FontFamily("Consolas"),
+            FontSize = 9.5,
+            FontWeight = FontWeights.SemiBold,
+            LineHeight = 12,
+            TextWrapping = TextWrapping.NoWrap
+        };
+
+        var panelBorder = new Border
+        {
+            Padding = new Thickness(6, 4, 6, 4),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(4),
+            Visibility = Visibility.Collapsed,
+            IsHitTestVisible = false,
+            Child = textBlock
+        };
+
+        CaptureOverlayCanvas.Children.Add(panelBorder);
+
+        visual = new MapBadgeOverlayVisual
+        {
+            PanelBorder = panelBorder,
+            TextBlock = textBlock
+        };
+        _mapBadgeVisuals[mapAreaId] = visual;
+        return visual;
+    }
+
+    private static string FormatMapBadgeOverlayText(
+        int mapAreaId,
+        IReadOnlyList<BlackBorderBadgeState> badgeStates)
+    {
+        var acquiredCount = badgeStates.Count(static state => state.IsAcquired);
+        var totalCount = badgeStates.Count;
+        return $"Map {mapAreaId + 1} {acquiredCount}/{totalCount} done\n" +
+               $"E {FormatBadgeLine(badgeStates, StageDifficulty.Easy)}\n" +
+               $"M {FormatBadgeLine(badgeStates, StageDifficulty.Medium)}\n" +
+               $"H {FormatBadgeLine(badgeStates, StageDifficulty.Hard)}";
+    }
+
+    private static string FormatBadgeLine(
+        IReadOnlyList<BlackBorderBadgeState> badgeStates,
+        StageDifficulty difficulty)
+    {
+        return string.Join(
+            " ",
+            badgeStates
+                .Where(state => state.Difficulty == difficulty)
+                .Select(state => $"{GetBadgeModeCode(state.Mode)}:{(state.IsAcquired ? "Y" : "N")}"));
+    }
+
+    private static string GetBadgeModeCode(StageMode mode)
+    {
+        return mode switch
+        {
+            StageMode.Standard => "S",
+            StageMode.PrimaryOnly => "P",
+            StageMode.Deflation => "D",
+            StageMode.MilitaryOnly => "Mi",
+            StageMode.Apopalypse => "A",
+            StageMode.Reverse => "R",
+            StageMode.MagicOnly => "Ma",
+            StageMode.DoubleHpMoabs => "DH",
+            StageMode.HalfCash => "HC",
+            StageMode.AlternateBloonsRounds => "AB",
+            StageMode.Impoppable => "I",
+            StageMode.CHIMPS => "C",
+            _ => mode.ToString()
+        };
+    }
+
+    private static Color GetMapBadgePanelColor(IReadOnlyList<BlackBorderBadgeState> badgeStates)
+    {
+        return badgeStates.Count > 0 && badgeStates.All(static state => state.IsAcquired)
+            ? Color.FromArgb(214, 20, 83, 45)
+            : Color.FromArgb(214, 26, 32, 44);
+    }
+
+    private static Color GetMapBadgePanelStrokeColor(IReadOnlyList<BlackBorderBadgeState> badgeStates)
+    {
+        return badgeStates.Count > 0 && badgeStates.All(static state => state.IsAcquired)
+            ? Color.FromRgb(34, 197, 94)
+            : Color.FromRgb(251, 191, 36);
+    }
+
+    private void HideMapBadgeOverlays()
+    {
+        foreach (var visual in _mapBadgeVisuals.Values)
+        {
+            visual.PanelBorder.Visibility = Visibility.Collapsed;
+        }
+    }
+
     private void HideOverlayRegions()
     {
         HideOverlayRegion(GoldRegionRectangle, GoldRegionLabelBorder);
@@ -634,6 +806,8 @@ public partial class CaptureTestWindow : UiFluentWindow
         {
             HidePointGroupVisual(pointGroupVisual);
         }
+
+        HideMapBadgeOverlays();
     }
 
     private void ResetCaptureDiagnostics()

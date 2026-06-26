@@ -93,6 +93,26 @@ public sealed class BlackBorderBadgeDetectionTests
         }
     }
 
+    [Fact]
+    public void AnalyzeMapAreaBadges_ReturnsEveryBadgeForEveryMapArea()
+    {
+        using var frame = CreateFrame();
+
+        for (var mapAreaId = 0; mapAreaId < 6; mapAreaId++)
+        {
+            var badgeStates = BlackBorderBadgeDetection.AnalyzeMapAreaBadges(frame, mapAreaId);
+
+            Assert.Equal(14, badgeStates.Count);
+            Assert.Contains(badgeStates, state => state.Difficulty == StageDifficulty.Easy && state.Mode == StageMode.Standard);
+            Assert.Contains(badgeStates, state => state.Difficulty == StageDifficulty.Hard && state.Mode == StageMode.CHIMPS);
+            Assert.All(badgeStates, state =>
+            {
+                Assert.InRange(state.ReferencePoint1080p.X, 0, 1920);
+                Assert.InRange(state.ReferencePoint1080p.Y, 0, 1080);
+            });
+        }
+    }
+
     private static Mat CreateFrame()
     {
         return new Mat(1080, 1920, MatType.CV_8UC3, Scalar.All(0));
