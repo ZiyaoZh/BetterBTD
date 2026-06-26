@@ -135,6 +135,18 @@ internal sealed class BlackBorderGameUiActionHandler : AutoTaskGameUiActionHandl
         {
             if (TryLocateMap(frame, context.Target.Map, out var mapPoint))
             {
+                if (BlackBorderBadgeDetection.TryIsStageBadgeAcquired(frame, context.Target, mapPoint, out var isAcquired) &&
+                    isAcquired)
+                {
+                    state.SetProperty(BlackBorderAutoTaskStateKeys.MapLocateAttempts, 0);
+                    state.SetProperty(BlackBorderAutoTaskStateKeys.HeroSelected, false);
+                    state.SetProperty(BlackBorderAutoTaskStateKeys.SkipCurrentTaskRequested, true);
+                    return Success(
+                        step,
+                        $"Black border badge for '{context.Target.Map}/{context.Target.Difficulty}/{context.Target.Mode}' is already acquired. Skipping the current queued stage.",
+                        600);
+                }
+
                 InputSimulationService.PrepareTargetWindowForInput();
                 InputSimulationService.ClickMouseAtScriptCoordinate(mapPoint);
                 state.SetProperty(BlackBorderAutoTaskStateKeys.MapLocateAttempts, 0);
