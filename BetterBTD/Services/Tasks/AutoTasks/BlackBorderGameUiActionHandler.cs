@@ -201,7 +201,8 @@ internal sealed class BlackBorderGameUiActionHandler : AutoTaskGameUiActionHandl
             return false;
         }
 
-        if (BlackBorderBadgeDetection.TryIsStageBadgeAcquired(frame, context.Target, mapPoint, out var isAcquired) &&
+        if (state.Request.Kind == AutoTaskKind.BlackBorder &&
+            BlackBorderBadgeDetection.TryIsStageBadgeAcquired(frame, context.Target, mapPoint, out var isAcquired) &&
             isAcquired)
         {
             state.SetProperty(BlackBorderAutoTaskStateKeys.MapLocateAttempts, 0);
