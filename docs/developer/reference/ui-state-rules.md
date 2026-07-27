@@ -1,3 +1,10 @@
+# UI 状态规则参考
+
+> [!NOTE]
+> 以下是基于 `1920 × 1080` 的颜色锚点记录。可编辑规则的当前来源是 `User\AutoTasks\game_ui_detection_rules.json`，默认值由 `GameUiDetectionConfigService` 生成。
+
+## 状态锚点
+
 带提示的关卡挑战界面
 检测：(780, 380) #F34A12, (780, 760) #5388D2, (900, 760) #62E200
 
@@ -102,3 +109,5 @@ BOSS战结果界面
 
 可返回界面
 检测：(68, 54) #FFFFFF
+
+返回 [开发者文档](../README.md) · [自动任务架构](auto-task-architecture.md)
