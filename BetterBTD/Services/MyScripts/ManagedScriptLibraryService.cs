@@ -279,8 +279,18 @@ public sealed class ManagedScriptLibraryService
             var document = LoadManifest();
             MigrateDedicatedBindings(document);
             var currentBindings = LoadCurrentBindings(document);
-            var record = FindRecordById(document, scriptId)
-                         ?? FindRecordByStoredFilePath(document, sourceFilePath);
+            var associatedRecord = FindRecordById(document, scriptId)
+                                   ?? FindRecordByStoredFilePath(document, sourceFilePath);
+            var documentIdRecord = FindRecordById(document, documentScriptId);
+            if (associatedRecord is not null &&
+                documentIdRecord is not null &&
+                !ReferenceEquals(associatedRecord, documentIdRecord))
+            {
+                throw new InvalidOperationException(
+                    $"Script ID '{documentScriptId}' is already used by another managed script.");
+            }
+
+            var record = associatedRecord ?? documentIdRecord;
             var now = DateTimeOffset.UtcNow;
 
             if (record is null)
@@ -569,6 +579,15 @@ public sealed class ManagedScriptLibraryService
             NormalizeRecord(script);
         }
 
+        document.Scripts = document.Scripts
+            .GroupBy(script => script.ScriptId, StringComparer.OrdinalIgnoreCase)
+            .Select(group => group
+                .OrderByDescending(record => File.Exists(GetStoredFilePath(record)))
+                .ThenByDescending(record => record.UpdatedAt)
+                .ThenByDescending(record => record.ImportedAt)
+                .First())
+            .ToList();
+
         foreach (var binding in document.Bindings)
         {
             binding.SlotId = binding.SlotId?.Trim() ?? string.Empty;
@@ -678,8 +697,16 @@ public sealed class ManagedScriptLibraryService
             .ThenBy(x => x.DisplayName, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-        var assetsById = assets.ToDictionary(x => x.ScriptId, StringComparer.OrdinalIgnoreCase);
-        var bindingsBySlotId = currentBindings.ToDictionary(x => x.SlotId, StringComparer.OrdinalIgnoreCase);
+        var assetsById = assets
+            .GroupBy(x => x.ScriptId, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
+        var bindingsBySlotId = currentBindings
+            .Where(x => !string.IsNullOrWhiteSpace(x.SlotId))
+            .GroupBy(x => x.SlotId.Trim(), StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(
+                group => group.Key,
+                group => group.OrderByDescending(x => x.UpdatedAt).First(),
+                StringComparer.OrdinalIgnoreCase);
 
         var slots = _slotCatalogService
             .GetAll()
