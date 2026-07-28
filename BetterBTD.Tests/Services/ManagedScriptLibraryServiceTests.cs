@@ -105,6 +105,118 @@ public sealed class ManagedScriptLibraryServiceTests
     }
 
     [Fact]
+    public void RemoveScripts_RemovesAllRequestedAssetsAndBindings()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), $"betterbtd-library-{Guid.NewGuid():N}");
+        var sourceDirectory = Path.Combine(rootDirectory, "source");
+
+        try
+        {
+            Directory.CreateDirectory(sourceDirectory);
+            var firstSourcePath = Path.Combine(sourceDirectory, "first-script.btd");
+            var secondSourcePath = Path.Combine(sourceDirectory, "second-script.btd");
+            var remainingSourcePath = Path.Combine(sourceDirectory, "remaining-script.btd");
+            ScriptDocumentService.Instance.Save(firstSourcePath, CreateDocument(
+                GameMapType.MonkeyMeadow,
+                StageDifficulty.Easy,
+                StageMode.Standard,
+                ["custom"]));
+            ScriptDocumentService.Instance.Save(secondSourcePath, CreateDocument(
+                GameMapType.DarkCastle,
+                StageDifficulty.Hard,
+                StageMode.CHIMPS,
+                ["collection"]));
+            ScriptDocumentService.Instance.Save(remainingSourcePath, CreateDocument(
+                GameMapType.Logs,
+                StageDifficulty.Medium,
+                StageMode.Reverse,
+                ["remaining"]));
+
+            var service = new ManagedScriptLibraryService(
+                Path.Combine(rootDirectory, "managed"),
+                ScriptDocumentService.Instance,
+                ManagedScriptSlotCatalogService.Instance);
+            var first = service.ImportScript(firstSourcePath);
+            var second = service.ImportScript(secondSourcePath);
+            var remaining = service.ImportScript(remainingSourcePath);
+            var customSlotId = ManagedScriptSlotIdFactory.CreateCustomDefaultSlotId();
+            var collectionSlotId = ManagedScriptSlotIdFactory.CreateCollectionSlotId("simple", GameMapType.DarkCastle);
+            service.SetBinding(customSlotId, first.ScriptId);
+            service.SetBinding(collectionSlotId, second.ScriptId);
+            Assert.True(service.TryGetManagedScriptFilePath(first.ScriptId, out var firstManagedFilePath));
+            Assert.True(service.TryGetManagedScriptFilePath(second.ScriptId, out var secondManagedFilePath));
+
+            var removedCount = service.RemoveScripts([first.ScriptId, second.ScriptId, "missing-script-id"]);
+            var snapshot = service.GetSnapshot();
+
+            Assert.Equal(2, removedCount);
+            Assert.Equal(remaining.ScriptId, Assert.Single(snapshot.Scripts).ScriptId);
+            Assert.False(File.Exists(firstManagedFilePath));
+            Assert.False(File.Exists(secondManagedFilePath));
+            Assert.False(snapshot.Slots.First(slot => slot.Definition.SlotId == customSlotId).HasBinding);
+            Assert.False(snapshot.Slots.First(slot => slot.Definition.SlotId == collectionSlotId).HasBinding);
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void ExportScripts_UsesUniqueNamesWithoutOverwritingExistingFiles()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), $"betterbtd-library-{Guid.NewGuid():N}");
+        var firstSourceDirectory = Path.Combine(rootDirectory, "source-a");
+        var secondSourceDirectory = Path.Combine(rootDirectory, "source-b");
+        var exportDirectory = Path.Combine(rootDirectory, "export");
+
+        try
+        {
+            Directory.CreateDirectory(firstSourceDirectory);
+            Directory.CreateDirectory(secondSourceDirectory);
+            Directory.CreateDirectory(exportDirectory);
+            var firstSourcePath = Path.Combine(firstSourceDirectory, "shared-name.btd");
+            var secondSourcePath = Path.Combine(secondSourceDirectory, "shared-name.btd");
+            ScriptDocumentService.Instance.Save(firstSourcePath, CreateDocument(
+                GameMapType.MonkeyMeadow,
+                StageDifficulty.Easy,
+                StageMode.Standard,
+                ["first"]));
+            ScriptDocumentService.Instance.Save(secondSourcePath, CreateDocument(
+                GameMapType.DarkCastle,
+                StageDifficulty.Hard,
+                StageMode.CHIMPS,
+                ["second"]));
+            File.WriteAllText(Path.Combine(exportDirectory, "shared-name.btd"), "existing");
+
+            var service = new ManagedScriptLibraryService(
+                Path.Combine(rootDirectory, "managed"),
+                ScriptDocumentService.Instance,
+                ManagedScriptSlotCatalogService.Instance);
+            var first = service.ImportScript(firstSourcePath);
+            var second = service.ImportScript(secondSourcePath);
+
+            var exportedFilePaths = service.ExportScripts([first.ScriptId, second.ScriptId], exportDirectory);
+
+            Assert.Equal(2, exportedFilePaths.Count);
+            Assert.Contains(Path.Combine(exportDirectory, "shared-name (2).btd"), exportedFilePaths);
+            Assert.Contains(Path.Combine(exportDirectory, "shared-name (3).btd"), exportedFilePaths);
+            Assert.Equal("existing", File.ReadAllText(Path.Combine(exportDirectory, "shared-name.btd")));
+            Assert.All(exportedFilePaths, exportedFilePath => Assert.True(File.Exists(exportedFilePath)));
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public void ImportLegacyScriptCollection_ConvertsAndImportsEachLegacyScript()
     {
         var rootDirectory = Path.Combine(Path.GetTempPath(), $"betterbtd-library-{Guid.NewGuid():N}");

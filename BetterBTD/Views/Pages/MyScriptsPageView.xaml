@@ -21,6 +21,8 @@
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <EventSetter Event="PreviewMouseLeftButtonDown" Handler="ScriptListItem_OnPreviewMouseLeftButtonDown" />
+            <EventSetter Event="PreviewKeyDown" Handler="ScriptListItem_OnPreviewKeyDown" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ListBoxItem">
@@ -63,50 +65,104 @@
 
         <ui:CardControl Grid.Row="0" Style="{StaticResource AppCardControlStyle}">
             <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
+                <Grid Visibility="{Binding IsNormalManagementMode, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
 
-                <ui:Button Grid.Column="0"
-                           Margin="0,0,8,0"
-                           Appearance="Primary"
-                           Content="{Binding ImportText}"
-                           Command="{Binding ImportScriptCommand}" />
-                <ui:Button Grid.Column="1"
-                           Margin="0,0,8,0"
-                           Appearance="Secondary"
-                           Content="{Binding ExportText}"
-                           Command="{Binding ExportSelectedScriptCommand}" />
-                <ui:Button Grid.Column="2"
-                           Margin="0,0,8,0"
-                           Appearance="Secondary"
-                           Content="{Binding RemoveText}"
-                           Command="{Binding RemoveSelectedScriptCommand}" />
-                <ui:Button Grid.Column="3"
-                           Margin="0,0,8,0"
-                           Appearance="Secondary"
-                           Content="{Binding EditText}"
-                           IsEnabled="{Binding HasSelectedScript}"
-                           Click="EditSelectedScriptButton_OnClick" />
-                <ui:Button Grid.Column="4"
-                           Margin="0,0,8,0"
-                           Appearance="Secondary"
-                           Content="{Binding RefreshText}"
-                           Command="{Binding RefreshCommand}" />
-                <ui:Button Grid.Column="6"
-                           Margin="0"
-                           HorizontalAlignment="Right"
-                           Appearance="Primary"
-                           Content="{Binding RunText}"
-                           IsEnabled="{Binding HasSelectedScript}"
-                           Icon="{ui:SymbolIcon Play24}"
-                           Click="RunSelectedScriptButton_OnClick" />
+                    <ui:Button Grid.Column="0"
+                               Margin="0,0,8,0"
+                               Appearance="Primary"
+                               Content="{Binding ImportText}"
+                               Icon="{ui:SymbolIcon ArrowUpload24}"
+                               Command="{Binding ImportScriptCommand}" />
+                    <ui:Button Grid.Column="1"
+                               Margin="0,0,8,0"
+                               Appearance="Secondary"
+                               Content="{Binding ExportText}"
+                               Icon="{ui:SymbolIcon ArrowDownload24}"
+                               Command="{Binding ExportSelectedScriptCommand}" />
+                    <ui:Button Grid.Column="2"
+                               Margin="0,0,8,0"
+                               Appearance="Secondary"
+                               Content="{Binding EditText}"
+                               Icon="{ui:SymbolIcon DocumentEdit24}"
+                               IsEnabled="{Binding HasSelectedScript}"
+                               Click="EditSelectedScriptButton_OnClick" />
+                    <ui:Button Grid.Column="3"
+                               Margin="0,0,8,0"
+                               Appearance="Secondary"
+                               Content="{Binding ManageText}"
+                               Command="{Binding EnterBatchManagementCommand}" />
+                    <ui:Button Grid.Column="5"
+                               Width="36"
+                               Height="32"
+                               Margin="0,0,8,0"
+                               Padding="4"
+                               Appearance="Transparent"
+                               BorderThickness="0"
+                               Command="{Binding RefreshCommand}"
+                               Icon="{ui:SymbolIcon ArrowCounterclockwise24}"
+                               ToolTip="{Binding RefreshText}" />
+                    <ui:Button Grid.Column="6"
+                               Margin="0"
+                               HorizontalAlignment="Right"
+                               Appearance="Primary"
+                               Content="{Binding RunText}"
+                               IsEnabled="{Binding HasSelectedScript}"
+                               Icon="{ui:SymbolIcon Play24}"
+                               Click="RunSelectedScriptButton_OnClick" />
+                </Grid>
+
+                <Grid Visibility="{Binding IsBatchManagementMode, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <CheckBox Grid.Column="0"
+                              Margin="2,0,16,0"
+                              VerticalAlignment="Center"
+                              Content="{Binding SelectAllText}"
+                              IsEnabled="{Binding CanChangeBatchSelection}"
+                              IsChecked="{Binding AreAllVisibleScriptsSelected, Mode=TwoWay}" />
+                    <TextBlock Grid.Column="1"
+                               VerticalAlignment="Center"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                               Text="{Binding BatchSelectionCountText}" />
+                    <ui:Button Grid.Column="3"
+                               Width="36"
+                               Height="32"
+                               Margin="0,0,8,0"
+                               Padding="4"
+                               Appearance="Secondary"
+                               Command="{Binding ExportBatchSelectionCommand}"
+                               Icon="{ui:SymbolIcon ArrowDownload24}"
+                               ToolTip="{Binding ExportSelectedText}" />
+                    <ui:Button Grid.Column="4"
+                               Width="36"
+                               Height="32"
+                               Margin="0,0,8,0"
+                               Padding="4"
+                               Appearance="Secondary"
+                               Command="{Binding RemoveBatchSelectionCommand}"
+                               Icon="{ui:SymbolIcon Delete24}"
+                               ToolTip="{Binding RemoveSelectedText}" />
+                    <ui:Button Grid.Column="5"
+                               Appearance="Primary"
+                               Content="{Binding DoneText}"
+                               Command="{Binding ExitBatchManagementCommand}" />
+                </Grid>
             </Grid>
         </ui:CardControl>
 
@@ -223,10 +279,19 @@
                                     <Grid Margin="0,0,0,2">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
 
-                                        <Border Width="28"
+                                        <CheckBox Grid.Column="0"
+                                                  Margin="10,0,2,0"
+                                                  VerticalAlignment="Center"
+                                                  IsEnabled="{Binding DataContext.CanChangeBatchSelection, RelativeSource={RelativeSource AncestorType={x:Type Page}}}"
+                                                  IsChecked="{Binding IsSelectedForBatch, Mode=TwoWay}"
+                                                  Visibility="{Binding DataContext.IsBatchManagementMode, RelativeSource={RelativeSource AncestorType={x:Type Page}}, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+                                        <Border Grid.Column="1"
+                                                Width="28"
                                                 Height="28"
                                                 Margin="10,8,12,8"
                                                 VerticalAlignment="Center"
@@ -238,7 +303,7 @@
                                                            Symbol="Document24" />
                                         </Border>
 
-                                        <TextBlock Grid.Column="1"
+                                        <TextBlock Grid.Column="2"
                                                    Margin="0,0,10,0"
                                                    VerticalAlignment="Center"
                                                    Foreground="{DynamicResource TextFillColorPrimaryBrush}"

@@ -1,6 +1,7 @@
 using System;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Threading;
 using BetterBTD.Services;
 using BetterBTD.ViewModels;
@@ -31,6 +32,34 @@ public partial class MyScriptsPageView : Page
     private void RunSelectedScriptButton_OnClick(object sender, RoutedEventArgs e)
     {
         RunSelectedScript();
+    }
+
+    private void ScriptListItem_OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (TryToggleBatchSelection(sender))
+        {
+            e.Handled = true;
+        }
+    }
+
+    private void ScriptListItem_OnPreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Space && TryToggleBatchSelection(sender))
+        {
+            e.Handled = true;
+        }
+    }
+
+    private bool TryToggleBatchSelection(object sender)
+    {
+        if (DataContext is not MyScriptsPageViewModel { IsBatchManagementMode: true, CanChangeBatchSelection: true } ||
+            sender is not ListBoxItem { DataContext: ManagedScriptListItemViewModel script })
+        {
+            return false;
+        }
+
+        script.IsSelectedForBatch = !script.IsSelectedForBatch;
+        return true;
     }
 
     private void OpenSelectedScriptInEditor()

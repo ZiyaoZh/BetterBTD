@@ -26,6 +26,9 @@ public sealed class MyScriptsPageViewModel : ObservableObject
     private bool _hasScripts;
     private bool _isLoadingScripts;
     private bool _isImportingScripts;
+    private bool _isBatchManagementMode;
+    private bool _isBatchOperationRunning;
+    private bool _isUpdatingBatchSelection;
     private bool _hasLoadedScripts;
     private double _loadingProgressValue;
     private double _loadingProgressMaximum = 1d;
@@ -64,6 +67,10 @@ public sealed class MyScriptsPageViewModel : ObservableObject
         ExportSelectedScriptCommand = new RelayCommand(ExportSelectedScript, CanExportSelectedScript);
         RemoveSelectedScriptCommand = new RelayCommand(RemoveSelectedScript, CanRemoveSelectedScript);
         CopySelectedScriptIdCommand = new RelayCommand(CopySelectedScriptId, CanCopySelectedScriptId);
+        EnterBatchManagementCommand = new RelayCommand(EnterBatchManagement, CanEnterBatchManagement);
+        ExitBatchManagementCommand = new RelayCommand(ExitBatchManagement, CanExitBatchManagement);
+        ExportBatchSelectionCommand = new AsyncRelayCommand(ExportBatchSelectionAsync, CanRunBatchOperation);
+        RemoveBatchSelectionCommand = new AsyncRelayCommand(RemoveBatchSelectionAsync, CanRunBatchOperation);
 
         LoadingProgressMaximum = 1d;
         LoadingProgressValue = 0d;
@@ -93,6 +100,14 @@ public sealed class MyScriptsPageViewModel : ObservableObject
 
     public IRelayCommand CopySelectedScriptIdCommand { get; }
 
+    public IRelayCommand EnterBatchManagementCommand { get; }
+
+    public IRelayCommand ExitBatchManagementCommand { get; }
+
+    public IAsyncRelayCommand ExportBatchSelectionCommand { get; }
+
+    public IAsyncRelayCommand RemoveBatchSelectionCommand { get; }
+
     public string ImportText => _localizationService.T("Library.Action.Import");
 
     public string ExportText => _localizationService.T("Library.Action.Export");
@@ -104,6 +119,20 @@ public sealed class MyScriptsPageViewModel : ObservableObject
     public string RunText => _localizationService.T("Library.Action.Run");
 
     public string RefreshText => _localizationService.T("Library.Action.Refresh");
+
+    public string ManageText => _localizationService.T("Library.Action.Manage");
+
+    public string DoneText => _localizationService.T("Library.Action.Done");
+
+    public string SelectAllText => _localizationService.T("Library.Action.SelectAll");
+
+    public string ExportSelectedText => _localizationService.T("Library.Action.ExportSelected");
+
+    public string RemoveSelectedText => _localizationService.T("Library.Action.RemoveSelected");
+
+    public string BatchSelectionCountText => string.Format(
+        _localizationService.T("Library.Batch.SelectionCount"),
+        BatchSelectedScriptCount);
 
     public string ScriptSearchLabel => _localizationService.T("Library.Filters.Search");
 
@@ -125,6 +154,56 @@ public sealed class MyScriptsPageViewModel : ObservableObject
         ? Scripts.Count.ToString()
         : $"{Scripts.Count} / {_allScripts.Count}";
 
+    public bool IsBatchManagementMode
+    {
+        get => _isBatchManagementMode;
+        private set
+        {
+            if (!SetProperty(ref _isBatchManagementMode, value))
+            {
+                return;
+            }
+
+            OnPropertyChanged(nameof(IsNormalManagementMode));
+            EnterBatchManagementCommand.NotifyCanExecuteChanged();
+        }
+    }
+
+    public bool IsNormalManagementMode => !IsBatchManagementMode;
+
+    public bool CanChangeBatchSelection => !_isBatchOperationRunning;
+
+    public int BatchSelectedScriptCount => _allScripts.Count(script => script.IsSelectedForBatch);
+
+    public bool HasBatchSelection => BatchSelectedScriptCount > 0;
+
+    public bool AreAllVisibleScriptsSelected
+    {
+        get => Scripts.Count > 0 && Scripts.All(script => script.IsSelectedForBatch);
+        set
+        {
+            if (Scripts.Count == 0 || value == AreAllVisibleScriptsSelected)
+            {
+                return;
+            }
+
+            _isUpdatingBatchSelection = true;
+            try
+            {
+                foreach (var script in Scripts)
+                {
+                    script.IsSelectedForBatch = value;
+                }
+            }
+            finally
+            {
+                _isUpdatingBatchSelection = false;
+            }
+
+            NotifyBatchSelectionChanged();
+        }
+    }
+
     public bool HasScripts
     {
         get => _hasScripts;
@@ -136,6 +215,7 @@ public sealed class MyScriptsPageViewModel : ObservableObject
             }
 
             OnPropertyChanged(nameof(ShowEmptyScriptsState));
+            EnterBatchManagementCommand.NotifyCanExecuteChanged();
         }
     }
 
@@ -155,6 +235,9 @@ public sealed class MyScriptsPageViewModel : ObservableObject
             ExportSelectedScriptCommand.NotifyCanExecuteChanged();
             RemoveSelectedScriptCommand.NotifyCanExecuteChanged();
             CopySelectedScriptIdCommand.NotifyCanExecuteChanged();
+            EnterBatchManagementCommand.NotifyCanExecuteChanged();
+            ExportBatchSelectionCommand.NotifyCanExecuteChanged();
+            RemoveBatchSelectionCommand.NotifyCanExecuteChanged();
         }
     }
 
@@ -507,6 +590,109 @@ public sealed class MyScriptsPageViewModel : ObservableObject
         return !IsLoadingScripts && SelectedScript is not null;
     }
 
+    private bool CanEnterBatchManagement()
+    {
+        return !IsLoadingScripts && HasScripts && !IsBatchManagementMode;
+    }
+
+    private void EnterBatchManagement()
+    {
+        ClearBatchSelection();
+        IsBatchManagementMode = true;
+    }
+
+    private void ExitBatchManagement()
+    {
+        ClearBatchSelection();
+        IsBatchManagementMode = false;
+    }
+
+    private bool CanExitBatchManagement()
+    {
+        return !_isBatchOperationRunning;
+    }
+
+    private bool CanRunBatchOperation()
+    {
+        return IsBatchManagementMode && HasBatchSelection && !IsLoadingScripts && !_isBatchOperationRunning;
+    }
+
+    private async Task ExportBatchSelectionAsync()
+    {
+        var selectedScripts = GetBatchSelectedScripts();
+        if (selectedScripts.Count == 0)
+        {
+            return;
+        }
+
+        var dialog = new OpenFolderDialog
+        {
+            Title = _localizationService.T("Library.Dialog.BatchExport.Title")
+        };
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        SetBatchOperationRunning(true);
+        try
+        {
+            var scriptIds = selectedScripts.Select(script => script.ScriptId).ToList();
+            await Task.Run(() => _managedScriptLibraryService.ExportScripts(scriptIds, dialog.FolderName));
+        }
+        catch (Exception ex)
+        {
+            ShowError("Library.Dialog.BatchExportError.Title", ex.Message);
+        }
+        finally
+        {
+            SetBatchOperationRunning(false);
+        }
+    }
+
+    private async Task RemoveBatchSelectionAsync()
+    {
+        var selectedScripts = GetBatchSelectedScripts();
+        if (selectedScripts.Count == 0)
+        {
+            return;
+        }
+
+        var result = _appDialogService.Show(new AppDialogRequest
+        {
+            Title = _localizationService.T("Library.Dialog.BatchRemove.Title"),
+            Message = string.Format(
+                _localizationService.T("Library.Dialog.BatchRemove.Message"),
+                selectedScripts.Count),
+            PrimaryButtonText = _localizationService.T("Library.Action.RemoveSelected"),
+            SecondaryButtonText = _localizationService.T("Library.Dialog.Cancel")
+        });
+        if (result != AppDialogResult.Primary)
+        {
+            return;
+        }
+
+        SetBatchOperationRunning(true);
+        try
+        {
+            var scriptIds = selectedScripts.Select(script => script.ScriptId).ToList();
+            await Task.Run(() => _managedScriptLibraryService.RemoveScripts(scriptIds));
+            await RefreshAsync();
+            if (!HasScripts)
+            {
+                IsBatchManagementMode = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowError("Library.Dialog.RemoveError.Title", ex.Message);
+        }
+        finally
+        {
+            SetBatchOperationRunning(false);
+        }
+    }
+
     private bool CanCopySelectedScriptId()
     {
         return !IsLoadingScripts && SelectedScript is not null && !string.IsNullOrWhiteSpace(SelectedScript.ScriptId);
@@ -567,6 +753,61 @@ public sealed class MyScriptsPageViewModel : ObservableObject
         }
     }
 
+    private List<ManagedScriptListItemViewModel> GetBatchSelectedScripts()
+    {
+        return _allScripts.Where(script => script.IsSelectedForBatch).ToList();
+    }
+
+    private void ClearBatchSelection()
+    {
+        _isUpdatingBatchSelection = true;
+        try
+        {
+            foreach (var script in _allScripts)
+            {
+                script.IsSelectedForBatch = false;
+            }
+        }
+        finally
+        {
+            _isUpdatingBatchSelection = false;
+        }
+
+        NotifyBatchSelectionChanged();
+    }
+
+    private void OnBatchScriptSelectionChanged()
+    {
+        if (!_isUpdatingBatchSelection)
+        {
+            NotifyBatchSelectionChanged();
+        }
+    }
+
+    private void NotifyBatchSelectionChanged()
+    {
+        OnPropertyChanged(nameof(BatchSelectedScriptCount));
+        OnPropertyChanged(nameof(BatchSelectionCountText));
+        OnPropertyChanged(nameof(HasBatchSelection));
+        OnPropertyChanged(nameof(AreAllVisibleScriptsSelected));
+        ExportBatchSelectionCommand.NotifyCanExecuteChanged();
+        RemoveBatchSelectionCommand.NotifyCanExecuteChanged();
+    }
+
+    private void SetBatchOperationRunning(bool value)
+    {
+        if (_isBatchOperationRunning == value)
+        {
+            return;
+        }
+
+        _isBatchOperationRunning = value;
+        OnPropertyChanged(nameof(CanChangeBatchSelection));
+        ExitBatchManagementCommand.NotifyCanExecuteChanged();
+        ExportBatchSelectionCommand.NotifyCanExecuteChanged();
+        RemoveBatchSelectionCommand.NotifyCanExecuteChanged();
+    }
+
     private void RefreshFilteredScripts()
     {
         var selectedScriptId = SelectedScript?.ScriptId;
@@ -581,6 +822,7 @@ public sealed class MyScriptsPageViewModel : ObservableObject
         HasScripts = Scripts.Count > 0;
         SelectedScript = Scripts.FirstOrDefault(x => x.ScriptId == selectedScriptId) ?? Scripts.FirstOrDefault();
         OnPropertyChanged(nameof(VisibleScriptCountText));
+        NotifyBatchSelectionChanged();
     }
 
     private bool MatchesScriptFilters(ManagedScriptListItemViewModel script)
@@ -619,7 +861,7 @@ public sealed class MyScriptsPageViewModel : ObservableObject
 
     private ManagedScriptListItemViewModel CreateScriptItem(ManagedScriptAssetEntry entry)
     {
-        return new ManagedScriptListItemViewModel
+        var script = new ManagedScriptListItemViewModel
         {
             ScriptId = entry.ScriptId,
             DisplayName = entry.DisplayName,
@@ -642,6 +884,14 @@ public sealed class MyScriptsPageViewModel : ObservableObject
             HasIssue = entry.HasMissingFile || entry.HasMetadataIssue,
             UpdatedAt = entry.UpdatedAt
         };
+        script.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(ManagedScriptListItemViewModel.IsSelectedForBatch))
+            {
+                OnBatchScriptSelectionChanged();
+            }
+        };
+        return script;
     }
 
     private string ResolveScriptStateText(ManagedScriptAssetEntry entry)
@@ -743,6 +993,12 @@ public sealed class MyScriptsPageViewModel : ObservableObject
         OnPropertyChanged(nameof(EditText));
         OnPropertyChanged(nameof(RunText));
         OnPropertyChanged(nameof(RefreshText));
+        OnPropertyChanged(nameof(ManageText));
+        OnPropertyChanged(nameof(DoneText));
+        OnPropertyChanged(nameof(SelectAllText));
+        OnPropertyChanged(nameof(ExportSelectedText));
+        OnPropertyChanged(nameof(RemoveSelectedText));
+        OnPropertyChanged(nameof(BatchSelectionCountText));
         OnPropertyChanged(nameof(ScriptSearchLabel));
         OnPropertyChanged(nameof(ScriptSearchPlaceholder));
         OnPropertyChanged(nameof(MapItems));
@@ -851,8 +1107,10 @@ public sealed class MyScriptsPageViewModel : ObservableObject
     }
 }
 
-public sealed class ManagedScriptListItemViewModel
+public sealed class ManagedScriptListItemViewModel : ObservableObject
 {
+    private bool _isSelectedForBatch;
+
     public required string ScriptId { get; init; }
 
     public required string DisplayName { get; init; }
@@ -888,4 +1146,10 @@ public sealed class ManagedScriptListItemViewModel
     public bool HasIssue { get; init; }
 
     public required DateTimeOffset UpdatedAt { get; init; }
+
+    public bool IsSelectedForBatch
+    {
+        get => _isSelectedForBatch;
+        set => SetProperty(ref _isSelectedForBatch, value);
+    }
 }
