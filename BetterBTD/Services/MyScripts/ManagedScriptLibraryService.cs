@@ -11,8 +11,16 @@ namespace BetterBTD.Services.MyScripts;
 
 public sealed class ManagedScriptLibraryService
 {
+    private const int MaxExportBaseFileNameLength = 120;
     private static readonly Lazy<ManagedScriptLibraryService> InstanceHolder =
         new(() => new ManagedScriptLibraryService());
+
+    private static readonly HashSet<string> ReservedWindowsFileNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "CON", "PRN", "AUX", "NUL",
+        "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+        "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"
+    };
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -279,8 +287,18 @@ public sealed class ManagedScriptLibraryService
             var document = LoadManifest();
             MigrateDedicatedBindings(document);
             var currentBindings = LoadCurrentBindings(document);
-            var record = FindRecordById(document, scriptId)
-                         ?? FindRecordByStoredFilePath(document, sourceFilePath);
+            var associatedRecord = FindRecordById(document, scriptId)
+                                   ?? FindRecordByStoredFilePath(document, sourceFilePath);
+            var documentIdRecord = FindRecordById(document, documentScriptId);
+            if (associatedRecord is not null &&
+                documentIdRecord is not null &&
+                !ReferenceEquals(associatedRecord, documentIdRecord))
+            {
+                throw new InvalidOperationException(
+                    $"Script ID '{documentScriptId}' is already used by another managed script.");
+            }
+
+            var record = associatedRecord ?? documentIdRecord;
             var now = DateTimeOffset.UtcNow;
 
             if (record is null)
@@ -375,32 +393,139 @@ public sealed class ManagedScriptLibraryService
         }
     }
 
-    public bool RemoveScript(string scriptId)
+    public IReadOnlyList<string> ExportScripts(IEnumerable<string> scriptIds, string targetDirectoryPath)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(scriptId);
+        ArgumentNullException.ThrowIfNull(scriptIds);
+        ArgumentException.ThrowIfNullOrWhiteSpace(targetDirectoryPath);
+
+        var requestedScriptIds = scriptIds
+            .Where(scriptId => !string.IsNullOrWhiteSpace(scriptId))
+            .Select(scriptId => scriptId.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        if (requestedScriptIds.Count == 0)
+        {
+            return [];
+        }
 
         lock (_syncRoot)
         {
             var document = LoadManifest();
             MigrateDedicatedBindings(document);
-            var record = document.Scripts.FirstOrDefault(x => string.Equals(x.ScriptId, scriptId, StringComparison.OrdinalIgnoreCase));
-            if (record is null)
+            var recordsById = document.Scripts.ToDictionary(
+                record => record.ScriptId,
+                StringComparer.OrdinalIgnoreCase);
+            var records = requestedScriptIds.Select(scriptId =>
             {
-                return false;
+                if (!recordsById.TryGetValue(scriptId, out var record))
+                {
+                    throw new InvalidOperationException("Managed script asset was not found.");
+                }
+
+                return record;
+            }).ToList();
+
+            var sourceFilePaths = records.Select(GetStoredFilePath).ToList();
+            var missingFilePath = sourceFilePaths.FirstOrDefault(sourceFilePath => !File.Exists(sourceFilePath));
+            if (missingFilePath is not null)
+            {
+                throw new FileNotFoundException("Managed script asset file was not found.", missingFilePath);
             }
 
-            document.Scripts.Remove(record);
-            document.Bindings.RemoveAll(x => string.Equals(x.ScriptId, scriptId, StringComparison.OrdinalIgnoreCase));
-            RemoveScriptBindingsFromDedicatedFiles(scriptId);
+            Directory.CreateDirectory(targetDirectoryPath);
+            var reservedFileNames = Directory.EnumerateFiles(targetDirectoryPath)
+                .Select(Path.GetFileName)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var exportedFilePaths = new List<string>(records.Count);
 
-            var storedFilePath = GetStoredFilePath(record);
-            if (File.Exists(storedFilePath))
+            try
             {
-                File.Delete(storedFilePath);
+                for (var index = 0; index < records.Count; index++)
+                {
+                    var baseFileName = SanitizeExportFileName(records[index].DisplayName);
+                    var fileName = $"{baseFileName}.btd";
+                    var suffix = 2;
+                    while (!reservedFileNames.Add(fileName))
+                    {
+                        fileName = $"{baseFileName} ({suffix++}).btd";
+                    }
+
+                    var targetFilePath = Path.Combine(targetDirectoryPath, fileName);
+                    File.Copy(sourceFilePaths[index], targetFilePath, overwrite: false);
+                    exportedFilePaths.Add(targetFilePath);
+                }
+
+                return exportedFilePaths;
+            }
+            catch
+            {
+                foreach (var exportedFilePath in exportedFilePaths)
+                {
+                    try
+                    {
+                        File.Delete(exportedFilePath);
+                    }
+                    catch
+                    {
+                        // Preserve the original export failure.
+                    }
+                }
+
+                throw;
+            }
+        }
+    }
+
+    public bool RemoveScript(string scriptId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(scriptId);
+
+        return RemoveScripts([scriptId]) > 0;
+    }
+
+    public int RemoveScripts(IEnumerable<string> scriptIds)
+    {
+        ArgumentNullException.ThrowIfNull(scriptIds);
+
+        var requestedScriptIds = scriptIds
+            .Where(scriptId => !string.IsNullOrWhiteSpace(scriptId))
+            .Select(scriptId => scriptId.Trim())
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (requestedScriptIds.Count == 0)
+        {
+            return 0;
+        }
+
+        lock (_syncRoot)
+        {
+            var document = LoadManifest();
+            MigrateDedicatedBindings(document);
+            var records = document.Scripts
+                .Where(record => requestedScriptIds.Contains(record.ScriptId))
+                .ToList();
+            if (records.Count == 0)
+            {
+                return 0;
+            }
+
+            var removedScriptIds = records
+                .Select(record => record.ScriptId)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            document.Scripts.RemoveAll(record => removedScriptIds.Contains(record.ScriptId));
+            document.Bindings.RemoveAll(binding => removedScriptIds.Contains(binding.ScriptId));
+            RemoveScriptBindingsFromDedicatedFiles(removedScriptIds);
+
+            foreach (var record in records)
+            {
+                var storedFilePath = GetStoredFilePath(record);
+                if (File.Exists(storedFilePath))
+                {
+                    File.Delete(storedFilePath);
+                }
             }
 
             SaveManifest(document);
-            return true;
+            return records.Count;
         }
     }
 
@@ -569,6 +694,15 @@ public sealed class ManagedScriptLibraryService
             NormalizeRecord(script);
         }
 
+        document.Scripts = document.Scripts
+            .GroupBy(script => script.ScriptId, StringComparer.OrdinalIgnoreCase)
+            .Select(group => group
+                .OrderByDescending(record => File.Exists(GetStoredFilePath(record)))
+                .ThenByDescending(record => record.UpdatedAt)
+                .ThenByDescending(record => record.ImportedAt)
+                .First())
+            .ToList();
+
         foreach (var binding in document.Bindings)
         {
             binding.SlotId = binding.SlotId?.Trim() ?? string.Empty;
@@ -678,8 +812,16 @@ public sealed class ManagedScriptLibraryService
             .ThenBy(x => x.DisplayName, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-        var assetsById = assets.ToDictionary(x => x.ScriptId, StringComparer.OrdinalIgnoreCase);
-        var bindingsBySlotId = currentBindings.ToDictionary(x => x.SlotId, StringComparer.OrdinalIgnoreCase);
+        var assetsById = assets
+            .GroupBy(x => x.ScriptId, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
+        var bindingsBySlotId = currentBindings
+            .Where(x => !string.IsNullOrWhiteSpace(x.SlotId))
+            .GroupBy(x => x.SlotId.Trim(), StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(
+                group => group.Key,
+                group => group.OrderByDescending(x => x.UpdatedAt).First(),
+                StringComparer.OrdinalIgnoreCase);
 
         var slots = _slotCatalogService
             .GetAll()
@@ -1012,18 +1154,18 @@ public sealed class ManagedScriptLibraryService
         SaveManifest(document);
     }
 
-    private void RemoveScriptBindingsFromDedicatedFiles(string scriptId)
+    private void RemoveScriptBindingsFromDedicatedFiles(IReadOnlySet<string> scriptIds)
     {
-        RemoveScriptBindingsFromDedicatedFile(_blackBorderBindingsFilePath, scriptId);
-        RemoveScriptBindingsFromDedicatedFile(_collectionBindingsFilePath, scriptId);
-        RemoveScriptBindingsFromDedicatedFile(_goldBalloonBindingsFilePath, scriptId);
+        RemoveScriptBindingsFromDedicatedFile(_blackBorderBindingsFilePath, scriptIds);
+        RemoveScriptBindingsFromDedicatedFile(_collectionBindingsFilePath, scriptIds);
+        RemoveScriptBindingsFromDedicatedFile(_goldBalloonBindingsFilePath, scriptIds);
     }
 
-    private void RemoveScriptBindingsFromDedicatedFile(string filePath, string scriptId)
+    private void RemoveScriptBindingsFromDedicatedFile(string filePath, IReadOnlySet<string> scriptIds)
     {
         var document = LoadTaskBindingDocument(filePath);
         var keysToRemove = document.Bindings
-            .Where(binding => string.Equals(binding.Value, scriptId, StringComparison.OrdinalIgnoreCase))
+            .Where(binding => scriptIds.Contains(binding.Value))
             .Select(binding => binding.Key)
             .ToList();
 
@@ -1309,6 +1451,28 @@ public sealed class ManagedScriptLibraryService
         return string.IsNullOrWhiteSpace(displayName)
             ? Path.GetFileNameWithoutExtension(sourceFilePath)
             : displayName.Trim();
+    }
+
+    private static string SanitizeExportFileName(string? displayName)
+    {
+        var invalidFileNameCharacters = Path.GetInvalidFileNameChars().ToHashSet();
+        var sanitizedName = new string((displayName ?? string.Empty)
+            .Select(character => invalidFileNameCharacters.Contains(character) ? '_' : character)
+            .ToArray())
+            .Trim()
+            .TrimEnd('.');
+        if (string.IsNullOrWhiteSpace(sanitizedName))
+        {
+            return "script";
+        }
+
+        if (sanitizedName.Length > MaxExportBaseFileNameLength)
+        {
+            sanitizedName = sanitizedName[..MaxExportBaseFileNameLength].TrimEnd();
+        }
+
+        var deviceName = sanitizedName.Split('.')[0];
+        return ReservedWindowsFileNames.Contains(deviceName) ? $"_{sanitizedName}" : sanitizedName;
     }
 
     private static bool AreSameFilePath(string left, string right)

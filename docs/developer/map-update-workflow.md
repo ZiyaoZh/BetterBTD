@@ -174,7 +174,7 @@ Get-Item BetterBTD\Assets\OcrIcons\Maps\1080p\SkullTweak.png
 完成修改后运行：
 
 ```powershell
-dotnet test BetterBTD.Tests\BetterBTD.Tests.csproj
+dotnet test BetterBTD.slnx -c Release /p:Platform=x64
 ```
 
 再检查差异：
@@ -204,3 +204,5 @@ git diff
 - 复制模板到 `Assets/OcrIcons/Maps/1080p/SkullTweak.png`。
 - 不更新 `LegacyMapType`，因为旧脚本不再维护新地图 ID。
 - 增加测试确认 Skull Tweak 是新手图，并拥有金气球槽位。
+
+返回 [开发者文档](README.md) · [开发指南](development.md)
