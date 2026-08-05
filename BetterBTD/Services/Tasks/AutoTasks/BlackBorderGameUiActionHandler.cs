@@ -26,10 +26,8 @@ internal sealed class BlackBorderGameUiActionHandler : AutoTaskGameUiActionHandl
     private static readonly WpfPoint MapSelectionScrollPoint = new(960, 540);
 
     private const int MapCategoryClickCaptureDelayMs = 500;
-    private const int MaxMapSearchPages = 10;
     private const int MapSelectionNextPageScrollDelta = -5;
     private const double MapSelectionClickYOffset1080p = -60d;
-    private const double StrictMapThreshold = 0.90d;
 
     public BlackBorderGameUiActionHandler(
         ScriptInputSimulationService inputSimulationService,
@@ -138,7 +136,7 @@ internal sealed class BlackBorderGameUiActionHandler : AutoTaskGameUiActionHandl
             return PressEscape(step, "Black border script metadata is unavailable. Returning from map selection.");
         }
 
-        EnsureMapSearchState(state, context);
+        BlackBorderMapSearchStateMachine.EnsureCurrentContext(state, context);
 
         if (!GameCaptureService.TryCaptureFrame(out _, out var frame))
         {
@@ -157,46 +155,36 @@ internal sealed class BlackBorderGameUiActionHandler : AutoTaskGameUiActionHandl
                 return locatedResult;
             }
 
-            if (!IsMapSearchCategorySelected(state))
+            if (!BlackBorderMapSearchStateMachine.IsCategorySelected(state))
             {
                 var categoryPoint = GetCategorySelectionPoint(context.Category);
                 InputSimulationService.PrepareTargetWindowForInput();
                 InputSimulationService.ClickMouseAtScriptCoordinate(categoryPoint);
-                state.SetProperty(BlackBorderAutoTaskStateKeys.MapSearchCategorySelected, true);
-                state.SetProperty(BlackBorderAutoTaskStateKeys.MapSearchPageIndex, 1);
-                state.SetProperty(BlackBorderAutoTaskStateKeys.MapLocateAttempts, 0);
+                BlackBorderMapSearchStateMachine.MarkCategorySelected(state);
                 return Success(
                     step,
                     $"Selected black border map category '{context.Category}' before searching for '{context.Target.Map}'.",
                     MapCategoryClickCaptureDelayMs);
             }
 
-            var pageIndex = GetMapSearchPageIndex(state);
-            var attempts = state.TryGetProperty<int>(BlackBorderAutoTaskStateKeys.MapLocateAttempts, out var currentAttempts)
-                ? currentAttempts + 1
-                : 1;
+            var missDecision = BlackBorderMapSearchStateMachine.CreateMissDecision(state);
 
-            if (pageIndex >= MaxMapSearchPages)
+            if (missDecision.IsTerminal)
             {
-                state.RemoveProperty(BlackBorderAutoTaskStateKeys.ResolvedScriptContext);
-                state.SetProperty(BlackBorderAutoTaskStateKeys.MapLocateAttempts, 0);
-                state.SetProperty(BlackBorderAutoTaskStateKeys.HeroSelected, false);
-                state.SetProperty(BlackBorderAutoTaskStateKeys.SkipCurrentTaskRequested, true);
-                ResetMapSearchState(state);
+                BlackBorderMapSearchStateMachine.MarkSearchExhausted(state);
                 return Success(
                     step,
-                    $"Black border map '{context.Target.Map}' was not found after scanning {MaxMapSearchPages} page(s). Skipping the current queued stage.",
+                    $"Black border map '{context.Target.Map}' was not found after scanning {BlackBorderMapSearchStateMachine.MaxPages} page(s). Skipping the current queued stage.",
                     600);
             }
 
             InputSimulationService.PrepareTargetWindowForInput();
             InputSimulationService.MoveMouseToScriptCoordinate(MapSelectionScrollPoint);
             InputSimulationService.ScrollMouseWheelVertical(MapSelectionNextPageScrollDelta);
-            state.SetProperty(BlackBorderAutoTaskStateKeys.MapLocateAttempts, attempts);
-            state.SetProperty(BlackBorderAutoTaskStateKeys.MapSearchPageIndex, pageIndex + 1);
+            BlackBorderMapSearchStateMachine.MarkPageAdvanced(state, missDecision);
             return Success(
                 step,
-                $"Black border map '{context.Target.Map}' was not found on page {pageIndex}. Advanced to page {pageIndex + 1} ({attempts}/{MaxMapSearchPages}).",
+                $"Black border map '{context.Target.Map}' was not found on page {missDecision.PageIndex}. Advanced to page {missDecision.NextPageIndex} ({missDecision.Attempts}/{BlackBorderMapSearchStateMachine.MaxPages}).",
                 700);
         }
     }
@@ -219,11 +207,8 @@ internal sealed class BlackBorderGameUiActionHandler : AutoTaskGameUiActionHandl
             BlackBorderBadgeDetection.TryIsStageBadgeAcquired(frame, context.Target, mapPoint, out var isAcquired) &&
             isAcquired)
         {
-            var currentPageIndex = GetMapSearchPageIndex(state);
-            state.SetProperty(BlackBorderAutoTaskStateKeys.MapLocateAttempts, 0);
-            state.SetProperty(BlackBorderAutoTaskStateKeys.HeroSelected, false);
             state.SetProperty(BlackBorderAutoTaskStateKeys.SkipCurrentTaskRequested, true);
-            ResetMapSearchState(state);
+            var currentPageIndex = BlackBorderMapSearchStateMachine.MarkMapFound(state);
             result = Success(
                 step,
                 $"Black border badge for '{context.Target.Map}/{context.Target.Difficulty}/{context.Target.Mode}' is already acquired. Page {currentPageIndex}, slot {slotIndex + 1}, score {FormatScore(matchInfo.Score)}. Skipping the current queued stage.",
@@ -231,13 +216,11 @@ internal sealed class BlackBorderGameUiActionHandler : AutoTaskGameUiActionHandl
             return true;
         }
 
-        var selectedPageIndex = GetMapSearchPageIndex(state);
+        var selectedPageIndex = BlackBorderMapSearchStateMachine.GetCurrentPageIndex(state);
         var clickPoint = ApplyMapSelectionClickOffset(mapPoint);
         InputSimulationService.PrepareTargetWindowForInput();
         InputSimulationService.ClickMouseAtScriptCoordinate(clickPoint);
-        state.SetProperty(BlackBorderAutoTaskStateKeys.MapLocateAttempts, 0);
-        state.SetProperty(BlackBorderAutoTaskStateKeys.HeroSelected, false);
-        ResetMapSearchState(state);
+        BlackBorderMapSearchStateMachine.MarkMapFound(state);
         result = Success(
             step,
             $"Selected black border map '{context.Target.Map}' on page {selectedPageIndex}, slot {slotIndex + 1}, score {FormatScore(matchInfo.Score)}, click ({Math.Round(clickPoint.X)}, {Math.Round(clickPoint.Y)}).",
@@ -383,8 +366,7 @@ internal sealed class BlackBorderGameUiActionHandler : AutoTaskGameUiActionHandl
                     slotRegion.X,
                     slotRegion.Y,
                     out var candidatePoint,
-                    out var candidateMatch) ||
-                candidateMatch.Score < StrictMapThreshold)
+                    out var candidateMatch))
             {
                 continue;
             }
@@ -407,45 +389,6 @@ internal sealed class BlackBorderGameUiActionHandler : AutoTaskGameUiActionHandl
         matchInfo = bestMatch;
         slotIndex = bestSlotIndex;
         return true;
-    }
-
-    private static void EnsureMapSearchState(
-        AutoTaskRuntimeState state,
-        BlackBorderAutoTaskScriptContext context)
-    {
-        var signature = BuildMapSearchSignature(context);
-        if (state.TryGetProperty<string>(BlackBorderAutoTaskStateKeys.MapSearchSignature, out var storedSignature) &&
-            string.Equals(storedSignature, signature, StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        ResetMapSearchState(state);
-        state.SetProperty(BlackBorderAutoTaskStateKeys.MapSearchSignature, signature);
-    }
-
-    private static void ResetMapSearchState(AutoTaskRuntimeState state)
-    {
-        state.SetProperty(BlackBorderAutoTaskStateKeys.MapSearchCategorySelected, false);
-        state.SetProperty(BlackBorderAutoTaskStateKeys.MapSearchPageIndex, 0);
-    }
-
-    private static string BuildMapSearchSignature(BlackBorderAutoTaskScriptContext context)
-    {
-        return $"{context.Category}|{context.Target.Map}|{context.Target.Difficulty}|{context.Target.Mode}";
-    }
-
-    private static bool IsMapSearchCategorySelected(AutoTaskRuntimeState state)
-    {
-        return state.TryGetProperty<bool>(BlackBorderAutoTaskStateKeys.MapSearchCategorySelected, out var selected) &&
-               selected;
-    }
-
-    private static int GetMapSearchPageIndex(AutoTaskRuntimeState state)
-    {
-        return state.TryGetProperty<int>(BlackBorderAutoTaskStateKeys.MapSearchPageIndex, out var pageIndex)
-            ? Math.Max(1, pageIndex)
-            : 1;
     }
 
     private static WpfPoint ApplyMapSelectionClickOffset(WpfPoint point)
