@@ -52,6 +52,41 @@ class CommandLineTests(unittest.TestCase):
         self.assertEqual("recognize", parsed.command)
         self.assertEqual(Path("frame.json"), parsed.evidence)
 
+    def test_click_requires_element_and_uses_transition_defaults(self) -> None:
+        parsed = parse_args(
+            ["click", "--element", "mainMenu.start", "--phase", "arrange"]
+        )
+        selector = _selector_from_args(parsed)
+
+        self.assertEqual("mainMenu.start", parsed.element)
+        self.assertEqual(DEFAULT_PROCESS_NAMES, selector.process_names)
+        self.assertEqual(10_000, parsed.transition_timeout_ms)
+        self.assertEqual(3, parsed.stable_samples)
+        self.assertEqual(0.05, parsed.change_threshold)
+        self.assertEqual(0.02, parsed.stability_threshold)
+
+    def test_click_launch_cannot_be_combined_with_exact_process(self) -> None:
+        with self.assertRaisesRegex(UsageError, "--launch cannot be combined"):
+            parse_args(
+                [
+                    "click",
+                    "--element",
+                    "mainMenu.start",
+                    "--phase",
+                    "arrange",
+                    "--process-id",
+                    "123",
+                    "--launch",
+                    "game.exe",
+                ]
+            )
+
+    def test_click_rejects_act_phase(self) -> None:
+        with self.assertRaisesRegex(UsageError, "invalid choice"):
+            parse_args(
+                ["click", "--element", "mainMenu.start", "--phase", "act"]
+            )
+
     def test_baseline_requires_subcommand(self) -> None:
         with self.assertRaisesRegex(UsageError, "requires a subcommand"):
             parse_args(["baseline"])

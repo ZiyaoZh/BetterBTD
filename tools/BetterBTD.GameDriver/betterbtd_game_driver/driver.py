@@ -38,6 +38,10 @@ class GameDriver:
     def __init__(self, window_api: WindowApi | None = None) -> None:
         self._window_api = window_api or WindowApi()
 
+    @property
+    def window_api(self) -> WindowApi:
+        return self._window_api
+
     def list_windows(
         self,
         selector: WindowSelector,

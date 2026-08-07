@@ -14,8 +14,9 @@ class VisualCatalogTests(unittest.TestCase):
 
         self.assertEqual("btd6-ui-independent", catalog.id)
         self.assertEqual((1920, 1080), (catalog.reference_width, catalog.reference_height))
-        self.assertEqual(["mainMenu"], [page.id for page in catalog.pages])
+        self.assertEqual(["mainMenu", "mapSelect"], [page.id for page in catalog.pages])
         self.assertEqual(4, len(catalog.pages[0].anchors))
+        self.assertEqual(5, len(catalog.pages[1].anchors))
 
     def test_template_hash_mismatch_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:

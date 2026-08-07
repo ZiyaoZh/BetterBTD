@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "mapSelect.zh-CN.20260807",
+  "sourceEvidenceId": "22ac89655c054c10a65f79e2d0d1f7a5",
+  "sourceImageSha256": "d7be9023dc2d551d6b5cc21420e28d622ea5497bd0a9a41afc4f30abe3015ae6",
+  "pageId": "mapSelect",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-07T15:13:00.000Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromAnchors": [
+    "mapSelect.pageIndicator",
+    "mapSelect.changeHero",
+    "mapSelect.community",
+    "mapCard.medals",
+    "mapCard.localizedTitle",
+    "mapCard.sparkles"
+  ],
+  "notes": [
+    "The source is the final evidence from an independently observed mainMenu.start click transition.",
+    "Global navigation icons identify the page; the Monkey Meadow image independently detects that actionable map card."
+  ]
+}

@@ -136,6 +136,34 @@ class WindowApi:
     def flush_compositor() -> bool:
         return dwmapi.DwmFlush() == 0
 
+    def click_client_point(
+        self,
+        handle: int,
+        client_x: int,
+        client_y: int,
+    ) -> tuple[int, int]:
+        snapshot = self.snapshot(handle)
+        if (
+            client_x < 0
+            or client_y < 0
+            or client_x >= snapshot.client_rect.width
+            or client_y >= snapshot.client_rect.height
+        ):
+            raise GameDriverError(
+                "inputPointOutsideClient",
+                f"Client input point ({client_x}, {client_y}) is outside the game client.",
+                5,
+            )
+
+        screen_x = snapshot.client_rect.x + client_x
+        screen_y = snapshot.client_rect.y + client_y
+        win32api.SetCursorPos((screen_x, screen_y))
+        time.sleep(0.05)
+        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+        time.sleep(0.05)
+        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+        return screen_x, screen_y
+
     @staticmethod
     def virtual_screen_rect() -> Rect:
         return Rect(

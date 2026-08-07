@@ -60,6 +60,25 @@ class VisualRecognitionTests(unittest.TestCase):
         self.assertEqual("unknown", result["recognition"]["status"])
         self.assertFalse(result["recognition"]["oracleEligible"])
 
+    def test_real_holdout_frame_matches_map_select(self) -> None:
+        evidence = read_evidence(SAMPLE_ROOT / "map-select.zh-CN.holdout.json")
+
+        result, match = recognize_image(evidence, self.catalog)
+
+        self.assertIsNotNone(match)
+        self.assertEqual("matched", result["recognition"]["status"])
+        self.assertEqual("mapSelect", result["recognition"]["page"]["id"])
+        self.assertGreater(result["recognition"]["page"]["score"], 0.99)
+        self.assertEqual(13, len(result["recognition"]["elements"]))
+        self.assertTrue(result["recognition"]["oracleEligible"])
+        monkey_meadow = next(
+            element
+            for element in result["recognition"]["elements"]
+            if element["id"] == "mapSelect.monkeyMeadow"
+        )
+        self.assertEqual("visible", monkey_meadow["visibility"])
+        self.assertTrue(monkey_meadow["visible"])
+
     def test_uniform_dark_frame_is_unknown(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             metadata_path = write_test_evidence(

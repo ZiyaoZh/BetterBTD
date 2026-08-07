@@ -13,6 +13,7 @@ from .baseline import build_templates
 from .driver import DEFAULT_PROCESS_NAMES, DEFAULT_WINDOW_TITLES, CaptureRequest, GameDriver
 from .evidence import read_evidence
 from .errors import GameDriverError, UsageError
+from .interaction import ClickRequest, InteractionDriver
 from .models import WindowSelector
 from .vision import recognize_image, write_annotation
 from .visual_catalog import load_visual_catalog, visual_catalog_summary
@@ -95,6 +96,105 @@ def create_parser() -> DriverArgumentParser:
         help="Wait for a newly launched game window (default: 60000).",
     )
 
+    click_parser = subparsers.add_parser(
+        "click",
+        help="Click an independently visible catalog element and observe the transition.",
+    )
+    _add_selector_arguments(click_parser)
+    click_parser.add_argument(
+        "--element",
+        required=True,
+        help="Stable catalog element ID to click, such as mainMenu.start.",
+    )
+    click_parser.add_argument(
+        "--phase",
+        required=True,
+        choices=("arrange", "recover"),
+        help="Input ownership phase; control is forbidden during act and assert.",
+    )
+    click_parser.add_argument(
+        "--output-dir",
+        type=Path,
+        help="Directory for before/after evidence and the operation trace.",
+    )
+    click_parser.add_argument(
+        "--launch",
+        type=Path,
+        help="Start this executable only when no matching BTD6 window exists.",
+    )
+    click_parser.add_argument(
+        "--catalog",
+        type=Path,
+        help="Catalog JSON path. Defaults to the bundled BTD6 visual catalog.",
+    )
+    click_parser.add_argument(
+        "--expect-page",
+        help="Require this independently recognized page after the transition.",
+    )
+    click_parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Replace the command's fixed evidence and trace files.",
+    )
+    click_parser.add_argument(
+        "--settle-ms",
+        type=lambda value: _bounded_integer(value, 0, 10_000, "--settle-ms"),
+        default=500,
+        help="Delay after activation before pre-input capture (default: 500).",
+    )
+    click_parser.add_argument(
+        "--activation-timeout-ms",
+        type=lambda value: _bounded_integer(
+            value, 100, 30_000, "--activation-timeout-ms"
+        ),
+        default=3_000,
+        help="Foreground verification timeout (default: 3000).",
+    )
+    click_parser.add_argument(
+        "--window-timeout-ms",
+        type=lambda value: _bounded_integer(value, 0, 120_000, "--window-timeout-ms"),
+        default=3_000,
+        help="Wait for an existing matching window (default: 3000).",
+    )
+    click_parser.add_argument(
+        "--launch-timeout-ms",
+        type=lambda value: _bounded_integer(value, 100, 300_000, "--launch-timeout-ms"),
+        default=60_000,
+        help="Wait for a newly launched game window (default: 60000).",
+    )
+    click_parser.add_argument(
+        "--transition-timeout-ms",
+        type=lambda value: _bounded_integer(
+            value, 500, 120_000, "--transition-timeout-ms"
+        ),
+        default=10_000,
+        help="Wait for a changed and stable frame (default: 10000).",
+    )
+    click_parser.add_argument(
+        "--poll-interval-ms",
+        type=lambda value: _bounded_integer(value, 50, 2_000, "--poll-interval-ms"),
+        default=200,
+        help="Visual transition sampling interval (default: 200).",
+    )
+    click_parser.add_argument(
+        "--stable-samples",
+        type=lambda value: _bounded_integer(value, 1, 20, "--stable-samples"),
+        default=3,
+        help="Consecutive low-difference frames required (default: 3).",
+    )
+    click_parser.add_argument(
+        "--change-threshold",
+        type=lambda value: _bounded_float(value, 0.001, 1.0, "--change-threshold"),
+        default=0.05,
+        help="Normalized difference required from the pre-input frame (default: 0.05).",
+    )
+    click_parser.add_argument(
+        "--stability-threshold",
+        type=lambda value: _bounded_float(value, 0.001, 1.0, "--stability-threshold"),
+        default=0.02,
+        help="Maximum normalized difference between stable frames (default: 0.02).",
+    )
+
     catalog_parser = subparsers.add_parser(
         "catalog",
         help="Validate the independent visual baseline catalog and templates.",
@@ -160,12 +260,16 @@ def parse_args(arguments: Sequence[str]) -> argparse.Namespace:
     parsed = parser.parse_args(arguments)
     if parsed.command == "baseline" and parsed.baseline_command is None:
         raise UsageError("baseline requires a subcommand such as 'build'.")
-    if parsed.command == "capture":
+    if parsed.command in ("capture", "click"):
         if parsed.launch is not None and (
             parsed.window_handle is not None or parsed.process_id is not None
         ):
             raise UsageError("--launch cannot be combined with --window-handle or --process-id.")
-        if parsed.output is not None and parsed.output.suffix.casefold() != ".png":
+        if (
+            parsed.command == "capture"
+            and parsed.output is not None
+            and parsed.output.suffix.casefold() != ".png"
+        ):
             raise UsageError("--output must name a .png file.")
     return parsed
 
@@ -217,6 +321,28 @@ def main(arguments: Sequence[str] | None = None) -> int:
                     window_timeout_ms=parsed.window_timeout_ms,
                     launch_timeout_ms=parsed.launch_timeout_ms,
                 )
+            )
+        elif parsed.command == "click":
+            result = InteractionDriver(driver).click(
+                ClickRequest(
+                    selector=selector,
+                    element_id=parsed.element,
+                    phase=parsed.phase,
+                    output_directory=parsed.output_dir,
+                    launch_path=parsed.launch,
+                    overwrite=parsed.overwrite,
+                    expected_page_id=parsed.expect_page,
+                    settle_ms=parsed.settle_ms,
+                    activation_timeout_ms=parsed.activation_timeout_ms,
+                    window_timeout_ms=parsed.window_timeout_ms,
+                    launch_timeout_ms=parsed.launch_timeout_ms,
+                    transition_timeout_ms=parsed.transition_timeout_ms,
+                    poll_interval_ms=parsed.poll_interval_ms,
+                    stable_sample_count=parsed.stable_samples,
+                    change_threshold=parsed.change_threshold,
+                    stability_threshold=parsed.stability_threshold,
+                ),
+                load_visual_catalog(parsed.catalog),
             )
         elif parsed.command not in ("catalog", "recognize", "baseline"):
             raise UsageError(f"Unsupported command: {parsed.command}")
@@ -301,6 +427,16 @@ def _bounded_integer(value: str, minimum: int, maximum: int, name: str) -> int:
         parsed = int(value)
     except ValueError as error:
         raise argparse.ArgumentTypeError(f"{name} must be an integer") from error
+    if parsed < minimum or parsed > maximum:
+        raise argparse.ArgumentTypeError(f"{name} must be between {minimum} and {maximum}")
+    return parsed
+
+
+def _bounded_float(value: str, minimum: float, maximum: float, name: str) -> float:
+    try:
+        parsed = float(value)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError(f"{name} must be a number") from error
     if parsed < minimum or parsed > maximum:
         raise argparse.ArgumentTypeError(f"{name} must be between {minimum} and {maximum}")
     return parsed

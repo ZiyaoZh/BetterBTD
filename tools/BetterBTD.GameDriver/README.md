@@ -42,6 +42,18 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\BetterBTD.GameDriver\g
 
 默认输出位于已被 Git 忽略的 `artifacts/game-driver/<UTC date>/`。可用 `capture --help` 查看窗口句柄、PID、等待时间、禁止激活和覆盖选项。命令成功时向 stdout 输出 JSON；失败时向 stderr 输出稳定的 `error.code` 和消息，并返回非零退出码。
 
+按稳定元素 ID 点击，并要求点击后的独立识别结果为地图选择页：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\BetterBTD.GameDriver\game-driver.ps1 click `
+  --element mainMenu.start `
+  --phase arrange `
+  --expect-page mapSelect `
+  --output-dir artifacts\game-driver\manual\main-to-map-select
+```
+
+`click` 只接受目录内具备动作点和独立可见性检测器的 `button`。输入前必须唯一识别当前页且证据为 Oracle 可用；输入后会等待画面相对操作前明显变化并连续稳定，再捕获最终证据和识别目标页。`--phase` 必须显式为 `arrange` 或 `recover`，CLI 不接受 `act` 或 `assert`。Recover 阶段仍须由测试编排层先通过 BetterBTD Test API 确认脚本已经停止。
+
 校验随工具提交的独立视觉目录、模板哈希和来源证据链：
 
 ```powershell
@@ -76,6 +88,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\BetterBTD.GameDriver\g
 - 黑帧/纯色帧诊断和其他警告。
 - 最后原子写入的 `.complete.json` 完成标记，其中包含 PNG 与元数据哈希。读取方只有在标记存在且哈希一致时才能接受该组证据。
 
+每次元素点击在独立输出目录保存 `before`、`after` 两组三件套和原子写入的 `operation.json`。操作轨迹记录客户区/屏幕物理坐标、点击阶段、每个轮询帧的全像素指纹、相对操作前与上一帧的归一化差异、连续稳定帧数和前后独立识别摘要。单个 `before`/`after` 捕获仍是单帧，所以其 `capture.stabilityCheckPerformed=false`；稳定性结论属于同时保存的操作级轨迹，不能通过改写单帧元数据伪造。
+
 Game Driver 在当前线程启用 Per-Monitor V2 坐标语义，以读取真实物理像素。这不会修改 Windows 的分辨率、缩放或其他系统显示设置。基准坐标仍按 BetterBTD 现有算法在代码中换算：
 
 ```text
@@ -89,7 +103,7 @@ screenY = clientOriginOnScreenY + clientY
 
 ## 视觉目录协议
 
-版本化目录位于 `visual-baselines/`。首个纵向切片覆盖中文 `mainMenu`：一份制模证据、一份不同动画时刻的真实正向留出证据、一份真实启动画面负向证据、4 个非文本锚点和 19 个目录元素。模板来自设置、成就、退出和开始图标；玩家名、货币、活动入口、本地化标签及动态徽章不会成为页面 ID 或锚点。
+版本化目录位于 `visual-baselines/`。当前覆盖中文 `mainMenu` 和 `mapSelect`，共 9 个独立模板和 32 个目录元素。主菜单模板来自设置、成就、退出和开始图标；地图选择模板来自返回、搜索、左右翻页图标和猴子草甸缩略图。玩家名、货币、活动入口、本地化标签、地图勋章、星光和动态徽章不会成为页面 ID 或锚点。
 
 每个模板记录来源 `evidenceId`、来源图片 SHA-256、裁剪矩形和模板 SHA-256。`catalog` 和 `baseline build` 都会重新校验这些值。识别代码只依赖 Game Driver 自己的目录和 Pillow，不加载 BetterBTD 截图、OCR 模板、OpenCvSharp 资源或运行时状态。
 
@@ -99,10 +113,10 @@ screenY = clientOriginOnScreenY + clientY
 
 - `desktop-gdi-bitblt` 捕获的是用户真实可见桌面，因此要求窗口未被遮挡、未最小化、完整位于虚拟桌面内且会话未锁屏。
 - 通知、顶置窗口和覆盖层会进入截图。这是可见证据的一部分，但测试编排需要据此判定现场是否有效。
-- 当前只在激活并等待指定时间后截取单帧，尚未实现连续帧稳定性判断。
-- 当前只覆盖中文主菜单页面；地图选择、难度、模式、英雄、关卡内、暂停、胜负和弹窗仍需要独立采集与标注。
-- 当前只有设置、成就、退出和开始元素具备独立可见性探测器；其他目录元素明确返回 `notEvaluated`，尚未实现其遮挡、文本、数值或选中状态检测。
-- 当前未实现鼠标键盘输入和等待条件。
+- 连续帧等待目前只用于 `click` 操作，采用规范化全画面差异阈值；不同分辨率、动画强度和显示布局仍需要真实校准。
+- 真实游戏视觉验证目前覆盖中文主菜单和初学者地图选择首个轮播页；难度、模式、英雄、关卡内、暂停、胜负和弹窗仍需要独立采集与标注。
+- 当前 9 个绑定锚点的元素具备独立可见性探测器；其他目录元素明确返回 `notEvaluated`，不能由 `click` 操作控制。
+- 当前只实现按元素 ID 左键点击和画面变化/稳定等待；客户区原始坐标点击、键盘、文本输入、滚动及元素出现/消失等通用等待尚未实现。
 
 ## 测试
 

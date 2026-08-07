@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "catalogId": "btd6-ui-independent",
-  "catalogVersion": 1,
+  "catalogVersion": 2,
   "game": {
     "id": "BloonsTD6",
     "observedProductVersion": "6000.0.58f2 (92dee566b325)",
@@ -178,6 +178,148 @@
           "role": "button",
           "bounds": { "x": 1710, "y": 850, "width": 210, "height": 230 },
           "actionPoint": { "x": 1815, "y": 950 }
+        }
+      ]
+    },
+    {
+      "id": "mapSelect",
+      "kind": "page",
+      "minimumScore": 0.90,
+      "minimumMatchedAnchors": 4,
+      "anchors": [
+        {
+          "id": "mapSelect.backIcon",
+          "bounds": { "x": 30, "y": 10, "width": 95, "height": 95 },
+          "template": "templates/map-select/back.png",
+          "templateSha256": "5cdd210f638256b21b7b04a7608f09fa4d2ba9cfad598c9f153e50d760bbdaf2",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/map-select.zh-CN.json",
+          "sourceEvidenceId": "22ac89655c054c10a65f79e2d0d1f7a5",
+          "sourceImageSha256": "d7be9023dc2d551d6b5cc21420e28d622ea5497bd0a9a41afc4f30abe3015ae6"
+        },
+        {
+          "id": "mapSelect.searchIcon",
+          "bounds": { "x": 38, "y": 125, "width": 82, "height": 85 },
+          "template": "templates/map-select/search.png",
+          "templateSha256": "5a0fac5e92c1b1bd1b85ac29c8f33a31d01d701db28a077265a42eca840bfa17",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/map-select.zh-CN.json",
+          "sourceEvidenceId": "22ac89655c054c10a65f79e2d0d1f7a5",
+          "sourceImageSha256": "d7be9023dc2d551d6b5cc21420e28d622ea5497bd0a9a41afc4f30abe3015ae6"
+        },
+        {
+          "id": "mapSelect.previousPageIcon",
+          "bounds": { "x": 235, "y": 385, "width": 75, "height": 95 },
+          "template": "templates/map-select/previous-page.png",
+          "templateSha256": "05de984915087102098fd6006a26a151b9de281cfeab12eff4caf701c8429408",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/map-select.zh-CN.json",
+          "sourceEvidenceId": "22ac89655c054c10a65f79e2d0d1f7a5",
+          "sourceImageSha256": "d7be9023dc2d551d6b5cc21420e28d622ea5497bd0a9a41afc4f30abe3015ae6"
+        },
+        {
+          "id": "mapSelect.nextPageIcon",
+          "bounds": { "x": 1610, "y": 385, "width": 80, "height": 95 },
+          "template": "templates/map-select/next-page.png",
+          "templateSha256": "d6a4a441f663451b4d89a5c59dcf9be183496668a6f445c5ce886538423799ed",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/map-select.zh-CN.json",
+          "sourceEvidenceId": "22ac89655c054c10a65f79e2d0d1f7a5",
+          "sourceImageSha256": "d7be9023dc2d551d6b5cc21420e28d622ea5497bd0a9a41afc4f30abe3015ae6"
+        },
+        {
+          "id": "mapSelect.monkeyMeadowThumbnail",
+          "bounds": { "x": 370, "y": 170, "width": 330, "height": 165 },
+          "template": "templates/map-select/monkey-meadow.png",
+          "templateSha256": "c4e6ac0230c5bc353a2d5b07f14c8e99e47563dd5291e734b7c5cf282c3ca921",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/map-select.zh-CN.json",
+          "sourceEvidenceId": "22ac89655c054c10a65f79e2d0d1f7a5",
+          "sourceImageSha256": "d7be9023dc2d551d6b5cc21420e28d622ea5497bd0a9a41afc4f30abe3015ae6"
+        }
+      ],
+      "elements": [
+        {
+          "id": "mapSelect.back",
+          "role": "button",
+          "bounds": { "x": 20, "y": 0, "width": 120, "height": 115 },
+          "actionPoint": { "x": 77, "y": 57 },
+          "anchorIds": ["mapSelect.backIcon"]
+        },
+        {
+          "id": "mapSelect.search",
+          "role": "button",
+          "bounds": { "x": 20, "y": 115, "width": 120, "height": 105 },
+          "actionPoint": { "x": 78, "y": 165 },
+          "anchorIds": ["mapSelect.searchIcon"]
+        },
+        {
+          "id": "mapSelect.friends",
+          "role": "button",
+          "bounds": { "x": 1785, "y": 0, "width": 135, "height": 125 },
+          "actionPoint": { "x": 1845, "y": 58 }
+        },
+        {
+          "id": "mapSelect.previousPage",
+          "role": "button",
+          "bounds": { "x": 225, "y": 375, "width": 95, "height": 115 },
+          "actionPoint": { "x": 272, "y": 430 },
+          "anchorIds": ["mapSelect.previousPageIcon"]
+        },
+        {
+          "id": "mapSelect.nextPage",
+          "role": "button",
+          "bounds": { "x": 1600, "y": 375, "width": 100, "height": 115 },
+          "actionPoint": { "x": 1648, "y": 430 },
+          "anchorIds": ["mapSelect.nextPageIcon"]
+        },
+        {
+          "id": "mapSelect.monkeyMeadow",
+          "role": "button",
+          "bounds": { "x": 350, "y": 125, "width": 375, "height": 300 },
+          "actionPoint": { "x": 535, "y": 270 },
+          "anchorIds": ["mapSelect.monkeyMeadowThumbnail"]
+        },
+        {
+          "id": "mapSelect.pageIndicator",
+          "role": "status",
+          "bounds": { "x": 640, "y": 735, "width": 640, "height": 55 }
+        },
+        {
+          "id": "mapSelect.changeHero",
+          "role": "button",
+          "bounds": { "x": 10, "y": 875, "width": 190, "height": 205 },
+          "actionPoint": { "x": 100, "y": 980 }
+        },
+        {
+          "id": "mapSelect.beginner",
+          "role": "button",
+          "bounds": { "x": 470, "y": 865, "width": 210, "height": 215 },
+          "actionPoint": { "x": 575, "y": 980 }
+        },
+        {
+          "id": "mapSelect.intermediate",
+          "role": "button",
+          "bounds": { "x": 720, "y": 865, "width": 230, "height": 215 },
+          "actionPoint": { "x": 835, "y": 980 }
+        },
+        {
+          "id": "mapSelect.advanced",
+          "role": "button",
+          "bounds": { "x": 970, "y": 865, "width": 230, "height": 215 },
+          "actionPoint": { "x": 1085, "y": 980 }
+        },
+        {
+          "id": "mapSelect.expert",
+          "role": "button",
+          "bounds": { "x": 1225, "y": 865, "width": 230, "height": 215 },
+          "actionPoint": { "x": 1340, "y": 980 }
+        },
+        {
+          "id": "mapSelect.community",
+          "role": "button",
+          "bounds": { "x": 1695, "y": 865, "width": 225, "height": 215 },
+          "actionPoint": { "x": 1810, "y": 980 }
         }
       ]
     }

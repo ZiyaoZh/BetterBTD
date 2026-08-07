@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "mapSelect.zh-CN.holdout.20260807",
+  "sourceEvidenceId": "97381e7565fb49b59fe85f0da25c2326",
+  "sourceImageSha256": "581f42b1c30334accf69cfcc747c75b88386b18c4fbcfea67dc3ea5e6ee1c2f0",
+  "pageId": "mapSelect",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-07T15:13:00.000Z",
+    "result": "accepted"
+  },
+  "notes": [
+    "This real holdout capture was taken at a different animation instant and did not supply template pixels.",
+    "Map-card sparkle positions differ from the source and remain outside the Monkey Meadow template crop."
+  ]
+}
