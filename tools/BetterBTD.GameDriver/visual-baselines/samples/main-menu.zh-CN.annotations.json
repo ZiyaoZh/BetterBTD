@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "mainMenu.zh-CN.20260807",
+  "sourceEvidenceId": "467bf2097c15447ca75e1dc687ce279e",
+  "sourceImageSha256": "478330a54bd4ce936de618802754338ec02be3b7340f41503983694d4f9ec78b",
+  "pageId": "mainMenu",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-07T14:26:00.000Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromAnchors": [
+    "mainMenu.playerSummary",
+    "mainMenu.inbox",
+    "mainMenu.premiumCurrency",
+    "mainMenu.quests",
+    "mainMenu.events"
+  ],
+  "notes": [
+    "The source is an unmodified Game Driver capture with a valid completion marker.",
+    "Stable non-text icons are used as anchors so localized labels and account values are not page IDs."
+  ]
+}

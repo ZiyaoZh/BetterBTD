@@ -1,7 +1,10 @@
 from pathlib import Path
+from contextlib import redirect_stdout
+from io import StringIO
 import unittest
+from unittest.mock import patch
 
-from betterbtd_game_driver.cli import _selector_from_args, parse_args
+from betterbtd_game_driver.cli import _selector_from_args, main, parse_args
 from betterbtd_game_driver.driver import DEFAULT_PROCESS_NAMES, DEFAULT_WINDOW_TITLES
 from betterbtd_game_driver.errors import UsageError
 
@@ -42,6 +45,24 @@ class CommandLineTests(unittest.TestCase):
     def test_output_must_be_png(self) -> None:
         with self.assertRaisesRegex(UsageError, "must name a .png"):
             parse_args(["capture", "--output", str(Path("capture.jpg"))])
+
+    def test_recognize_requires_committed_evidence_metadata(self) -> None:
+        parsed = parse_args(["recognize", "--evidence", "frame.json"])
+
+        self.assertEqual("recognize", parsed.command)
+        self.assertEqual(Path("frame.json"), parsed.evidence)
+
+    def test_baseline_requires_subcommand(self) -> None:
+        with self.assertRaisesRegex(UsageError, "requires a subcommand"):
+            parse_args(["baseline"])
+
+    def test_catalog_command_does_not_initialize_win32(self) -> None:
+        with patch("betterbtd_game_driver.cli.enable_per_monitor_v2") as enable_dpi:
+            with redirect_stdout(StringIO()):
+                exit_code = main(["catalog"])
+
+        self.assertEqual(0, exit_code)
+        enable_dpi.assert_not_called()
 
 
 if __name__ == "__main__":

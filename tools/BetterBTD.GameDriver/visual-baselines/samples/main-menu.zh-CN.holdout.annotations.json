@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "mainMenu.zh-CN.20260807.holdout",
+  "sourceEvidenceId": "cef64f34572c47a18813f9c5bc80ef39",
+  "sourceImageSha256": "bc387063d1bbe58131a58a1d0dc82e0686b40e081367ddea36a25bb64ede403a",
+  "pageId": "mainMenu",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "purpose": "positiveHoldout",
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-07T14:35:30.000Z",
+    "result": "accepted"
+  },
+  "notes": [
+    "This frame was captured after a fresh game launch and was not used to generate templates.",
+    "Windmill, character and button animations differ from the template source frame."
+  ]
+}

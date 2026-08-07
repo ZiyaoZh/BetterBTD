@@ -9,9 +9,13 @@ from typing import Sequence
 import pywintypes
 
 from . import __version__
+from .baseline import build_templates
 from .driver import DEFAULT_PROCESS_NAMES, DEFAULT_WINDOW_TITLES, CaptureRequest, GameDriver
+from .evidence import read_evidence
 from .errors import GameDriverError, UsageError
 from .models import WindowSelector
+from .vision import recognize_image, write_annotation
+from .visual_catalog import load_visual_catalog, visual_catalog_summary
 from .win32 import enable_per_monitor_v2
 
 
@@ -90,6 +94,62 @@ def create_parser() -> DriverArgumentParser:
         default=60_000,
         help="Wait for a newly launched game window (default: 60000).",
     )
+
+    catalog_parser = subparsers.add_parser(
+        "catalog",
+        help="Validate the independent visual baseline catalog and templates.",
+    )
+    catalog_parser.add_argument(
+        "--catalog",
+        type=Path,
+        help="Catalog JSON path. Defaults to the bundled BTD6 visual catalog.",
+    )
+
+    recognize_parser = subparsers.add_parser(
+        "recognize",
+        help="Recognize a BTD6 page from an independent client screenshot.",
+    )
+    recognize_parser.add_argument(
+        "--evidence",
+        type=Path,
+        required=True,
+        help="Capture metadata JSON whose adjacent PNG and completion marker will be verified.",
+    )
+    recognize_parser.add_argument(
+        "--catalog",
+        type=Path,
+        help="Catalog JSON path. Defaults to the bundled BTD6 visual catalog.",
+    )
+    recognize_parser.add_argument(
+        "--annotated-output",
+        type=Path,
+        help="Optional PNG showing recognized element bounds for human review.",
+    )
+    recognize_parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Replace an existing annotated output image.",
+    )
+
+    baseline_parser = subparsers.add_parser(
+        "baseline",
+        help="Build deterministic templates from committed raw evidence.",
+    )
+    baseline_subparsers = baseline_parser.add_subparsers(dest="baseline_command")
+    build_parser = baseline_subparsers.add_parser(
+        "build",
+        help="Rebuild every catalog template and verify its expected hash.",
+    )
+    build_parser.add_argument(
+        "--catalog",
+        type=Path,
+        help="Catalog JSON path. Defaults to the bundled BTD6 visual catalog.",
+    )
+    build_parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Replace existing template images after all provenance checks.",
+    )
     return parser
 
 
@@ -98,6 +158,8 @@ def parse_args(arguments: Sequence[str]) -> argparse.Namespace:
     if not arguments:
         return argparse.Namespace(command="help", parser=parser)
     parsed = parser.parse_args(arguments)
+    if parsed.command == "baseline" and parsed.baseline_command is None:
+        raise UsageError("baseline requires a subcommand such as 'build'.")
     if parsed.command == "capture":
         if parsed.launch is not None and (
             parsed.window_handle is not None or parsed.process_id is not None
@@ -116,9 +178,29 @@ def main(arguments: Sequence[str] | None = None) -> int:
             parsed.parser.print_help()
             return 0
 
-        enable_per_monitor_v2()
-        driver = GameDriver()
-        selector = _selector_from_args(parsed)
+        if parsed.command == "catalog":
+            result = visual_catalog_summary(load_visual_catalog(parsed.catalog))
+        elif parsed.command == "recognize":
+            catalog = load_visual_catalog(parsed.catalog)
+            evidence = read_evidence(parsed.evidence)
+            result, page_match = recognize_image(evidence, catalog)
+            if parsed.annotated_output is not None:
+                write_annotation(
+                    evidence.image_path,
+                    parsed.annotated_output,
+                    page_match,
+                    overwrite=parsed.overwrite,
+                )
+                result["annotation"] = {
+                    "path": str(parsed.annotated_output.expanduser().resolve())
+                }
+        elif parsed.command == "baseline" and parsed.baseline_command == "build":
+            catalog = load_visual_catalog(parsed.catalog, verify_templates=False)
+            result = build_templates(catalog, overwrite=parsed.overwrite)
+        else:
+            enable_per_monitor_v2()
+            driver = GameDriver()
+            selector = _selector_from_args(parsed)
 
         if parsed.command == "windows":
             result = driver.list_windows(selector, include_all=parsed.all)
@@ -136,7 +218,7 @@ def main(arguments: Sequence[str] | None = None) -> int:
                     launch_timeout_ms=parsed.launch_timeout_ms,
                 )
             )
-        else:
+        elif parsed.command not in ("catalog", "recognize", "baseline"):
             raise UsageError(f"Unsupported command: {parsed.command}")
 
         print(json.dumps(result, ensure_ascii=False, indent=2))

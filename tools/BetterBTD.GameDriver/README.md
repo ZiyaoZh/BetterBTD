@@ -1,6 +1,6 @@
 # BetterBTD.GameDriver
 
-`BetterBTD.GameDriver` 是独立于 BetterBTD 进程和程序集的 Windows x64 Python CLI。当前版本只负责查找或启动真实 BTD6、恢复并激活游戏窗口，以及保存客户区截图和外部证据元数据。
+`BetterBTD.GameDriver` 是独立于 BetterBTD 进程和程序集的 Windows x64 Python CLI。它负责查找或启动真实 BTD6、恢复并激活游戏窗口、保存客户区截图证据，以及用自己的视觉基准离线识别页面和可见元素。
 
 它不引用 `BetterBTD`、`Fischless.GameCapture`、BetterBTD OCR 模板或运行时状态。截图来自桌面合成后的真实可见像素，可作为黑盒测试的原始证据。
 
@@ -42,6 +42,28 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\BetterBTD.GameDriver\g
 
 默认输出位于已被 Git 忽略的 `artifacts/game-driver/<UTC date>/`。可用 `capture --help` 查看窗口句柄、PID、等待时间、禁止激活和覆盖选项。命令成功时向 stdout 输出 JSON；失败时向 stderr 输出稳定的 `error.code` 和消息，并返回非零退出码。
 
+校验随工具提交的独立视觉目录、模板哈希和来源证据链：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\BetterBTD.GameDriver\game-driver.ps1 catalog
+```
+
+识别一组已经完成提交的截图证据。入口是捕获元数据而不是任意 PNG，命令会先校验相邻 PNG 和 `.complete.json`：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\BetterBTD.GameDriver\game-driver.ps1 recognize `
+  --evidence artifacts\game-driver\manual\frame.json `
+  --annotated-output artifacts\game-driver\manual\frame.annotated.png
+```
+
+识别结果包含 `matched`、`unknown` 或 `ambiguous` 状态、页面与锚点分数、稳定元素 ID、基准/客户区边界、动作点和 `oracleEligible`。标注图只用于早期人工复核，不会写回或替代原始截图证据。
+
+从目录声明的来源证据确定性重建模板，并验证生成哈希：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\BetterBTD.GameDriver\game-driver.ps1 baseline build --overwrite
+```
+
 ## 证据协议
 
 每次截图包含：
@@ -65,12 +87,22 @@ screenY = clientOriginOnScreenY + clientY
 
 点坐标和矩形统一采用左闭右开的客户区边界。
 
+## 视觉目录协议
+
+版本化目录位于 `visual-baselines/`。首个纵向切片覆盖中文 `mainMenu`：一份制模证据、一份不同动画时刻的真实正向留出证据、一份真实启动画面负向证据、4 个非文本锚点和 19 个目录元素。模板来自设置、成就、退出和开始图标；玩家名、货币、活动入口、本地化标签及动态徽章不会成为页面 ID 或锚点。
+
+每个模板记录来源 `evidenceId`、来源图片 SHA-256、裁剪矩形和模板 SHA-256。`catalog` 和 `baseline build` 都会重新校验这些值。识别代码只依赖 Game Driver 自己的目录和 Pillow，不加载 BetterBTD 截图、OCR 模板、OpenCvSharp 资源或运行时状态。
+
+当前页面识别要求 `16:9` 画面，并把画面规范化到 `1920 x 1080` 后进行固定区域多锚点比较。至少命中页面声明数量的锚点并超过总分阈值才返回 `matched`；两个候选分差小于 `0.02` 时返回 `ambiguous`，其余情况返回 `unknown`。只有完整证据链无警告且识别状态为 `matched` 时，识别结果才标记为 Oracle 可用。
+
 ## 当前限制
 
 - `desktop-gdi-bitblt` 捕获的是用户真实可见桌面，因此要求窗口未被遮挡、未最小化、完整位于虚拟桌面内且会话未锁屏。
 - 通知、顶置窗口和覆盖层会进入截图。这是可见证据的一部分，但测试编排需要据此判定现场是否有效。
 - 当前只在激活并等待指定时间后截取单帧，尚未实现连续帧稳定性判断。
-- 当前未实现鼠标键盘输入、元素识别、页面状态或等待条件。这些能力将在截图证据链稳定后逐步加入。
+- 当前只覆盖中文主菜单页面；地图选择、难度、模式、英雄、关卡内、暂停、胜负和弹窗仍需要独立采集与标注。
+- 当前只有设置、成就、退出和开始元素具备独立可见性探测器；其他目录元素明确返回 `notEvaluated`，尚未实现其遮挡、文本、数值或选中状态检测。
+- 当前未实现鼠标键盘输入和等待条件。
 
 ## 测试
 

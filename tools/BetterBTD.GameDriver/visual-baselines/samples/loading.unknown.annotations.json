@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "loading.unknown.20260807",
+  "sourceEvidenceId": "c60f6693c4dc4403a1742e9654ef4b2a",
+  "sourceImageSha256": "155f1834b86403c6253f64d7accdc3d902679e57f8e39106f7feb8b4f866f50e",
+  "pageId": null,
+  "clientSize": { "width": 1920, "height": 1080 },
+  "purpose": "negativeHoldout",
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-07T14:35:30.000Z",
+    "result": "acceptedAsUnknown"
+  },
+  "notes": [
+    "This is a real BTD6 startup/loading frame, not a synthetic negative image.",
+    "It must remain unknown until a separately defined loading-state detector exists."
+  ]
+}

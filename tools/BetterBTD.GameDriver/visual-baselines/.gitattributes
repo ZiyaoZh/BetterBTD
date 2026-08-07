@@ -1,0 +1,3 @@
+samples/*.json -text whitespace=cr-at-eol
+samples/*.png -text
+templates/**/*.png -text

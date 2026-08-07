@@ -1,0 +1,185 @@
+{
+  "schemaVersion": 1,
+  "catalogId": "btd6-ui-independent",
+  "catalogVersion": 1,
+  "game": {
+    "id": "BloonsTD6",
+    "observedProductVersion": "6000.0.58f2 (92dee566b325)",
+    "observedSteamBuildId": "24529267"
+  },
+  "referenceSpace": {
+    "id": "btd6Reference1920x1080",
+    "width": 1920,
+    "height": 1080,
+    "rectangleConvention": "halfOpen"
+  },
+  "pages": [
+    {
+      "id": "mainMenu",
+      "kind": "page",
+      "minimumScore": 0.95,
+      "minimumMatchedAnchors": 3,
+      "anchors": [
+        {
+          "id": "mainMenu.settingsIcon",
+          "bounds": { "x": 25, "y": 155, "width": 100, "height": 115 },
+          "template": "templates/main-menu/settings.png",
+          "templateSha256": "61812d2bf7049c8d892d65c4cab0aa9791e4cef8c8115d335458a1c21ef603cd",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/main-menu.zh-CN.json",
+          "sourceEvidenceId": "467bf2097c15447ca75e1dc687ce279e",
+          "sourceImageSha256": "478330a54bd4ce936de618802754338ec02be3b7340f41503983694d4f9ec78b"
+        },
+        {
+          "id": "mainMenu.achievementsIcon",
+          "bounds": { "x": 28, "y": 303, "width": 90, "height": 90 },
+          "template": "templates/main-menu/achievements.png",
+          "templateSha256": "20e617e09f6d8fcd889fc3d30a2e450303b43c22c0b9dce80ae467d32dc7a577",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/main-menu.zh-CN.json",
+          "sourceEvidenceId": "467bf2097c15447ca75e1dc687ce279e",
+          "sourceImageSha256": "478330a54bd4ce936de618802754338ec02be3b7340f41503983694d4f9ec78b"
+        },
+        {
+          "id": "mainMenu.exitIcon",
+          "bounds": { "x": 17, "y": 966, "width": 70, "height": 69 },
+          "template": "templates/main-menu/exit.png",
+          "templateSha256": "65fff9d19e411aa67fb2ec65f12fc0c20d9bf8cf5ab584091595f75924f7882b",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/main-menu.zh-CN.json",
+          "sourceEvidenceId": "467bf2097c15447ca75e1dc687ce279e",
+          "sourceImageSha256": "478330a54bd4ce936de618802754338ec02be3b7340f41503983694d4f9ec78b"
+        },
+        {
+          "id": "mainMenu.startIcon",
+          "bounds": { "x": 925, "y": 895, "width": 72, "height": 109 },
+          "template": "templates/main-menu/start.png",
+          "templateSha256": "e66b9ebcf7c9e0eb46eba7a6a3abd405ee384eb67f4d4bff3ac26f1ce68a8550",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/main-menu.zh-CN.json",
+          "sourceEvidenceId": "467bf2097c15447ca75e1dc687ce279e",
+          "sourceImageSha256": "478330a54bd4ce936de618802754338ec02be3b7340f41503983694d4f9ec78b"
+        }
+      ],
+      "elements": [
+        {
+          "id": "mainMenu.playerSummary",
+          "role": "button",
+          "bounds": { "x": 10, "y": 5, "width": 520, "height": 140 },
+          "actionPoint": { "x": 275, "y": 70 }
+        },
+        {
+          "id": "mainMenu.inbox",
+          "role": "button",
+          "bounds": { "x": 535, "y": 5, "width": 130, "height": 105 },
+          "actionPoint": { "x": 595, "y": 60 }
+        },
+        {
+          "id": "mainMenu.premiumCurrency",
+          "role": "status",
+          "bounds": { "x": 1460, "y": 10, "width": 450, "height": 90 }
+        },
+        {
+          "id": "mainMenu.settings",
+          "role": "button",
+          "bounds": { "x": 10, "y": 145, "width": 130, "height": 135 },
+          "actionPoint": { "x": 75, "y": 215 },
+          "anchorIds": ["mainMenu.settingsIcon"]
+        },
+        {
+          "id": "mainMenu.achievements",
+          "role": "button",
+          "bounds": { "x": 10, "y": 285, "width": 130, "height": 130 },
+          "actionPoint": { "x": 75, "y": 345 },
+          "anchorIds": ["mainMenu.achievementsIcon"]
+        },
+        {
+          "id": "mainMenu.store",
+          "role": "button",
+          "bounds": { "x": 5, "y": 410, "width": 150, "height": 135 },
+          "actionPoint": { "x": 75, "y": 475 }
+        },
+        {
+          "id": "mainMenu.trophyStore",
+          "role": "button",
+          "bounds": { "x": 5, "y": 545, "width": 140, "height": 150 },
+          "actionPoint": { "x": 75, "y": 615 }
+        },
+        {
+          "id": "mainMenu.heroProfile",
+          "role": "button",
+          "bounds": { "x": 1765, "y": 105, "width": 150, "height": 145 },
+          "actionPoint": { "x": 1840, "y": 180 }
+        },
+        {
+          "id": "mainMenu.quests",
+          "role": "button",
+          "bounds": { "x": 1760, "y": 245, "width": 155, "height": 150 },
+          "actionPoint": { "x": 1840, "y": 320 }
+        },
+        {
+          "id": "mainMenu.events",
+          "role": "button",
+          "bounds": { "x": 1760, "y": 390, "width": 155, "height": 145 },
+          "actionPoint": { "x": 1840, "y": 460 }
+        },
+        {
+          "id": "mainMenu.exit",
+          "role": "button",
+          "bounds": { "x": 5, "y": 950, "width": 100, "height": 105 },
+          "actionPoint": { "x": 50, "y": 995 },
+          "anchorIds": ["mainMenu.exitIcon"]
+        },
+        {
+          "id": "mainMenu.monkeys",
+          "role": "button",
+          "bounds": { "x": 230, "y": 850, "width": 195, "height": 230 },
+          "actionPoint": { "x": 325, "y": 950 }
+        },
+        {
+          "id": "mainMenu.heroes",
+          "role": "button",
+          "bounds": { "x": 440, "y": 850, "width": 195, "height": 230 },
+          "actionPoint": { "x": 535, "y": 950 }
+        },
+        {
+          "id": "mainMenu.legends",
+          "role": "button",
+          "bounds": { "x": 640, "y": 850, "width": 210, "height": 230 },
+          "actionPoint": { "x": 745, "y": 950 }
+        },
+        {
+          "id": "mainMenu.start",
+          "role": "button",
+          "bounds": { "x": 855, "y": 845, "width": 210, "height": 235 },
+          "actionPoint": { "x": 960, "y": 950 },
+          "anchorIds": ["mainMenu.startIcon"]
+        },
+        {
+          "id": "mainMenu.coop",
+          "role": "button",
+          "bounds": { "x": 1060, "y": 845, "width": 235, "height": 235 },
+          "actionPoint": { "x": 1175, "y": 950 }
+        },
+        {
+          "id": "mainMenu.powers",
+          "role": "button",
+          "bounds": { "x": 1290, "y": 850, "width": 210, "height": 230 },
+          "actionPoint": { "x": 1395, "y": 950 }
+        },
+        {
+          "id": "mainMenu.knowledge",
+          "role": "button",
+          "bounds": { "x": 1490, "y": 850, "width": 220, "height": 230 },
+          "actionPoint": { "x": 1600, "y": 950 }
+        },
+        {
+          "id": "mainMenu.mods",
+          "role": "button",
+          "bounds": { "x": 1710, "y": 850, "width": 210, "height": 230 },
+          "actionPoint": { "x": 1815, "y": 950 }
+        }
+      ]
+    }
+  ]
+}
