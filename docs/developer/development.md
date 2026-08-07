@@ -42,6 +42,7 @@ CI 使用相同的 Release/x64 构建路径，工作流定义在 `.github/workfl
 | `Fischless.GameCapture` | 游戏窗口捕获抽象与实现 |
 | `Fischless.HotkeyCapture` | 全局热键支持 |
 | `Fischless.WindowsInput` | Windows 输入模拟基础库 |
+| `tools/BetterBTD.GameDriver` | 独立 Python 黑盒游戏驱动与外部截图证据 |
 
 更详细的分层说明见 [项目架构](architecture.md)。
 

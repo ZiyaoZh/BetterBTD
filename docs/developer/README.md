@@ -8,6 +8,7 @@
 - [项目架构](architecture.md)
 - [脚本文件格式](script-file-format.md)
 - [机器人控制 HTTP 协议](robot-control-http-api.md)
+- [独立 BTD6 Game Driver](game-driver.md)
 - [新增地图维护流程](map-update-workflow.md)
 
 ## 内部参考

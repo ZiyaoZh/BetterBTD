@@ -55,6 +55,12 @@ Windows 与游戏窗口
 - 识别失败应记录诊断信息并等待、重试或回退，避免在未知界面连续点击。
 - 持久化 ID 使用稳定枚举名或字符串键，本地化只负责显示。
 
+## 外部黑盒测试工具
+
+`tools/BetterBTD.GameDriver` 位于 BetterBTD 单进程运行时之外，直接观察真实 BTD6 窗口。它不引用 BetterBTD、`Fischless.GameCapture`、OCR 模板或运行时状态。BetterBTD 内部识别只能作为诊断信息；黑盒可见行为以 Game Driver 保存的真实游戏截图及其独立解释为准。
+
+测试编排必须维护游戏输入所有权：前置和恢复阶段可由 Game Driver 控制游戏，脚本执行阶段只能由 BetterBTD 输入，Game Driver 只读观察。详细协议见 [独立 BTD6 Game Driver](game-driver.md)。
+
 ## 扩展入口
 
 - 新脚本指令：更新脚本模型、编辑器选项、处理器、序列展示和格式文档。
