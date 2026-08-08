@@ -17,7 +17,7 @@ class VisualCatalogTests(unittest.TestCase):
 
         self.assertEqual("btd6-ui-independent", catalog.id)
         self.assertEqual(2, catalog.schema_version)
-        self.assertEqual(13, catalog.version)
+        self.assertEqual(14, catalog.version)
         self.assertEqual((1920, 1080), (catalog.reference_width, catalog.reference_height))
         self.assertEqual(
             [
@@ -31,6 +31,9 @@ class VisualCatalogTests(unittest.TestCase):
                 "hardModeSelect",
                 "heroSelect",
                 "inLevel",
+                "victoryPlayerStats",
+                "victorySummary",
+                "freeplayPrompt",
                 "stageSettings",
                 "settings",
                 "hotkeys",
@@ -50,10 +53,24 @@ class VisualCatalogTests(unittest.TestCase):
         self.assertEqual(37, len(catalog.pages[8].anchors))
         self.assertEqual(4, len(catalog.pages[9].anchors))
         self.assertEqual(4, len(catalog.pages[10].anchors))
-        self.assertEqual(18, len(catalog.pages[11].anchors))
-        self.assertEqual(7, len(catalog.pages[12].anchors))
-        self.assertEqual(11, len(catalog.pages[13].anchors))
-        self.assertEqual(45, len(catalog.pages[14].anchors))
+        self.assertEqual(5, len(catalog.pages[11].anchors))
+        self.assertEqual(4, len(catalog.pages[12].anchors))
+        self.assertEqual(4, len(catalog.pages[13].anchors))
+        self.assertEqual(18, len(catalog.pages[14].anchors))
+        self.assertEqual(7, len(catalog.pages[15].anchors))
+        self.assertEqual(11, len(catalog.pages[16].anchors))
+        self.assertEqual(45, len(catalog.pages[17].anchors))
+        self.assertEqual(
+            ["modal", "modal", "modal"],
+            [page.kind for page in catalog.pages[10:13]],
+        )
+        self.assertEqual(
+            [3, 5, 3],
+            [
+                sum(anchor.page_anchor for anchor in page.anchors)
+                for page in catalog.pages[10:13]
+            ],
+        )
         self.assertEqual(
             3,
             sum(anchor.page_anchor for anchor in catalog.pages[8].anchors),
@@ -84,7 +101,7 @@ class VisualCatalogTests(unittest.TestCase):
             [5, 6, 5],
             [
                 sum(anchor.page_anchor for anchor in page.anchors)
-                for page in catalog.pages[11:14]
+                for page in catalog.pages[14:17]
             ],
         )
         self.assertTrue(all(page.positive_holdout is not None for page in catalog.pages))
@@ -143,14 +160,32 @@ class VisualCatalogTests(unittest.TestCase):
         self.assertEqual(
             {
                 "valid": True,
-                "pageCount": 15,
-                "templateCount": 289,
-                "elementCount": 260,
+                "pageCount": 18,
+                "templateCount": 302,
+                "elementCount": 273,
                 "viewStateCount": 21,
                 "placementCount": 251,
             },
             summary["validation"],
         )
+
+    def test_modal_kind_is_supported_and_other_kinds_are_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            catalog_path = _write_minimal_catalog(Path(temporary_directory))
+            document = _read_catalog(catalog_path)
+            document["pages"][0]["kind"] = "modal"
+            _write_catalog(catalog_path, document)
+
+            catalog = load_visual_catalog(catalog_path)
+
+            self.assertEqual("modal", catalog.pages[0].kind)
+
+            document["pages"][0]["kind"] = "overlay"
+            _write_catalog(catalog_path, document)
+            with self.assertRaises(GameDriverError) as context:
+                load_visual_catalog(catalog_path)
+
+            self.assertIn("kind must be page or modal", context.exception.message)
 
     def test_schema_v1_legacy_catalog_remains_supported(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:

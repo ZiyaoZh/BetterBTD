@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "catalogId": "btd6-ui-independent",
-  "catalogVersion": 13,
+  "catalogVersion": 14,
   "game": {
     "id": "BloonsTD6",
     "observedProductVersion": "6000.0.58f2 (92dee566b325)",
@@ -10386,6 +10386,437 @@
           },
           "anchorIds": [
             "inLevel.startButtonFrame"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "victoryPlayerStats",
+      "kind": "modal",
+      "minimumScore": 0.94,
+      "minimumMatchedAnchors": 3,
+      "positiveHoldout": {
+        "evidence": "samples/victory-player-stats.zh-CN.holdout.json",
+        "evidenceId": "eabac933fc7c4b62a2481deed8c2022f",
+        "imageSha256": "e80eed5e317e8b522e9fcd74aa81a79d4aae32edfd1f22cb7d4f15205acc83d5"
+      },
+      "anchors": [
+        {
+          "id": "victoryPlayerStats.title",
+          "bounds": {
+            "x": 610,
+            "y": 95,
+            "width": 190,
+            "height": 125
+          },
+          "template": "templates/victory-player-stats/title.png",
+          "templateSha256": "9ce46db0b4056f70b0a140b88089e4ed282b8b91a94280106a9551b2a2f70f38",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/victory-player-stats.zh-CN.json",
+          "sourceEvidenceId": "acbf429f15a54945a5bf0aa9da7f7d45",
+          "sourceImageSha256": "b2257384b186dd185a8a414791fdd62ac2cd2c26630395e74ffde9b65dfc0248"
+        },
+        {
+          "id": "victoryPlayerStats.cardLeftFrame",
+          "bounds": {
+            "x": 775,
+            "y": 275,
+            "width": 25,
+            "height": 515
+          },
+          "template": "templates/victory-player-stats/card-left-frame.png",
+          "templateSha256": "e520cf0669697a937a92cdca49bc30c4c464168477b1cc63e3bd107e6e6b9e78",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/victory-player-stats.zh-CN.json",
+          "sourceEvidenceId": "acbf429f15a54945a5bf0aa9da7f7d45",
+          "sourceImageSha256": "b2257384b186dd185a8a414791fdd62ac2cd2c26630395e74ffde9b65dfc0248"
+        },
+        {
+          "id": "victoryPlayerStats.cardRightFrame",
+          "bounds": {
+            "x": 1125,
+            "y": 275,
+            "width": 25,
+            "height": 515
+          },
+          "template": "templates/victory-player-stats/card-right-frame.png",
+          "templateSha256": "384f2ed5605ea26622beb533d7a3c2a497b9aa7df553f6cec98d9d2c91e445d8",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/victory-player-stats.zh-CN.json",
+          "sourceEvidenceId": "acbf429f15a54945a5bf0aa9da7f7d45",
+          "sourceImageSha256": "b2257384b186dd185a8a414791fdd62ac2cd2c26630395e74ffde9b65dfc0248"
+        },
+        {
+          "id": "victoryPlayerStats.nextButton",
+          "bounds": {
+            "x": 840,
+            "y": 855,
+            "width": 240,
+            "height": 105
+          },
+          "template": "templates/victory-player-stats/next-button.png",
+          "templateSha256": "43f9d7c4dcdb9961ca1bcabfd4e1cec33f81eafcaadd6c85c946dfc51975f1fc",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/victory-player-stats.zh-CN.json",
+          "sourceEvidenceId": "acbf429f15a54945a5bf0aa9da7f7d45",
+          "sourceImageSha256": "b2257384b186dd185a8a414791fdd62ac2cd2c26630395e74ffde9b65dfc0248"
+        }
+      ],
+      "elements": [
+        {
+          "id": "victoryPlayerStats.dialog",
+          "role": "status",
+          "bounds": {
+            "x": 600,
+            "y": 90,
+            "width": 720,
+            "height": 875
+          },
+          "anchorIds": [
+            "victoryPlayerStats.title",
+            "victoryPlayerStats.cardLeftFrame",
+            "victoryPlayerStats.cardRightFrame"
+          ]
+        },
+        {
+          "id": "victoryPlayerStats.outcome",
+          "role": "status",
+          "bounds": {
+            "x": 600,
+            "y": 90,
+            "width": 720,
+            "height": 175
+          },
+          "anchorIds": [
+            "victoryPlayerStats.title"
+          ]
+        },
+        {
+          "id": "victoryPlayerStats.statistics",
+          "role": "region",
+          "bounds": {
+            "x": 775,
+            "y": 265,
+            "width": 380,
+            "height": 585
+          },
+          "anchorIds": [
+            "victoryPlayerStats.cardLeftFrame",
+            "victoryPlayerStats.cardRightFrame"
+          ]
+        },
+        {
+          "id": "victoryPlayerStats.next",
+          "role": "button",
+          "bounds": {
+            "x": 830,
+            "y": 845,
+            "width": 260,
+            "height": 125
+          },
+          "actionPoint": {
+            "x": 960,
+            "y": 905
+          },
+          "anchorIds": [
+            "victoryPlayerStats.nextButton"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "victorySummary",
+      "kind": "modal",
+      "minimumScore": 0.94,
+      "minimumMatchedAnchors": 4,
+      "positiveHoldout": {
+        "evidence": "samples/victory-summary.zh-CN.holdout.json",
+        "evidenceId": "fd586009e1a047cbbc84478bd49a25e1",
+        "imageSha256": "ad58a2c3df11cbaf79e7d51194a14d4c73a01784fb11482fceb5bdffd4afd6e0"
+      },
+      "anchors": [
+        {
+          "id": "victorySummary.title",
+          "bounds": {
+            "x": 610,
+            "y": 375,
+            "width": 190,
+            "height": 105
+          },
+          "template": "templates/victory-summary/title.png",
+          "templateSha256": "6aeccafbe4771bb634ae5de698439f49b227b6a144020da9032b0becca67e4d1",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/victory-summary.zh-CN.json",
+          "sourceEvidenceId": "dd1216ac712443c6b5451fc5d92febc2",
+          "sourceImageSha256": "3859e50da117d3d285f2a4edaa2ec0f3db052591209d0e2ee97f0d0fff9eb78c"
+        },
+        {
+          "id": "victorySummary.panelLeft",
+          "bounds": {
+            "x": 540,
+            "y": 445,
+            "width": 60,
+            "height": 425
+          },
+          "template": "templates/victory-summary/panel-left.png",
+          "templateSha256": "b30912ec115dd5aed7741326c6abec6ef2c7fbddf55842a3da4ee5e726665bb6",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/victory-summary.zh-CN.json",
+          "sourceEvidenceId": "dd1216ac712443c6b5451fc5d92febc2",
+          "sourceImageSha256": "3859e50da117d3d285f2a4edaa2ec0f3db052591209d0e2ee97f0d0fff9eb78c"
+        },
+        {
+          "id": "victorySummary.homeButton",
+          "bounds": {
+            "x": 650,
+            "y": 780,
+            "width": 135,
+            "height": 135
+          },
+          "template": "templates/victory-summary/home-button.png",
+          "templateSha256": "362314c9237b451c08f126c47d3a2c009d1d314159efe907d3651fdfca63b418",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/victory-summary.zh-CN.json",
+          "sourceEvidenceId": "dd1216ac712443c6b5451fc5d92febc2",
+          "sourceImageSha256": "3859e50da117d3d285f2a4edaa2ec0f3db052591209d0e2ee97f0d0fff9eb78c"
+        },
+        {
+          "id": "victorySummary.browseMapsButton",
+          "bounds": {
+            "x": 895,
+            "y": 780,
+            "width": 130,
+            "height": 135
+          },
+          "template": "templates/victory-summary/browse-maps-button.png",
+          "templateSha256": "5e6ca2f3e4a23f216c77e0a0dbb6760bd01d313cf0bdde1ddf90711facd2435d",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/victory-summary.zh-CN.json",
+          "sourceEvidenceId": "dd1216ac712443c6b5451fc5d92febc2",
+          "sourceImageSha256": "3859e50da117d3d285f2a4edaa2ec0f3db052591209d0e2ee97f0d0fff9eb78c"
+        },
+        {
+          "id": "victorySummary.freeplayButton",
+          "bounds": {
+            "x": 1135,
+            "y": 780,
+            "width": 135,
+            "height": 135
+          },
+          "template": "templates/victory-summary/freeplay-button.png",
+          "templateSha256": "816f33da4fcd5bf7058c34a0e50e8e77b46b6c296efb733531c78bc10dd11373",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/victory-summary.zh-CN.json",
+          "sourceEvidenceId": "dd1216ac712443c6b5451fc5d92febc2",
+          "sourceImageSha256": "3859e50da117d3d285f2a4edaa2ec0f3db052591209d0e2ee97f0d0fff9eb78c"
+        }
+      ],
+      "elements": [
+        {
+          "id": "victorySummary.dialog",
+          "role": "status",
+          "bounds": {
+            "x": 540,
+            "y": 280,
+            "width": 840,
+            "height": 610
+          },
+          "anchorIds": [
+            "victorySummary.title",
+            "victorySummary.panelLeft"
+          ]
+        },
+        {
+          "id": "victorySummary.outcome",
+          "role": "status",
+          "bounds": {
+            "x": 600,
+            "y": 280,
+            "width": 720,
+            "height": 250
+          },
+          "anchorIds": [
+            "victorySummary.title"
+          ]
+        },
+        {
+          "id": "victorySummary.reward",
+          "role": "value",
+          "bounds": {
+            "x": 560,
+            "y": 535,
+            "width": 800,
+            "height": 225
+          }
+        },
+        {
+          "id": "victorySummary.home",
+          "role": "button",
+          "bounds": {
+            "x": 635,
+            "y": 770,
+            "width": 165,
+            "height": 200
+          },
+          "actionPoint": {
+            "x": 720,
+            "y": 850
+          },
+          "anchorIds": [
+            "victorySummary.homeButton"
+          ]
+        },
+        {
+          "id": "victorySummary.browseMaps",
+          "role": "button",
+          "bounds": {
+            "x": 875,
+            "y": 770,
+            "width": 170,
+            "height": 200
+          },
+          "actionPoint": {
+            "x": 960,
+            "y": 850
+          },
+          "anchorIds": [
+            "victorySummary.browseMapsButton"
+          ]
+        },
+        {
+          "id": "victorySummary.freeplay",
+          "role": "button",
+          "bounds": {
+            "x": 1115,
+            "y": 770,
+            "width": 170,
+            "height": 200
+          },
+          "actionPoint": {
+            "x": 1200,
+            "y": 850
+          },
+          "anchorIds": [
+            "victorySummary.freeplayButton"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "freeplayPrompt",
+      "kind": "modal",
+      "minimumScore": 0.94,
+      "minimumMatchedAnchors": 3,
+      "positiveHoldout": {
+        "evidence": "samples/freeplay-prompt.zh-CN.holdout.json",
+        "evidenceId": "6a3842697e934b00aec9501eea340d12",
+        "imageSha256": "802188f950a96aa5266bc8e726d2ffc721c6bef2220f5a81cf91a169856758fa"
+      },
+      "anchors": [
+        {
+          "id": "freeplayPrompt.badge",
+          "bounds": {
+            "x": 850,
+            "y": 155,
+            "width": 220,
+            "height": 155
+          },
+          "template": "templates/freeplay-prompt/badge.png",
+          "templateSha256": "bb1ba11ed43b9148e538168042c878e7fa2e8ed0ad37c164fe192f569db0b23d",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/freeplay-prompt.zh-CN.json",
+          "sourceEvidenceId": "709528feea6141a99bc80cbf2a7f8c25",
+          "sourceImageSha256": "770a0da7d6d35e807ef0f64064336506b2b5546a8a3ecaf39978845cfe788e0f"
+        },
+        {
+          "id": "freeplayPrompt.banner",
+          "bounds": {
+            "x": 1120,
+            "y": 315,
+            "width": 170,
+            "height": 105
+          },
+          "template": "templates/freeplay-prompt/banner.png",
+          "templateSha256": "18fe787e50bd94fa433ff8fbf9b79bf4e0c72979507ed00a9740491e5d1333e9",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/freeplay-prompt.zh-CN.json",
+          "sourceEvidenceId": "709528feea6141a99bc80cbf2a7f8c25",
+          "sourceImageSha256": "770a0da7d6d35e807ef0f64064336506b2b5546a8a3ecaf39978845cfe788e0f"
+        },
+        {
+          "id": "freeplayPrompt.panelLeft",
+          "bounds": {
+            "x": 480,
+            "y": 365,
+            "width": 25,
+            "height": 445
+          },
+          "template": "templates/freeplay-prompt/panel-left.png",
+          "templateSha256": "ec2ee016a610409c1f9cec0ce27803a483df54a91f36635c2e7b79ee78709bc3",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/freeplay-prompt.zh-CN.json",
+          "sourceEvidenceId": "709528feea6141a99bc80cbf2a7f8c25",
+          "sourceImageSha256": "770a0da7d6d35e807ef0f64064336506b2b5546a8a3ecaf39978845cfe788e0f"
+        },
+        {
+          "id": "freeplayPrompt.okButton",
+          "bounds": {
+            "x": 835,
+            "y": 710,
+            "width": 250,
+            "height": 95
+          },
+          "template": "templates/freeplay-prompt/ok-button.png",
+          "templateSha256": "77b47b85d6fa60772fa3d321dadc2f33110a6e0c6d08134a7a765008dffea2bb",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/freeplay-prompt.zh-CN.json",
+          "sourceEvidenceId": "709528feea6141a99bc80cbf2a7f8c25",
+          "sourceImageSha256": "770a0da7d6d35e807ef0f64064336506b2b5546a8a3ecaf39978845cfe788e0f"
+        }
+      ],
+      "elements": [
+        {
+          "id": "freeplayPrompt.dialog",
+          "role": "status",
+          "bounds": {
+            "x": 480,
+            "y": 155,
+            "width": 960,
+            "height": 670
+          },
+          "anchorIds": [
+            "freeplayPrompt.badge",
+            "freeplayPrompt.banner",
+            "freeplayPrompt.panelLeft"
+          ]
+        },
+        {
+          "id": "freeplayPrompt.message",
+          "role": "status",
+          "bounds": {
+            "x": 520,
+            "y": 500,
+            "width": 880,
+            "height": 135
+          }
+        },
+        {
+          "id": "freeplayPrompt.ok",
+          "role": "button",
+          "bounds": {
+            "x": 825,
+            "y": 700,
+            "width": 270,
+            "height": 115
+          },
+          "actionPoint": {
+            "x": 960,
+            "y": 755
+          },
+          "anchorIds": [
+            "freeplayPrompt.okButton"
           ]
         }
       ]

@@ -205,6 +205,17 @@ class ClickTargetTests(unittest.TestCase):
                 "inLevel.settings": (1600, 50),
                 "inLevel.startOrFastForward": (1840, 1020),
             },
+            "victory-player-stats.zh-CN.holdout.json": {
+                "victoryPlayerStats.next": (960, 905),
+            },
+            "victory-summary.zh-CN.holdout.json": {
+                "victorySummary.home": (720, 850),
+                "victorySummary.browseMaps": (960, 850),
+                "victorySummary.freeplay": (1200, 850),
+            },
+            "freeplay-prompt.zh-CN.holdout.json": {
+                "freeplayPrompt.ok": (960, 755),
+            },
             "stage-settings.zh-CN.holdout.json": {
                 "stageSettings.home": (850, 840),
                 "stageSettings.continue": (1295, 840),

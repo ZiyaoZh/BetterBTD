@@ -16,6 +16,7 @@ from .visual_catalog import VisualCatalog, VisualElement, VisualPage, VisualView
 
 
 COMPARISON_SIZE = (48, 48)
+PAGE_KIND_RANK = {"page": 0, "modal": 1}
 
 
 @dataclass(frozen=True, slots=True)
@@ -99,11 +100,19 @@ def recognize_image(
         reverse=True,
     )
     matched_pages = [match for match in ranked_pages if match.matched]
-    best_match = matched_pages[0] if matched_pages else None
+    best_match = max(
+        matched_pages,
+        key=lambda match: (
+            PAGE_KIND_RANK[match.page.kind],
+            match.ranking_score,
+        ),
+        default=None,
+    )
     ambiguous = (
         best_match is not None
         and any(
             candidate is not best_match
+            and candidate.page.kind == best_match.page.kind
             and abs(best_match.ranking_score - candidate.ranking_score) < 0.02
             and abs(best_match.score - candidate.score) < 0.02
             for candidate in ranked_pages
@@ -398,6 +407,7 @@ def _page_result(
 ) -> dict[str, object]:
     result: dict[str, object] = {
         "id": match.page.id,
+        "kind": match.page.kind,
         "score": match.score,
         "rankingScore": match.ranking_score,
         "matchedAnchorCount": match.matched_anchor_count,
@@ -431,6 +441,7 @@ def _page_result(
 def _page_candidate(match: PageMatch) -> dict[str, object]:
     result: dict[str, object] = {
         "id": match.page.id,
+        "kind": match.page.kind,
         "score": match.score,
         "rankingScore": match.ranking_score,
         "matched": match.matched,

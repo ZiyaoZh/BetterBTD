@@ -201,8 +201,8 @@ def _parse_catalog(
         page_id = _stable_id(page, "id")
         _require_unique(page_id, seen_page_ids, "page id")
         kind = _stable_id(page, "kind")
-        if kind != "page":
-            raise ValueError(f"page {page_id} kind must currently be page")
+        if kind not in ("page", "modal"):
+            raise ValueError(f"page {page_id} kind must be page or modal")
         minimum_score = _score(page, "minimumScore")
         minimum_matched_anchors = _positive_integer(page, "minimumMatchedAnchors")
 

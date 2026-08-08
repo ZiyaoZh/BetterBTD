@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "victoryPlayerStats.zh-CN.20260808",
+  "sourceEvidenceId": "acbf429f15a54945a5bf0aa9da7f7d45",
+  "sourceImageSha256": "b2257384b186dd185a8a414791fdd62ac2cd2c26630395e74ffde9b65dfc0248",
+  "pageId": "victoryPlayerStats",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T09:13:00.000Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromAnchors": [
+    "victoryPlayerStats.playerName",
+    "victoryPlayerStats.topTower",
+    "victoryPlayerStats.statistics",
+    "victoryPlayerStats.monkeyStar",
+    "victoryPlayerStats.backgroundSparkles"
+  ],
+  "notes": [
+    "The source is the first visible page after a real Monkey Meadow Easy Standard round 40 victory.",
+    "Page anchors use the non-text title banner shape and narrow card borders while excluding player, tower and numeric statistics.",
+    "The localized next-button template is detector-only and does not contribute to page recognition.",
+    "The independent holdout was captured later so animated sparkles and star positions differ from the template source."
+  ]
+}

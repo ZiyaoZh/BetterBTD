@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "victorySummary.zh-CN.20260808",
+  "sourceEvidenceId": "dd1216ac712443c6b5451fc5d92febc2",
+  "sourceImageSha256": "3859e50da117d3d285f2a4edaa2ec0f3db052591209d0e2ee97f0d0fff9eb78c",
+  "pageId": "victorySummary",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T09:14:00.000Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromAnchors": [
+    "victorySummary.rewardValue",
+    "victorySummary.mapAndModeText",
+    "victorySummary.backgroundSparkles"
+  ],
+  "notes": [
+    "The source is the second page of the same real victory flow.",
+    "Page anchors use the non-text banner shape, panel frame and button icons; localized labels do not contribute to page recognition.",
+    "Home, browse maps and freeplay are modeled as independently visible buttons with stable action points.",
+    "Only the freeplay branch was exercised in this capture session; the other two actions remain visually modeled but are not claimed as real transition coverage."
+  ]
+}

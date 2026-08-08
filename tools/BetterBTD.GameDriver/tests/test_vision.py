@@ -99,6 +99,10 @@ class VisualRecognitionTests(unittest.TestCase):
         self.assertGreater(result["recognition"]["page"]["score"], 0.99)
         self.assertEqual(19, len(result["recognition"]["elements"]))
         self.assertTrue(result["recognition"]["oracleEligible"])
+        self.assertEqual(
+            "mainMenu",
+            result["recognition"]["candidates"][0]["id"],
+        )
         start = next(
             element
             for element in result["recognition"]["elements"]
@@ -365,6 +369,113 @@ class VisualRecognitionTests(unittest.TestCase):
         self.assertEqual("visible", settings["visibility"])
         self.assertTrue(settings["visible"])
         self.assertEqual("notEvaluated", cash["visibility"])
+
+    def test_real_holdout_frame_matches_victory_player_stats(self) -> None:
+        evidence = read_evidence(
+            SAMPLE_ROOT / "victory-player-stats.zh-CN.holdout.json"
+        )
+
+        result, match = recognize_image(evidence, self.catalog)
+
+        self.assertIsNotNone(match)
+        recognition = result["recognition"]
+        self.assertEqual("matched", recognition["status"])
+        self.assertTrue(recognition["oracleEligible"])
+        self.assertEqual("victoryPlayerStats", recognition["page"]["id"])
+        self.assertEqual("modal", recognition["page"]["kind"])
+        self.assertGreater(recognition["page"]["score"], 0.99)
+        self.assertEqual(4, len(recognition["elements"]))
+        next_button = next(
+            element
+            for element in recognition["elements"]
+            if element["id"] == "victoryPlayerStats.next"
+        )
+        self.assertEqual("visible", next_button["visibility"])
+        self.assertTrue(next_button["visible"])
+        self.assertEqual({"x": 960, "y": 905}, next_button["actionPointClient"])
+
+    def test_victory_player_stats_page_ignores_dynamic_values_and_labels(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            with Image.open(
+                SAMPLE_ROOT / "victory-player-stats.zh-CN.holdout.png"
+            ) as source:
+                modified = source.convert("RGB")
+                modified.paste((235, 80, 20), (815, 95, 1105, 220))
+                modified.paste((70, 110, 160), (800, 275, 1125, 790))
+                modified.paste((30, 210, 20), (880, 875, 1040, 935))
+            metadata_path = write_test_evidence(
+                Path(temporary_directory),
+                "victory-stats-dynamic-content-changed",
+                modified,
+            )
+            evidence = read_evidence(metadata_path)
+
+            result, match = recognize_image(evidence, self.catalog)
+
+            self.assertIsNotNone(match)
+            recognition = result["recognition"]
+            self.assertEqual("matched", recognition["status"])
+            self.assertEqual("victoryPlayerStats", recognition["page"]["id"])
+            next_button = next(
+                element
+                for element in recognition["elements"]
+                if element["id"] == "victoryPlayerStats.next"
+            )
+            self.assertEqual("notVisible", next_button["visibility"])
+            self.assertFalse(next_button["visible"])
+
+    def test_real_holdout_frame_matches_victory_summary_actions(self) -> None:
+        evidence = read_evidence(SAMPLE_ROOT / "victory-summary.zh-CN.holdout.json")
+
+        result, match = recognize_image(evidence, self.catalog)
+
+        self.assertIsNotNone(match)
+        recognition = result["recognition"]
+        self.assertEqual("matched", recognition["status"])
+        self.assertTrue(recognition["oracleEligible"])
+        self.assertEqual("victorySummary", recognition["page"]["id"])
+        self.assertEqual("modal", recognition["page"]["kind"])
+        self.assertGreater(recognition["page"]["score"], 0.99)
+        self.assertEqual(6, len(recognition["elements"]))
+        elements = {element["id"]: element for element in recognition["elements"]}
+        for element_id, action_point in (
+            ("victorySummary.home", {"x": 720, "y": 850}),
+            ("victorySummary.browseMaps", {"x": 960, "y": 850}),
+            ("victorySummary.freeplay", {"x": 1200, "y": 850}),
+        ):
+            element = elements[element_id]
+            self.assertEqual("visible", element["visibility"])
+            self.assertTrue(element["visible"])
+            self.assertEqual(action_point, element["actionPointClient"])
+        self.assertEqual("notEvaluated", elements["victorySummary.reward"]["visibility"])
+
+    def test_freeplay_modal_takes_precedence_over_visible_in_level_hud(self) -> None:
+        evidence = read_evidence(SAMPLE_ROOT / "freeplay-prompt.zh-CN.holdout.json")
+
+        result, match = recognize_image(evidence, self.catalog)
+
+        self.assertIsNotNone(match)
+        recognition = result["recognition"]
+        self.assertEqual("matched", recognition["status"])
+        self.assertTrue(recognition["oracleEligible"])
+        self.assertEqual("freeplayPrompt", recognition["page"]["id"])
+        self.assertEqual("modal", recognition["page"]["kind"])
+        self.assertGreater(recognition["page"]["score"], 0.99)
+        in_level = next(
+            candidate
+            for candidate in recognition["candidates"]
+            if candidate["id"] == "inLevel"
+        )
+        self.assertTrue(in_level["matched"])
+        self.assertEqual("page", in_level["kind"])
+        ok_button = next(
+            element
+            for element in recognition["elements"]
+            if element["id"] == "freeplayPrompt.ok"
+        )
+        self.assertEqual("visible", ok_button["visibility"])
+        self.assertTrue(ok_button["visible"])
+        self.assertEqual({"x": 960, "y": 755}, ok_button["actionPointClient"])
 
     def test_real_holdout_frame_matches_medium_mode_select(self) -> None:
         evidence = read_evidence(SAMPLE_ROOT / "medium-mode-select.zh-CN.holdout.json")

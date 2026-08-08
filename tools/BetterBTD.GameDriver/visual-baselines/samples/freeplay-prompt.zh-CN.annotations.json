@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "freeplayPrompt.zh-CN.20260808",
+  "sourceEvidenceId": "709528feea6141a99bc80cbf2a7f8c25",
+  "sourceImageSha256": "770a0da7d6d35e807ef0f64064336506b2b5546a8a3ecaf39978845cfe788e0f",
+  "pageId": "freeplayPrompt",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T09:15:00.000Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromAnchors": [
+    "freeplayPrompt.underlyingMap",
+    "freeplayPrompt.underlyingHud"
+  ],
+  "notes": [
+    "The modal appears after selecting freeplay on the victory summary and visually occludes an otherwise recognizable in-level HUD.",
+    "Page anchors are restricted to the modal badge, non-text banner shape and narrow frame border.",
+    "The OK-button template is detector-only and does not contribute to page recognition.",
+    "The modal page kind must take recognition precedence over matching anchors on the underlying in-level page."
+  ]
+}
