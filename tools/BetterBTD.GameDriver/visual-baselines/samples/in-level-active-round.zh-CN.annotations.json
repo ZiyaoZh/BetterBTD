@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "inLevel.roundActive.zh-CN.20260808",
+  "sourceEvidenceId": "816e6c0243824a859af34b6a049c7d09",
+  "sourceImageSha256": "f574e35b20625bac798530cf4b4db2a9b7d7dc3c6fb5414ad2baf47d059e57df",
+  "pageId": "inLevel",
+  "viewStateId": "inLevel.roundActive",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T14:59:35.000Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromPageAnchors": [
+    "inLevel.map",
+    "inLevel.towers",
+    "inLevel.bloons",
+    "inLevel.healthValue",
+    "inLevel.cashValue",
+    "inLevel.roundValue",
+    "inLevel.towerPrices",
+    "account.currency"
+  ],
+  "notes": [
+    "The real standard game was observed while round 13 was actively running after retry-last-round restore.",
+    "Stable sidebar chrome identifies inLevel; the bottom-right active-round control identifies this view state.",
+    "Moving bloons, tower animation, map content, and all numeric values are excluded from page anchors."
+  ]
+}

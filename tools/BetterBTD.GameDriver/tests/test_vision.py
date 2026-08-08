@@ -405,6 +405,14 @@ class VisualRecognitionTests(unittest.TestCase):
                     "overwriteSaveConfirmation.confirm": {"x": 1135, "y": 730},
                 },
             ),
+            "overwrite-save-confirmation-easy.zh-CN.holdout.json": (
+                "overwriteSaveConfirmation",
+                "modal",
+                {
+                    "overwriteSaveConfirmation.cancel": {"x": 780, "y": 730},
+                    "overwriteSaveConfirmation.confirm": {"x": 1135, "y": 730},
+                },
+            ),
             "chimps-mode-info.zh-CN.holdout.json": (
                 "chimpsModeInfo",
                 "modal",
@@ -417,6 +425,24 @@ class VisualRecognitionTests(unittest.TestCase):
                     "defeatSummary.home": {"x": 740, "y": 810},
                     "defeatSummary.restart": {"x": 960, "y": 810},
                     "defeatSummary.browseMaps": {"x": 1180, "y": 810},
+                },
+            ),
+            "defeat-summary-retry-last-round.zh-CN.holdout.json": (
+                "defeatSummary",
+                "modal",
+                {
+                    "defeatSummary.home": {"x": 630, "y": 810},
+                    "defeatSummary.restart": {"x": 850, "y": 810},
+                    "defeatSummary.browseMaps": {"x": 1070, "y": 810},
+                    "defeatSummary.retryLastRound": {"x": 1290, "y": 810},
+                },
+            ),
+            "retry-last-round-confirmation.zh-CN.holdout.json": (
+                "retryLastRoundConfirmation",
+                "modal",
+                {
+                    "retryLastRoundConfirmation.cancel": {"x": 780, "y": 730},
+                    "retryLastRoundConfirmation.confirm": {"x": 1135, "y": 730},
                 },
             ),
             "restart-game-confirmation.zh-CN.holdout.json": (
@@ -445,7 +471,13 @@ class VisualRecognitionTests(unittest.TestCase):
                 self.assertTrue(recognition["oracleEligible"])
                 self.assertEqual(page_id, recognition["page"]["id"])
                 self.assertEqual(kind, recognition["page"]["kind"])
-                self.assertGreater(recognition["page"]["score"], 0.99)
+                minimum_score = (
+                    0.985
+                    if evidence_name
+                    == "defeat-summary-retry-last-round.zh-CN.holdout.json"
+                    else 0.99
+                )
+                self.assertGreater(recognition["page"]["score"], minimum_score)
                 elements = {
                     element["id"]: element for element in recognition["elements"]
                 }
@@ -454,12 +486,24 @@ class VisualRecognitionTests(unittest.TestCase):
                     self.assertEqual("visible", element["visibility"])
                     self.assertTrue(element["visible"])
                     self.assertEqual(action_point, element["actionPointClient"])
+                if evidence_name == "defeat-summary.zh-CN.holdout.json":
+                    self.assertEqual(
+                        "defeatSummary.noRetryLastRound",
+                        recognition["page"]["viewState"]["state"]["id"],
+                    )
+                    self.assertFalse(elements["defeatSummary.retryLastRound"]["visible"])
+                elif evidence_name == "defeat-summary-retry-last-round.zh-CN.holdout.json":
+                    self.assertEqual(
+                        "defeatSummary.retryLastRoundAvailable",
+                        recognition["page"]["viewState"]["state"]["id"],
+                    )
 
     def test_new_modal_holdouts_do_not_match_other_result_modals(self) -> None:
         new_modal_ids = {
             "overwriteSaveConfirmation",
             "chimpsModeInfo",
             "defeatSummary",
+            "retryLastRoundConfirmation",
             "restartGameConfirmation",
         }
         result_modal_ids = {
@@ -479,6 +523,11 @@ class VisualRecognitionTests(unittest.TestCase):
             "defeat-summary.zh-CN.holdout.json": (
                 "defeatSummary",
                 result_modal_ids | (new_modal_ids - {"defeatSummary"}),
+            ),
+            "retry-last-round-confirmation.zh-CN.holdout.json": (
+                "retryLastRoundConfirmation",
+                result_modal_ids
+                | (new_modal_ids - {"retryLastRoundConfirmation"}),
             ),
             "restart-game-confirmation.zh-CN.holdout.json": (
                 "restartGameConfirmation",
@@ -519,6 +568,15 @@ class VisualRecognitionTests(unittest.TestCase):
                     (1435, 0, 1560, 105),
                 ],
             ),
+            "defeat-summary-retry-last-round.zh-CN.holdout.png": (
+                "defeatSummary",
+                [
+                    (580, 425, 1340, 540),
+                    (580, 575, 1340, 730),
+                    (20, 0, 570, 105),
+                    (1435, 0, 1560, 105),
+                ],
+            ),
             "post-game-map-review.zh-CN.holdout.png": (
                 "postGameMapReview",
                 [
@@ -546,6 +604,62 @@ class VisualRecognitionTests(unittest.TestCase):
                     self.assertIsNotNone(match)
                     self.assertEqual("matched", result["recognition"]["status"])
                     self.assertEqual(page_id, result["recognition"]["page"]["id"])
+
+    def test_real_active_round_keeps_in_level_oracle_and_control_state(self) -> None:
+        for evidence_name in (
+            "in-level-active-round.zh-CN.json",
+            "in-level-active-round.zh-CN.holdout.json",
+        ):
+            with self.subTest(evidence_name=evidence_name):
+                evidence = read_evidence(SAMPLE_ROOT / evidence_name)
+
+                result, match = recognize_image(evidence, self.catalog)
+
+                self.assertIsNotNone(match)
+                recognition = result["recognition"]
+                self.assertEqual("matched", recognition["status"])
+                self.assertTrue(recognition["oracleEligible"])
+                self.assertEqual("inLevel", recognition["page"]["id"])
+                self.assertGreater(recognition["page"]["score"], 0.99)
+                self.assertEqual(
+                    "inLevel.roundActive",
+                    recognition["page"]["viewState"]["state"]["id"],
+                )
+                start_control = next(
+                    element
+                    for element in recognition["elements"]
+                    if element["id"] == "inLevel.startOrFastForward"
+                )
+                self.assertTrue(start_control["visible"])
+                self.assertEqual(
+                    {"x": 1840, "y": 1020},
+                    start_control["actionPointClient"],
+                )
+
+    def test_active_round_page_identity_ignores_dynamic_battlefield(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            with Image.open(
+                SAMPLE_ROOT / "in-level-active-round.zh-CN.holdout.png"
+            ) as source:
+                modified = source.convert("RGB")
+                modified.paste((45, 85, 125), (0, 105, 1560, 1080))
+            metadata_path = write_test_evidence(
+                Path(temporary_directory),
+                "in-level-active-round-battlefield-changed",
+                modified,
+            )
+            evidence = read_evidence(metadata_path)
+
+            result, match = recognize_image(evidence, self.catalog)
+
+        self.assertIsNotNone(match)
+        recognition = result["recognition"]
+        self.assertEqual("matched", recognition["status"])
+        self.assertEqual("inLevel", recognition["page"]["id"])
+        self.assertEqual(
+            "inLevel.roundActive",
+            recognition["page"]["viewState"]["state"]["id"],
+        )
 
     def test_real_holdout_frame_matches_victory_player_stats(self) -> None:
         evidence = read_evidence(

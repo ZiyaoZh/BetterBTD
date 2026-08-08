@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "retryLastRoundConfirmation.zh-CN.20260808",
+  "sourceEvidenceId": "d2c66c5f7b0844f3a5697ea04eb1e9c7",
+  "sourceImageSha256": "3acce6967de1d9e969d6024950e2694e1041bb798fbf379155ddc2ccecf251ac",
+  "pageId": "retryLastRoundConfirmation",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T14:53:00.000Z",
+    "result": "accepted"
+  },
+  "localizedSemanticAnchors": [
+    "retryLastRoundConfirmation.title"
+  ],
+  "dynamicRegionsExcludedFromAnchors": [
+    "defeatSummary.roundReached",
+    "defeatSummary.leakReason",
+    "inLevel.healthValue",
+    "inLevel.cashValue",
+    "inLevel.roundValue",
+    "inLevel.map",
+    "account.currency"
+  ],
+  "notes": [
+    "Retry last round opens a confirmation modal and does not immediately restore gameplay.",
+    "The zh-CN title is required to distinguish this modal from restartGameConfirmation because their nonlocalized chrome is otherwise identical.",
+    "Cancel was exercised and returned to defeatSummary.retryLastRoundAvailable."
+  ]
+}

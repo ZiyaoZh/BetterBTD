@@ -18,7 +18,7 @@ class VisualCatalogTests(unittest.TestCase):
 
         self.assertEqual("btd6-ui-independent", catalog.id)
         self.assertEqual(2, catalog.schema_version)
-        self.assertEqual(15, catalog.version)
+        self.assertEqual(16, catalog.version)
         self.assertEqual((1920, 1080), (catalog.reference_width, catalog.reference_height))
         self.assertEqual(
             [
@@ -35,6 +35,7 @@ class VisualCatalogTests(unittest.TestCase):
                 "overwriteSaveConfirmation",
                 "chimpsModeInfo",
                 "defeatSummary",
+                "retryLastRoundConfirmation",
                 "restartGameConfirmation",
                 "postGameMapReview",
                 "victoryPlayerStats",
@@ -59,11 +60,12 @@ class VisualCatalogTests(unittest.TestCase):
                 6,
                 9,
                 37,
-                4,
                 6,
+                7,
                 4,
-                5,
-                5,
+                9,
+                6,
+                6,
                 3,
                 4,
                 5,
@@ -81,6 +83,7 @@ class VisualCatalogTests(unittest.TestCase):
                 "overwriteSaveConfirmation": "modal",
                 "chimpsModeInfo": "modal",
                 "defeatSummary": "modal",
+                "retryLastRoundConfirmation": "modal",
                 "restartGameConfirmation": "modal",
                 "postGameMapReview": "page",
                 "victoryPlayerStats": "modal",
@@ -95,6 +98,7 @@ class VisualCatalogTests(unittest.TestCase):
                     "overwriteSaveConfirmation",
                     "chimpsModeInfo",
                     "defeatSummary",
+                    "retryLastRoundConfirmation",
                     "restartGameConfirmation",
                     "postGameMapReview",
                     "victoryPlayerStats",
@@ -104,10 +108,10 @@ class VisualCatalogTests(unittest.TestCase):
             },
         )
         self.assertEqual(
-            [4, 3, 5, 3, 3, 3, 5, 3],
+            [4, 3, 2, 4, 4, 3, 3, 5, 3],
             [
                 sum(anchor.page_anchor for anchor in page.anchors)
-                for page in catalog.pages[10:18]
+                for page in catalog.pages[10:19]
             ],
         )
         self.assertEqual(
@@ -117,6 +121,20 @@ class VisualCatalogTests(unittest.TestCase):
         self.assertEqual(
             3,
             sum(anchor.page_anchor for anchor in catalog.pages[9].anchors),
+        )
+        in_level = catalog.pages[9]
+        self.assertEqual(
+            ["inLevel.roundReady", "inLevel.roundActive"],
+            [view_state.id for view_state in in_level.view_states],
+        )
+        start_control = next(
+            element
+            for element in in_level.elements
+            if element.id == "inLevel.startOrFastForward"
+        )
+        self.assertEqual(
+            ["inLevel.roundReady", "inLevel.roundActive"],
+            [placement.view_state_id for placement in start_control.placements],
         )
         map_select = catalog.pages[3]
         self.assertEqual(4, sum(anchor.page_anchor for anchor in map_select.anchors))
@@ -144,7 +162,7 @@ class VisualCatalogTests(unittest.TestCase):
             [5, 6, 5],
             [
                 sum(anchor.page_anchor for anchor in page.anchors)
-                for page in catalog.pages[19:22]
+                for page in catalog.pages[20:23]
             ],
         )
         self.assertTrue(all(page.positive_holdout is not None for page in catalog.pages))
@@ -157,6 +175,25 @@ class VisualCatalogTests(unittest.TestCase):
             30,
             sum(len(element.placements) for element in hero_select.elements),
         )
+        defeat_summary = catalog.pages[12]
+        self.assertEqual(
+            [
+                "defeatSummary.noRetryLastRound",
+                "defeatSummary.retryLastRoundAvailable",
+            ],
+            [view_state.id for view_state in defeat_summary.view_states],
+        )
+        retry_last_round = next(
+            element
+            for element in defeat_summary.elements
+            if element.id == "defeatSummary.retryLastRound"
+        )
+        self.assertEqual(1, len(retry_last_round.placements))
+        self.assertEqual(
+            "defeatSummary.retryLastRoundAvailable",
+            retry_last_round.placements[0].view_state_id,
+        )
+        self.assertEqual((1290, 810), retry_last_round.placements[0].action_point)
         self.assertEqual(
             [
                 "Quincy",
@@ -203,11 +240,11 @@ class VisualCatalogTests(unittest.TestCase):
         self.assertEqual(
             {
                 "valid": True,
-                "pageCount": 23,
-                "templateCount": 325,
-                "elementCount": 297,
-                "viewStateCount": 21,
-                "placementCount": 251,
+                "pageCount": 24,
+                "templateCount": 339,
+                "elementCount": 302,
+                "viewStateCount": 25,
+                "placementCount": 260,
             },
             summary["validation"],
         )
@@ -223,10 +260,10 @@ class VisualCatalogTests(unittest.TestCase):
                 placement.action_point is not None for placement in element.placements
             )
 
-        self.assertEqual(237, sum(has_detector(element) for element in elements))
-        self.assertEqual(201, sum(has_action_point(element) for element in elements))
+        self.assertEqual(241, sum(has_detector(element) for element in elements))
+        self.assertEqual(204, sum(has_action_point(element) for element in elements))
         self.assertEqual(
-            178,
+            181,
             sum(
                 has_detector(element) and has_action_point(element)
                 for element in elements

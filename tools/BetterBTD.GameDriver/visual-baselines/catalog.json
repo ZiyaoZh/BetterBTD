@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "catalogId": "btd6-ui-independent",
-  "catalogVersion": 15,
+  "catalogVersion": 16,
   "game": {
     "id": "BloonsTD6",
     "observedProductVersion": "6000.0.58f2 (92dee566b325)",
@@ -10221,6 +10221,34 @@
         "evidenceId": "b6fe048cc00b45efb2d57add520d5bf4",
         "imageSha256": "8c939259fff3909c58d00c7dde3ad161654eed03dffe2e772d858a6594a0a7f9"
       },
+      "viewStates": [
+        {
+          "id": "inLevel.roundReady",
+          "minimumScore": 0.93,
+          "minimumMatchedAnchors": 1,
+          "anchorIds": [
+            "inLevel.startButtonFrame"
+          ],
+          "positiveHoldout": {
+            "evidence": "samples/in-level.zh-CN.holdout.json",
+            "evidenceId": "b6fe048cc00b45efb2d57add520d5bf4",
+            "imageSha256": "8c939259fff3909c58d00c7dde3ad161654eed03dffe2e772d858a6594a0a7f9"
+          }
+        },
+        {
+          "id": "inLevel.roundActive",
+          "minimumScore": 0.93,
+          "minimumMatchedAnchors": 1,
+          "anchorIds": [
+            "inLevel.fastForwardButtonFrame"
+          ],
+          "positiveHoldout": {
+            "evidence": "samples/in-level-active-round.zh-CN.holdout.json",
+            "evidenceId": "139410dbccf54a22bc4c288dbe61f5e9",
+            "imageSha256": "7338a8531dfad021e26d107107511556fc118365f43c98c0e44ffc1154a92fdb"
+          }
+        }
+      ],
       "anchors": [
         {
           "id": "inLevel.healthIcon",
@@ -10269,6 +10297,21 @@
           "sourceImageSha256": "4e2b40d8ee1ff6598a84e7e8cbf7acbe3fb9380bfb2bf8abf17c04a9d8715076"
         },
         {
+          "id": "inLevel.sidebarRightFrame",
+          "bounds": {
+            "x": 1890,
+            "y": 145,
+            "width": 30,
+            "height": 760
+          },
+          "template": "templates/in-level/sidebar-right-frame.png",
+          "templateSha256": "932d0574fa3d1d776c2edd2a915aa33ed159770e75f4e39215be4f7b5fde02eb",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/in-level.zh-CN.json",
+          "sourceEvidenceId": "6b55112e34a1441ba073fd298c9735c1",
+          "sourceImageSha256": "4e2b40d8ee1ff6598a84e7e8cbf7acbe3fb9380bfb2bf8abf17c04a9d8715076"
+        },
+        {
           "id": "inLevel.startButtonFrame",
           "bounds": {
             "x": 1780,
@@ -10279,9 +10322,26 @@
           "template": "templates/in-level/start-button-frame.png",
           "templateSha256": "bb68526ea1d82e44800be60edf8ba59124ef0d0d7640200087cb194f54e396aa",
           "minimumScore": 0.93,
+          "pageAnchor": false,
           "sourceEvidence": "samples/in-level.zh-CN.json",
           "sourceEvidenceId": "6b55112e34a1441ba073fd298c9735c1",
           "sourceImageSha256": "4e2b40d8ee1ff6598a84e7e8cbf7acbe3fb9380bfb2bf8abf17c04a9d8715076"
+        },
+        {
+          "id": "inLevel.fastForwardButtonFrame",
+          "bounds": {
+            "x": 1780,
+            "y": 965,
+            "width": 105,
+            "height": 105
+          },
+          "template": "templates/in-level/fast-forward-button-frame.png",
+          "templateSha256": "f63dfd1c6f2514a332369d3c6bd430feddbbf8b21a80b108ef9561de6721baf7",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/in-level-active-round.zh-CN.json",
+          "sourceEvidenceId": "816e6c0243824a859af34b6a049c7d09",
+          "sourceImageSha256": "f574e35b20625bac798530cf4b4db2a9b7d7dc3c6fb5414ad2baf47d059e57df"
         }
       ],
       "elements": [
@@ -10375,18 +10435,39 @@
         {
           "id": "inLevel.startOrFastForward",
           "role": "button",
-          "bounds": {
-            "x": 1775,
-            "y": 955,
-            "width": 135,
-            "height": 125
-          },
-          "actionPoint": {
-            "x": 1840,
-            "y": 1020
-          },
-          "anchorIds": [
-            "inLevel.startButtonFrame"
+          "placements": [
+            {
+              "viewStateId": "inLevel.roundReady",
+              "bounds": {
+                "x": 1775,
+                "y": 955,
+                "width": 135,
+                "height": 125
+              },
+              "actionPoint": {
+                "x": 1840,
+                "y": 1020
+              },
+              "anchorIds": [
+                "inLevel.startButtonFrame"
+              ]
+            },
+            {
+              "viewStateId": "inLevel.roundActive",
+              "bounds": {
+                "x": 1775,
+                "y": 955,
+                "width": 135,
+                "height": 125
+              },
+              "actionPoint": {
+                "x": 1840,
+                "y": 1020
+              },
+              "anchorIds": [
+                "inLevel.fastForwardButtonFrame"
+              ]
+            }
           ]
         }
       ]
@@ -10397,9 +10478,9 @@
       "minimumScore": 0.94,
       "minimumMatchedAnchors": 4,
       "positiveHoldout": {
-        "evidence": "samples/overwrite-save-confirmation.zh-CN.holdout.json",
-        "evidenceId": "9225a2ff9913481896bf116ba27c8b84",
-        "imageSha256": "5949441d7728b0f2cd69f00befec33957edbdbc0177bdf0834e22d6435310bb2"
+        "evidence": "samples/overwrite-save-confirmation-easy.zh-CN.holdout.json",
+        "evidenceId": "3e5d42ec0d5e40088417b05d899df6c4",
+        "imageSha256": "2bcb93d2474752838b81f963b041bfb442b73a4a92306d3d9be1d6b1285c20e7"
       },
       "anchors": [
         {
@@ -10428,6 +10509,22 @@
           "template": "templates/overwrite-save-confirmation/mode-header-left.png",
           "templateSha256": "54fd7d841be4c6f0b0435caa4ac79dccfd1cf4654838454425062c73bb4770ee",
           "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/overwrite-save-confirmation.zh-CN.json",
+          "sourceEvidenceId": "82fa3ed5be41424887d6f0c2e59b530f",
+          "sourceImageSha256": "ae0d6f4955987ec36f175454542e512859c583f48017f00b495f3845e762d5d7"
+        },
+        {
+          "id": "overwriteSaveConfirmation.title",
+          "bounds": {
+            "x": 780,
+            "y": 365,
+            "width": 360,
+            "height": 65
+          },
+          "template": "templates/overwrite-save-confirmation/title.png",
+          "templateSha256": "c6606aacf846be00a9d773639211f18f5c2a3cbaaa927b54007e605418434d66",
+          "minimumScore": 0.95,
           "sourceEvidence": "samples/overwrite-save-confirmation.zh-CN.json",
           "sourceEvidenceId": "82fa3ed5be41424887d6f0c2e59b530f",
           "sourceImageSha256": "ae0d6f4955987ec36f175454542e512859c583f48017f00b495f3845e762d5d7"
@@ -10678,12 +10775,45 @@
       "id": "defeatSummary",
       "kind": "modal",
       "minimumScore": 0.94,
-      "minimumMatchedAnchors": 4,
+      "minimumMatchedAnchors": 2,
       "positiveHoldout": {
         "evidence": "samples/defeat-summary.zh-CN.holdout.json",
         "evidenceId": "2da11f71b11943f7a472b9c089a45508",
         "imageSha256": "f6cca2c8b50816dd3e07e968d6a5c0eea8cc3c64ddf390a207cb662bbfd27d8e"
       },
+      "viewStates": [
+        {
+          "id": "defeatSummary.noRetryLastRound",
+          "minimumScore": 0.93,
+          "minimumMatchedAnchors": 3,
+          "anchorIds": [
+            "defeatSummary.homeButton",
+            "defeatSummary.restartButton",
+            "defeatSummary.browseMapsButton"
+          ],
+          "positiveHoldout": {
+            "evidence": "samples/defeat-summary.zh-CN.holdout.json",
+            "evidenceId": "2da11f71b11943f7a472b9c089a45508",
+            "imageSha256": "f6cca2c8b50816dd3e07e968d6a5c0eea8cc3c64ddf390a207cb662bbfd27d8e"
+          }
+        },
+        {
+          "id": "defeatSummary.retryLastRoundAvailable",
+          "minimumScore": 0.93,
+          "minimumMatchedAnchors": 4,
+          "anchorIds": [
+            "defeatSummary.retryLastRoundHomeButton",
+            "defeatSummary.retryLastRoundRestartButton",
+            "defeatSummary.retryLastRoundBrowseMapsButton",
+            "defeatSummary.retryLastRoundButton"
+          ],
+          "positiveHoldout": {
+            "evidence": "samples/defeat-summary-retry-last-round.zh-CN.holdout.json",
+            "evidenceId": "c06a72765ff249eb8ddaec161a6b74d4",
+            "imageSha256": "fbeab516f8fa34aeeb449456dbbe3f9d05f7ed9101a74ad5d2cc19eeeb869f49"
+          }
+        }
+      ],
       "anchors": [
         {
           "id": "defeatSummary.portrait",
@@ -10726,6 +10856,7 @@
           "template": "templates/defeat-summary/home-button.png",
           "templateSha256": "ac5eece5e49bfe879932a697919061e335467ab04e36c184623d4e1f7a3a5cef",
           "minimumScore": 0.93,
+          "pageAnchor": false,
           "sourceEvidence": "samples/defeat-summary.zh-CN.json",
           "sourceEvidenceId": "53f30e83a5de4f1b8277657be9ab372d",
           "sourceImageSha256": "7e0fa80fdbf2b498af0c0faddc43197c0eb7b20ab1edf83364185ad5e7f7868b"
@@ -10741,6 +10872,7 @@
           "template": "templates/defeat-summary/restart-button.png",
           "templateSha256": "99d0811fddf379f896a2140423fbec8a98a8d9c7757843bef4765266ae2a157f",
           "minimumScore": 0.93,
+          "pageAnchor": false,
           "sourceEvidence": "samples/defeat-summary.zh-CN.json",
           "sourceEvidenceId": "53f30e83a5de4f1b8277657be9ab372d",
           "sourceImageSha256": "7e0fa80fdbf2b498af0c0faddc43197c0eb7b20ab1edf83364185ad5e7f7868b"
@@ -10756,9 +10888,74 @@
           "template": "templates/defeat-summary/browse-maps-button.png",
           "templateSha256": "3d1c1b3f03f2f97a0976d9552fbeb1aa9be8cbd749f206f5f2470f181c5b8e3f",
           "minimumScore": 0.93,
+          "pageAnchor": false,
           "sourceEvidence": "samples/defeat-summary.zh-CN.json",
           "sourceEvidenceId": "53f30e83a5de4f1b8277657be9ab372d",
           "sourceImageSha256": "7e0fa80fdbf2b498af0c0faddc43197c0eb7b20ab1edf83364185ad5e7f7868b"
+        },
+        {
+          "id": "defeatSummary.retryLastRoundHomeButton",
+          "bounds": {
+            "x": 565,
+            "y": 745,
+            "width": 130,
+            "height": 125
+          },
+          "template": "templates/defeat-summary/retry-last-round-home-button.png",
+          "templateSha256": "d133a1cc53f6c14102604cb558f1cb3527f69e605e16a3009ce948bf629d4783",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/defeat-summary-retry-last-round.zh-CN.json",
+          "sourceEvidenceId": "d3662ea1ec8e40a08c962fe6b0e0ebf3",
+          "sourceImageSha256": "e9c1d6529330ae4cf0b98bf41feb186cc2fcc91067b1bf8bf0f74d726b547617"
+        },
+        {
+          "id": "defeatSummary.retryLastRoundRestartButton",
+          "bounds": {
+            "x": 785,
+            "y": 745,
+            "width": 130,
+            "height": 125
+          },
+          "template": "templates/defeat-summary/retry-last-round-restart-button.png",
+          "templateSha256": "dab94f7a901bd1a245dd9783f7e1844495a64cffa0dd03859fc61beb31e4e55e",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/defeat-summary-retry-last-round.zh-CN.json",
+          "sourceEvidenceId": "d3662ea1ec8e40a08c962fe6b0e0ebf3",
+          "sourceImageSha256": "e9c1d6529330ae4cf0b98bf41feb186cc2fcc91067b1bf8bf0f74d726b547617"
+        },
+        {
+          "id": "defeatSummary.retryLastRoundBrowseMapsButton",
+          "bounds": {
+            "x": 1005,
+            "y": 745,
+            "width": 130,
+            "height": 125
+          },
+          "template": "templates/defeat-summary/retry-last-round-browse-maps-button.png",
+          "templateSha256": "da770394e0c5318ea0e277b83ce8cc2711ee24fffb87bc7e198fc7d3bc4483f6",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/defeat-summary-retry-last-round.zh-CN.json",
+          "sourceEvidenceId": "d3662ea1ec8e40a08c962fe6b0e0ebf3",
+          "sourceImageSha256": "e9c1d6529330ae4cf0b98bf41feb186cc2fcc91067b1bf8bf0f74d726b547617"
+        },
+        {
+          "id": "defeatSummary.retryLastRoundButton",
+          "bounds": {
+            "x": 1225,
+            "y": 745,
+            "width": 130,
+            "height": 125
+          },
+          "template": "templates/defeat-summary/retry-last-round-button.png",
+          "templateSha256": "ae9ae6562a71e7a0971fc50d049a7931e06a7ea4fc4df261880791d7fb2e20b8",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/defeat-summary-retry-last-round.zh-CN.json",
+          "sourceEvidenceId": "d3662ea1ec8e40a08c962fe6b0e0ebf3",
+          "sourceImageSha256": "e9c1d6529330ae4cf0b98bf41feb186cc2fcc91067b1bf8bf0f74d726b547617"
         }
       ],
       "elements": [
@@ -10812,52 +11009,303 @@
         {
           "id": "defeatSummary.home",
           "role": "button",
-          "bounds": {
-            "x": 675,
-            "y": 745,
-            "width": 130,
-            "height": 125
-          },
-          "actionPoint": {
-            "x": 740,
-            "y": 810
-          },
-          "anchorIds": [
-            "defeatSummary.homeButton"
+          "placements": [
+            {
+              "viewStateId": "defeatSummary.noRetryLastRound",
+              "bounds": {
+                "x": 675,
+                "y": 745,
+                "width": 130,
+                "height": 125
+              },
+              "actionPoint": {
+                "x": 740,
+                "y": 810
+              },
+              "anchorIds": [
+                "defeatSummary.homeButton"
+              ]
+            },
+            {
+              "viewStateId": "defeatSummary.retryLastRoundAvailable",
+              "bounds": {
+                "x": 565,
+                "y": 745,
+                "width": 130,
+                "height": 125
+              },
+              "actionPoint": {
+                "x": 630,
+                "y": 810
+              },
+              "anchorIds": [
+                "defeatSummary.retryLastRoundHomeButton"
+              ]
+            }
           ]
         },
         {
           "id": "defeatSummary.restart",
           "role": "button",
-          "bounds": {
-            "x": 895,
-            "y": 745,
-            "width": 130,
-            "height": 125
-          },
-          "actionPoint": {
-            "x": 960,
-            "y": 810
-          },
-          "anchorIds": [
-            "defeatSummary.restartButton"
+          "placements": [
+            {
+              "viewStateId": "defeatSummary.noRetryLastRound",
+              "bounds": {
+                "x": 895,
+                "y": 745,
+                "width": 130,
+                "height": 125
+              },
+              "actionPoint": {
+                "x": 960,
+                "y": 810
+              },
+              "anchorIds": [
+                "defeatSummary.restartButton"
+              ]
+            },
+            {
+              "viewStateId": "defeatSummary.retryLastRoundAvailable",
+              "bounds": {
+                "x": 785,
+                "y": 745,
+                "width": 130,
+                "height": 125
+              },
+              "actionPoint": {
+                "x": 850,
+                "y": 810
+              },
+              "anchorIds": [
+                "defeatSummary.retryLastRoundRestartButton"
+              ]
+            }
           ]
         },
         {
           "id": "defeatSummary.browseMaps",
           "role": "button",
+          "placements": [
+            {
+              "viewStateId": "defeatSummary.noRetryLastRound",
+              "bounds": {
+                "x": 1115,
+                "y": 745,
+                "width": 130,
+                "height": 125
+              },
+              "actionPoint": {
+                "x": 1180,
+                "y": 810
+              },
+              "anchorIds": [
+                "defeatSummary.browseMapsButton"
+              ]
+            },
+            {
+              "viewStateId": "defeatSummary.retryLastRoundAvailable",
+              "bounds": {
+                "x": 1005,
+                "y": 745,
+                "width": 130,
+                "height": 125
+              },
+              "actionPoint": {
+                "x": 1070,
+                "y": 810
+              },
+              "anchorIds": [
+                "defeatSummary.retryLastRoundBrowseMapsButton"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "defeatSummary.retryLastRound",
+          "role": "button",
+          "placements": [
+            {
+              "viewStateId": "defeatSummary.retryLastRoundAvailable",
+              "bounds": {
+                "x": 1225,
+                "y": 745,
+                "width": 130,
+                "height": 125
+              },
+              "actionPoint": {
+                "x": 1290,
+                "y": 810
+              },
+              "anchorIds": [
+                "defeatSummary.retryLastRoundButton"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "retryLastRoundConfirmation",
+      "kind": "modal",
+      "minimumScore": 0.94,
+      "minimumMatchedAnchors": 4,
+      "positiveHoldout": {
+        "evidence": "samples/retry-last-round-confirmation.zh-CN.holdout.json",
+        "evidenceId": "12a96bc18a244683b59d340582cdfda1",
+        "imageSha256": "edfa111db6d7197786b10774cc5258cb56d1193059d3ef72a1ebad94d9b55e4e"
+      },
+      "anchors": [
+        {
+          "id": "retryLastRoundConfirmation.portraitContext",
           "bounds": {
-            "x": 1115,
-            "y": 745,
-            "width": 130,
-            "height": 125
+            "x": 835,
+            "y": 85,
+            "width": 250,
+            "height": 230
           },
-          "actionPoint": {
-            "x": 1180,
-            "y": 810
+          "template": "templates/retry-last-round-confirmation/portrait-context.png",
+          "templateSha256": "4f578fcb702e08775fa5029157bdf377eb1da0b79f073e7f1521fac869553ad2",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/retry-last-round-confirmation.zh-CN.json",
+          "sourceEvidenceId": "d2c66c5f7b0844f3a5697ea04eb1e9c7",
+          "sourceImageSha256": "3acce6967de1d9e969d6024950e2694e1041bb798fbf379155ddc2ccecf251ac"
+        },
+        {
+          "id": "retryLastRoundConfirmation.panelLeft",
+          "bounds": {
+            "x": 520,
+            "y": 440,
+            "width": 30,
+            "height": 300
+          },
+          "template": "templates/retry-last-round-confirmation/panel-left.png",
+          "templateSha256": "ee8c0f12300390bce7691b66dcd7a82f59853ccea1110518a9ab40265490bc79",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/retry-last-round-confirmation.zh-CN.json",
+          "sourceEvidenceId": "d2c66c5f7b0844f3a5697ea04eb1e9c7",
+          "sourceImageSha256": "3acce6967de1d9e969d6024950e2694e1041bb798fbf379155ddc2ccecf251ac"
+        },
+        {
+          "id": "retryLastRoundConfirmation.panelRight",
+          "bounds": {
+            "x": 1365,
+            "y": 440,
+            "width": 30,
+            "height": 300
+          },
+          "template": "templates/retry-last-round-confirmation/panel-right.png",
+          "templateSha256": "c49c35209e3e8483aecd4bfabcd7fef911c14e342ec9d2028e9eaef0d1c11f57",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/retry-last-round-confirmation.zh-CN.json",
+          "sourceEvidenceId": "d2c66c5f7b0844f3a5697ea04eb1e9c7",
+          "sourceImageSha256": "3acce6967de1d9e969d6024950e2694e1041bb798fbf379155ddc2ccecf251ac"
+        },
+        {
+          "id": "retryLastRoundConfirmation.title",
+          "bounds": {
+            "x": 780,
+            "y": 365,
+            "width": 360,
+            "height": 65
+          },
+          "template": "templates/retry-last-round-confirmation/title.png",
+          "templateSha256": "195d9f41ba51216b2fb29a1d6b80fd212202c6940c343b3454f047a0b5552cb0",
+          "minimumScore": 0.95,
+          "sourceEvidence": "samples/retry-last-round-confirmation.zh-CN.json",
+          "sourceEvidenceId": "d2c66c5f7b0844f3a5697ea04eb1e9c7",
+          "sourceImageSha256": "3acce6967de1d9e969d6024950e2694e1041bb798fbf379155ddc2ccecf251ac"
+        },
+        {
+          "id": "retryLastRoundConfirmation.cancelButton",
+          "bounds": {
+            "x": 650,
+            "y": 685,
+            "width": 265,
+            "height": 90
+          },
+          "template": "templates/retry-last-round-confirmation/cancel-button.png",
+          "templateSha256": "61e207ba70bd869f63606cfd876036ef57bd67dee71e9186a64a6654c50b2f5b",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/retry-last-round-confirmation.zh-CN.json",
+          "sourceEvidenceId": "d2c66c5f7b0844f3a5697ea04eb1e9c7",
+          "sourceImageSha256": "3acce6967de1d9e969d6024950e2694e1041bb798fbf379155ddc2ccecf251ac"
+        },
+        {
+          "id": "retryLastRoundConfirmation.confirmButton",
+          "bounds": {
+            "x": 1005,
+            "y": 685,
+            "width": 260,
+            "height": 90
+          },
+          "template": "templates/retry-last-round-confirmation/confirm-button.png",
+          "templateSha256": "995fe725d4f86023f705bed25a5e10c9e2795d77c7719cd7f1558aa17ddeef2a",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/retry-last-round-confirmation.zh-CN.json",
+          "sourceEvidenceId": "d2c66c5f7b0844f3a5697ea04eb1e9c7",
+          "sourceImageSha256": "3acce6967de1d9e969d6024950e2694e1041bb798fbf379155ddc2ccecf251ac"
+        }
+      ],
+      "elements": [
+        {
+          "id": "retryLastRoundConfirmation.dialog",
+          "role": "status",
+          "bounds": {
+            "x": 475,
+            "y": 285,
+            "width": 945,
+            "height": 490
           },
           "anchorIds": [
-            "defeatSummary.browseMapsButton"
+            "retryLastRoundConfirmation.panelLeft",
+            "retryLastRoundConfirmation.panelRight",
+            "retryLastRoundConfirmation.title"
+          ]
+        },
+        {
+          "id": "retryLastRoundConfirmation.warning",
+          "role": "region",
+          "bounds": {
+            "x": 550,
+            "y": 440,
+            "width": 815,
+            "height": 245
+          }
+        },
+        {
+          "id": "retryLastRoundConfirmation.cancel",
+          "role": "button",
+          "bounds": {
+            "x": 650,
+            "y": 685,
+            "width": 265,
+            "height": 90
+          },
+          "actionPoint": {
+            "x": 780,
+            "y": 730
+          },
+          "anchorIds": [
+            "retryLastRoundConfirmation.cancelButton"
+          ]
+        },
+        {
+          "id": "retryLastRoundConfirmation.confirm",
+          "role": "button",
+          "bounds": {
+            "x": 1005,
+            "y": 685,
+            "width": 260,
+            "height": 90
+          },
+          "actionPoint": {
+            "x": 1135,
+            "y": 730
+          },
+          "anchorIds": [
+            "retryLastRoundConfirmation.confirmButton"
           ]
         }
       ]
@@ -10866,7 +11314,7 @@
       "id": "restartGameConfirmation",
       "kind": "modal",
       "minimumScore": 0.94,
-      "minimumMatchedAnchors": 3,
+      "minimumMatchedAnchors": 4,
       "positiveHoldout": {
         "evidence": "samples/restart-game-confirmation.zh-CN.holdout.json",
         "evidenceId": "50b10f920db0464f8ca3f5a11a666a4c",
@@ -10914,6 +11362,21 @@
           "template": "templates/restart-game-confirmation/panel-right.png",
           "templateSha256": "c49c35209e3e8483aecd4bfabcd7fef911c14e342ec9d2028e9eaef0d1c11f57",
           "minimumScore": 0.93,
+          "sourceEvidence": "samples/restart-game-confirmation.zh-CN.json",
+          "sourceEvidenceId": "478261d2a3c84b7c9d7f1760fd8d6b47",
+          "sourceImageSha256": "986256eafbf4e55d3abad01ea5395bb349b61f6a73de081088def04e175a85a2"
+        },
+        {
+          "id": "restartGameConfirmation.title",
+          "bounds": {
+            "x": 780,
+            "y": 365,
+            "width": 360,
+            "height": 65
+          },
+          "template": "templates/restart-game-confirmation/title.png",
+          "templateSha256": "b81511caf5ce53999d17feb0c22d1d0caf4e387d89cf93213846e1317e2f6920",
+          "minimumScore": 0.95,
           "sourceEvidence": "samples/restart-game-confirmation.zh-CN.json",
           "sourceEvidenceId": "478261d2a3c84b7c9d7f1760fd8d6b47",
           "sourceImageSha256": "986256eafbf4e55d3abad01ea5395bb349b61f6a73de081088def04e175a85a2"

@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "defeatSummary.retryLastRound.zh-CN.20260808",
+  "sourceEvidenceId": "d3662ea1ec8e40a08c962fe6b0e0ebf3",
+  "sourceImageSha256": "e9c1d6529330ae4cf0b98bf41feb186cc2fcc91067b1bf8bf0f74d726b547617",
+  "pageId": "defeatSummary",
+  "viewStateId": "defeatSummary.retryLastRoundAvailable",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T14:48:30.000Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromPageAnchors": [
+    "defeatSummary.roundReached",
+    "defeatSummary.leakReason",
+    "inLevel.healthValue",
+    "inLevel.cashValue",
+    "inLevel.roundValue",
+    "inLevel.map",
+    "account.currency"
+  ],
+  "notes": [
+    "The real standard game failed on round 13 after the first round, exposing a fourth retry-last-round action.",
+    "The stable portrait and panel chrome identify defeatSummary; the four nonlocalized action icons identify this view state.",
+    "Button templates exclude localized labels, and dynamic round, leak, map, cash, and account values remain non-anchors."
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "overwriteSaveConfirmation.easyModeSelect.zh-CN.20260808",
+  "sourceEvidenceId": "af4d1bd9f3fa41c0958fa1e02eb5c41d",
+  "sourceImageSha256": "2bcb93d2474752838b81f963b041bfb442b73a4a92306d3d9be1d6b1285c20e7",
+  "pageId": "overwriteSaveConfirmation",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T15:05:30.000Z",
+    "result": "accepted"
+  },
+  "localizedSemanticAnchors": [
+    "overwriteSaveConfirmation.title"
+  ],
+  "dynamicRegionsExcludedFromAnchors": [
+    "modeSelect.modeCards",
+    "modeSelect.localizedDescription",
+    "modeSelect.rewardValues",
+    "modeSelect.medals",
+    "modeSelect.options"
+  ],
+  "notes": [
+    "Selecting Deflation with an existing save opened the same overwrite confirmation previously observed from Hard CHIMPS.",
+    "The shared back action, modal chrome, and zh-CN semantic title identify the confirmation independently of difficulty and mode artwork.",
+    "The two static captures have identical image bytes; the catalog does not claim image diversity from metadata-only recapture."
+  ]
+}

@@ -205,7 +205,15 @@ class ClickTargetTests(unittest.TestCase):
                 "inLevel.settings": (1600, 50),
                 "inLevel.startOrFastForward": (1840, 1020),
             },
+            "in-level-active-round.zh-CN.holdout.json": {
+                "inLevel.settings": (1600, 50),
+                "inLevel.startOrFastForward": (1840, 1020),
+            },
             "overwrite-save-confirmation.zh-CN.holdout.json": {
+                "overwriteSaveConfirmation.cancel": (780, 730),
+                "overwriteSaveConfirmation.confirm": (1135, 730),
+            },
+            "overwrite-save-confirmation-easy.zh-CN.holdout.json": {
                 "overwriteSaveConfirmation.cancel": (780, 730),
                 "overwriteSaveConfirmation.confirm": (1135, 730),
             },
@@ -216,6 +224,16 @@ class ClickTargetTests(unittest.TestCase):
                 "defeatSummary.home": (740, 810),
                 "defeatSummary.restart": (960, 810),
                 "defeatSummary.browseMaps": (1180, 810),
+            },
+            "defeat-summary-retry-last-round.zh-CN.holdout.json": {
+                "defeatSummary.home": (630, 810),
+                "defeatSummary.restart": (850, 810),
+                "defeatSummary.browseMaps": (1070, 810),
+                "defeatSummary.retryLastRound": (1290, 810),
+            },
+            "retry-last-round-confirmation.zh-CN.holdout.json": {
+                "retryLastRoundConfirmation.cancel": (780, 730),
+                "retryLastRoundConfirmation.confirm": (1135, 730),
             },
             "restart-game-confirmation.zh-CN.holdout.json": {
                 "restartGameConfirmation.cancel": (780, 730),
@@ -269,6 +287,20 @@ class ClickTargetTests(unittest.TestCase):
                     )
                     self.assertEqual(element_id, target.id)
                     self.assertEqual(expected_action_point, target.action_point)
+
+    def test_retry_last_round_is_rejected_when_defeat_state_does_not_offer_it(self) -> None:
+        evidence = read_evidence(SAMPLE_ROOT / "defeat-summary.zh-CN.holdout.json")
+        recognition, page_match = recognize_image(evidence, self.catalog)
+
+        with self.assertRaises(GameDriverError) as context:
+            _resolve_click_target(
+                recognition,
+                page_match,
+                "defeatSummary.retryLastRound",
+                evidence,
+            )
+
+        self.assertEqual("elementNotVisible", context.exception.code)
 
     def test_unlocked_ascent_is_actionable_and_locked_variant_is_not(self) -> None:
         unlocked_evidence = read_evidence(
