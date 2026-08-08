@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "restartGameConfirmation.zh-CN.20260808",
+  "sourceEvidenceId": "478261d2a3c84b7c9d7f1760fd8d6b47",
+  "sourceImageSha256": "986256eafbf4e55d3abad01ea5395bb349b61f6a73de081088def04e175a85a2",
+  "pageId": "restartGameConfirmation",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T10:14:00.000Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromAnchors": [
+    "restartGameConfirmation.localizedTitle",
+    "restartGameConfirmation.warningText",
+    "defeatSummary.roundReached",
+    "defeatSummary.leakReason"
+  ],
+  "notes": [
+    "The modal was reached from the real defeat summary restart action.",
+    "The dimmed defeat portrait distinguishes it from the visually similar overwrite-save confirmation.",
+    "Cancel returned to defeatSummary and confirm reset the real CHIMPS game."
+  ]
+}

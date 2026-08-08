@@ -38,7 +38,8 @@ Game Driver 不导入 BetterBTD Python 模块，也不引用 BetterBTD 或 Fisch
 - 中文关卡入口基准：`difficultySelect` 的 `Easy/Medium/Hard`，以及 `easyModeSelect` 的 `Standard/PrimaryOnly/Deflation`；这些 ID 与脚本持久化枚举名一致，不使用本地化显示文本。
 - 中文中级/困难模式基准：覆盖 `MilitaryOnly`、`Apopalypse`、`Reverse`、`MagicOnly`、`DoubleHpMoabs`、`HalfCash`、`AlternateBloonsRounds`、`Impoppable` 和 `CHIMPS`，并保留可见的 `Sandbox`。
 - 中文英雄选择基准：页面 Oracle 使用固定控件，`heroSelect.top`/`heroSelect.bottom` 合并覆盖 18 个 `HeroType` 及 30 个视口 placement，并独立区分 `choose` 与 `selected` 状态；真实验证包括底部视口识别、Corvus/Silas 元素点击、滚轮返回顶部、Quincy 选择和恢复主菜单。英雄网格不接受拖动滚屏。
-- 中文关卡内与暂停基准：`inLevel` 只使用跨难度公共 HUD，`stageSettings` 使用底部命令图标；真实验证简单/困难标准关卡、暂停继续和暂停返回主页。
+- 中文关卡内与暂停基准：`inLevel` 只使用跨难度公共 HUD，生命图标为 detector-only，不参与页面身份；`stageSettings` 使用底部命令图标。真实验证简单/困难标准、CHIMPS 活动画面、暂停继续和暂停返回主页。
+- 中文 CHIMPS 失败基准：`overwriteSaveConfirmation`、`chimpsModeInfo`、`defeatSummary`、`restartGameConfirmation` 和 `postGameMapReview` 覆盖存档覆盖确认、模式说明、一滴血失败、重新开始和赛后地图检视；失败页三个分支和两个确认框的全部安全分支均已真实执行。失败页“浏览地图”进入的是独立 `postGameMapReview`，不是 `mapSelect`。两个确认页当前分别绑定困难模式页和失败总结的背景上下文，其他难度或暂停设置中的同类弹窗仍应返回 `unknown`，不得视为已覆盖。
 - 中文设置基准：`settings`、`hotkeys` 和 `accessibility` 完整声明当前可见控件，配置、账号和外部链接保持不可操作；真实验证从主菜单进入、子页往返和恢复主菜单。
 - 中文额外设置基准：`extras.top`/`extras.bottom` 覆盖全部 7 个开关、14 个视口 placement 和 28 个 `enabled`/`disabled` 状态声明；开关不提供动作点，真实验证包括上下端点滚动和边界 `unchangedStable`。
 - `click` 控制命令：只点击当前已识别页面中具备独立可见性检测的目录按钮，保存操作前后证据和独立轨迹，并可独立断言最终页面与视口。
@@ -65,7 +66,7 @@ Python 依赖全部锁定在工具自己的虚拟环境。实现和使用说明�
 
 首版比较器将截图规范化到基准尺寸，在固定稳定区域比较多个独立模板。`pageAnchor` 缺省为 `true`；设为 `false` 的模板仍可判断元素可见性，但不能抬高或拉低页面分数，也不能满足最少页面锚点数。页面必须同时满足最少锚点数和总分阈值；未达到阈值返回 `unknown`，同类页面分数过近返回 `ambiguous`，两者都不能作为通过条件。遮挡并阻止底层交互的顶层画面声明为 `kind=modal`；命中的 modal 优先于普通 page，modal 候选之间仍按相同分差规则拒绝歧义结果。
 
-当前 catalog v14 使用 schema v2，共 18 个页面、302 个模板、273 个元素、21 个视口状态和 251 个元素 placement。新增 `victoryPlayerStats`、`victorySummary` 与 `freeplayPrompt` 三个中文模态页面；`page` 表示稳定逻辑页面，`viewState` 表示同页内可独立识别的轮播或滚动视口。元素可按视口声明 `placements`，每项包含该视口中的边界、动作点、检测锚点和可选 `states`；识别结果仅采用当前已识别视口对应的 placement。页面 `score` 只计算页面锚点，`rankingScore` 可合入视口分数以参与跨页面候选竞争。元素状态使用独立锚点返回 `matched`、`ambiguous` 或 `unknown`。当前 223 个元素具有独立可见性探测器，其中 169 个按钮同时具有动作点。
+当前 catalog v15 使用 schema v2，共 23 个页面、325 个模板、297 个元素、21 个视口状态和 251 个元素 placement。新增 `overwriteSaveConfirmation`、`chimpsModeInfo`、`defeatSummary`、`restartGameConfirmation` 和 `postGameMapReview` 五个中文页面；前四个是 modal，赛后地图检视是稳定 page。`page` 表示稳定逻辑页面，`viewState` 表示同页内可独立识别的轮播或滚动视口。元素可按视口声明 `placements`，每项包含该视口中的边界、动作点、检测锚点和可选 `states`；识别结果仅采用当前已识别视口对应的 placement。页面 `score` 只计算页面锚点，`rankingScore` 可合入视口分数以参与跨页面候选竞争。元素状态使用独立锚点返回 `matched`、`ambiguous` 或 `unknown`。237 个元素具有独立可见性探测器，201 个按钮声明动作点，其中 178 个同时具有探测器和动作点。
 
 schema v2 锚点的 `sourceBounds` 表示从来源证据确定性裁剪模板的位置，运行时仍在 `bounds` 指定的位置比较。schema v1 目录继续受支持：页面没有 `viewStates`，元素沿用顶层几何与锚点，且未声明 `sourceBounds` 时令其等于 `bounds`。目录 schema 升级不改变截图证据或识别输出各自已有的 schema 版本。
 
@@ -87,6 +88,6 @@ schema v2 锚点的 `sourceBounds` 表示从来源证据确定性裁剪模板的
 1. 扩展完整热键表及更多滚动中间视口，并为适合拖动的页面补充真实手势验证；`extras` 与 `heroSelect` 上下视口已完成真实滚轮、状态观察和现场恢复验证。
 2. 增加跨加载中间态的页面等待、按键、文本输入和元素出现/消失等待，并继续保存操作轨迹。
 3. 增加生命、金币、回合及其他元素的独立文本、数值和选中状态识别。
-4. 扩展英文界面、更多账号状态、活动回合、失败、其他奖励和通用弹窗的真实视觉基准，并与 BetterBTD Test API 组合，同时保持截图与识别 Oracle 独立；中文简单标准胜利与自由游戏分支已完成首个纵切片。
+4. 扩展英文界面、更多账号状态、活动回合、其他失败形态、奖励和通用弹窗的真实视觉基准，并与 BetterBTD Test API 组合，同时保持截图与识别 Oracle 独立；中文简单标准胜利/自由游戏和困难 CHIMPS 失败分支已完成纵切片。
 
-桌面 GDI 首版后端要求游戏可见且无遮挡。锁屏、断开的 RDP、独占全屏和部分 DirectFlip 路径可能无法提供有效画面；单帧证据会明确标记 `occlusionSensitive=true` 和 `stabilityCheckPerformed=false`。控制命令的稳定性记录在同目录 `operation.json` 中，测试编排不得把两者混为同一字段。当前操作在第一个满足条件的稳定画面停止；冷启动等包含加载中间态的流程仍需编排层重复观察，不能假设第一次稳定就是最终目标页。本轮真实胜利恢复同样先停在加载图标，随后重复捕获才确认 `mainMenu`，因此该限制仍未解除。地图选择的 34 张独立 source/holdout 截图全部匹配正确视口，最低 holdout 视口分数 `0.996790`；额外证据覆盖锁定/解锁 `Ascent` 和不带未读徽章的分类状态，高级分类状态检测排除徽章与本地化标签并通过互斥负样本。真实输入验证覆盖分类切换、轮播翻页、地图进入/返回、锁定地图拒绝及解锁 `Ascent` 进入难度选择，最终恢复 `mainMenu` 的独立识别分数为 `0.999301`，页面断言和 Oracle 资格均通过。真实简单标准胜利链的三个新页面 holdout 分数为 `0.998563`、`0.999793`、`1.0`；自由游戏与确认动作已执行，最终恢复主菜单分数为 `0.999576`，主页和浏览地图两个总结动作尚未分别实点。真实 `extras` 验证覆盖上下端点和边界无变化；真实英雄验证覆盖底部页面分数 `0.991168`、底部视口分数 `0.999160`、Corvus/Silas 元素点击、滚轮回到顶部视口分数 `0.999807`，以及恢复 Quincy 后返回主菜单。英雄网格拖动没有滚动，不能作为该页面的成功操作路径。
+桌面 GDI 首版后端要求游戏可见且无遮挡。锁屏、断开的 RDP、独占全屏和部分 DirectFlip 路径可能无法提供有效画面；单帧证据会明确标记 `occlusionSensitive=true` 和 `stabilityCheckPerformed=false`。控制命令的稳定性记录在同目录 `operation.json` 中，测试编排不得把两者混为同一字段。当前操作在第一个满足条件的稳定画面停止；冷启动等包含加载中间态的流程仍需编排层重复观察，不能假设第一次稳定就是最终目标页。真实胜利恢复曾先停在加载图标，随后重复捕获才确认 `mainMenu`，因此该限制仍未解除。地图选择的 34 张独立 source/holdout 截图全部匹配正确视口，最低 holdout 视口分数 `0.996790`；额外证据覆盖锁定/解锁 `Ascent` 和不带未读徽章的分类状态，高级分类状态检测排除徽章与本地化标签并通过互斥负样本。真实输入验证覆盖分类切换、轮播翻页、地图进入/返回、锁定地图拒绝及解锁 `Ascent` 进入难度选择。真实简单标准胜利链的三个页面 holdout 分数为 `0.998563`、`0.999793`、`1.0`；自由游戏与确认动作已执行，通关总结的主页和浏览地图两个动作仍未分别实点。真实困难 CHIMPS 失败链覆盖存档覆盖确认的取消/确认、模式说明确认、第 6 回合一滴血失败、失败总结的主页/重新开始/浏览地图、重开确认的取消/确认和赛后地图检视继续；五个新增页面 holdout 分数为 `1.0`、`1.0`、`0.9990694`、`0.99916`、`0.999403`。普通和 CHIMPS 活动画面共用 `inLevel` 页面身份，CHIMPS 分数为 `0.996553`；生命值仍未解析。最终恢复 `mainMenu` 的独立识别分数为 `0.9997265`，页面断言和 Oracle 资格均通过。真实 `extras` 验证覆盖上下端点和边界无变化；真实英雄验证覆盖底部页面分数 `0.991168`、底部视口分数 `0.999160`、Corvus/Silas 元素点击、滚轮回到顶部视口分数 `0.999807`，以及恢复 Quincy 后返回主菜单。英雄网格拖动没有滚动，不能作为该页面的成功操作路径。

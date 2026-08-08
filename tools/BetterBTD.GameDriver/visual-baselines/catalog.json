@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "catalogId": "btd6-ui-independent",
-  "catalogVersion": 14,
+  "catalogVersion": 15,
   "game": {
     "id": "BloonsTD6",
     "observedProductVersion": "6000.0.58f2 (92dee566b325)",
@@ -10233,6 +10233,7 @@
           "template": "templates/in-level/health.png",
           "templateSha256": "1d49cbd84818a0d618ffc70423225bf39b64f73e0131fdaa78dac254ad94a333",
           "minimumScore": 0.93,
+          "pageAnchor": false,
           "sourceEvidence": "samples/in-level.zh-CN.json",
           "sourceEvidenceId": "6b55112e34a1441ba073fd298c9735c1",
           "sourceImageSha256": "4e2b40d8ee1ff6598a84e7e8cbf7acbe3fb9380bfb2bf8abf17c04a9d8715076"
@@ -10386,6 +10387,754 @@
           },
           "anchorIds": [
             "inLevel.startButtonFrame"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "overwriteSaveConfirmation",
+      "kind": "modal",
+      "minimumScore": 0.94,
+      "minimumMatchedAnchors": 4,
+      "positiveHoldout": {
+        "evidence": "samples/overwrite-save-confirmation.zh-CN.holdout.json",
+        "evidenceId": "9225a2ff9913481896bf116ba27c8b84",
+        "imageSha256": "5949441d7728b0f2cd69f00befec33957edbdbc0177bdf0834e22d6435310bb2"
+      },
+      "anchors": [
+        {
+          "id": "overwriteSaveConfirmation.backContext",
+          "bounds": {
+            "x": 35,
+            "y": 15,
+            "width": 85,
+            "height": 85
+          },
+          "template": "templates/overwrite-save-confirmation/back-context.png",
+          "templateSha256": "524b6ac979f82272004cd4812c7ab78c3beba97fb338108726202c5774cc7fe9",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/overwrite-save-confirmation.zh-CN.json",
+          "sourceEvidenceId": "82fa3ed5be41424887d6f0c2e59b530f",
+          "sourceImageSha256": "ae0d6f4955987ec36f175454542e512859c583f48017f00b495f3845e762d5d7"
+        },
+        {
+          "id": "overwriteSaveConfirmation.modeHeaderLeft",
+          "bounds": {
+            "x": 640,
+            "y": 0,
+            "width": 180,
+            "height": 95
+          },
+          "template": "templates/overwrite-save-confirmation/mode-header-left.png",
+          "templateSha256": "54fd7d841be4c6f0b0435caa4ac79dccfd1cf4654838454425062c73bb4770ee",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/overwrite-save-confirmation.zh-CN.json",
+          "sourceEvidenceId": "82fa3ed5be41424887d6f0c2e59b530f",
+          "sourceImageSha256": "ae0d6f4955987ec36f175454542e512859c583f48017f00b495f3845e762d5d7"
+        },
+        {
+          "id": "overwriteSaveConfirmation.panelLeft",
+          "bounds": {
+            "x": 520,
+            "y": 440,
+            "width": 30,
+            "height": 300
+          },
+          "template": "templates/overwrite-save-confirmation/panel-left.png",
+          "templateSha256": "076c51aace2cce2d1f6bf910fec65f77da4ac697a4d379221704c9a6c61d2756",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/overwrite-save-confirmation.zh-CN.json",
+          "sourceEvidenceId": "82fa3ed5be41424887d6f0c2e59b530f",
+          "sourceImageSha256": "ae0d6f4955987ec36f175454542e512859c583f48017f00b495f3845e762d5d7"
+        },
+        {
+          "id": "overwriteSaveConfirmation.panelRight",
+          "bounds": {
+            "x": 1365,
+            "y": 440,
+            "width": 30,
+            "height": 300
+          },
+          "template": "templates/overwrite-save-confirmation/panel-right.png",
+          "templateSha256": "244091ca7ef77d75c022f216268a85f4ef573cfcf46210e658bad564e988609e",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/overwrite-save-confirmation.zh-CN.json",
+          "sourceEvidenceId": "82fa3ed5be41424887d6f0c2e59b530f",
+          "sourceImageSha256": "ae0d6f4955987ec36f175454542e512859c583f48017f00b495f3845e762d5d7"
+        },
+        {
+          "id": "overwriteSaveConfirmation.cancelButton",
+          "bounds": {
+            "x": 650,
+            "y": 685,
+            "width": 265,
+            "height": 90
+          },
+          "template": "templates/overwrite-save-confirmation/cancel-button.png",
+          "templateSha256": "f87352889dcaacda72f93f8d99a52cc5a793897f8071fc61867d48172fa02f8b",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/overwrite-save-confirmation.zh-CN.json",
+          "sourceEvidenceId": "82fa3ed5be41424887d6f0c2e59b530f",
+          "sourceImageSha256": "ae0d6f4955987ec36f175454542e512859c583f48017f00b495f3845e762d5d7"
+        },
+        {
+          "id": "overwriteSaveConfirmation.confirmButton",
+          "bounds": {
+            "x": 1005,
+            "y": 685,
+            "width": 260,
+            "height": 90
+          },
+          "template": "templates/overwrite-save-confirmation/confirm-button.png",
+          "templateSha256": "15987f2f98c19534a457e9c61a150e43ab3baffdc0278e3f301e7a80e3221429",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/overwrite-save-confirmation.zh-CN.json",
+          "sourceEvidenceId": "82fa3ed5be41424887d6f0c2e59b530f",
+          "sourceImageSha256": "ae0d6f4955987ec36f175454542e512859c583f48017f00b495f3845e762d5d7"
+        }
+      ],
+      "elements": [
+        {
+          "id": "overwriteSaveConfirmation.dialog",
+          "role": "status",
+          "bounds": {
+            "x": 475,
+            "y": 285,
+            "width": 945,
+            "height": 490
+          },
+          "anchorIds": [
+            "overwriteSaveConfirmation.panelLeft",
+            "overwriteSaveConfirmation.panelRight"
+          ]
+        },
+        {
+          "id": "overwriteSaveConfirmation.warning",
+          "role": "region",
+          "bounds": {
+            "x": 550,
+            "y": 440,
+            "width": 815,
+            "height": 245
+          }
+        },
+        {
+          "id": "overwriteSaveConfirmation.cancel",
+          "role": "button",
+          "bounds": {
+            "x": 650,
+            "y": 685,
+            "width": 265,
+            "height": 90
+          },
+          "actionPoint": {
+            "x": 780,
+            "y": 730
+          },
+          "anchorIds": [
+            "overwriteSaveConfirmation.cancelButton"
+          ]
+        },
+        {
+          "id": "overwriteSaveConfirmation.confirm",
+          "role": "button",
+          "bounds": {
+            "x": 1005,
+            "y": 685,
+            "width": 260,
+            "height": 90
+          },
+          "actionPoint": {
+            "x": 1135,
+            "y": 730
+          },
+          "anchorIds": [
+            "overwriteSaveConfirmation.confirmButton"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chimpsModeInfo",
+      "kind": "modal",
+      "minimumScore": 0.94,
+      "minimumMatchedAnchors": 3,
+      "positiveHoldout": {
+        "evidence": "samples/chimps-mode-info.zh-CN.holdout.json",
+        "evidenceId": "bd20c064b7d3483d980ca6cc728d1b75",
+        "imageSha256": "57a2738c73755b0a82271bb64d2b90977001315035c3616d7a12ba5b82051198"
+      },
+      "anchors": [
+        {
+          "id": "chimpsModeInfo.badge",
+          "bounds": {
+            "x": 850,
+            "y": 140,
+            "width": 220,
+            "height": 205
+          },
+          "template": "templates/chimps-mode-info/badge.png",
+          "templateSha256": "f262afb441f4e353d94e41549b40bd6e2b43ab6fbd8de88546530a3b660aa040",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/chimps-mode-info.zh-CN.json",
+          "sourceEvidenceId": "23a6367e6ad046a2807f50e2f11ae1e3",
+          "sourceImageSha256": "f687541106c62ff7330699629541572ba17aadbb34996663f7e31f268a77d177"
+        },
+        {
+          "id": "chimpsModeInfo.bannerLeft",
+          "bounds": {
+            "x": 640,
+            "y": 315,
+            "width": 160,
+            "height": 125
+          },
+          "template": "templates/chimps-mode-info/banner-left.png",
+          "templateSha256": "f9a3eb0b5431d916b6b6a8bba15eb027bcaabbd160e80718d2a8f690f8ed06cc",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/chimps-mode-info.zh-CN.json",
+          "sourceEvidenceId": "23a6367e6ad046a2807f50e2f11ae1e3",
+          "sourceImageSha256": "f687541106c62ff7330699629541572ba17aadbb34996663f7e31f268a77d177"
+        },
+        {
+          "id": "chimpsModeInfo.panelLeft",
+          "bounds": {
+            "x": 480,
+            "y": 360,
+            "width": 40,
+            "height": 450
+          },
+          "template": "templates/chimps-mode-info/panel-left.png",
+          "templateSha256": "b83cec86846530d0464aa225fbc236e87f44457f313bc3c672348de623f5e7bf",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/chimps-mode-info.zh-CN.json",
+          "sourceEvidenceId": "23a6367e6ad046a2807f50e2f11ae1e3",
+          "sourceImageSha256": "f687541106c62ff7330699629541572ba17aadbb34996663f7e31f268a77d177"
+        },
+        {
+          "id": "chimpsModeInfo.okButton",
+          "bounds": {
+            "x": 835,
+            "y": 710,
+            "width": 245,
+            "height": 90
+          },
+          "template": "templates/chimps-mode-info/ok-button.png",
+          "templateSha256": "7b105819ef138e00d79d67b43087389bba72ed241ccba6a34f7c776ad8fb1490",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/chimps-mode-info.zh-CN.json",
+          "sourceEvidenceId": "23a6367e6ad046a2807f50e2f11ae1e3",
+          "sourceImageSha256": "f687541106c62ff7330699629541572ba17aadbb34996663f7e31f268a77d177"
+        }
+      ],
+      "elements": [
+        {
+          "id": "chimpsModeInfo.dialog",
+          "role": "status",
+          "bounds": {
+            "x": 480,
+            "y": 140,
+            "width": 960,
+            "height": 685
+          },
+          "anchorIds": [
+            "chimpsModeInfo.badge",
+            "chimpsModeInfo.bannerLeft",
+            "chimpsModeInfo.panelLeft"
+          ]
+        },
+        {
+          "id": "chimpsModeInfo.description",
+          "role": "region",
+          "bounds": {
+            "x": 510,
+            "y": 440,
+            "width": 850,
+            "height": 250
+          }
+        },
+        {
+          "id": "chimpsModeInfo.ok",
+          "role": "button",
+          "bounds": {
+            "x": 835,
+            "y": 710,
+            "width": 245,
+            "height": 90
+          },
+          "actionPoint": {
+            "x": 960,
+            "y": 755
+          },
+          "anchorIds": [
+            "chimpsModeInfo.okButton"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "defeatSummary",
+      "kind": "modal",
+      "minimumScore": 0.94,
+      "minimumMatchedAnchors": 4,
+      "positiveHoldout": {
+        "evidence": "samples/defeat-summary.zh-CN.holdout.json",
+        "evidenceId": "2da11f71b11943f7a472b9c089a45508",
+        "imageSha256": "f6cca2c8b50816dd3e07e968d6a5c0eea8cc3c64ddf390a207cb662bbfd27d8e"
+      },
+      "anchors": [
+        {
+          "id": "defeatSummary.portrait",
+          "bounds": {
+            "x": 835,
+            "y": 85,
+            "width": 250,
+            "height": 230
+          },
+          "template": "templates/defeat-summary/portrait.png",
+          "templateSha256": "59693f3ad51e4d4f74a3b09504327004cc3a73102ee5c3146fefdaff0805c35c",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/defeat-summary.zh-CN.json",
+          "sourceEvidenceId": "53f30e83a5de4f1b8277657be9ab372d",
+          "sourceImageSha256": "7e0fa80fdbf2b498af0c0faddc43197c0eb7b20ab1edf83364185ad5e7f7868b"
+        },
+        {
+          "id": "defeatSummary.panelLeft",
+          "bounds": {
+            "x": 550,
+            "y": 320,
+            "width": 35,
+            "height": 485
+          },
+          "template": "templates/defeat-summary/panel-left.png",
+          "templateSha256": "ac541c10216fef908e285538bef38e619531f69dace8360ffd171bb8990a68cd",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/defeat-summary.zh-CN.json",
+          "sourceEvidenceId": "53f30e83a5de4f1b8277657be9ab372d",
+          "sourceImageSha256": "7e0fa80fdbf2b498af0c0faddc43197c0eb7b20ab1edf83364185ad5e7f7868b"
+        },
+        {
+          "id": "defeatSummary.homeButton",
+          "bounds": {
+            "x": 675,
+            "y": 745,
+            "width": 130,
+            "height": 125
+          },
+          "template": "templates/defeat-summary/home-button.png",
+          "templateSha256": "ac5eece5e49bfe879932a697919061e335467ab04e36c184623d4e1f7a3a5cef",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/defeat-summary.zh-CN.json",
+          "sourceEvidenceId": "53f30e83a5de4f1b8277657be9ab372d",
+          "sourceImageSha256": "7e0fa80fdbf2b498af0c0faddc43197c0eb7b20ab1edf83364185ad5e7f7868b"
+        },
+        {
+          "id": "defeatSummary.restartButton",
+          "bounds": {
+            "x": 895,
+            "y": 745,
+            "width": 130,
+            "height": 125
+          },
+          "template": "templates/defeat-summary/restart-button.png",
+          "templateSha256": "99d0811fddf379f896a2140423fbec8a98a8d9c7757843bef4765266ae2a157f",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/defeat-summary.zh-CN.json",
+          "sourceEvidenceId": "53f30e83a5de4f1b8277657be9ab372d",
+          "sourceImageSha256": "7e0fa80fdbf2b498af0c0faddc43197c0eb7b20ab1edf83364185ad5e7f7868b"
+        },
+        {
+          "id": "defeatSummary.browseMapsButton",
+          "bounds": {
+            "x": 1115,
+            "y": 745,
+            "width": 130,
+            "height": 125
+          },
+          "template": "templates/defeat-summary/browse-maps-button.png",
+          "templateSha256": "3d1c1b3f03f2f97a0976d9552fbeb1aa9be8cbd749f206f5f2470f181c5b8e3f",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/defeat-summary.zh-CN.json",
+          "sourceEvidenceId": "53f30e83a5de4f1b8277657be9ab372d",
+          "sourceImageSha256": "7e0fa80fdbf2b498af0c0faddc43197c0eb7b20ab1edf83364185ad5e7f7868b"
+        }
+      ],
+      "elements": [
+        {
+          "id": "defeatSummary.dialog",
+          "role": "status",
+          "bounds": {
+            "x": 550,
+            "y": 85,
+            "width": 820,
+            "height": 785
+          },
+          "anchorIds": [
+            "defeatSummary.portrait",
+            "defeatSummary.panelLeft"
+          ]
+        },
+        {
+          "id": "defeatSummary.outcome",
+          "role": "status",
+          "bounds": {
+            "x": 835,
+            "y": 85,
+            "width": 250,
+            "height": 325
+          },
+          "anchorIds": [
+            "defeatSummary.portrait"
+          ]
+        },
+        {
+          "id": "defeatSummary.roundReached",
+          "role": "value",
+          "bounds": {
+            "x": 580,
+            "y": 425,
+            "width": 760,
+            "height": 115
+          }
+        },
+        {
+          "id": "defeatSummary.leakReason",
+          "role": "region",
+          "bounds": {
+            "x": 580,
+            "y": 575,
+            "width": 760,
+            "height": 155
+          }
+        },
+        {
+          "id": "defeatSummary.home",
+          "role": "button",
+          "bounds": {
+            "x": 675,
+            "y": 745,
+            "width": 130,
+            "height": 125
+          },
+          "actionPoint": {
+            "x": 740,
+            "y": 810
+          },
+          "anchorIds": [
+            "defeatSummary.homeButton"
+          ]
+        },
+        {
+          "id": "defeatSummary.restart",
+          "role": "button",
+          "bounds": {
+            "x": 895,
+            "y": 745,
+            "width": 130,
+            "height": 125
+          },
+          "actionPoint": {
+            "x": 960,
+            "y": 810
+          },
+          "anchorIds": [
+            "defeatSummary.restartButton"
+          ]
+        },
+        {
+          "id": "defeatSummary.browseMaps",
+          "role": "button",
+          "bounds": {
+            "x": 1115,
+            "y": 745,
+            "width": 130,
+            "height": 125
+          },
+          "actionPoint": {
+            "x": 1180,
+            "y": 810
+          },
+          "anchorIds": [
+            "defeatSummary.browseMapsButton"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "restartGameConfirmation",
+      "kind": "modal",
+      "minimumScore": 0.94,
+      "minimumMatchedAnchors": 3,
+      "positiveHoldout": {
+        "evidence": "samples/restart-game-confirmation.zh-CN.holdout.json",
+        "evidenceId": "50b10f920db0464f8ca3f5a11a666a4c",
+        "imageSha256": "08987c3d247517d4124e3bdc651769aa33b9638e8ec9338b7684c7633e02bb58"
+      },
+      "anchors": [
+        {
+          "id": "restartGameConfirmation.portraitContext",
+          "bounds": {
+            "x": 835,
+            "y": 85,
+            "width": 250,
+            "height": 230
+          },
+          "template": "templates/restart-game-confirmation/portrait-context.png",
+          "templateSha256": "94d73c399f6f1f075655bc532759b602af4f90ca775baf8a4b7e35edb13a4405",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/restart-game-confirmation.zh-CN.json",
+          "sourceEvidenceId": "478261d2a3c84b7c9d7f1760fd8d6b47",
+          "sourceImageSha256": "986256eafbf4e55d3abad01ea5395bb349b61f6a73de081088def04e175a85a2"
+        },
+        {
+          "id": "restartGameConfirmation.panelLeft",
+          "bounds": {
+            "x": 520,
+            "y": 440,
+            "width": 30,
+            "height": 300
+          },
+          "template": "templates/restart-game-confirmation/panel-left.png",
+          "templateSha256": "31acde00d6c605a37b10a00c5aea786cb3e4dfffaf769d9f7c064fc1c6773b2d",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/restart-game-confirmation.zh-CN.json",
+          "sourceEvidenceId": "478261d2a3c84b7c9d7f1760fd8d6b47",
+          "sourceImageSha256": "986256eafbf4e55d3abad01ea5395bb349b61f6a73de081088def04e175a85a2"
+        },
+        {
+          "id": "restartGameConfirmation.panelRight",
+          "bounds": {
+            "x": 1365,
+            "y": 440,
+            "width": 30,
+            "height": 300
+          },
+          "template": "templates/restart-game-confirmation/panel-right.png",
+          "templateSha256": "c49c35209e3e8483aecd4bfabcd7fef911c14e342ec9d2028e9eaef0d1c11f57",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/restart-game-confirmation.zh-CN.json",
+          "sourceEvidenceId": "478261d2a3c84b7c9d7f1760fd8d6b47",
+          "sourceImageSha256": "986256eafbf4e55d3abad01ea5395bb349b61f6a73de081088def04e175a85a2"
+        },
+        {
+          "id": "restartGameConfirmation.cancelButton",
+          "bounds": {
+            "x": 650,
+            "y": 685,
+            "width": 265,
+            "height": 90
+          },
+          "template": "templates/restart-game-confirmation/cancel-button.png",
+          "templateSha256": "d889782f446a933a366ce62dd7550059b8b1907524ef123ab8900d8bc5402f93",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/restart-game-confirmation.zh-CN.json",
+          "sourceEvidenceId": "478261d2a3c84b7c9d7f1760fd8d6b47",
+          "sourceImageSha256": "986256eafbf4e55d3abad01ea5395bb349b61f6a73de081088def04e175a85a2"
+        },
+        {
+          "id": "restartGameConfirmation.confirmButton",
+          "bounds": {
+            "x": 1005,
+            "y": 685,
+            "width": 260,
+            "height": 90
+          },
+          "template": "templates/restart-game-confirmation/confirm-button.png",
+          "templateSha256": "151f245b4a635166c3f41de4870a8250143af98c856af7bc0a35b278eed8fa07",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/restart-game-confirmation.zh-CN.json",
+          "sourceEvidenceId": "478261d2a3c84b7c9d7f1760fd8d6b47",
+          "sourceImageSha256": "986256eafbf4e55d3abad01ea5395bb349b61f6a73de081088def04e175a85a2"
+        }
+      ],
+      "elements": [
+        {
+          "id": "restartGameConfirmation.dialog",
+          "role": "status",
+          "bounds": {
+            "x": 475,
+            "y": 285,
+            "width": 945,
+            "height": 490
+          },
+          "anchorIds": [
+            "restartGameConfirmation.panelLeft",
+            "restartGameConfirmation.panelRight"
+          ]
+        },
+        {
+          "id": "restartGameConfirmation.warning",
+          "role": "region",
+          "bounds": {
+            "x": 550,
+            "y": 440,
+            "width": 815,
+            "height": 245
+          }
+        },
+        {
+          "id": "restartGameConfirmation.cancel",
+          "role": "button",
+          "bounds": {
+            "x": 650,
+            "y": 685,
+            "width": 265,
+            "height": 90
+          },
+          "actionPoint": {
+            "x": 780,
+            "y": 730
+          },
+          "anchorIds": [
+            "restartGameConfirmation.cancelButton"
+          ]
+        },
+        {
+          "id": "restartGameConfirmation.confirm",
+          "role": "button",
+          "bounds": {
+            "x": 1005,
+            "y": 685,
+            "width": 260,
+            "height": 90
+          },
+          "actionPoint": {
+            "x": 1135,
+            "y": 730
+          },
+          "anchorIds": [
+            "restartGameConfirmation.confirmButton"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "postGameMapReview",
+      "kind": "page",
+      "minimumScore": 0.94,
+      "minimumMatchedAnchors": 3,
+      "positiveHoldout": {
+        "evidence": "samples/post-game-map-review.zh-CN.holdout.json",
+        "evidenceId": "43a25171704a453ba3136c7f05e23dcf",
+        "imageSha256": "2a5ef13e31faa9ca80b405688720a050fa72d8dc7244a910040c912611c799e4"
+      },
+      "anchors": [
+        {
+          "id": "postGameMapReview.panelLeft",
+          "bounds": {
+            "x": 1635,
+            "y": 895,
+            "width": 35,
+            "height": 185
+          },
+          "template": "templates/post-game-map-review/panel-left.png",
+          "templateSha256": "0955b3c6a9422448af505b32835dcaa744b594b2f9312b9b17027dda045a395e",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/post-game-map-review.zh-CN.json",
+          "sourceEvidenceId": "e9153bb4afcf41d78c266600f906652f",
+          "sourceImageSha256": "3a513af1ca4fde87e987827249a27c8251dfe70bee1e372912632735a52f8366"
+        },
+        {
+          "id": "postGameMapReview.panelRight",
+          "bounds": {
+            "x": 1880,
+            "y": 895,
+            "width": 40,
+            "height": 185
+          },
+          "template": "templates/post-game-map-review/panel-right.png",
+          "templateSha256": "6663b9c1d64cbeb56a0c82115dd6a7e9848e2fd4f277651911f9d1a4996f14cb",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/post-game-map-review.zh-CN.json",
+          "sourceEvidenceId": "e9153bb4afcf41d78c266600f906652f",
+          "sourceImageSha256": "3a513af1ca4fde87e987827249a27c8251dfe70bee1e372912632735a52f8366"
+        },
+        {
+          "id": "postGameMapReview.continueButton",
+          "bounds": {
+            "x": 1705,
+            "y": 915,
+            "width": 120,
+            "height": 110
+          },
+          "template": "templates/post-game-map-review/continue-button.png",
+          "templateSha256": "de71adf02cb9d079b368d8a68ac279f446192b4a266ef9a6863b6502af9da41d",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/post-game-map-review.zh-CN.json",
+          "sourceEvidenceId": "e9153bb4afcf41d78c266600f906652f",
+          "sourceImageSha256": "3a513af1ca4fde87e987827249a27c8251dfe70bee1e372912632735a52f8366"
+        }
+      ],
+      "elements": [
+        {
+          "id": "postGameMapReview.map",
+          "role": "status",
+          "bounds": {
+            "x": 0,
+            "y": 0,
+            "width": 1640,
+            "height": 1080
+          }
+        },
+        {
+          "id": "postGameMapReview.health",
+          "role": "value",
+          "bounds": {
+            "x": 35,
+            "y": 0,
+            "width": 210,
+            "height": 105
+          }
+        },
+        {
+          "id": "postGameMapReview.cash",
+          "role": "value",
+          "bounds": {
+            "x": 280,
+            "y": 0,
+            "width": 300,
+            "height": 105
+          }
+        },
+        {
+          "id": "postGameMapReview.round",
+          "role": "value",
+          "bounds": {
+            "x": 1435,
+            "y": 0,
+            "width": 125,
+            "height": 105
+          }
+        },
+        {
+          "id": "postGameMapReview.towerInventory",
+          "role": "region",
+          "bounds": {
+            "x": 1650,
+            "y": 85,
+            "width": 270,
+            "height": 805
+          }
+        },
+        {
+          "id": "postGameMapReview.continue",
+          "role": "button",
+          "bounds": {
+            "x": 1640,
+            "y": 890,
+            "width": 280,
+            "height": 190
+          },
+          "actionPoint": {
+            "x": 1765,
+            "y": 980
+          },
+          "anchorIds": [
+            "postGameMapReview.continueButton"
           ]
         }
       ]

@@ -6,6 +6,7 @@ import unittest
 
 from betterbtd_game_driver.errors import GameDriverError
 from betterbtd_game_driver.visual_catalog import (
+    VisualElement,
     load_visual_catalog,
     visual_catalog_summary,
 )
@@ -17,7 +18,7 @@ class VisualCatalogTests(unittest.TestCase):
 
         self.assertEqual("btd6-ui-independent", catalog.id)
         self.assertEqual(2, catalog.schema_version)
-        self.assertEqual(14, catalog.version)
+        self.assertEqual(15, catalog.version)
         self.assertEqual((1920, 1080), (catalog.reference_width, catalog.reference_height))
         self.assertEqual(
             [
@@ -31,6 +32,11 @@ class VisualCatalogTests(unittest.TestCase):
                 "hardModeSelect",
                 "heroSelect",
                 "inLevel",
+                "overwriteSaveConfirmation",
+                "chimpsModeInfo",
+                "defeatSummary",
+                "restartGameConfirmation",
+                "postGameMapReview",
                 "victoryPlayerStats",
                 "victorySummary",
                 "freeplayPrompt",
@@ -42,38 +48,75 @@ class VisualCatalogTests(unittest.TestCase):
             ],
             [page.id for page in catalog.pages],
         )
-        self.assertEqual(4, len(catalog.pages[0].anchors))
-        self.assertEqual(5, len(catalog.pages[1].anchors))
-        self.assertEqual(5, len(catalog.pages[2].anchors))
-        self.assertEqual(126, len(catalog.pages[3].anchors))
-        self.assertEqual(4, len(catalog.pages[4].anchors))
-        self.assertEqual(4, len(catalog.pages[5].anchors))
-        self.assertEqual(6, len(catalog.pages[6].anchors))
-        self.assertEqual(9, len(catalog.pages[7].anchors))
-        self.assertEqual(37, len(catalog.pages[8].anchors))
-        self.assertEqual(4, len(catalog.pages[9].anchors))
-        self.assertEqual(4, len(catalog.pages[10].anchors))
-        self.assertEqual(5, len(catalog.pages[11].anchors))
-        self.assertEqual(4, len(catalog.pages[12].anchors))
-        self.assertEqual(4, len(catalog.pages[13].anchors))
-        self.assertEqual(18, len(catalog.pages[14].anchors))
-        self.assertEqual(7, len(catalog.pages[15].anchors))
-        self.assertEqual(11, len(catalog.pages[16].anchors))
-        self.assertEqual(45, len(catalog.pages[17].anchors))
         self.assertEqual(
-            ["modal", "modal", "modal"],
-            [page.kind for page in catalog.pages[10:13]],
+            [
+                4,
+                5,
+                5,
+                126,
+                4,
+                4,
+                6,
+                9,
+                37,
+                4,
+                6,
+                4,
+                5,
+                5,
+                3,
+                4,
+                5,
+                4,
+                4,
+                18,
+                7,
+                11,
+                45,
+            ],
+            [len(page.anchors) for page in catalog.pages],
         )
         self.assertEqual(
-            [3, 5, 3],
+            {
+                "overwriteSaveConfirmation": "modal",
+                "chimpsModeInfo": "modal",
+                "defeatSummary": "modal",
+                "restartGameConfirmation": "modal",
+                "postGameMapReview": "page",
+                "victoryPlayerStats": "modal",
+                "victorySummary": "modal",
+                "freeplayPrompt": "modal",
+            },
+            {
+                page.id: page.kind
+                for page in catalog.pages
+                if page.id
+                in {
+                    "overwriteSaveConfirmation",
+                    "chimpsModeInfo",
+                    "defeatSummary",
+                    "restartGameConfirmation",
+                    "postGameMapReview",
+                    "victoryPlayerStats",
+                    "victorySummary",
+                    "freeplayPrompt",
+                }
+            },
+        )
+        self.assertEqual(
+            [4, 3, 5, 3, 3, 3, 5, 3],
             [
                 sum(anchor.page_anchor for anchor in page.anchors)
-                for page in catalog.pages[10:13]
+                for page in catalog.pages[10:18]
             ],
         )
         self.assertEqual(
             3,
             sum(anchor.page_anchor for anchor in catalog.pages[8].anchors),
+        )
+        self.assertEqual(
+            3,
+            sum(anchor.page_anchor for anchor in catalog.pages[9].anchors),
         )
         map_select = catalog.pages[3]
         self.assertEqual(4, sum(anchor.page_anchor for anchor in map_select.anchors))
@@ -101,7 +144,7 @@ class VisualCatalogTests(unittest.TestCase):
             [5, 6, 5],
             [
                 sum(anchor.page_anchor for anchor in page.anchors)
-                for page in catalog.pages[14:17]
+                for page in catalog.pages[19:22]
             ],
         )
         self.assertTrue(all(page.positive_holdout is not None for page in catalog.pages))
@@ -160,13 +203,34 @@ class VisualCatalogTests(unittest.TestCase):
         self.assertEqual(
             {
                 "valid": True,
-                "pageCount": 18,
-                "templateCount": 302,
-                "elementCount": 273,
+                "pageCount": 23,
+                "templateCount": 325,
+                "elementCount": 297,
                 "viewStateCount": 21,
                 "placementCount": 251,
             },
             summary["validation"],
+        )
+        elements = [element for page in catalog.pages for element in page.elements]
+
+        def has_detector(element: VisualElement) -> bool:
+            return bool(element.anchor_ids) or any(
+                placement.anchor_ids for placement in element.placements
+            )
+
+        def has_action_point(element: VisualElement) -> bool:
+            return element.action_point is not None or any(
+                placement.action_point is not None for placement in element.placements
+            )
+
+        self.assertEqual(237, sum(has_detector(element) for element in elements))
+        self.assertEqual(201, sum(has_action_point(element) for element in elements))
+        self.assertEqual(
+            178,
+            sum(
+                has_detector(element) and has_action_point(element)
+                for element in elements
+            ),
         )
 
     def test_modal_kind_is_supported_and_other_kinds_are_rejected(self) -> None:

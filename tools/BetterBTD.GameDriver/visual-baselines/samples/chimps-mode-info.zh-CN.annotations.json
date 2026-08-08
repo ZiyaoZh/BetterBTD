@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "chimpsModeInfo.zh-CN.20260808",
+  "sourceEvidenceId": "23a6367e6ad046a2807f50e2f11ae1e3",
+  "sourceImageSha256": "f687541106c62ff7330699629541572ba17aadbb34996663f7e31f268a77d177",
+  "pageId": "chimpsModeInfo",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T10:11:00.000Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromAnchors": [
+    "chimpsModeInfo.localizedTitle",
+    "chimpsModeInfo.descriptionText",
+    "inLevel.healthValue",
+    "inLevel.cashValue",
+    "inLevel.roundValue",
+    "inLevel.map",
+    "inLevel.towerInventory"
+  ],
+  "notes": [
+    "The blocking modal appeared after confirming a real CHIMPS game entry.",
+    "The badge, banner chrome and dialog edge identify the modal independently of localized prose.",
+    "The OK action was exercised and the following round-six game state was observed independently."
+  ]
+}

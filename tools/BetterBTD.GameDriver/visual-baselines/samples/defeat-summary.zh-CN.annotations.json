@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "defeatSummary.zh-CN.20260808",
+  "sourceEvidenceId": "53f30e83a5de4f1b8277657be9ab372d",
+  "sourceImageSha256": "7e0fa80fdbf2b498af0c0faddc43197c0eb7b20ab1edf83364185ad5e7f7868b",
+  "pageId": "defeatSummary",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T10:13:00.000Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromAnchors": [
+    "defeatSummary.roundReached",
+    "defeatSummary.leakReason",
+    "inLevel.healthValue",
+    "inLevel.cashValue",
+    "inLevel.roundValue",
+    "inLevel.map",
+    "account.currency"
+  ],
+  "notes": [
+    "The defeat was triggered by leaking round-six bloons in a real one-life CHIMPS game without placing towers.",
+    "The result portrait, dialog chrome and three nonlocalized action icons identify the modal.",
+    "Home, restart and browse-maps branches were all exercised; restart also covered cancel and confirm."
+  ]
+}

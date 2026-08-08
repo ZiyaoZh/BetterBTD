@@ -205,6 +205,25 @@ class ClickTargetTests(unittest.TestCase):
                 "inLevel.settings": (1600, 50),
                 "inLevel.startOrFastForward": (1840, 1020),
             },
+            "overwrite-save-confirmation.zh-CN.holdout.json": {
+                "overwriteSaveConfirmation.cancel": (780, 730),
+                "overwriteSaveConfirmation.confirm": (1135, 730),
+            },
+            "chimps-mode-info.zh-CN.holdout.json": {
+                "chimpsModeInfo.ok": (960, 755),
+            },
+            "defeat-summary.zh-CN.holdout.json": {
+                "defeatSummary.home": (740, 810),
+                "defeatSummary.restart": (960, 810),
+                "defeatSummary.browseMaps": (1180, 810),
+            },
+            "restart-game-confirmation.zh-CN.holdout.json": {
+                "restartGameConfirmation.cancel": (780, 730),
+                "restartGameConfirmation.confirm": (1135, 730),
+            },
+            "post-game-map-review.zh-CN.holdout.json": {
+                "postGameMapReview.continue": (1765, 980),
+            },
             "victory-player-stats.zh-CN.holdout.json": {
                 "victoryPlayerStats.next": (960, 905),
             },

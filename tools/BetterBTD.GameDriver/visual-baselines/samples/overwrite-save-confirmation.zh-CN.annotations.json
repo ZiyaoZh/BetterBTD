@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "overwriteSaveConfirmation.zh-CN.20260808",
+  "sourceEvidenceId": "82fa3ed5be41424887d6f0c2e59b530f",
+  "sourceImageSha256": "ae0d6f4955987ec36f175454542e512859c583f48017f00b495f3845e762d5d7",
+  "pageId": "overwriteSaveConfirmation",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T10:10:00.000Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromAnchors": [
+    "overwriteSaveConfirmation.warningText",
+    "hardModeSelect.rewardValues",
+    "hardModeSelect.accountState"
+  ],
+  "notes": [
+    "The modal was reached by selecting CHIMPS while a saved game already existed.",
+    "Both cancel and confirm branches were exercised against the real game.",
+    "Background context anchors distinguish this generic confirmation chrome from the restart confirmation modal."
+  ]
+}

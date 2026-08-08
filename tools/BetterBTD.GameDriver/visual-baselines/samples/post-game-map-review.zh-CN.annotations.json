@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "postGameMapReview.zh-CN.20260808",
+  "sourceEvidenceId": "e9153bb4afcf41d78c266600f906652f",
+  "sourceImageSha256": "3a513af1ca4fde87e987827249a27c8251dfe70bee1e372912632735a52f8366",
+  "pageId": "postGameMapReview",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T10:16:00.000Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromAnchors": [
+    "postGameMapReview.map",
+    "postGameMapReview.health",
+    "postGameMapReview.cash",
+    "postGameMapReview.round",
+    "postGameMapReview.towerInventory",
+    "postGameMapReview.localizedContinueLabel"
+  ],
+  "notes": [
+    "The page was reached from the real defeat summary browse-maps action.",
+    "It is a post-game map inspection state, not the normal map selection page.",
+    "The bottom review panel and magnifier action identify the page; continue returned to defeatSummary."
+  ]
+}

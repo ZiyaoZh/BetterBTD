@@ -370,6 +370,183 @@ class VisualRecognitionTests(unittest.TestCase):
         self.assertTrue(settings["visible"])
         self.assertEqual("notEvaluated", cash["visibility"])
 
+    def test_in_level_page_identity_ignores_health_badge_variants(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            with Image.open(SAMPLE_ROOT / "in-level.zh-CN.holdout.png") as source:
+                modified = source.convert("RGB")
+                modified.paste((30, 60, 90), (35, 0, 245, 105))
+            metadata_path = write_test_evidence(
+                Path(temporary_directory),
+                "in-level-health-badge-changed",
+                modified,
+            )
+            evidence = read_evidence(metadata_path)
+
+            result, match = recognize_image(evidence, self.catalog)
+
+            self.assertIsNotNone(match)
+            recognition = result["recognition"]
+            self.assertEqual("matched", recognition["status"])
+            self.assertEqual("inLevel", recognition["page"]["id"])
+            health = next(
+                element
+                for element in recognition["elements"]
+                if element["id"] == "inLevel.health"
+            )
+            self.assertEqual("notVisible", health["visibility"])
+
+    def test_real_holdouts_match_new_defeat_workflow_pages_and_actions(self) -> None:
+        cases = {
+            "overwrite-save-confirmation.zh-CN.holdout.json": (
+                "overwriteSaveConfirmation",
+                "modal",
+                {
+                    "overwriteSaveConfirmation.cancel": {"x": 780, "y": 730},
+                    "overwriteSaveConfirmation.confirm": {"x": 1135, "y": 730},
+                },
+            ),
+            "chimps-mode-info.zh-CN.holdout.json": (
+                "chimpsModeInfo",
+                "modal",
+                {"chimpsModeInfo.ok": {"x": 960, "y": 755}},
+            ),
+            "defeat-summary.zh-CN.holdout.json": (
+                "defeatSummary",
+                "modal",
+                {
+                    "defeatSummary.home": {"x": 740, "y": 810},
+                    "defeatSummary.restart": {"x": 960, "y": 810},
+                    "defeatSummary.browseMaps": {"x": 1180, "y": 810},
+                },
+            ),
+            "restart-game-confirmation.zh-CN.holdout.json": (
+                "restartGameConfirmation",
+                "modal",
+                {
+                    "restartGameConfirmation.cancel": {"x": 780, "y": 730},
+                    "restartGameConfirmation.confirm": {"x": 1135, "y": 730},
+                },
+            ),
+            "post-game-map-review.zh-CN.holdout.json": (
+                "postGameMapReview",
+                "page",
+                {"postGameMapReview.continue": {"x": 1765, "y": 980}},
+            ),
+        }
+        for evidence_name, (page_id, kind, expected_actions) in cases.items():
+            with self.subTest(evidence_name=evidence_name):
+                evidence = read_evidence(SAMPLE_ROOT / evidence_name)
+
+                result, match = recognize_image(evidence, self.catalog)
+
+                self.assertIsNotNone(match)
+                recognition = result["recognition"]
+                self.assertEqual("matched", recognition["status"])
+                self.assertTrue(recognition["oracleEligible"])
+                self.assertEqual(page_id, recognition["page"]["id"])
+                self.assertEqual(kind, recognition["page"]["kind"])
+                self.assertGreater(recognition["page"]["score"], 0.99)
+                elements = {
+                    element["id"]: element for element in recognition["elements"]
+                }
+                for element_id, action_point in expected_actions.items():
+                    element = elements[element_id]
+                    self.assertEqual("visible", element["visibility"])
+                    self.assertTrue(element["visible"])
+                    self.assertEqual(action_point, element["actionPointClient"])
+
+    def test_new_modal_holdouts_do_not_match_other_result_modals(self) -> None:
+        new_modal_ids = {
+            "overwriteSaveConfirmation",
+            "chimpsModeInfo",
+            "defeatSummary",
+            "restartGameConfirmation",
+        }
+        result_modal_ids = {
+            "victoryPlayerStats",
+            "victorySummary",
+            "freeplayPrompt",
+        }
+        cases = {
+            "overwrite-save-confirmation.zh-CN.holdout.json": (
+                "overwriteSaveConfirmation",
+                result_modal_ids | (new_modal_ids - {"overwriteSaveConfirmation"}),
+            ),
+            "chimps-mode-info.zh-CN.holdout.json": (
+                "chimpsModeInfo",
+                result_modal_ids | (new_modal_ids - {"chimpsModeInfo"}),
+            ),
+            "defeat-summary.zh-CN.holdout.json": (
+                "defeatSummary",
+                result_modal_ids | (new_modal_ids - {"defeatSummary"}),
+            ),
+            "restart-game-confirmation.zh-CN.holdout.json": (
+                "restartGameConfirmation",
+                result_modal_ids | (new_modal_ids - {"restartGameConfirmation"}),
+            ),
+            "victory-player-stats.zh-CN.holdout.json": (
+                "victoryPlayerStats",
+                new_modal_ids,
+            ),
+            "victory-summary.zh-CN.holdout.json": ("victorySummary", new_modal_ids),
+            "freeplay-prompt.zh-CN.holdout.json": ("freeplayPrompt", new_modal_ids),
+        }
+        for evidence_name, (expected_page, rejected_ids) in cases.items():
+            with self.subTest(evidence_name=evidence_name):
+                evidence = read_evidence(SAMPLE_ROOT / evidence_name)
+
+                result, match = recognize_image(evidence, self.catalog)
+
+                self.assertIsNotNone(match)
+                recognition = result["recognition"]
+                self.assertEqual(expected_page, recognition["page"]["id"])
+                candidates = {
+                    candidate["id"]: candidate
+                    for candidate in recognition["candidates"]
+                }
+                self.assertTrue(
+                    all(not candidates[page_id]["matched"] for page_id in rejected_ids)
+                )
+
+    def test_defeat_and_map_review_ignore_dynamic_observation_regions(self) -> None:
+        cases = {
+            "defeat-summary.zh-CN.holdout.png": (
+                "defeatSummary",
+                [
+                    (580, 425, 1340, 540),
+                    (580, 575, 1340, 730),
+                    (20, 0, 570, 105),
+                    (1435, 0, 1560, 105),
+                ],
+            ),
+            "post-game-map-review.zh-CN.holdout.png": (
+                "postGameMapReview",
+                [
+                    (0, 0, 1640, 1080),
+                    (1650, 85, 1920, 890),
+                ],
+            ),
+        }
+        for image_name, (page_id, regions) in cases.items():
+            with self.subTest(image_name=image_name):
+                with tempfile.TemporaryDirectory() as temporary_directory:
+                    with Image.open(SAMPLE_ROOT / image_name) as source:
+                        modified = source.convert("RGB")
+                        for region in regions:
+                            modified.paste((45, 85, 125), region)
+                    metadata_path = write_test_evidence(
+                        Path(temporary_directory),
+                        f"{page_id}-dynamic-content-changed",
+                        modified,
+                    )
+                    evidence = read_evidence(metadata_path)
+
+                    result, match = recognize_image(evidence, self.catalog)
+
+                    self.assertIsNotNone(match)
+                    self.assertEqual("matched", result["recognition"]["status"])
+                    self.assertEqual(page_id, result["recognition"]["page"]["id"])
+
     def test_real_holdout_frame_matches_victory_player_stats(self) -> None:
         evidence = read_evidence(
             SAMPLE_ROOT / "victory-player-stats.zh-CN.holdout.json"
