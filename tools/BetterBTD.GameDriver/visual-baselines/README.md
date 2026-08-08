@@ -14,18 +14,44 @@
 4. 保留一张未参与模板生成且图片哈希不同的真实截图，作为页面 `positiveHoldout` 验证正向识别；目录加载会拒绝与制模源图相同的留出证据。另用不同页面验证 `unknown`。
 5. 重新生成模板、校验目录，并记录真实游戏版本、语言和未覆盖条件。
 
-当前目录覆盖 14 个中文页面、108 个模板和 159 个元素：
+当前 catalog v12 使用 schema v2，覆盖 15 个中文页面、168 个模板、171 个元素、4 个视口状态和 44 个元素 placement：
 
 - `welcome` 与 `modifiedClientWarning`：用于真实冷启动；玩家名、用户 ID、版本号和本地化正文不参与识别。修改客户端警告仅允许继续，注销和关闭游戏保持不可操作。
 - `mainMenu` 与初学者 `mapSelect` 首个轮播页：地图名、勋章、星光和活动状态不参与页面识别；猴子草甸缩略图只用于该地图卡的独立可见性检测。
 - `difficultySelect` 与 `easyModeSelect`：难度肖像和简单模式图标分别绑定 `Easy/Medium/Hard` 与 `Standard/PrimaryOnly/Deflation`；奖励、勋章和本地化说明不参与识别。
 - `mediumModeSelect` 与 `hardModeSelect`：覆盖主项目稳定枚举名对应的所有模式路径，并额外保留 `Sandbox`；真实可逆开关状态作为独立留出证据，开关区域不参与锚点。
-- `heroSelect`：固定页面控件与 15 个首屏英雄头像分离计分；英雄按钮使用主项目 `HeroType` 的稳定英文枚举名，并独立区分 `choose` 与 `selected` 状态。
+- `heroSelect`：固定页面控件与滚动视口分离计分；`heroSelect.top` 和 `heroSelect.bottom` 合并覆盖 18 个英雄，英雄按钮使用主项目 `HeroType` 的稳定英文枚举名，并独立区分 `choose` 与 `selected` 状态。
 - `inLevel` 与 `stageSettings`：公共 HUD 用于跨简单/困难标准关卡识别；暂停页只开放继续和 Recover 所需的主页动作，商店与重新开始保持不可操作。
 - `settings`：完整声明屏幕尺寸、点唱机、音量、启用状态和所有底部入口；账号、注销、语言、配置修改和外部链接没有动作点。
 - `hotkeys`：独立识别返回、恢复默认、三组键位区域和当前普通光标选中状态；键位、恢复默认和光标尺寸不开放动作。
 - `accessibility`：完整声明效果比例、两个开关、四种范围圈模式、返回和 `OK`；只开放两个退出动作。
+- `extras`：`extras.top` 和 `extras.bottom` 都独立覆盖 `doubleCash`、`fastTrack`、`bigBloons`、`smallBloons`、`bigMonkeyTowers`、`smallMonkeyTowers`、`smallBosses` 七个开关，并分别检测 `enabled`/`disabled`；这些配置开关没有动作点。
 
 `pageAnchor` 缺省为 `true`；设为 `false` 的模板只检测元素可见性，不计入页面分数或最少页面锚点数。该规则用于可滚动英雄头像和动态选择状态，目录校验会拒绝用 detector-only 模板凑足 `minimumMatchedAnchors`。
 
-其他地图卡、分类按钮和底部选项虽然可能已有稳定元素 ID 与动作边界，但在拥有自己的检测器前必须保持 `notEvaluated`，控制命令不得点击。`extras` 和热键长列表需要滚动能力后再扩展；英雄首屏之外的 `Corvus`、`Silas` 仍需要滚动采集；关卡内生命、金币和回合数值当前仅有区域声明，尚未实现独立数值解析。
+schema v2 保留稳定 `page` 身份，并用 `viewStates` 描述同一页面的不同滚动视口。可滚动元素通过 `placements` 为每个可见视口声明独立 `bounds`、`actionPoint`、`anchorIds` 和可选 `states`；识别器只输出已识别视口中的 placement。锚点 `sourceBounds` 是制模来源截图中的裁剪区域，`bounds` 是运行时匹配区域，二者可不同。元素 `states` 使用独立锚点输出 `matched`、`ambiguous` 或 `unknown`，当前用于 `extras` 七个开关的 `enabled`/`disabled`。schema v1 仍可加载：它没有 `viewStates`/`placements`，且未声明 `sourceBounds` 时按 `bounds` 处理。
+
+`heroSelect` 的 `1920 x 1080` 参考动作点如下。上下视口各可见 15 个英雄，重叠 12 个，合集为 18 个；`Silas` 在上下视口都可见，只有 `Psi`、`Geraldo`、`Corvus` 仅位于底部视口，因此不再使用“Silas/Corvus 均未覆盖”的旧语义。
+
+| 英雄 ID | `heroSelect.top` | `heroSelect.bottom` |
+| --- | --- | --- |
+| `Quincy` | `(100, 220)` | - |
+| `Gwendolin` | `(255, 220)` | - |
+| `StrikerJones` | `(405, 220)` | - |
+| `ObynGreenfoot` | `(100, 415)` | `(100, 160)` |
+| `DanDeMonk` | `(255, 415)` | `(255, 160)` |
+| `Benjamin` | `(405, 415)` | `(405, 160)` |
+| `PatFusty` | `(100, 605)` | `(100, 330)` |
+| `CaptainChurchill` | `(255, 605)` | `(255, 330)` |
+| `Ezili` | `(405, 605)` | `(405, 330)` |
+| `Silas` | `(100, 800)` | `(100, 520)` |
+| `Etienne` | `(255, 800)` | `(255, 520)` |
+| `Sauda` | `(405, 800)` | `(405, 520)` |
+| `Rosalia` | `(100, 990)` | `(100, 710)` |
+| `Adora` | `(255, 990)` | `(255, 710)` |
+| `AdmiralBrickell` | `(405, 990)` | `(405, 710)` |
+| `Psi` | - | `(100, 900)` |
+| `Geraldo` | - | `(255, 900)` |
+| `Corvus` | - | `(405, 900)` |
+
+其他地图卡、分类按钮和底部选项虽然可能已有稳定元素 ID 与动作边界，但在拥有自己的检测器前必须保持 `notEvaluated`，控制命令不得点击。完整热键长列表仍需补充视口覆盖；关卡内生命、金币和回合数值当前仅有区域声明，尚未实现独立数值解析。`extras` 与英雄上下视口已通过各自 source/holdout 的离线证据、目录和识别验证。真实 `extras` 验证覆盖上下端点滚动及边界 `unchangedStable`；真实英雄验证覆盖底部视口识别、Corvus/Silas 元素点击、滚轮回到顶部、Quincy 选择和返回主菜单。英雄网格不接受拖动滚屏，因此英雄页只把滚轮列为已验证的视口切换动作。

@@ -5,7 +5,10 @@ import tempfile
 import unittest
 
 from betterbtd_game_driver.errors import GameDriverError
-from betterbtd_game_driver.visual_catalog import load_visual_catalog
+from betterbtd_game_driver.visual_catalog import (
+    load_visual_catalog,
+    visual_catalog_summary,
+)
 
 
 class VisualCatalogTests(unittest.TestCase):
@@ -13,6 +16,8 @@ class VisualCatalogTests(unittest.TestCase):
         catalog = load_visual_catalog()
 
         self.assertEqual("btd6-ui-independent", catalog.id)
+        self.assertEqual(2, catalog.schema_version)
+        self.assertEqual(12, catalog.version)
         self.assertEqual((1920, 1080), (catalog.reference_width, catalog.reference_height))
         self.assertEqual(
             [
@@ -30,6 +35,7 @@ class VisualCatalogTests(unittest.TestCase):
                 "settings",
                 "hotkeys",
                 "accessibility",
+                "extras",
             ],
             [page.id for page in catalog.pages],
         )
@@ -41,12 +47,13 @@ class VisualCatalogTests(unittest.TestCase):
         self.assertEqual(4, len(catalog.pages[5].anchors))
         self.assertEqual(6, len(catalog.pages[6].anchors))
         self.assertEqual(9, len(catalog.pages[7].anchors))
-        self.assertEqual(22, len(catalog.pages[8].anchors))
+        self.assertEqual(37, len(catalog.pages[8].anchors))
         self.assertEqual(4, len(catalog.pages[9].anchors))
         self.assertEqual(4, len(catalog.pages[10].anchors))
         self.assertEqual(18, len(catalog.pages[11].anchors))
         self.assertEqual(7, len(catalog.pages[12].anchors))
         self.assertEqual(11, len(catalog.pages[13].anchors))
+        self.assertEqual(45, len(catalog.pages[14].anchors))
         self.assertEqual(
             3,
             sum(anchor.page_anchor for anchor in catalog.pages[8].anchors),
@@ -55,10 +62,241 @@ class VisualCatalogTests(unittest.TestCase):
             [5, 6, 5],
             [
                 sum(anchor.page_anchor for anchor in page.anchors)
-                for page in catalog.pages[11:]
+                for page in catalog.pages[11:14]
             ],
         )
         self.assertTrue(all(page.positive_holdout is not None for page in catalog.pages))
+        hero_select = catalog.pages[8]
+        self.assertEqual(
+            ["heroSelect.top", "heroSelect.bottom"],
+            [view_state.id for view_state in hero_select.view_states],
+        )
+        self.assertEqual(
+            30,
+            sum(len(element.placements) for element in hero_select.elements),
+        )
+        self.assertEqual(
+            [
+                "Quincy",
+                "Gwendolin",
+                "StrikerJones",
+                "ObynGreenfoot",
+                "DanDeMonk",
+                "Benjamin",
+                "PatFusty",
+                "CaptainChurchill",
+                "Ezili",
+                "Silas",
+                "Etienne",
+                "Sauda",
+                "Rosalia",
+                "Adora",
+                "AdmiralBrickell",
+                "Psi",
+                "Geraldo",
+                "Corvus",
+            ],
+            [
+                element.id.removeprefix("heroSelect.")
+                for element in hero_select.elements
+                if element.placements
+            ],
+        )
+        extras = catalog.pages[-1]
+        self.assertEqual(
+            ["extras.top", "extras.bottom"],
+            [view_state.id for view_state in extras.view_states],
+        )
+        self.assertEqual(3, sum(anchor.page_anchor for anchor in extras.anchors))
+        self.assertEqual(14, sum(len(element.placements) for element in extras.elements))
+        self.assertEqual(
+            28,
+            sum(
+                len(placement.states)
+                for element in extras.elements
+                for placement in element.placements
+            ),
+        )
+        summary = visual_catalog_summary(catalog)
+        self.assertEqual(
+            {
+                "valid": True,
+                "pageCount": 15,
+                "templateCount": 168,
+                "elementCount": 171,
+                "viewStateCount": 4,
+                "placementCount": 44,
+            },
+            summary["validation"],
+        )
+
+    def test_schema_v1_legacy_catalog_remains_supported(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            catalog = load_visual_catalog(_write_minimal_catalog(Path(temporary_directory)))
+
+        self.assertEqual(1, catalog.schema_version)
+        self.assertEqual((), catalog.pages[0].view_states)
+        self.assertEqual((), catalog.pages[0].elements[0].placements)
+        self.assertEqual(
+            catalog.pages[0].anchors[0].bounds,
+            catalog.pages[0].anchors[0].source_bounds,
+        )
+
+    def test_schema_v2_view_state_and_placement_are_loaded(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            catalog_path = _write_minimal_catalog(Path(temporary_directory), schema_version=2)
+            catalog = load_visual_catalog(catalog_path)
+
+        page = catalog.pages[0]
+        self.assertEqual(2, catalog.schema_version)
+        self.assertEqual(["testPage.top"], [state.id for state in page.view_states])
+        self.assertEqual(
+            ["testPage.top"],
+            [placement.view_state_id for placement in page.elements[0].placements],
+        )
+
+    def test_view_state_must_only_reference_detector_only_anchors(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            catalog_path = _write_minimal_catalog(Path(temporary_directory), schema_version=2)
+            document = _read_catalog(catalog_path)
+            document["pages"][0]["viewStates"][0]["anchorIds"] = ["testPage.anchor"]
+            _write_catalog(catalog_path, document)
+
+            with self.assertRaises(GameDriverError) as context:
+                load_visual_catalog(catalog_path)
+
+        self.assertIn("must use detector-only anchors", context.exception.message)
+
+    def test_view_state_holdout_must_differ_from_template_sources(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            catalog_path = _write_minimal_catalog(Path(temporary_directory), schema_version=2)
+            document = _read_catalog(catalog_path)
+            detector = document["pages"][0]["anchors"][1]
+            document["pages"][0]["viewStates"][0]["positiveHoldout"] = {
+                "evidence": detector["sourceEvidence"],
+                "evidenceId": detector["sourceEvidenceId"],
+                "imageSha256": detector["sourceImageSha256"],
+            }
+            _write_catalog(catalog_path, document)
+
+            with self.assertRaises(GameDriverError) as context:
+                load_visual_catalog(catalog_path)
+
+        self.assertIn("must differ", context.exception.message)
+
+    def test_view_state_holdout_provenance_must_match_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            catalog_path = _write_minimal_catalog(Path(temporary_directory), schema_version=2)
+            document = _read_catalog(catalog_path)
+            document["pages"][0]["viewStates"][0]["positiveHoldout"]["evidenceId"] = (
+                "wrong-evidence"
+            )
+            _write_catalog(catalog_path, document)
+
+            with self.assertRaises(GameDriverError) as context:
+                load_visual_catalog(catalog_path)
+
+        self.assertIn("evidenceId does not match", context.exception.message)
+
+    def test_placement_must_reference_a_view_state_on_the_same_page(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            catalog_path = _write_minimal_catalog(Path(temporary_directory), schema_version=2)
+            document = _read_catalog(catalog_path)
+            _placement(document)["viewStateId"] = "testPage.unknown"
+            _write_catalog(catalog_path, document)
+
+            with self.assertRaises(GameDriverError) as context:
+                load_visual_catalog(catalog_path)
+
+        self.assertIn("references unknown view state", context.exception.message)
+
+    def test_placement_bounds_must_be_inside_reference_space(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            catalog_path = _write_minimal_catalog(Path(temporary_directory), schema_version=2)
+            document = _read_catalog(catalog_path)
+            _placement(document)["bounds"] = {"x": 1919, "y": 0, "width": 2, "height": 10}
+            _write_catalog(catalog_path, document)
+
+            with self.assertRaises(GameDriverError) as context:
+                load_visual_catalog(catalog_path)
+
+        self.assertIn("placement bounds must be inside", context.exception.message)
+
+    def test_placement_action_point_must_be_inside_placement_bounds(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            catalog_path = _write_minimal_catalog(Path(temporary_directory), schema_version=2)
+            document = _read_catalog(catalog_path)
+            _placement(document)["actionPoint"] = {"x": 10, "y": 5}
+            _write_catalog(catalog_path, document)
+
+            with self.assertRaises(GameDriverError) as context:
+                load_visual_catalog(catalog_path)
+
+        self.assertIn("actionPoint must be inside bounds", context.exception.message)
+
+    def test_element_cannot_repeat_a_placement_view_state(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            catalog_path = _write_minimal_catalog(Path(temporary_directory), schema_version=2)
+            document = _read_catalog(catalog_path)
+            document["pages"][0]["elements"][0]["placements"].append(
+                dict(_placement(document))
+            )
+            _write_catalog(catalog_path, document)
+
+            with self.assertRaises(GameDriverError) as context:
+                load_visual_catalog(catalog_path)
+
+        self.assertIn(
+            "duplicate element testPage.button placement viewStateId",
+            context.exception.message,
+        )
+
+    def test_placement_cannot_repeat_an_element_state_id(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            catalog_path = _write_minimal_catalog(Path(temporary_directory), schema_version=2)
+            document = _read_catalog(catalog_path)
+            state = {"id": "enabled", "anchorIds": ["testPage.detector"]}
+            _placement(document)["states"] = [state, dict(state)]
+            _write_catalog(catalog_path, document)
+
+            with self.assertRaises(GameDriverError) as context:
+                load_visual_catalog(catalog_path)
+
+        self.assertIn(
+            "duplicate element testPage.button placement state id",
+            context.exception.message,
+        )
+
+    def test_source_bounds_must_be_inside_reference_space(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            catalog_path = _write_minimal_catalog(Path(temporary_directory), schema_version=2)
+            document = _read_catalog(catalog_path)
+            document["pages"][0]["anchors"][0]["sourceBounds"] = {
+                "x": 1919,
+                "y": 0,
+                "width": 2,
+                "height": 10,
+            }
+            _write_catalog(catalog_path, document)
+
+            with self.assertRaises(GameDriverError) as context:
+                load_visual_catalog(catalog_path)
+
+        self.assertIn("sourceBounds bounds must be inside", context.exception.message)
+
+    def test_schema_v1_rejects_source_bounds(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            catalog_path = _write_minimal_catalog(Path(temporary_directory))
+            document = _read_catalog(catalog_path)
+            document["pages"][0]["anchors"][0]["sourceBounds"] = dict(
+                document["pages"][0]["anchors"][0]["bounds"]
+            )
+            _write_catalog(catalog_path, document)
+
+            with self.assertRaises(GameDriverError) as context:
+                load_visual_catalog(catalog_path)
+
+        self.assertIn("sourceBounds require catalog schemaVersion 2", context.exception.message)
 
     def test_positive_holdout_must_differ_from_template_source(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -165,7 +403,7 @@ class VisualCatalogTests(unittest.TestCase):
             self.assertIn("overlap protected source evidence", context.exception.message)
 
 
-def _write_minimal_catalog(root: Path) -> Path:
+def _write_minimal_catalog(root: Path, *, schema_version: int = 1) -> Path:
     template_path = root / "template.png"
     template_path.write_bytes(b"template")
     template_hash = hashlib.sha256(template_path.read_bytes()).hexdigest()
@@ -187,7 +425,7 @@ def _write_minimal_catalog(root: Path) -> Path:
     holdout_document = json.loads(holdout_path.read_text(encoding="utf-8"))
     holdout_hash = hashlib.sha256((root / "holdout.png").read_bytes()).hexdigest()
     document = {
-        "schemaVersion": 1,
+        "schemaVersion": schema_version,
         "catalogId": "test",
         "catalogVersion": 1,
         "referenceSpace": {
@@ -229,9 +467,86 @@ def _write_minimal_catalog(root: Path) -> Path:
             }
         ],
     }
+    if schema_version == 2:
+        detector_template_path = root / "detector-template.png"
+        detector_template_path.write_bytes(b"detector-template")
+        detector_source_path = write_test_evidence(
+            root,
+            "detector-source",
+            Image.new("RGB", (1920, 1080), "gray"),
+        )
+        detector_source = json.loads(detector_source_path.read_text(encoding="utf-8"))
+        detector_source_hash = hashlib.sha256(
+            (root / "detector-source.png").read_bytes()
+        ).hexdigest()
+        state_holdout_path = write_test_evidence(
+            root,
+            "state-holdout",
+            Image.new("RGB", (1920, 1080), "blue"),
+        )
+        state_holdout = json.loads(state_holdout_path.read_text(encoding="utf-8"))
+        state_holdout_hash = hashlib.sha256(
+            (root / "state-holdout.png").read_bytes()
+        ).hexdigest()
+        page = document["pages"][0]
+        page["anchors"].append(
+            {
+                "id": "testPage.detector",
+                "bounds": {"x": 20, "y": 0, "width": 10, "height": 10},
+                "sourceBounds": {"x": 30, "y": 0, "width": 10, "height": 10},
+                "template": "detector-template.png",
+                "templateSha256": hashlib.sha256(
+                    detector_template_path.read_bytes()
+                ).hexdigest(),
+                "minimumScore": 0.9,
+                "pageAnchor": False,
+                "sourceEvidence": "detector-source.json",
+                "sourceEvidenceId": detector_source["evidenceId"],
+                "sourceImageSha256": detector_source_hash,
+            }
+        )
+        page["viewStates"] = [
+            {
+                "id": "testPage.top",
+                "minimumScore": 0.9,
+                "minimumMatchedAnchors": 1,
+                "anchorIds": ["testPage.detector"],
+                "positiveHoldout": {
+                    "evidence": "state-holdout.json",
+                    "evidenceId": state_holdout["evidenceId"],
+                    "imageSha256": state_holdout_hash,
+                },
+            }
+        ]
+        page["elements"] = [
+            {
+                "id": "testPage.button",
+                "role": "button",
+                "placements": [
+                    {
+                        "viewStateId": "testPage.top",
+                        "bounds": {"x": 0, "y": 0, "width": 10, "height": 10},
+                        "actionPoint": {"x": 5, "y": 5},
+                        "anchorIds": ["testPage.detector"],
+                    }
+                ],
+            }
+        ]
     catalog_path = root / "catalog.json"
-    catalog_path.write_text(json.dumps(document), encoding="utf-8")
+    _write_catalog(catalog_path, document)
     return catalog_path
+
+
+def _read_catalog(path: Path) -> dict[str, object]:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _write_catalog(path: Path, document: dict[str, object]) -> None:
+    path.write_text(json.dumps(document), encoding="utf-8")
+
+
+def _placement(document: dict[str, object]) -> dict[str, object]:
+    return document["pages"][0]["elements"][0]["placements"][0]
 
 
 if __name__ == "__main__":

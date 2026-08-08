@@ -1,22 +1,30 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import datetime
+import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import MagicMock, patch
 
 from PIL import Image
 
 from betterbtd_game_driver.evidence import read_evidence
 from betterbtd_game_driver.errors import GameDriverError
 from betterbtd_game_driver.interaction import (
+    DragPointRequest,
+    InteractionDriver,
+    ScrollPointRequest,
     VisualTransitionTracker,
     _validate_interaction_outputs,
     _resolve_click_target,
     resolve_interaction_output_directory,
 )
+from betterbtd_game_driver.models import Rect, WindowSelector, WindowSnapshot
 from betterbtd_game_driver.vision import recognize_image
 from betterbtd_game_driver.visual_catalog import load_visual_catalog
+from visual_test_support import write_test_evidence
 
 
 SAMPLE_ROOT = Path(__file__).resolve().parent.parent / "visual-baselines" / "samples"
@@ -71,6 +79,52 @@ class VisualTransitionTrackerTests(unittest.TestCase):
 
         self.assertFalse(observation["changed"])
         self.assertFalse(complete)
+
+    def test_unchanged_stable_frames_are_counted_for_explicit_scroll_boundary(self) -> None:
+        frame = Image.new("RGB", (1920, 1080), "black")
+        tracker = VisualTransitionTracker(
+            frame,
+            change_threshold=0.005,
+            stability_threshold=0.02,
+            stable_sample_count=2,
+        )
+
+        first, _ = tracker.observe(frame, elapsed_ms=200, fingerprint="same-1")
+        second, _ = tracker.observe(frame, elapsed_ms=400, fingerprint="same-2")
+
+        self.assertEqual(1, first["consecutiveUnchangedStableSamples"])
+        self.assertEqual(2, second["consecutiveUnchangedStableSamples"])
+
+    def test_transient_change_that_returns_to_before_does_not_complete_as_changed(self) -> None:
+        before = Image.new("RGB", (1920, 1080), "black")
+        tracker = VisualTransitionTracker(
+            before,
+            change_threshold=0.005,
+            stability_threshold=0.02,
+            stable_sample_count=2,
+        )
+
+        _, changed_complete = tracker.observe(
+            Image.new("RGB", (1920, 1080), "white"),
+            elapsed_ms=200,
+            fingerprint="changed",
+        )
+        returned, returned_complete = tracker.observe(
+            before,
+            elapsed_ms=400,
+            fingerprint="returned",
+        )
+        stable, stable_complete = tracker.observe(
+            before,
+            elapsed_ms=600,
+            fingerprint="stable",
+        )
+
+        self.assertFalse(changed_complete)
+        self.assertFalse(returned_complete)
+        self.assertFalse(stable_complete)
+        self.assertFalse(returned["currentlyChanged"])
+        self.assertEqual(1, stable["consecutiveUnchangedStableSamples"])
 
 
 class ClickTargetTests(unittest.TestCase):
@@ -133,8 +187,14 @@ class ClickTargetTests(unittest.TestCase):
                 "heroSelect.back": (77, 57),
                 "heroSelect.Quincy": (100, 220),
                 "heroSelect.Gwendolin": (255, 220),
-                "heroSelect.Geraldo": (405, 990),
+                "heroSelect.AdmiralBrickell": (405, 990),
                 "heroSelect.detailsScrollUp": (1600, 1005),
+            },
+            "hero-select-bottom.zh-CN.holdout.json": {
+                "heroSelect.Silas": (100, 520),
+                "heroSelect.Psi": (100, 900),
+                "heroSelect.Geraldo": (255, 900),
+                "heroSelect.Corvus": (405, 900),
             },
             "hero-select-choice.zh-CN.json": {
                 "heroSelect.choose": (1120, 615),
@@ -177,6 +237,20 @@ class ClickTargetTests(unittest.TestCase):
                     )
                     self.assertEqual(element_id, target.id)
                     self.assertEqual(expected_action_point, target.action_point)
+
+    def test_hero_without_a_placement_in_current_view_state_is_rejected(self) -> None:
+        evidence = read_evidence(SAMPLE_ROOT / "hero-select.zh-CN.holdout.json")
+        recognition, page_match = recognize_image(evidence, self.catalog)
+
+        with self.assertRaises(GameDriverError) as context:
+            _resolve_click_target(
+                recognition,
+                page_match,
+                "heroSelect.Corvus",
+                evidence,
+            )
+
+        self.assertEqual("elementNotVisible", context.exception.code)
 
     def test_element_without_visibility_detector_is_rejected(self) -> None:
         with self.assertRaises(GameDriverError) as context:
@@ -264,6 +338,227 @@ class InteractionOutputTests(unittest.TestCase):
             self.assertTrue(old_after.exists())
             self.assertFalse(old_completion.exists())
             self.assertFalse(old_trace.exists())
+
+
+class DragInteractionTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.catalog = load_visual_catalog()
+
+    def test_drag_writes_two_endpoint_trace_and_checks_final_view_state(self) -> None:
+        snapshot = WindowSnapshot(
+            handle=123,
+            process_id=456,
+            process_name="BloonsTD6",
+            title="BloonsTD6",
+            visible=True,
+            minimized=False,
+            foreground=True,
+            dpi=192,
+            window_rect=Rect(607, 138, 1946, 1151),
+            client_rect=Rect(620, 196, 1920, 1080),
+        )
+        window_api = MagicMock()
+        window_api.activate.return_value = True
+        window_api.snapshot.return_value = snapshot
+        window_api.drag_client_points.return_value = (636, 696, 636, 1096)
+        game_driver = MagicMock()
+        game_driver.window_api = window_api
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            output_directory = Path(temporary_directory) / "drag-trace"
+            frames = iter(
+                (
+                    SAMPLE_ROOT / "hero-select.zh-CN.holdout.png",
+                    SAMPLE_ROOT / "hero-select-bottom.zh-CN.holdout.png",
+                )
+            )
+
+            def capture(request):
+                request.output_path.parent.mkdir(parents=True, exist_ok=True)
+                with Image.open(next(frames)) as source:
+                    write_test_evidence(
+                        request.output_path.parent,
+                        request.output_path.stem,
+                        source.convert("RGB"),
+                    )
+                return {"window": snapshot.to_dict()}
+
+            game_driver.capture.side_effect = capture
+            request = DragPointRequest(
+                selector=WindowSelector(handle=123),
+                phase="arrange",
+                output_directory=output_directory,
+                launch_path=None,
+                overwrite=False,
+                expected_page_id="heroSelect",
+                settle_ms=0,
+                activation_timeout_ms=1_000,
+                window_timeout_ms=0,
+                launch_timeout_ms=0,
+                transition_timeout_ms=5_000,
+                poll_interval_ms=100,
+                stable_sample_count=2,
+                change_threshold=0.005,
+                stability_threshold=0.002,
+                start_reference_x=16,
+                start_reference_y=500,
+                end_reference_x=16,
+                end_reference_y=900,
+                duration_ms=600,
+                steps=12,
+                allow_no_change=False,
+                expected_view_state_id="heroSelect.bottom",
+            )
+            interaction = InteractionDriver(game_driver)
+            observations = [{"elapsedMs": 200, "currentlyChanged": True}]
+
+            with patch.object(
+                interaction,
+                "_wait_for_transition",
+                return_value=(observations, "changedStable"),
+            ):
+                result = interaction.drag_point(request, self.catalog)
+
+            trace = json.loads(
+                (output_directory / "operation.json").read_text(encoding="utf-8")
+            )
+
+        window_api.drag_client_points.assert_called_once_with(
+            123,
+            16,
+            500,
+            16,
+            900,
+            600,
+            12,
+        )
+        window_api.click_client_point.assert_not_called()
+        window_api.scroll_client_point.assert_not_called()
+        self.assertEqual("dragClientPoints", result["operation"])
+        self.assertEqual("changedStable", trace["transition"]["status"])
+        self.assertEqual(observations, trace["transition"]["observations"])
+        self.assertEqual(
+            {"x": 16, "y": 500},
+            trace["input"]["referenceStartPoint"],
+        )
+        self.assertEqual(
+            {"x": 16, "y": 900},
+            trace["input"]["referenceEndPoint"],
+        )
+        self.assertEqual({"x": 636, "y": 696}, trace["input"]["screenStartPoint"])
+        self.assertEqual({"x": 636, "y": 1096}, trace["input"]["screenEndPoint"])
+        self.assertEqual(600, trace["input"]["durationMs"])
+        self.assertEqual(12, trace["input"]["stepCount"])
+        self.assertEqual("heroSelect", trace["expectation"]["pageId"])
+        self.assertTrue(trace["expectation"]["matched"])
+        self.assertEqual(
+            "heroSelect.bottom",
+            trace["expectation"]["viewStateId"],
+        )
+        self.assertTrue(trace["expectation"]["viewStateMatched"])
+
+    def test_drag_rejects_assert_phase_before_capture_or_input(self) -> None:
+        game_driver = MagicMock()
+        request = DragPointRequest(
+            selector=WindowSelector(handle=123),
+            phase="assert",
+            output_directory=None,
+            launch_path=None,
+            overwrite=False,
+            expected_page_id=None,
+            settle_ms=0,
+            activation_timeout_ms=1_000,
+            window_timeout_ms=0,
+            launch_timeout_ms=0,
+            transition_timeout_ms=5_000,
+            poll_interval_ms=100,
+            stable_sample_count=2,
+            change_threshold=0.005,
+            stability_threshold=0.002,
+            start_reference_x=16,
+            start_reference_y=500,
+            end_reference_x=16,
+            end_reference_y=900,
+            duration_ms=600,
+            steps=12,
+            allow_no_change=False,
+            expected_view_state_id=None,
+        )
+
+        with self.assertRaisesRegex(GameDriverError, "phase must be arrange or recover"):
+            InteractionDriver(game_driver).drag_point(request, self.catalog)
+
+        game_driver.capture.assert_not_called()
+
+    def test_direct_scroll_and_drag_requests_preserve_cli_safety_bounds(self) -> None:
+        game_driver = MagicMock()
+        drag = DragPointRequest(
+            selector=WindowSelector(handle=123),
+            phase="arrange",
+            output_directory=None,
+            launch_path=None,
+            overwrite=False,
+            expected_page_id=None,
+            settle_ms=0,
+            activation_timeout_ms=1_000,
+            window_timeout_ms=0,
+            launch_timeout_ms=0,
+            transition_timeout_ms=5_000,
+            poll_interval_ms=100,
+            stable_sample_count=2,
+            change_threshold=0.005,
+            stability_threshold=0.002,
+            start_reference_x=16,
+            start_reference_y=500,
+            end_reference_x=16,
+            end_reference_y=900,
+            duration_ms=600,
+            steps=12,
+            allow_no_change=False,
+            expected_view_state_id=None,
+        )
+        scroll = ScrollPointRequest(
+            selector=WindowSelector(handle=123),
+            phase="arrange",
+            output_directory=None,
+            launch_path=None,
+            overwrite=False,
+            expected_page_id=None,
+            settle_ms=0,
+            activation_timeout_ms=1_000,
+            window_timeout_ms=0,
+            launch_timeout_ms=0,
+            transition_timeout_ms=5_000,
+            poll_interval_ms=100,
+            stable_sample_count=2,
+            change_threshold=0.005,
+            stability_threshold=0.002,
+            reference_x=16,
+            reference_y=500,
+            direction="up",
+            notches=21,
+            allow_no_change=False,
+            expected_view_state_id=None,
+        )
+        cases = (
+            (replace(drag, duration_ms=49), "Drag duration must be between"),
+            (replace(drag, duration_ms=5_001), "Drag duration must be between"),
+            (replace(drag, steps=101), "Drag steps must be between"),
+            (scroll, "Scroll notches must be between"),
+        )
+
+        for request, expected_message in cases:
+            with (
+                self.subTest(message=expected_message),
+                self.assertRaisesRegex(GameDriverError, expected_message),
+            ):
+                if isinstance(request, DragPointRequest):
+                    InteractionDriver(game_driver).drag_point(request, self.catalog)
+                else:
+                    InteractionDriver(game_driver).scroll_point(request, self.catalog)
+
+        game_driver.capture.assert_not_called()
 
 
 if __name__ == "__main__":

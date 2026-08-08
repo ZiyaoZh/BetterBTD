@@ -121,6 +121,166 @@ class CommandLineTests(unittest.TestCase):
                 ["click-point", "--x", "960", "--y", "540", "--phase", "act"]
             )
 
+    def test_scroll_uses_reference_coordinates_and_transition_defaults(self) -> None:
+        parsed = parse_args(
+            [
+                "scroll-point",
+                "--x",
+                "960",
+                "--y",
+                "540",
+                "--direction",
+                "down",
+                "--notches",
+                "3",
+                "--phase",
+                "arrange",
+            ]
+        )
+        selector = _selector_from_args(parsed)
+
+        self.assertEqual((960, 540), (parsed.x, parsed.y))
+        self.assertEqual(("down", 3), (parsed.direction, parsed.notches))
+        self.assertEqual(DEFAULT_PROCESS_NAMES, selector.process_names)
+        self.assertEqual(10_000, parsed.transition_timeout_ms)
+        self.assertEqual(0.005, parsed.change_threshold)
+
+    def test_scroll_rejects_act_phase(self) -> None:
+        with self.assertRaisesRegex(UsageError, "invalid choice"):
+            parse_args(
+                [
+                    "scroll-point",
+                    "--x",
+                    "960",
+                    "--y",
+                    "540",
+                    "--direction",
+                    "down",
+                    "--phase",
+                    "act",
+                ]
+            )
+
+    def test_scroll_rejects_zero_notches(self) -> None:
+        with self.assertRaisesRegex(UsageError, "--notches must be between 1 and 20"):
+            parse_args(
+                [
+                    "scroll-point",
+                    "--x",
+                    "960",
+                    "--y",
+                    "540",
+                    "--direction",
+                    "down",
+                    "--notches",
+                    "0",
+                    "--phase",
+                    "arrange",
+                ]
+            )
+
+    def test_scroll_has_lower_change_threshold_and_opt_in_no_change(self) -> None:
+        parsed = parse_args(
+            [
+                "scroll-point",
+                "--x",
+                "960",
+                "--y",
+                "540",
+                "--direction",
+                "up",
+                "--allow-no-change",
+                "--expect-view-state",
+                "extras.top",
+                "--phase",
+                "recover",
+            ]
+        )
+
+        self.assertEqual(0.005, parsed.change_threshold)
+        self.assertTrue(parsed.allow_no_change)
+        self.assertEqual("extras.top", parsed.expect_view_state)
+
+    def test_drag_uses_two_reference_points_and_deterministic_defaults(self) -> None:
+        parsed = parse_args(
+            [
+                "drag-point",
+                "--start-x",
+                "250",
+                "--start-y",
+                "850",
+                "--end-x",
+                "250",
+                "--end-y",
+                "250",
+                "--phase",
+                "arrange",
+                "--expect-page",
+                "heroSelect",
+            ]
+        )
+
+        self.assertEqual((250, 850), (parsed.start_x, parsed.start_y))
+        self.assertEqual((250, 250), (parsed.end_x, parsed.end_y))
+        self.assertEqual(500, parsed.duration_ms)
+        self.assertEqual(10, parsed.steps)
+        self.assertEqual(0.005, parsed.change_threshold)
+        self.assertFalse(parsed.allow_no_change)
+
+    def test_drag_rejects_act_phase(self) -> None:
+        with self.assertRaisesRegex(UsageError, "invalid choice"):
+            parse_args(
+                [
+                    "drag-point",
+                    "--start-x",
+                    "250",
+                    "--start-y",
+                    "850",
+                    "--end-x",
+                    "250",
+                    "--end-y",
+                    "250",
+                    "--phase",
+                    "act",
+                ]
+            )
+
+    def test_drag_rejects_identical_points(self) -> None:
+        with self.assertRaisesRegex(UsageError, "must differ"):
+            parse_args(
+                [
+                    "drag-point",
+                    "--start-x",
+                    "250",
+                    "--start-y",
+                    "850",
+                    "--end-x",
+                    "250",
+                    "--end-y",
+                    "850",
+                    "--phase",
+                    "recover",
+                ]
+            )
+
+    def test_drag_rejects_endpoint_outside_reference_client(self) -> None:
+        with self.assertRaisesRegex(UsageError, "--end-y must be between 0 and 1079"):
+            parse_args(
+                [
+                    "drag-point",
+                    "--start-x",
+                    "250",
+                    "--start-y",
+                    "850",
+                    "--end-x",
+                    "250",
+                    "--end-y",
+                    "1080",
+                    "--phase",
+                    "recover",
+                ]
+            )
+
     def test_baseline_requires_subcommand(self) -> None:
         with self.assertRaisesRegex(UsageError, "requires a subcommand"):
             parse_args(["baseline"])

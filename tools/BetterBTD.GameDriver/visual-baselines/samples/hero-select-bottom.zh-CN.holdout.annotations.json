@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "heroSelect.bottom.zh-CN.holdout.20260808",
+  "sourceEvidenceId": "59869e37f9c148dc83d3a5509098759d",
+  "sourceImageSha256": "21d64514378ccad02469a36aaf3a58dadb5f908f8fe7834446738e1dea0a05a5",
+  "pageId": "heroSelect",
+  "viewStateId": "heroSelect.bottom",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T04:40:07.799Z",
+    "result": "accepted"
+  },
+  "notes": [
+    "This positive holdout was captured independently after the bottom-viewport template source.",
+    "Corvus is selected in the holdout, while the detector crops remain outside the dynamic selection border."
+  ]
+}

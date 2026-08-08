@@ -4,11 +4,12 @@
   "sourceEvidenceId": "8e51cb029ec544768218ba711cf630ba",
   "sourceImageSha256": "703f715a81b3ed97e800cb2f80abf0746beb1d7fcdc3a86e5b2c9d2ba2a7fb5f",
   "pageId": "heroSelect",
+  "viewStateId": "heroSelect.top",
   "language": "zh-CN",
   "clientSize": { "width": 1920, "height": 1080 },
   "review": {
     "method": "agentImageView",
-    "reviewedAtUtc": "2026-08-08T02:20:00.000Z",
+    "reviewedAtUtc": "2026-08-08T04:40:07.799Z",
     "result": "accepted"
   },
   "dynamicRegionsExcludedFromPageAnchors": [
@@ -23,6 +24,7 @@
   "notes": [
     "The source is an unmodified Game Driver capture with a valid completion marker.",
     "Stable frame controls participate in page recognition; hero portraits are detector-only anchors.",
-    "The first 15 visible hero slots use stable HeroType enum names; Corvus and Silas require scrolling and are not inferred."
+    "The top viewport covers rows one through five, with all 15 positions mapped to stable HeroType enum names.",
+    "Rows two through five also have independently captured placements in heroSelect.bottom."
   ]
 }

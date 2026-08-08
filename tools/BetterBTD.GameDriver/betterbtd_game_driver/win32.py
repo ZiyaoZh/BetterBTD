@@ -28,6 +28,10 @@ dwmapi.DwmFlush.argtypes = []
 dwmapi.DwmFlush.restype = ctypes.c_long
 
 DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 = ctypes.c_void_p(-4)
+MAX_SCROLL_NOTCHES = 20
+MIN_DRAG_DURATION_MS = 50
+MAX_DRAG_DURATION_MS = 5_000
+MAX_DRAG_STEPS = 100
 
 
 def enable_per_monitor_v2() -> None:
@@ -79,13 +83,19 @@ class WindowApi:
                 snapshots.append(snapshot)
 
         win32gui.EnumWindows(callback, None)
-        return sorted(snapshots, key=lambda item: (item.process_name or "", item.title, item.handle))
+        return sorted(
+            snapshots,
+            key=lambda item: (item.process_name or "", item.title, item.handle),
+        )
 
     def snapshot(self, handle: int) -> WindowSnapshot:
         window_left, window_top, window_right, window_bottom = win32gui.GetWindowRect(handle)
         client_left, client_top, client_right, client_bottom = win32gui.GetClientRect(handle)
         screen_left, screen_top = win32gui.ClientToScreen(handle, (client_left, client_top))
-        screen_right, screen_bottom = win32gui.ClientToScreen(handle, (client_right, client_bottom))
+        screen_right, screen_bottom = win32gui.ClientToScreen(
+            handle,
+            (client_right, client_bottom),
+        )
         _, process_id = win32process.GetWindowThreadProcessId(handle)
         dpi = int(user32.GetDpiForWindow(handle))
 
@@ -163,6 +173,113 @@ class WindowApi:
         time.sleep(0.05)
         win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
         return screen_x, screen_y
+
+    def scroll_client_point(
+        self,
+        handle: int,
+        client_x: int,
+        client_y: int,
+        direction: str,
+        notches: int,
+    ) -> tuple[int, int, int]:
+        snapshot = self.snapshot(handle)
+        if (
+            client_x < 0
+            or client_y < 0
+            or client_x >= snapshot.client_rect.width
+            or client_y >= snapshot.client_rect.height
+        ):
+            raise GameDriverError(
+                "inputPointOutsideClient",
+                f"Client input point ({client_x}, {client_y}) is outside the game client.",
+                5,
+            )
+        if direction not in ("up", "down"):
+            raise GameDriverError(
+                "inputDirectionInvalid",
+                "Scroll direction must be up or down.",
+                5,
+            )
+        if not 1 <= notches <= MAX_SCROLL_NOTCHES:
+            raise GameDriverError(
+                "inputStepCountInvalid",
+                f"Scroll notches must be between 1 and {MAX_SCROLL_NOTCHES}.",
+                5,
+            )
+
+        screen_x = snapshot.client_rect.x + client_x
+        screen_y = snapshot.client_rect.y + client_y
+        wheel_delta = win32con.WHEEL_DELTA if direction == "up" else -win32con.WHEEL_DELTA
+        win32api.SetCursorPos((screen_x, screen_y))
+        time.sleep(0.05)
+        for index in range(notches):
+            win32api.mouse_event(win32con.MOUSEEVENTF_WHEEL, 0, 0, wheel_delta, 0)
+            if index + 1 < notches:
+                time.sleep(0.05)
+        return screen_x, screen_y, wheel_delta * notches
+
+    def drag_client_points(
+        self,
+        handle: int,
+        start_client_x: int,
+        start_client_y: int,
+        end_client_x: int,
+        end_client_y: int,
+        duration_ms: int,
+        steps: int,
+    ) -> tuple[int, int, int, int]:
+        snapshot = self.snapshot(handle)
+        for label, client_x, client_y in (
+            ("start", start_client_x, start_client_y),
+            ("end", end_client_x, end_client_y),
+        ):
+            if (
+                client_x < 0
+                or client_y < 0
+                or client_x >= snapshot.client_rect.width
+                or client_y >= snapshot.client_rect.height
+            ):
+                raise GameDriverError(
+                    "inputPointOutsideClient",
+                    f"Drag {label} point ({client_x}, {client_y}) is outside the game client.",
+                    5,
+                )
+        if not MIN_DRAG_DURATION_MS <= duration_ms <= MAX_DRAG_DURATION_MS:
+            raise GameDriverError(
+                "inputDurationInvalid",
+                f"Drag duration must be between {MIN_DRAG_DURATION_MS} and "
+                f"{MAX_DRAG_DURATION_MS} milliseconds.",
+                5,
+            )
+        if not 1 <= steps <= MAX_DRAG_STEPS:
+            raise GameDriverError(
+                "inputStepCountInvalid",
+                f"Drag steps must be between 1 and {MAX_DRAG_STEPS}.",
+                5,
+            )
+
+        start_screen_x = snapshot.client_rect.x + start_client_x
+        start_screen_y = snapshot.client_rect.y + start_client_y
+        end_screen_x = snapshot.client_rect.x + end_client_x
+        end_screen_y = snapshot.client_rect.y + end_client_y
+        win32api.SetCursorPos((start_screen_x, start_screen_y))
+        time.sleep(0.05)
+        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+        try:
+            step_delay_seconds = duration_ms / steps / 1000
+            for index in range(1, steps + 1):
+                progress = index / steps
+                screen_x = round(
+                    start_screen_x + (end_screen_x - start_screen_x) * progress
+                )
+                screen_y = round(
+                    start_screen_y + (end_screen_y - start_screen_y) * progress
+                )
+                win32api.SetCursorPos((screen_x, screen_y))
+                time.sleep(step_delay_seconds)
+        finally:
+            win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+        return start_screen_x, start_screen_y, end_screen_x, end_screen_y
 
     @staticmethod
     def virtual_screen_rect() -> Rect:

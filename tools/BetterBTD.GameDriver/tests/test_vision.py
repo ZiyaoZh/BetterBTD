@@ -259,12 +259,17 @@ class VisualRecognitionTests(unittest.TestCase):
         self.assertEqual("heroSelect", result["recognition"]["page"]["id"])
         self.assertGreater(result["recognition"]["page"]["score"], 0.99)
         self.assertEqual(3, result["recognition"]["page"]["matchedAnchorCount"])
-        self.assertEqual(24, len(result["recognition"]["elements"]))
+        self.assertEqual(27, len(result["recognition"]["elements"]))
         self.assertTrue(result["recognition"]["oracleEligible"])
+        view_state = result["recognition"]["page"]["viewState"]
+        self.assertEqual("matched", view_state["status"])
+        self.assertEqual("heroSelect.top", view_state["state"]["id"])
         for element_id in (
             "heroSelect.Quincy",
             "heroSelect.Gwendolin",
-            "heroSelect.Geraldo",
+            "heroSelect.DanDeMonk",
+            "heroSelect.Silas",
+            "heroSelect.AdmiralBrickell",
             "heroSelect.back",
         ):
             element = next(
@@ -286,6 +291,102 @@ class VisualRecognitionTests(unittest.TestCase):
         )
         self.assertEqual("visible", selected["visibility"])
         self.assertEqual("notVisible", choose["visibility"])
+
+    def test_real_hero_frames_match_view_states_and_all_action_coordinates(self) -> None:
+        top_actions = {
+            "Quincy": (100, 220),
+            "Gwendolin": (255, 220),
+            "StrikerJones": (405, 220),
+            "ObynGreenfoot": (100, 415),
+            "DanDeMonk": (255, 415),
+            "Benjamin": (405, 415),
+            "PatFusty": (100, 605),
+            "CaptainChurchill": (255, 605),
+            "Ezili": (405, 605),
+            "Silas": (100, 800),
+            "Etienne": (255, 800),
+            "Sauda": (405, 800),
+            "Rosalia": (100, 990),
+            "Adora": (255, 990),
+            "AdmiralBrickell": (405, 990),
+        }
+        bottom_actions = {
+            "ObynGreenfoot": (100, 160),
+            "DanDeMonk": (255, 160),
+            "Benjamin": (405, 160),
+            "PatFusty": (100, 330),
+            "CaptainChurchill": (255, 330),
+            "Ezili": (405, 330),
+            "Silas": (100, 520),
+            "Etienne": (255, 520),
+            "Sauda": (405, 520),
+            "Rosalia": (100, 710),
+            "Adora": (255, 710),
+            "AdmiralBrickell": (405, 710),
+            "Psi": (100, 900),
+            "Geraldo": (255, 900),
+            "Corvus": (405, 900),
+        }
+        cases = (
+            ("hero-select.zh-CN.json", "heroSelect.top", top_actions),
+            ("hero-select.zh-CN.holdout.json", "heroSelect.top", top_actions),
+            ("hero-select-bottom.zh-CN.json", "heroSelect.bottom", bottom_actions),
+            (
+                "hero-select-bottom.zh-CN.holdout.json",
+                "heroSelect.bottom",
+                bottom_actions,
+            ),
+        )
+        all_heroes = set(top_actions) | set(bottom_actions)
+
+        for evidence_name, expected_view_state, expected_actions in cases:
+            with self.subTest(evidence=evidence_name):
+                evidence = read_evidence(SAMPLE_ROOT / evidence_name)
+                result, match = recognize_image(evidence, self.catalog)
+                recognition = result["recognition"]
+
+                self.assertIsNotNone(match)
+                self.assertEqual("matched", recognition["status"])
+                self.assertTrue(recognition["oracleEligible"])
+                self.assertEqual("heroSelect", recognition["page"]["id"])
+                page = recognition["page"]
+                page_anchor_scores = [
+                    anchor["score"]
+                    for anchor in page["anchors"]
+                    if anchor["pageAnchor"]
+                ]
+                self.assertAlmostEqual(
+                    sum(page_anchor_scores) / len(page_anchor_scores),
+                    page["score"],
+                )
+                self.assertEqual(
+                    expected_view_state,
+                    page["viewState"]["state"]["id"],
+                )
+                self.assertAlmostEqual(
+                    (page["score"] + page["viewState"]["state"]["score"]) / 2,
+                    page["rankingScore"],
+                    places=6,
+                )
+                elements = {
+                    element["id"].removeprefix("heroSelect."): element
+                    for element in recognition["elements"]
+                    if element["id"].removeprefix("heroSelect.") in all_heroes
+                }
+                self.assertEqual(all_heroes, set(elements))
+                for hero, expected_action in expected_actions.items():
+                    element = elements[hero]
+                    self.assertEqual("visible", element["visibility"])
+                    self.assertTrue(element["visible"])
+                    self.assertEqual(
+                        {"x": expected_action[0], "y": expected_action[1]},
+                        element["actionPointClient"],
+                    )
+                for hero in all_heroes - set(expected_actions):
+                    element = elements[hero]
+                    self.assertEqual("viewStateUnknown", element["visibility"])
+                    self.assertIsNone(element["visible"])
+                    self.assertIsNone(element["actionPointClient"])
 
     def test_real_choice_frame_distinguishes_choose_from_selected(self) -> None:
         evidence = read_evidence(SAMPLE_ROOT / "hero-select-choice.zh-CN.json")
@@ -327,6 +428,11 @@ class VisualRecognitionTests(unittest.TestCase):
             self.assertEqual("matched", result["recognition"]["status"])
             self.assertEqual("heroSelect", result["recognition"]["page"]["id"])
             self.assertGreater(result["recognition"]["page"]["score"], 0.99)
+            self.assertEqual(0.5, result["recognition"]["page"]["rankingScore"])
+            self.assertEqual(
+                "unknown",
+                result["recognition"]["page"]["viewState"]["status"],
+            )
             quincy = next(
                 element
                 for element in result["recognition"]["elements"]
@@ -337,8 +443,8 @@ class VisualRecognitionTests(unittest.TestCase):
                 for anchor in result["recognition"]["page"]["anchors"]
                 if anchor["id"] == "heroSelect.QuincyPortrait"
             )
-            self.assertEqual("notVisible", quincy["visibility"])
-            self.assertFalse(quincy["visible"])
+            self.assertEqual("viewStateUnknown", quincy["visibility"])
+            self.assertIsNone(quincy["visible"])
             self.assertFalse(portrait["pageAnchor"])
 
     def test_real_holdout_frame_matches_stage_settings(self) -> None:
@@ -418,6 +524,125 @@ class VisualRecognitionTests(unittest.TestCase):
         )
         self.assertEqual("notVisible", map_effects["visibility"])
         self.assertFalse(map_effects["visible"])
+
+    def test_real_extras_frames_match_view_state_placements_and_toggle_states(self) -> None:
+        scenarios = (
+            (
+                "extras-top.zh-CN.json",
+                "extras.top",
+                {
+                    "doubleCash": "enabled",
+                    "fastTrack": "disabled",
+                    "bigBloons": "disabled",
+                    "smallBloons": "enabled",
+                    "bigMonkeyTowers": "disabled",
+                    "smallMonkeyTowers": "disabled",
+                    "smallBosses": "disabled",
+                },
+            ),
+            (
+                "extras-top.zh-CN.holdout.json",
+                "extras.top",
+                {
+                    "doubleCash": "enabled",
+                    "fastTrack": "enabled",
+                    "bigBloons": "disabled",
+                    "smallBloons": "enabled",
+                    "bigMonkeyTowers": "disabled",
+                    "smallMonkeyTowers": "disabled",
+                    "smallBosses": "disabled",
+                },
+            ),
+            (
+                "extras-bottom.zh-CN.json",
+                "extras.bottom",
+                {
+                    "doubleCash": "enabled",
+                    "fastTrack": "disabled",
+                    "bigBloons": "disabled",
+                    "smallBloons": "enabled",
+                    "bigMonkeyTowers": "disabled",
+                    "smallMonkeyTowers": "disabled",
+                    "smallBosses": "disabled",
+                },
+            ),
+            (
+                "extras-bottom.zh-CN.holdout.json",
+                "extras.bottom",
+                {
+                    "doubleCash": "enabled",
+                    "fastTrack": "disabled",
+                    "bigBloons": "enabled",
+                    "smallBloons": "enabled",
+                    "bigMonkeyTowers": "disabled",
+                    "smallMonkeyTowers": "disabled",
+                    "smallBosses": "disabled",
+                },
+            ),
+        )
+
+        for evidence_name, expected_view_state, expected_states in scenarios:
+            with self.subTest(evidence=evidence_name):
+                evidence = read_evidence(SAMPLE_ROOT / evidence_name)
+
+                result, match = recognize_image(evidence, self.catalog)
+
+                self.assertIsNotNone(match)
+                recognition = result["recognition"]
+                self.assertEqual("matched", recognition["status"])
+                self.assertTrue(recognition["oracleEligible"])
+                self.assertEqual("extras", recognition["page"]["id"])
+                view_state = recognition["page"]["viewState"]
+                self.assertEqual("matched", view_state["status"])
+                self.assertTrue(view_state["oracleEligible"])
+                self.assertEqual(expected_view_state, view_state["state"]["id"])
+                elements = {
+                    element["id"]: element for element in recognition["elements"]
+                }
+                self.assertEqual(9, len(elements))
+                for element_name, expected_state in expected_states.items():
+                    element = elements[f"extras.{element_name}"]
+                    self.assertEqual("visible", element["visibility"])
+                    self.assertTrue(element["visible"])
+                    self.assertEqual(expected_view_state, element["viewStateId"])
+                    self.assertIsNotNone(element["boundsReference"])
+                    self.assertEqual("matched", element["state"]["status"])
+                    self.assertEqual(expected_state, element["state"]["id"])
+
+    def test_unmodeled_extras_scroll_position_keeps_page_but_view_state_is_unknown(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            with Image.open(SAMPLE_ROOT / "extras-top.zh-CN.holdout.png") as source:
+                intermediate = source.convert("RGB")
+                scrolled_content = intermediate.crop((0, 140, 1920, 1080))
+                intermediate.paste(scrolled_content, (0, 105))
+                intermediate.paste((0, 0, 0), (0, 1045, 1920, 1080))
+            metadata_path = write_test_evidence(
+                Path(temporary_directory),
+                "extras-intermediate",
+                intermediate,
+            )
+            evidence = read_evidence(metadata_path)
+
+            result, match = recognize_image(evidence, self.catalog)
+
+        self.assertIsNotNone(match)
+        recognition = result["recognition"]
+        self.assertEqual("matched", recognition["status"])
+        self.assertEqual("extras", recognition["page"]["id"])
+        view_state = recognition["page"]["viewState"]
+        self.assertEqual("unknown", view_state["status"])
+        self.assertFalse(view_state["oracleEligible"])
+        self.assertIsNone(view_state["state"])
+        placement_elements = [
+            element
+            for element in recognition["elements"]
+            if element["id"] not in ("extras.back", "extras.options")
+        ]
+        self.assertEqual(7, len(placement_elements))
+        self.assertTrue(
+            all(element["visibility"] == "viewStateUnknown" for element in placement_elements)
+        )
+        self.assertTrue(all(element["boundsReference"] is None for element in placement_elements))
 
     def test_uniform_dark_frame_is_unknown(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:

@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "extras.top.zh-CN.holdout.20260808",
+  "sourceEvidenceId": "2a941f0e4d684bd49402e3c11cb85cf1",
+  "sourceImageSha256": "7376c61bd7e46095f33d41a92a70281529487fa8f4e9906a8561b118e8f40078",
+  "pageId": "extras",
+  "viewStateId": "extras.top",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T03:52:43.493Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromPageAnchors": [
+    "extras.scrollableContent",
+    "extras.toggleStates"
+  ],
+  "notes": [
+    "The holdout was captured with Fast Track temporarily enabled and was not used to build templates.",
+    "Fast Track was restored to disabled after capture."
+  ]
+}

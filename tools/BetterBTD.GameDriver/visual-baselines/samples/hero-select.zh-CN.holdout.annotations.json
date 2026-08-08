@@ -4,6 +4,7 @@
   "sourceEvidenceId": "e9600d045c61422a93720130656a5adc",
   "sourceImageSha256": "1748182359fd475e1271f6831b9e9d4e5ec3461fce51db3e9ee03eb84f8ac39b",
   "pageId": "heroSelect",
+  "viewStateId": "heroSelect.top",
   "language": "zh-CN",
   "clientSize": { "width": 1920, "height": 1080 },
   "review": {

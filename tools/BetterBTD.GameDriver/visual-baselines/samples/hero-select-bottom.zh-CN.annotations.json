@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "heroSelect.bottom.zh-CN.20260808",
+  "sourceEvidenceId": "152e6380acbf44ba84ecf91150ebdbdc",
+  "sourceImageSha256": "4ac6c3e226508b09957621f2cdc8226ad2da7f349a97f2e5ea53f24edb5d2059",
+  "pageId": "heroSelect",
+  "viewStateId": "heroSelect.bottom",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T04:40:07.799Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromPageAnchors": [
+    "heroSelect.collectionProgress",
+    "heroSelect.premiumCurrency",
+    "heroSelect.selectedHeroArtwork",
+    "heroSelect.selectionState",
+    "heroSelect.skins",
+    "heroSelect.localizedText"
+  ],
+  "notes": [
+    "The bottom viewport covers rows two through six and exposes Psi, Geraldo, and Corvus in the final row.",
+    "Portrait crops exclude dynamic titles, selection borders, and red notification badges.",
+    "Together with heroSelect.top, this provides independent visibility and action coordinates for all 18 heroes."
+  ]
+}

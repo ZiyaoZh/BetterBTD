@@ -66,7 +66,43 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\BetterBTD.GameDriver\g
 
 `click-point` 使用与 `click` 相同的输入所有权、窗口一致性、前后证据和变化/稳定等待协议，但不要求操作前页面已被目录识别，因此不能把坐标点击本身当作元素级 Oracle。若指定 `--expect-page`，操作后仍必须独立识别到该页面。轨迹同时记录参考坐标、换算后的客户区物理坐标和屏幕物理坐标。
 
+在参考客户区坐标发送垂直滚轮输入，并要求操作后识别到指定视口状态：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\BetterBTD.GameDriver\game-driver.ps1 scroll-point `
+  --x 1500 `
+  --y 850 `
+  --direction down `
+  --notches 3 `
+  --phase arrange `
+  --expect-page extras `
+  --expect-view-state extras.bottom `
+  --output-dir artifacts\game-driver\manual\extras-scroll-bottom
+```
+
+`scroll-point` 强制要求 `--phase arrange` 或 `--phase recover`，支持 `up`/`down` 和 1 至 20 个滚轮档位。它把光标放到换算后的客户区点再发送滚轮输入，并保存参考、客户区和屏幕物理坐标以及 Win32 wheel delta。默认要求画面发生变化后连续稳定；在列表已经到顶或到底等合法边界场景，可显式指定 `--allow-no-change`，此时轨迹将结果区分为 `changedStable`、`unchangedStable` 或 `timeout`。`--expect-view-state` 是操作后独立视口状态断言，可与 `--expect-page` 同时使用；仅有滚轮调用成功或像素变化仍不构成 Oracle。
+
+在两个参考客户区坐标之间执行左键拖动：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\BetterBTD.GameDriver\game-driver.ps1 drag-point `
+  --start-x 250 `
+  --start-y 850 `
+  --end-x 250 `
+  --end-y 250 `
+  --duration-ms 500 `
+  --steps 10 `
+  --phase arrange `
+  --allow-no-change `
+  --expect-page heroSelect `
+  --output-dir artifacts\game-driver\manual\hero-drag-probe
+```
+
+`drag-point` 分别换算并记录起点和终点，按 `--duration-ms`（50 至 5000，默认 500）和 `--steps`（1 至 100，默认 10）线性移动。底层在按下左键后用 `finally` 保证发送 mouse-up；即使中途移动或等待抛出异常，也不会有意把左键保持在按下状态。它具有与滚动相同的阶段限制、`--allow-no-change`、`--expect-page`、`--expect-view-state`、窗口一致性和证据协议。上例是允许无变化结果的探索性拖动探针；当前真实英雄网格不接受拖动滚屏，英雄视口切换必须使用 `scroll-point`。mouse-up 保证只描述 Game Driver 的输入清理语义，不代表游戏一定接受了拖动或到达目标状态。
+
 `--change-threshold` 默认 `0.05`，适合页面转换。只改变局部状态的操作必须使用真实轨迹校准更低阈值；例如英雄 `choose -> selected` 在当前 `1920 x 1080` 中文环境使用 `--change-threshold 0.004`，最终仍须由独立状态模板和 `--expect-page` 确认，不能只凭像素变化判定成功。
+
+`scroll-point` 和 `drag-point` 针对局部视口变化默认使用较低的 `--change-threshold 0.005`；不同分辨率、动画和页面仍需要真实轨迹校准。
 
 真实冷启动可能依次出现 `welcome`、加载画面和 `modifiedClientWarning`，也可能直接进入 `mainMenu`。启动页可点击 `welcome.start`；修改客户端警告只开放 `modifiedClientWarning.continue`，会改变账号状态的 `unregister` 和关闭进程的 `closeGame` 没有动作点。加载画面可能先于目标页稳定，因此冷启动编排目前需要在操作后重复 `capture`/`recognize`，直到独立识别到下一个可处理页。
 
@@ -104,7 +140,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\BetterBTD.GameDriver\g
 - 黑帧/纯色帧诊断和其他警告。
 - 最后原子写入的 `.complete.json` 完成标记，其中包含 PNG 与元数据哈希。读取方只有在标记存在且哈希一致时才能接受该组证据。
 
-每次元素或坐标点击在独立输出目录保存 `before`、`after` 两组三件套和原子写入的 `operation.json`。操作轨迹记录参考/客户区/屏幕物理坐标、点击阶段、每个轮询帧的全像素指纹、相对操作前与上一帧的归一化差异、连续稳定帧数和前后独立识别摘要。单个 `before`/`after` 捕获仍是单帧，所以其 `capture.stabilityCheckPerformed=false`；稳定性结论属于同时保存的操作级轨迹，不能通过改写单帧元数据伪造。
+每次点击、滚动或拖动都在独立输出目录保存 `before`、`after` 两组三件套和原子写入的 `operation.json`。操作轨迹记录输入所有权阶段、参考/客户区/屏幕物理坐标、滚轮方向与档位或拖动时长与步数、每个轮询帧的全像素指纹、相对操作前与上一帧的归一化差异、连续稳定帧数、前后独立识别摘要，以及页面和视口状态期望。单个 `before`/`after` 捕获仍是单帧，所以其 `capture.stabilityCheckPerformed=false`；稳定性结论属于同时保存的操作级轨迹，不能通过改写单帧元数据伪造。
 
 Game Driver 在当前线程启用 Per-Monitor V2 坐标语义，以读取真实物理像素。这不会修改 Windows 的分辨率、缩放或其他系统显示设置。基准坐标仍按 BetterBTD 现有算法在代码中换算：
 
@@ -119,22 +155,24 @@ screenY = clientOriginOnScreenY + clientY
 
 ## 视觉目录协议
 
-版本化目录位于 `visual-baselines/`。当前覆盖 14 个中文页面：`welcome`、`modifiedClientWarning`、`mainMenu`、`mapSelect`、`difficultySelect`、三种难度的模式选择、`heroSelect`、`inLevel`、`stageSettings`、`settings`、`hotkeys` 和 `accessibility`，共 108 个独立模板和 159 个目录元素。主流程已能独立选择 `MonkeyMeadow` 的简单、中级和困难模式入口；英雄页可检测首屏 15 个 `HeroType`、`choose`/`selected` 状态和返回动作；设置页完整建模当前可见控件，只开放不会修改账号、语言、键位或视觉配置的安全动作。真实验证还覆盖 `mainMenu -> settings -> hotkeys/accessibility -> settings -> mainMenu` 往返。玩家名、用户 ID、版本号、货币、活动入口、本地化标签、奖励数值、地图勋章、星光和动态徽章不会成为页面 ID 或页面识别锚点。
+版本化目录位于 `visual-baselines/`。当前 catalog v12 使用 schema v2，覆盖 15 个中文页面、168 个独立模板、171 个目录元素、4 个视口状态和 44 个元素 placement。页面包括 `welcome`、`modifiedClientWarning`、`mainMenu`、`mapSelect`、`difficultySelect`、三种难度的模式选择、`heroSelect`、`inLevel`、`stageSettings`、`settings`、`hotkeys`、`accessibility` 和 `extras`。主流程已能独立选择 `MonkeyMeadow` 的简单、中级和困难模式入口；`heroSelect.top`/`heroSelect.bottom` 合并覆盖 18 个稳定 `HeroType`，`extras.top`/`extras.bottom` 覆盖全部 7 个开关及其 `enabled`/`disabled` 状态。玩家名、用户 ID、版本号、货币、活动入口、本地化标签、奖励数值、地图勋章、星光和动态徽章不会成为页面 ID 或页面识别锚点。
 
 每个模板记录来源 `evidenceId`、来源图片 SHA-256、裁剪矩形和模板 SHA-256。每页还必须绑定一组 Oracle 可用的正向留出证据，且其图片哈希不能与任何制模源图相同。`catalog` 和 `baseline build` 会重新校验完整证据链。识别代码只依赖 Game Driver 自己的目录和 Pillow，不加载 BetterBTD 截图、OCR 模板、OpenCvSharp 资源或运行时状态。
 
 当前页面识别要求 `16:9` 画面，并把画面规范化到 `1920 x 1080` 后进行固定区域多锚点比较。锚点的 `pageAnchor` 缺省为 `true`；`false` 只用于元素可见性，不影响页面分数和最少锚点数。至少命中页面声明数量的页面锚点并超过总分阈值才返回 `matched`；两个候选分差小于 `0.02` 时返回 `ambiguous`，其余情况返回 `unknown`。只有完整证据链无警告且识别状态为 `matched` 时，识别结果才标记为 Oracle 可用。
 
+schema v2 在页面身份之下增加 `viewStates`，并允许元素按视口声明 `placements`；每个 placement 自带当前视口中的 `bounds`、`actionPoint`、检测锚点和可选 `states`。锚点的 `sourceBounds` 指定从来源证据裁剪模板的位置，`bounds` 仍是运行时画面中的匹配位置，因此同一来源图可以为另一个视口提供模板而不混淆坐标。识别结果分别报告页面、视口状态、当前 placement 和元素状态。页面 `score` 始终只由 `pageAnchor=true` 的锚点计算；`rankingScore` 可合入视口置信度，只用于跨页面候选竞争。加载器继续接受 schema v1：缺省为无视口状态、无 placement，并令 `sourceBounds == bounds`，已有 v1 目录语义不变。
+
 ## 当前限制
 
 - `desktop-gdi-bitblt` 捕获的是用户真实可见桌面，因此要求窗口未被遮挡、未最小化、完整位于虚拟桌面内且会话未锁屏。
 - 通知、顶置窗口和覆盖层会进入截图。这是可见证据的一部分，但测试编排需要据此判定现场是否有效。
-- 连续帧等待目前用于 `click` 和 `click-point`，采用规范化全画面差异阈值；不同分辨率、动画强度和显示布局仍需要真实校准。
-- 点击命令在第一个明显变化且连续稳定的画面停止；若操作经过可稳定停留的加载页，它不会自动跨越中间态等待更后的目标页。
-- 真实游戏视觉验证目前覆盖中文冷启动、修改客户端警告、主菜单、设置/热键/辅助功能往返、初学者地图选择首个轮播页、三种难度模式页、Quincy/Gwendolin 英雄选择与恢复、简单/困难标准关卡、暂停继续和暂停返回主页；额外设置长列表、其他英雄滚动、活动回合、其他地图、胜负、奖励和通用弹窗仍需要独立采集与标注。
+- 连续帧等待用于 `click`、`click-point`、`scroll-point` 和 `drag-point`，采用规范化全画面差异阈值；不同分辨率、动画强度和显示布局仍需要真实校准。滚动和拖动只在显式 `--allow-no-change` 时接受连续稳定的无变化画面。
+- 控制命令在第一个明显变化且连续稳定的画面停止；若操作经过可稳定停留的加载页，它不会自动跨越中间态等待更后的目标页。
+- 现有真实游戏验证覆盖中文冷启动、修改客户端警告、主菜单、设置/热键/辅助功能往返、初学者地图选择首个轮播页、三种难度模式页、简单/困难标准关卡、暂停继续和暂停返回主页。`extras` 已真实验证上下端点滚动及边界 `unchangedStable`。英雄页已真实识别底部视口（页面分数 `0.991168`、视口分数 `0.999160`），按元素 ID 点击 Corvus、Silas 均返回 `changedStable`，在左侧滚动指示区向上 20 档后独立识别 `heroSelect.top`（视口分数 `0.999807`），随后恢复选中 Quincy 并返回 `mainMenu`（分数 `0.999120`）。英雄网格的真实拖动探针没有产生滚动，因此不把拖动声明为英雄页成功路径。
 - `inLevel.health` 已检测公共 HUD 图标，但生命、金币和回合数值尚未解析；跨地图、受限模式和已开局动态画面仍需扩大真实样本。
-- 当前 104 个目录元素具备独立可见性探测器，其中 67 个具备可点击动作点；其他元素明确返回 `notEvaluated`，不能由 `click` 操作控制。
-- 当前实现按元素 ID 或参考客户区坐标左键点击和画面变化/稳定等待；键盘、文本输入、滚动及元素出现/消失等通用等待尚未实现。
+- 当前 115 个目录元素具备独立可见性探测器，其中 71 个按钮具备可点击动作点；其余元素明确返回 `notEvaluated`。只有当前页面和视口均独立识别、对应 placement 可见且动作点有效的按钮才能由 `click` 控制。`extras` 开关只有独立状态检测，不提供会修改配置的动作点。
+- 当前实现支持元素/坐标点击、坐标滚轮和坐标拖动；键盘、文本输入以及元素出现/消失等通用等待尚未实现。
 
 ## 测试
 

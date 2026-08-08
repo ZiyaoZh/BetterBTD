@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "extras.bottom.zh-CN.holdout.20260808",
+  "sourceEvidenceId": "b49b54f9383c4791938c1faffbd1a169",
+  "sourceImageSha256": "0f27e82f7ddd7506aab14f1812573fc4218c9cfe30298db3122963362d8f5f9c",
+  "pageId": "extras",
+  "viewStateId": "extras.bottom",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T03:52:43.493Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromPageAnchors": [
+    "extras.scrollableContent",
+    "extras.toggleStates"
+  ],
+  "notes": [
+    "The holdout was captured with Big Bloons temporarily enabled and was not used to build templates.",
+    "Big Bloons was restored to disabled after capture."
+  ]
+}

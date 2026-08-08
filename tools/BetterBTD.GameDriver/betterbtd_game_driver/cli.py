@@ -13,11 +13,23 @@ from .baseline import build_templates
 from .driver import DEFAULT_PROCESS_NAMES, DEFAULT_WINDOW_TITLES, CaptureRequest, GameDriver
 from .evidence import read_evidence
 from .errors import GameDriverError, UsageError
-from .interaction import ClickRequest, InteractionDriver, PointClickRequest
+from .interaction import (
+    ClickRequest,
+    DragPointRequest,
+    InteractionDriver,
+    PointClickRequest,
+    ScrollPointRequest,
+)
 from .models import WindowSelector
 from .vision import recognize_image, write_annotation
 from .visual_catalog import load_visual_catalog, visual_catalog_summary
-from .win32 import enable_per_monitor_v2
+from .win32 import (
+    MAX_DRAG_DURATION_MS,
+    MAX_DRAG_STEPS,
+    MAX_SCROLL_NOTCHES,
+    MIN_DRAG_DURATION_MS,
+    enable_per_monitor_v2,
+)
 
 
 class DriverArgumentParser(argparse.ArgumentParser):
@@ -127,6 +139,107 @@ def create_parser() -> DriverArgumentParser:
     )
     _add_interaction_arguments(point_click_parser)
 
+    scroll_parser = subparsers.add_parser(
+        "scroll-point",
+        help="Scroll at a 1920x1080 reference-space client point and observe the transition.",
+    )
+    _add_selector_arguments(scroll_parser)
+    scroll_parser.add_argument(
+        "--x",
+        type=lambda value: _bounded_integer(value, 0, 1919, "--x"),
+        required=True,
+        help="Reference-space client X coordinate (0 through 1919).",
+    )
+    scroll_parser.add_argument(
+        "--y",
+        type=lambda value: _bounded_integer(value, 0, 1079, "--y"),
+        required=True,
+        help="Reference-space client Y coordinate (0 through 1079).",
+    )
+    scroll_parser.add_argument(
+        "--direction",
+        choices=("up", "down"),
+        required=True,
+        help="Vertical wheel direction.",
+    )
+    scroll_parser.add_argument(
+        "--notches",
+        type=lambda value: _bounded_integer(
+            value,
+            1,
+            MAX_SCROLL_NOTCHES,
+            "--notches",
+        ),
+        default=1,
+        help="Number of wheel detents to send (default: 1).",
+    )
+    scroll_parser.add_argument(
+        "--allow-no-change",
+        action="store_true",
+        help="Accept an unchanged stable frame, for example at a scroll boundary.",
+    )
+    scroll_parser.add_argument(
+        "--expect-view-state",
+        help="Require an independently recognized catalog view state after scrolling.",
+    )
+    _add_interaction_arguments(scroll_parser, default_change_threshold=0.005)
+
+    drag_parser = subparsers.add_parser(
+        "drag-point",
+        help=(
+            "Drag between two 1920x1080 reference-space client points and observe "
+            "the transition."
+        ),
+    )
+    _add_selector_arguments(drag_parser)
+    for option, destination, axis, maximum in (
+        ("--start-x", "start_x", "X", 1919),
+        ("--start-y", "start_y", "Y", 1079),
+        ("--end-x", "end_x", "X", 1919),
+        ("--end-y", "end_y", "Y", 1079),
+    ):
+        drag_parser.add_argument(
+            option,
+            dest=destination,
+            type=lambda value, name=option, limit=maximum: _bounded_integer(
+                value, 0, limit, name
+            ),
+            required=True,
+            help=f"Reference-space client {axis} coordinate (0 through {maximum}).",
+        )
+    drag_parser.add_argument(
+        "--duration-ms",
+        type=lambda value: _bounded_integer(
+            value,
+            MIN_DRAG_DURATION_MS,
+            MAX_DRAG_DURATION_MS,
+            "--duration-ms",
+        ),
+        default=500,
+        help="Time from mouse-down to mouse-up in milliseconds (default: 500).",
+    )
+    drag_parser.add_argument(
+        "--steps",
+        type=lambda value: _bounded_integer(
+            value,
+            1,
+            MAX_DRAG_STEPS,
+            "--steps",
+        ),
+        default=10,
+        help="Linear cursor movements between endpoints (default: 10).",
+    )
+    drag_parser.add_argument(
+        "--allow-no-change",
+        action="store_true",
+        help="Accept an unchanged stable frame, for example at a drag boundary.",
+    )
+    drag_parser.add_argument(
+        "--expect-view-state",
+        help="Require an independently recognized catalog view state after dragging.",
+    )
+    _add_interaction_arguments(drag_parser, default_change_threshold=0.005)
+
     catalog_parser = subparsers.add_parser(
         "catalog",
         help="Validate the independent visual baseline catalog and templates.",
@@ -185,7 +298,11 @@ def create_parser() -> DriverArgumentParser:
     return parser
 
 
-def _add_interaction_arguments(parser: argparse.ArgumentParser) -> None:
+def _add_interaction_arguments(
+    parser: argparse.ArgumentParser,
+    *,
+    default_change_threshold: float = 0.05,
+) -> None:
     parser.add_argument(
         "--phase",
         required=True,
@@ -265,8 +382,11 @@ def _add_interaction_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--change-threshold",
         type=lambda value: _bounded_float(value, 0.000001, 1.0, "--change-threshold"),
-        default=0.05,
-        help="Normalized difference required from the pre-input frame (default: 0.05).",
+        default=default_change_threshold,
+        help=(
+            "Normalized difference required from the pre-input frame "
+            f"(default: {default_change_threshold})."
+        ),
     )
     parser.add_argument(
         "--stability-threshold",
@@ -283,7 +403,13 @@ def parse_args(arguments: Sequence[str]) -> argparse.Namespace:
     parsed = parser.parse_args(arguments)
     if parsed.command == "baseline" and parsed.baseline_command is None:
         raise UsageError("baseline requires a subcommand such as 'build'.")
-    if parsed.command in ("capture", "click", "click-point"):
+    if parsed.command in (
+        "capture",
+        "click",
+        "click-point",
+        "scroll-point",
+        "drag-point",
+    ):
         if parsed.launch is not None and (
             parsed.window_handle is not None or parsed.process_id is not None
         ):
@@ -294,6 +420,12 @@ def parse_args(arguments: Sequence[str]) -> argparse.Namespace:
             and parsed.output.suffix.casefold() != ".png"
         ):
             raise UsageError("--output must name a .png file.")
+        if (
+            parsed.command == "drag-point"
+            and parsed.start_x == parsed.end_x
+            and parsed.start_y == parsed.end_y
+        ):
+            raise UsageError("Drag start and end points must differ.")
     return parsed
 
 
@@ -390,6 +522,62 @@ def main(arguments: Sequence[str] | None = None) -> int:
                 ),
                 load_visual_catalog(parsed.catalog),
             )
+        elif parsed.command == "scroll-point":
+            result = InteractionDriver(driver).scroll_point(
+                ScrollPointRequest(
+                    selector=selector,
+                    reference_x=parsed.x,
+                    reference_y=parsed.y,
+                    direction=parsed.direction,
+                    notches=parsed.notches,
+                    allow_no_change=parsed.allow_no_change,
+                    expected_view_state_id=parsed.expect_view_state,
+                    phase=parsed.phase,
+                    output_directory=parsed.output_dir,
+                    launch_path=parsed.launch,
+                    overwrite=parsed.overwrite,
+                    expected_page_id=parsed.expect_page,
+                    settle_ms=parsed.settle_ms,
+                    activation_timeout_ms=parsed.activation_timeout_ms,
+                    window_timeout_ms=parsed.window_timeout_ms,
+                    launch_timeout_ms=parsed.launch_timeout_ms,
+                    transition_timeout_ms=parsed.transition_timeout_ms,
+                    poll_interval_ms=parsed.poll_interval_ms,
+                    stable_sample_count=parsed.stable_samples,
+                    change_threshold=parsed.change_threshold,
+                    stability_threshold=parsed.stability_threshold,
+                ),
+                load_visual_catalog(parsed.catalog),
+            )
+        elif parsed.command == "drag-point":
+            result = InteractionDriver(driver).drag_point(
+                DragPointRequest(
+                    selector=selector,
+                    start_reference_x=parsed.start_x,
+                    start_reference_y=parsed.start_y,
+                    end_reference_x=parsed.end_x,
+                    end_reference_y=parsed.end_y,
+                    duration_ms=parsed.duration_ms,
+                    steps=parsed.steps,
+                    allow_no_change=parsed.allow_no_change,
+                    expected_view_state_id=parsed.expect_view_state,
+                    phase=parsed.phase,
+                    output_directory=parsed.output_dir,
+                    launch_path=parsed.launch,
+                    overwrite=parsed.overwrite,
+                    expected_page_id=parsed.expect_page,
+                    settle_ms=parsed.settle_ms,
+                    activation_timeout_ms=parsed.activation_timeout_ms,
+                    window_timeout_ms=parsed.window_timeout_ms,
+                    launch_timeout_ms=parsed.launch_timeout_ms,
+                    transition_timeout_ms=parsed.transition_timeout_ms,
+                    poll_interval_ms=parsed.poll_interval_ms,
+                    stable_sample_count=parsed.stable_samples,
+                    change_threshold=parsed.change_threshold,
+                    stability_threshold=parsed.stability_threshold,
+                ),
+                load_visual_catalog(parsed.catalog),
+            )
         elif parsed.command not in ("catalog", "recognize", "baseline"):
             raise UsageError(f"Unsupported command: {parsed.command}")
 
@@ -458,7 +646,9 @@ def _parse_window_handle(value: str) -> int:
     try:
         handle = int(value, 0)
     except ValueError as error:
-        raise argparse.ArgumentTypeError("window handle must be decimal or 0x-prefixed hexadecimal") from error
+        raise argparse.ArgumentTypeError(
+            "window handle must be decimal or 0x-prefixed hexadecimal"
+        ) from error
     if handle <= 0:
         raise argparse.ArgumentTypeError("window handle must be positive")
     return handle

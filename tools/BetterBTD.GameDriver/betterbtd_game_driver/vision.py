@@ -12,7 +12,7 @@ from PIL import Image, ImageChops, ImageDraw, ImageFont, ImageOps, ImageStat
 from .coordinates import reference_rect_to_client, reference_to_client
 from .evidence import EvidenceBundle, evidence_reference
 from .errors import GameDriverError
-from .visual_catalog import VisualCatalog, VisualPage
+from .visual_catalog import VisualCatalog, VisualElement, VisualPage, VisualViewState
 
 
 COMPARISON_SIZE = (48, 48)
@@ -31,9 +31,21 @@ class AnchorMatch:
 class PageMatch:
     page: VisualPage
     score: float
+    ranking_score: float
     matched_anchor_count: int
     matched: bool
     anchors: tuple[AnchorMatch, ...]
+    view_state: ViewStateMatch | None = None
+    view_state_ambiguous: bool = False
+    view_state_candidates: tuple[ViewStateMatch, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class ViewStateMatch:
+    view_state: VisualViewState
+    score: float
+    matched_anchor_count: int
+    matched: bool
 
 
 def recognize_image(
@@ -83,14 +95,19 @@ def recognize_image(
     page_matches = tuple(_match_page(reference_image, page) for page in catalog.pages)
     ranked_pages = sorted(
         page_matches,
-        key=lambda match: match.score,
+        key=lambda match: match.ranking_score,
         reverse=True,
     )
-    best_match = ranked_pages[0] if ranked_pages and ranked_pages[0].matched else None
+    matched_pages = [match for match in ranked_pages if match.matched]
+    best_match = matched_pages[0] if matched_pages else None
     ambiguous = (
         best_match is not None
-        and len(ranked_pages) > 1
-        and abs(ranked_pages[0].score - ranked_pages[1].score) < 0.02
+        and any(
+            candidate is not best_match
+            and abs(best_match.ranking_score - candidate.ranking_score) < 0.02
+            and abs(best_match.score - candidate.score) < 0.02
+            for candidate in ranked_pages
+        )
     )
     if ambiguous:
         best_match = None
@@ -119,7 +136,11 @@ def recognize_image(
         "recognition": {
             "status": "ambiguous" if ambiguous else ("matched" if best_match else "unknown"),
             "oracleEligible": best_match is not None and evidence.oracle_eligible,
-            "page": _page_result(best_match, width, height) if best_match else None,
+            "page": (
+                _page_result(best_match, width, height, evidence.oracle_eligible)
+                if best_match
+                else None
+            ),
             "candidates": [
                 _page_candidate(match)
                 for match in ranked_pages
@@ -177,12 +198,17 @@ def write_annotation(
         color = (30, 210, 100)
         anchor_matches = {anchor.id: anchor for anchor in page_match.anchors}
         for element in page_match.page.elements:
+            placement = _element_placement_for_match(page_match, element)
+            if placement is None:
+                continue
             rect = reference_rect_to_client(
-                element.bounds,
+                placement.bounds,
                 width,
                 height,
             )
-            detector_matches = [anchor_matches[anchor_id] for anchor_id in element.anchor_ids]
+            detector_matches = [
+                anchor_matches[anchor_id] for anchor_id in placement.anchor_ids
+            ]
             element_color = (
                 (30, 210, 100)
                 if detector_matches and all(item.matched for item in detector_matches)
@@ -253,18 +279,70 @@ def _match_page(reference_image: Image.Image, page: VisualPage) -> PageMatch:
 
     page_anchor_matches = [match for match in anchor_matches if match.page_anchor]
     matched_anchor_count = sum(match.matched for match in page_anchor_matches)
-    score = sum(match.score for match in page_anchor_matches) / len(page_anchor_matches)
-    matched = (
+    page_score = sum(match.score for match in page_anchor_matches) / len(
+        page_anchor_matches
+    )
+    view_state, view_state_ambiguous, view_state_candidates = _match_view_states(
+        page,
+        anchor_matches,
+    )
+    page_requirements_matched = (
         matched_anchor_count >= page.minimum_matched_anchors
-        and score >= page.minimum_score
+        and page_score >= page.minimum_score
+    )
+    score = page_score
+    ranking_score = (
+        round(
+            (page_score + (view_state.score if view_state is not None else 0.0)) / 2,
+            6,
+        )
+        if page.view_states
+        else page_score
     )
     return PageMatch(
         page=page,
         score=score,
+        ranking_score=ranking_score,
         matched_anchor_count=matched_anchor_count,
-        matched=matched,
+        matched=page_requirements_matched,
         anchors=tuple(anchor_matches),
+        view_state=view_state,
+        view_state_ambiguous=view_state_ambiguous,
+        view_state_candidates=view_state_candidates,
     )
+
+
+def _match_view_states(
+    page: VisualPage,
+    anchor_matches: list[AnchorMatch],
+) -> tuple[ViewStateMatch | None, bool, tuple[ViewStateMatch, ...]]:
+    if not page.view_states:
+        return None, False, ()
+    matches_by_id = {match.id: match for match in anchor_matches}
+    candidates: list[ViewStateMatch] = []
+    for view_state in page.view_states:
+        state_anchors = [matches_by_id[anchor_id] for anchor_id in view_state.anchor_ids]
+        score = sum(anchor.score for anchor in state_anchors) / len(state_anchors)
+        matched_anchor_count = sum(anchor.matched for anchor in state_anchors)
+        candidates.append(
+            ViewStateMatch(
+                view_state=view_state,
+                score=score,
+                matched_anchor_count=matched_anchor_count,
+                matched=(
+                    matched_anchor_count >= view_state.minimum_matched_anchors
+                    and score >= view_state.minimum_score
+                ),
+            )
+        )
+    ranked = tuple(sorted(candidates, key=lambda candidate: candidate.score, reverse=True))
+    best = ranked[0] if ranked and ranked[0].matched else None
+    ambiguous = (
+        best is not None
+        and len(ranked) > 1
+        and abs(ranked[0].score - ranked[1].score) < 0.02
+    )
+    return (None if ambiguous else best), ambiguous, ranked
 
 
 def _image_similarity(first: Image.Image, second: Image.Image) -> float:
@@ -316,26 +394,76 @@ def _page_result(
     match: PageMatch,
     width: int,
     height: int,
+    evidence_oracle_eligible: bool,
 ) -> dict[str, object]:
-    return {
+    result: dict[str, object] = {
         "id": match.page.id,
         "score": match.score,
+        "rankingScore": match.ranking_score,
         "matchedAnchorCount": match.matched_anchor_count,
         "requiredAnchorCount": match.page.minimum_matched_anchors,
         "anchors": [_anchor_result(anchor) for anchor in match.anchors],
         "clientSize": {"width": width, "height": height},
     }
+    if match.page.view_states:
+        result["viewState"] = {
+            "status": (
+                "ambiguous"
+                if match.view_state_ambiguous
+                else ("matched" if match.view_state is not None else "unknown")
+            ),
+            "oracleEligible": (
+                match.view_state is not None and evidence_oracle_eligible
+            ),
+            "state": (
+                _view_state_result(match.view_state)
+                if match.view_state is not None
+                else None
+            ),
+            "candidates": [
+                _view_state_candidate(candidate)
+                for candidate in match.view_state_candidates
+            ],
+        }
+    return result
 
 
 def _page_candidate(match: PageMatch) -> dict[str, object]:
-    return {
+    result: dict[str, object] = {
         "id": match.page.id,
         "score": match.score,
+        "rankingScore": match.ranking_score,
         "matched": match.matched,
         "matchedAnchorCount": match.matched_anchor_count,
         "requiredAnchorCount": match.page.minimum_matched_anchors,
         "anchors": [_anchor_result(anchor) for anchor in match.anchors],
     }
+    if match.page.view_states:
+        result["viewStateStatus"] = (
+            "ambiguous"
+            if match.view_state_ambiguous
+            else ("matched" if match.view_state is not None else "unknown")
+        )
+        result["viewStateId"] = (
+            match.view_state.view_state.id if match.view_state is not None else None
+        )
+    return result
+
+
+def _view_state_result(match: ViewStateMatch) -> dict[str, object]:
+    return {
+        "id": match.view_state.id,
+        "score": match.score,
+        "matchedAnchorCount": match.matched_anchor_count,
+        "requiredAnchorCount": match.view_state.minimum_matched_anchors,
+        "anchorIds": list(match.view_state.anchor_ids),
+    }
+
+
+def _view_state_candidate(match: ViewStateMatch) -> dict[str, object]:
+    result = _view_state_result(match)
+    result["matched"] = match.matched
+    return result
 
 
 def _anchor_result(anchor: AnchorMatch) -> dict[str, object]:
@@ -356,20 +484,47 @@ def _element_results(
     result: list[dict[str, object]] = []
     anchor_matches = {anchor.id: anchor for anchor in match.anchors}
     for element in match.page.elements:
-        client_bounds = reference_rect_to_client(element.bounds, width, height)
+        placement = _element_placement_for_match(match, element)
+        if placement is None:
+            result.append(
+                {
+                    "id": element.id,
+                    "role": element.role,
+                    "visibility": "viewStateUnknown",
+                    "visible": None,
+                    "confidence": None,
+                    "detectorAnchorIds": [],
+                    "viewStateId": None,
+                    "boundsReference": None,
+                    "boundsClient": None,
+                    "actionPointClient": None,
+                }
+            )
+            continue
+        client_bounds = reference_rect_to_client(placement.bounds, width, height)
         action_point = None
-        if element.action_point is not None:
+        if placement.action_point is not None:
             action_x, action_y = reference_to_client(
-                element.action_point[0],
-                element.action_point[1],
+                placement.action_point[0],
+                placement.action_point[1],
                 width,
                 height,
             )
             action_point = {"x": action_x, "y": action_y}
-        detector_matches = [anchor_matches[anchor_id] for anchor_id in element.anchor_ids]
+        detector_matches = [
+            anchor_matches[anchor_id] for anchor_id in placement.anchor_ids
+        ]
         detected = bool(detector_matches) and all(item.matched for item in detector_matches)
-        visibility = "visible" if detected else ("notVisible" if detector_matches else "notEvaluated")
+        visibility = (
+            "visible"
+            if detected
+            else ("notVisible" if detector_matches else "notEvaluated")
+        )
         confidence = min((item.score for item in detector_matches), default=None)
+        state_result = _element_state_result(
+            getattr(placement, "states", ()),
+            anchor_matches,
+        )
         result.append(
             {
                 "id": element.id,
@@ -377,10 +532,57 @@ def _element_results(
                 "visibility": visibility,
                 "visible": detected if detector_matches else None,
                 "confidence": confidence,
-                "detectorAnchorIds": list(element.anchor_ids),
-                "boundsReference": element.bounds.to_dict(),
+                "detectorAnchorIds": list(placement.anchor_ids),
+                "viewStateId": (
+                    placement.view_state_id if element.placements else None
+                ),
+                "boundsReference": placement.bounds.to_dict(),
                 "boundsClient": client_bounds.to_dict(),
                 "actionPointClient": action_point,
+                "state": state_result,
             }
         )
     return result
+
+
+def _element_placement_for_match(match: PageMatch, element: VisualElement):
+    if not element.placements:
+        return element
+    if match.view_state is None:
+        return None
+    return next(
+        (
+            placement
+            for placement in element.placements
+            if placement.view_state_id == match.view_state.view_state.id
+        ),
+        None,
+    )
+
+
+def _element_state_result(states, anchor_matches: dict[str, AnchorMatch]):
+    if not states:
+        return None
+    candidates: list[dict[str, object]] = []
+    for state in states:
+        matches = [anchor_matches[anchor_id] for anchor_id in state.anchor_ids]
+        matched = all(anchor.matched for anchor in matches)
+        candidates.append(
+            {
+                "id": state.id,
+                "matched": matched,
+                "confidence": min(anchor.score for anchor in matches),
+                "detectorAnchorIds": list(state.anchor_ids),
+            }
+        )
+    matched_candidates = [candidate for candidate in candidates if candidate["matched"]]
+    if len(matched_candidates) == 1:
+        status = "matched"
+        state_id = matched_candidates[0]["id"]
+    elif len(matched_candidates) > 1:
+        status = "ambiguous"
+        state_id = None
+    else:
+        status = "unknown"
+        state_id = None
+    return {"status": status, "id": state_id, "candidates": candidates}

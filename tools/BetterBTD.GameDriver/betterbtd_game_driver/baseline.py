@@ -61,10 +61,10 @@ def build_templates(
 
                 template = image.crop(
                     (
-                        anchor.bounds.x,
-                        anchor.bounds.y,
-                        anchor.bounds.right,
-                        anchor.bounds.bottom,
+                        anchor.source_bounds.x,
+                        anchor.source_bounds.y,
+                        anchor.source_bounds.right,
+                        anchor.source_bounds.bottom,
                     )
                 )
                 content = _encode_png(template)

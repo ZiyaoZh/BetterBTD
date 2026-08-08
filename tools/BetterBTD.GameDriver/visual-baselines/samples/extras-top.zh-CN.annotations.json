@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "extras.top.zh-CN.20260808",
+  "sourceEvidenceId": "9223a211aca543b49eb852f1d065dc6b",
+  "sourceImageSha256": "33b8480384aa385f56bea878f8699c797fd30f6b4b38f7363f9ff868ba5a854f",
+  "pageId": "extras",
+  "viewStateId": "extras.top",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T03:52:43.493Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromPageAnchors": [
+    "extras.scrollableContent",
+    "extras.toggleStates",
+    "extras.localizedText"
+  ],
+  "notes": [
+    "The top endpoint exposes Double Cash, Fast Track, Big Bloons, Small Bloons, Big Monkey Towers, Small Monkey Towers, and the upper portion of Small Bosses.",
+    "Page-frame anchors identify extras independently; scroll-content anchors identify extras.top and element states.",
+    "The source is an unmodified Game Driver capture with a valid completion marker."
+  ]
+}

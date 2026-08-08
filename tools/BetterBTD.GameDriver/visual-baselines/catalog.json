@@ -1,7 +1,7 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "catalogId": "btd6-ui-independent",
-  "catalogVersion": 10,
+  "catalogVersion": 12,
   "game": {
     "id": "BloonsTD6",
     "observedProductVersion": "6000.0.58f2 (92dee566b325)",
@@ -1094,6 +1094,38 @@
         "evidenceId": "e9600d045c61422a93720130656a5adc",
         "imageSha256": "1748182359fd475e1271f6831b9e9d4e5ec3461fce51db3e9ee03eb84f8ac39b"
       },
+      "viewStates": [
+        {
+          "id": "heroSelect.top",
+          "minimumScore": 0.93,
+          "minimumMatchedAnchors": 3,
+          "anchorIds": [
+            "heroSelect.QuincyPortrait",
+            "heroSelect.EziliPortrait",
+            "heroSelect.AdmiralBrickellPortrait"
+          ],
+          "positiveHoldout": {
+            "evidence": "samples/hero-select.zh-CN.holdout.json",
+            "evidenceId": "e9600d045c61422a93720130656a5adc",
+            "imageSha256": "1748182359fd475e1271f6831b9e9d4e5ec3461fce51db3e9ee03eb84f8ac39b"
+          }
+        },
+        {
+          "id": "heroSelect.bottom",
+          "minimumScore": 0.93,
+          "minimumMatchedAnchors": 3,
+          "anchorIds": [
+            "heroSelect.bottomObynGreenfootPortrait",
+            "heroSelect.bottomSaudaPortrait",
+            "heroSelect.bottomCorvusPortrait"
+          ],
+          "positiveHoldout": {
+            "evidence": "samples/hero-select-bottom.zh-CN.holdout.json",
+            "evidenceId": "59869e37f9c148dc83d3a5509098759d",
+            "imageSha256": "21d64514378ccad02469a36aaf3a58dadb5f908f8fe7834446738e1dea0a05a5"
+          }
+        }
+      ],
       "anchors": [
         {
           "id": "heroSelect.backIcon",
@@ -1214,9 +1246,9 @@
           "sourceImageSha256": "703f715a81b3ed97e800cb2f80abf0746beb1d7fcdc3a86e5b2c9d2ba2a7fb5f"
         },
         {
-          "id": "heroSelect.RosaliaPortrait",
+          "id": "heroSelect.DanDeMonkPortrait",
           "bounds": { "x": 205, "y": 350, "width": 100, "height": 125 },
-          "template": "templates/hero-select/rosalia.png",
+          "template": "templates/hero-select/dan-de-monk.png",
           "templateSha256": "6d47311841f1fc18fce131cb1c417977d3c4d5c829ac10adfdc666cc9f07ae5a",
           "minimumScore": 0.93,
           "pageAnchor": false,
@@ -1225,9 +1257,9 @@
           "sourceImageSha256": "703f715a81b3ed97e800cb2f80abf0746beb1d7fcdc3a86e5b2c9d2ba2a7fb5f"
         },
         {
-          "id": "heroSelect.CaptainChurchillPortrait",
+          "id": "heroSelect.BenjaminPortrait",
           "bounds": { "x": 355, "y": 350, "width": 100, "height": 125 },
-          "template": "templates/hero-select/captain-churchill.png",
+          "template": "templates/hero-select/benjamin.png",
           "templateSha256": "5f5e1dfcfe1f310b4d10098763891f9ea2f5b9e368a6e16c3beb420dcd7772ae",
           "minimumScore": 0.93,
           "pageAnchor": false,
@@ -1236,9 +1268,9 @@
           "sourceImageSha256": "703f715a81b3ed97e800cb2f80abf0746beb1d7fcdc3a86e5b2c9d2ba2a7fb5f"
         },
         {
-          "id": "heroSelect.BenjaminPortrait",
+          "id": "heroSelect.PatFustyPortrait",
           "bounds": { "x": 50, "y": 540, "width": 100, "height": 125 },
-          "template": "templates/hero-select/benjamin.png",
+          "template": "templates/hero-select/pat-fusty.png",
           "templateSha256": "b06b201fc38d2889a479c1a03ba9b8cd362302baf210a580b23c050c364693a5",
           "minimumScore": 0.93,
           "pageAnchor": false,
@@ -1247,9 +1279,9 @@
           "sourceImageSha256": "703f715a81b3ed97e800cb2f80abf0746beb1d7fcdc3a86e5b2c9d2ba2a7fb5f"
         },
         {
-          "id": "heroSelect.PatFustyPortrait",
+          "id": "heroSelect.CaptainChurchillPortrait",
           "bounds": { "x": 205, "y": 540, "width": 100, "height": 125 },
-          "template": "templates/hero-select/pat-fusty.png",
+          "template": "templates/hero-select/captain-churchill.png",
           "templateSha256": "03cf03665e0c90127e35afde0daa368fe365f48bec37f277587ee942b8c027ea",
           "minimumScore": 0.93,
           "pageAnchor": false,
@@ -1269,9 +1301,9 @@
           "sourceImageSha256": "703f715a81b3ed97e800cb2f80abf0746beb1d7fcdc3a86e5b2c9d2ba2a7fb5f"
         },
         {
-          "id": "heroSelect.AdoraPortrait",
+          "id": "heroSelect.SilasPortrait",
           "bounds": { "x": 50, "y": 735, "width": 100, "height": 120 },
-          "template": "templates/hero-select/adora.png",
+          "template": "templates/hero-select/silas.png",
           "templateSha256": "fa3c89a2cf04a73ee0834b1e60eaa70cd13361de74a1e8d0303f00a9ad030904",
           "minimumScore": 0.93,
           "pageAnchor": false,
@@ -1302,9 +1334,9 @@
           "sourceImageSha256": "703f715a81b3ed97e800cb2f80abf0746beb1d7fcdc3a86e5b2c9d2ba2a7fb5f"
         },
         {
-          "id": "heroSelect.AdmiralBrickellPortrait",
+          "id": "heroSelect.RosaliaPortrait",
           "bounds": { "x": 50, "y": 925, "width": 100, "height": 125 },
-          "template": "templates/hero-select/admiral-brickell.png",
+          "template": "templates/hero-select/rosalia.png",
           "templateSha256": "b39b11f39f05dc0d4cb3596c8020c6460b044643464acb92d0536379a7f32164",
           "minimumScore": 0.93,
           "pageAnchor": false,
@@ -1313,9 +1345,9 @@
           "sourceImageSha256": "703f715a81b3ed97e800cb2f80abf0746beb1d7fcdc3a86e5b2c9d2ba2a7fb5f"
         },
         {
-          "id": "heroSelect.PsiPortrait",
+          "id": "heroSelect.AdoraPortrait",
           "bounds": { "x": 205, "y": 925, "width": 100, "height": 125 },
-          "template": "templates/hero-select/psi.png",
+          "template": "templates/hero-select/adora.png",
           "templateSha256": "75ed32cffdf0323af15fc6e88464bb09163ded15c8b2c39abaa52c55ccc2f85b",
           "minimumScore": 0.93,
           "pageAnchor": false,
@@ -1324,15 +1356,180 @@
           "sourceImageSha256": "703f715a81b3ed97e800cb2f80abf0746beb1d7fcdc3a86e5b2c9d2ba2a7fb5f"
         },
         {
-          "id": "heroSelect.GeraldoPortrait",
+          "id": "heroSelect.AdmiralBrickellPortrait",
           "bounds": { "x": 355, "y": 925, "width": 100, "height": 125 },
-          "template": "templates/hero-select/geraldo.png",
+          "template": "templates/hero-select/admiral-brickell.png",
           "templateSha256": "1be68745c13cc2e128d7839c5c72db53ddfa121694e5965eb485a115c9434bf1",
           "minimumScore": 0.93,
           "pageAnchor": false,
           "sourceEvidence": "samples/hero-select.zh-CN.json",
           "sourceEvidenceId": "8e51cb029ec544768218ba711cf630ba",
           "sourceImageSha256": "703f715a81b3ed97e800cb2f80abf0746beb1d7fcdc3a86e5b2c9d2ba2a7fb5f"
+        },
+        {
+          "id": "heroSelect.bottomObynGreenfootPortrait",
+          "bounds": { "x": 50, "y": 120, "width": 100, "height": 90 },
+          "template": "templates/hero-select/bottom/obyn-greenfoot.png",
+          "templateSha256": "9d1255f012f6b991db9e123bec6dea04e1e51367b4efe55bd2bda02e9a3e31eb",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/hero-select-bottom.zh-CN.json",
+          "sourceEvidenceId": "152e6380acbf44ba84ecf91150ebdbdc",
+          "sourceImageSha256": "4ac6c3e226508b09957621f2cdc8226ad2da7f349a97f2e5ea53f24edb5d2059"
+        },
+        {
+          "id": "heroSelect.bottomDanDeMonkPortrait",
+          "bounds": { "x": 205, "y": 120, "width": 100, "height": 90 },
+          "template": "templates/hero-select/bottom/dan-de-monk.png",
+          "templateSha256": "1ba3d0ef1fae3418b56b439c5c456fc3f098b42826bfe1a72f9c21a42b59ebb8",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/hero-select-bottom.zh-CN.json",
+          "sourceEvidenceId": "152e6380acbf44ba84ecf91150ebdbdc",
+          "sourceImageSha256": "4ac6c3e226508b09957621f2cdc8226ad2da7f349a97f2e5ea53f24edb5d2059"
+        },
+        {
+          "id": "heroSelect.bottomBenjaminPortrait",
+          "bounds": { "x": 355, "y": 120, "width": 100, "height": 90 },
+          "template": "templates/hero-select/bottom/benjamin.png",
+          "templateSha256": "ac909d6777537bbffcc36a8a8d1c92f26db20bb99935c6c9b87bc70227fd79ff",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/hero-select-bottom.zh-CN.json",
+          "sourceEvidenceId": "152e6380acbf44ba84ecf91150ebdbdc",
+          "sourceImageSha256": "4ac6c3e226508b09957621f2cdc8226ad2da7f349a97f2e5ea53f24edb5d2059"
+        },
+        {
+          "id": "heroSelect.bottomPatFustyPortrait",
+          "bounds": { "x": 50, "y": 280, "width": 100, "height": 110 },
+          "template": "templates/hero-select/bottom/pat-fusty.png",
+          "templateSha256": "0d192230c846a53fc0e68990de3fc9fec824bf89aa8a9bcb5b93951f5a522498",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/hero-select-bottom.zh-CN.json",
+          "sourceEvidenceId": "152e6380acbf44ba84ecf91150ebdbdc",
+          "sourceImageSha256": "4ac6c3e226508b09957621f2cdc8226ad2da7f349a97f2e5ea53f24edb5d2059"
+        },
+        {
+          "id": "heroSelect.bottomCaptainChurchillPortrait",
+          "bounds": { "x": 205, "y": 280, "width": 100, "height": 110 },
+          "template": "templates/hero-select/bottom/captain-churchill.png",
+          "templateSha256": "b02cfbbd00d3179020be4ae91e7fde35de4fe71842e19a69fdc3567d67074367",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/hero-select-bottom.zh-CN.json",
+          "sourceEvidenceId": "152e6380acbf44ba84ecf91150ebdbdc",
+          "sourceImageSha256": "4ac6c3e226508b09957621f2cdc8226ad2da7f349a97f2e5ea53f24edb5d2059"
+        },
+        {
+          "id": "heroSelect.bottomEziliPortrait",
+          "bounds": { "x": 355, "y": 280, "width": 100, "height": 110 },
+          "template": "templates/hero-select/bottom/ezili.png",
+          "templateSha256": "8cfe02e5b7d666695d11555b8ed1d14ea39125644f8c7082872fec6f35a68769",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/hero-select-bottom.zh-CN.json",
+          "sourceEvidenceId": "152e6380acbf44ba84ecf91150ebdbdc",
+          "sourceImageSha256": "4ac6c3e226508b09957621f2cdc8226ad2da7f349a97f2e5ea53f24edb5d2059"
+        },
+        {
+          "id": "heroSelect.bottomSilasPortrait",
+          "bounds": { "x": 50, "y": 475, "width": 100, "height": 110 },
+          "template": "templates/hero-select/bottom/silas.png",
+          "templateSha256": "8379474a31799a0edf48fa2345b59daaea405e942966f7b20fd0cded1d12caa7",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/hero-select-bottom.zh-CN.json",
+          "sourceEvidenceId": "152e6380acbf44ba84ecf91150ebdbdc",
+          "sourceImageSha256": "4ac6c3e226508b09957621f2cdc8226ad2da7f349a97f2e5ea53f24edb5d2059"
+        },
+        {
+          "id": "heroSelect.bottomEtiennePortrait",
+          "bounds": { "x": 205, "y": 475, "width": 100, "height": 110 },
+          "template": "templates/hero-select/bottom/etienne.png",
+          "templateSha256": "1b56b88283599e264d77982c92f9a1d0aacc35789458236b63ca74387160564a",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/hero-select-bottom.zh-CN.json",
+          "sourceEvidenceId": "152e6380acbf44ba84ecf91150ebdbdc",
+          "sourceImageSha256": "4ac6c3e226508b09957621f2cdc8226ad2da7f349a97f2e5ea53f24edb5d2059"
+        },
+        {
+          "id": "heroSelect.bottomSaudaPortrait",
+          "bounds": { "x": 355, "y": 475, "width": 100, "height": 110 },
+          "template": "templates/hero-select/bottom/sauda.png",
+          "templateSha256": "a5fe0762b7fe3a1a437f4478f32ef15f035942f61a8cc0171a30d39b72bfbf65",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/hero-select-bottom.zh-CN.json",
+          "sourceEvidenceId": "152e6380acbf44ba84ecf91150ebdbdc",
+          "sourceImageSha256": "4ac6c3e226508b09957621f2cdc8226ad2da7f349a97f2e5ea53f24edb5d2059"
+        },
+        {
+          "id": "heroSelect.bottomRosaliaPortrait",
+          "bounds": { "x": 50, "y": 665, "width": 100, "height": 110 },
+          "template": "templates/hero-select/bottom/rosalia.png",
+          "templateSha256": "ad9dea55f5f4bf1106075c616ca09f672c1fc4931be41f628b30592a973765d3",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/hero-select-bottom.zh-CN.json",
+          "sourceEvidenceId": "152e6380acbf44ba84ecf91150ebdbdc",
+          "sourceImageSha256": "4ac6c3e226508b09957621f2cdc8226ad2da7f349a97f2e5ea53f24edb5d2059"
+        },
+        {
+          "id": "heroSelect.bottomAdoraPortrait",
+          "bounds": { "x": 205, "y": 665, "width": 100, "height": 110 },
+          "template": "templates/hero-select/bottom/adora.png",
+          "templateSha256": "5fc7501f7ed90b53373e045e2258b555ac7aec43b6b9ee85ed321a40ed9457a7",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/hero-select-bottom.zh-CN.json",
+          "sourceEvidenceId": "152e6380acbf44ba84ecf91150ebdbdc",
+          "sourceImageSha256": "4ac6c3e226508b09957621f2cdc8226ad2da7f349a97f2e5ea53f24edb5d2059"
+        },
+        {
+          "id": "heroSelect.bottomAdmiralBrickellPortrait",
+          "bounds": { "x": 355, "y": 665, "width": 100, "height": 110 },
+          "template": "templates/hero-select/bottom/admiral-brickell.png",
+          "templateSha256": "ae06b58ab5521550fb1d88bada973b794539fc0e632c0d537b8e3b4c1d9c6f06",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/hero-select-bottom.zh-CN.json",
+          "sourceEvidenceId": "152e6380acbf44ba84ecf91150ebdbdc",
+          "sourceImageSha256": "4ac6c3e226508b09957621f2cdc8226ad2da7f349a97f2e5ea53f24edb5d2059"
+        },
+        {
+          "id": "heroSelect.bottomPsiPortrait",
+          "bounds": { "x": 50, "y": 855, "width": 100, "height": 110 },
+          "template": "templates/hero-select/bottom/psi.png",
+          "templateSha256": "a37cd94033c8ec09097e62953ee03ad2021e0d9816fe1bd33f081cd4dab7ac47",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/hero-select-bottom.zh-CN.json",
+          "sourceEvidenceId": "152e6380acbf44ba84ecf91150ebdbdc",
+          "sourceImageSha256": "4ac6c3e226508b09957621f2cdc8226ad2da7f349a97f2e5ea53f24edb5d2059"
+        },
+        {
+          "id": "heroSelect.bottomGeraldoPortrait",
+          "bounds": { "x": 205, "y": 855, "width": 100, "height": 110 },
+          "template": "templates/hero-select/bottom/geraldo.png",
+          "templateSha256": "0d02ede8c063adc06ce2b92e7ebacc91041b37fb2a3c346e28b347a0a8d09f10",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/hero-select-bottom.zh-CN.json",
+          "sourceEvidenceId": "152e6380acbf44ba84ecf91150ebdbdc",
+          "sourceImageSha256": "4ac6c3e226508b09957621f2cdc8226ad2da7f349a97f2e5ea53f24edb5d2059"
+        },
+        {
+          "id": "heroSelect.bottomCorvusPortrait",
+          "bounds": { "x": 355, "y": 855, "width": 100, "height": 110 },
+          "template": "templates/hero-select/bottom/corvus.png",
+          "templateSha256": "8b828d622f01bc6909c2377a15e433851744d39331bbe4cbe1c1a41431920747",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/hero-select-bottom.zh-CN.json",
+          "sourceEvidenceId": "152e6380acbf44ba84ecf91150ebdbdc",
+          "sourceImageSha256": "4ac6c3e226508b09957621f2cdc8226ad2da7f349a97f2e5ea53f24edb5d2059"
         }
       ],
       "elements": [
@@ -1357,107 +1554,290 @@
         {
           "id": "heroSelect.Quincy",
           "role": "button",
-          "bounds": { "x": 30, "y": 130, "width": 145, "height": 185 },
-          "actionPoint": { "x": 100, "y": 220 },
-          "anchorIds": ["heroSelect.QuincyPortrait"]
+          "placements": [
+            {
+              "viewStateId": "heroSelect.top",
+              "bounds": { "x": 30, "y": 130, "width": 145, "height": 185 },
+              "actionPoint": { "x": 100, "y": 220 },
+              "anchorIds": ["heroSelect.QuincyPortrait"]
+            }
+          ]
         },
         {
           "id": "heroSelect.Gwendolin",
           "role": "button",
-          "bounds": { "x": 185, "y": 130, "width": 140, "height": 185 },
-          "actionPoint": { "x": 255, "y": 220 },
-          "anchorIds": ["heroSelect.GwendolinPortrait"]
+          "placements": [
+            {
+              "viewStateId": "heroSelect.top",
+              "bounds": { "x": 185, "y": 130, "width": 140, "height": 185 },
+              "actionPoint": { "x": 255, "y": 220 },
+              "anchorIds": ["heroSelect.GwendolinPortrait"]
+            }
+          ]
         },
         {
           "id": "heroSelect.StrikerJones",
           "role": "button",
-          "bounds": { "x": 335, "y": 130, "width": 145, "height": 185 },
-          "actionPoint": { "x": 405, "y": 220 },
-          "anchorIds": ["heroSelect.StrikerJonesPortrait"]
+          "placements": [
+            {
+              "viewStateId": "heroSelect.top",
+              "bounds": { "x": 335, "y": 130, "width": 145, "height": 185 },
+              "actionPoint": { "x": 405, "y": 220 },
+              "anchorIds": ["heroSelect.StrikerJonesPortrait"]
+            }
+          ]
         },
         {
           "id": "heroSelect.ObynGreenfoot",
           "role": "button",
-          "bounds": { "x": 30, "y": 325, "width": 145, "height": 180 },
-          "actionPoint": { "x": 100, "y": 415 },
-          "anchorIds": ["heroSelect.ObynGreenfootPortrait"]
+          "placements": [
+            {
+              "viewStateId": "heroSelect.top",
+              "bounds": { "x": 30, "y": 325, "width": 145, "height": 180 },
+              "actionPoint": { "x": 100, "y": 415 },
+              "anchorIds": ["heroSelect.ObynGreenfootPortrait"]
+            },
+            {
+              "viewStateId": "heroSelect.bottom",
+              "bounds": { "x": 30, "y": 105, "width": 145, "height": 115 },
+              "actionPoint": { "x": 100, "y": 160 },
+              "anchorIds": ["heroSelect.bottomObynGreenfootPortrait"]
+            }
+          ]
         },
         {
-          "id": "heroSelect.Rosalia",
+          "id": "heroSelect.DanDeMonk",
           "role": "button",
-          "bounds": { "x": 185, "y": 325, "width": 140, "height": 180 },
-          "actionPoint": { "x": 255, "y": 415 },
-          "anchorIds": ["heroSelect.RosaliaPortrait"]
-        },
-        {
-          "id": "heroSelect.CaptainChurchill",
-          "role": "button",
-          "bounds": { "x": 335, "y": 325, "width": 145, "height": 180 },
-          "actionPoint": { "x": 405, "y": 415 },
-          "anchorIds": ["heroSelect.CaptainChurchillPortrait"]
+          "placements": [
+            {
+              "viewStateId": "heroSelect.top",
+              "bounds": { "x": 185, "y": 325, "width": 140, "height": 180 },
+              "actionPoint": { "x": 255, "y": 415 },
+              "anchorIds": ["heroSelect.DanDeMonkPortrait"]
+            },
+            {
+              "viewStateId": "heroSelect.bottom",
+              "bounds": { "x": 185, "y": 105, "width": 140, "height": 115 },
+              "actionPoint": { "x": 255, "y": 160 },
+              "anchorIds": ["heroSelect.bottomDanDeMonkPortrait"]
+            }
+          ]
         },
         {
           "id": "heroSelect.Benjamin",
           "role": "button",
-          "bounds": { "x": 30, "y": 515, "width": 145, "height": 180 },
-          "actionPoint": { "x": 100, "y": 605 },
-          "anchorIds": ["heroSelect.BenjaminPortrait"]
+          "placements": [
+            {
+              "viewStateId": "heroSelect.top",
+              "bounds": { "x": 335, "y": 325, "width": 145, "height": 180 },
+              "actionPoint": { "x": 405, "y": 415 },
+              "anchorIds": ["heroSelect.BenjaminPortrait"]
+            },
+            {
+              "viewStateId": "heroSelect.bottom",
+              "bounds": { "x": 335, "y": 105, "width": 145, "height": 115 },
+              "actionPoint": { "x": 405, "y": 160 },
+              "anchorIds": ["heroSelect.bottomBenjaminPortrait"]
+            }
+          ]
         },
         {
           "id": "heroSelect.PatFusty",
           "role": "button",
-          "bounds": { "x": 185, "y": 515, "width": 140, "height": 180 },
-          "actionPoint": { "x": 255, "y": 605 },
-          "anchorIds": ["heroSelect.PatFustyPortrait"]
+          "placements": [
+            {
+              "viewStateId": "heroSelect.top",
+              "bounds": { "x": 30, "y": 515, "width": 145, "height": 180 },
+              "actionPoint": { "x": 100, "y": 605 },
+              "anchorIds": ["heroSelect.PatFustyPortrait"]
+            },
+            {
+              "viewStateId": "heroSelect.bottom",
+              "bounds": { "x": 30, "y": 235, "width": 145, "height": 180 },
+              "actionPoint": { "x": 100, "y": 330 },
+              "anchorIds": ["heroSelect.bottomPatFustyPortrait"]
+            }
+          ]
+        },
+        {
+          "id": "heroSelect.CaptainChurchill",
+          "role": "button",
+          "placements": [
+            {
+              "viewStateId": "heroSelect.top",
+              "bounds": { "x": 185, "y": 515, "width": 140, "height": 180 },
+              "actionPoint": { "x": 255, "y": 605 },
+              "anchorIds": ["heroSelect.CaptainChurchillPortrait"]
+            },
+            {
+              "viewStateId": "heroSelect.bottom",
+              "bounds": { "x": 185, "y": 235, "width": 140, "height": 180 },
+              "actionPoint": { "x": 255, "y": 330 },
+              "anchorIds": ["heroSelect.bottomCaptainChurchillPortrait"]
+            }
+          ]
         },
         {
           "id": "heroSelect.Ezili",
           "role": "button",
-          "bounds": { "x": 335, "y": 515, "width": 145, "height": 180 },
-          "actionPoint": { "x": 405, "y": 605 },
-          "anchorIds": ["heroSelect.EziliPortrait"]
+          "placements": [
+            {
+              "viewStateId": "heroSelect.top",
+              "bounds": { "x": 335, "y": 515, "width": 145, "height": 180 },
+              "actionPoint": { "x": 405, "y": 605 },
+              "anchorIds": ["heroSelect.EziliPortrait"]
+            },
+            {
+              "viewStateId": "heroSelect.bottom",
+              "bounds": { "x": 335, "y": 235, "width": 145, "height": 180 },
+              "actionPoint": { "x": 405, "y": 330 },
+              "anchorIds": ["heroSelect.bottomEziliPortrait"]
+            }
+          ]
         },
         {
-          "id": "heroSelect.Adora",
+          "id": "heroSelect.Silas",
           "role": "button",
-          "bounds": { "x": 30, "y": 705, "width": 145, "height": 180 },
-          "actionPoint": { "x": 100, "y": 800 },
-          "anchorIds": ["heroSelect.AdoraPortrait"]
+          "placements": [
+            {
+              "viewStateId": "heroSelect.top",
+              "bounds": { "x": 30, "y": 705, "width": 145, "height": 180 },
+              "actionPoint": { "x": 100, "y": 800 },
+              "anchorIds": ["heroSelect.SilasPortrait"]
+            },
+            {
+              "viewStateId": "heroSelect.bottom",
+              "bounds": { "x": 30, "y": 430, "width": 145, "height": 180 },
+              "actionPoint": { "x": 100, "y": 520 },
+              "anchorIds": ["heroSelect.bottomSilasPortrait"]
+            }
+          ]
         },
         {
           "id": "heroSelect.Etienne",
           "role": "button",
-          "bounds": { "x": 185, "y": 705, "width": 140, "height": 180 },
-          "actionPoint": { "x": 255, "y": 800 },
-          "anchorIds": ["heroSelect.EtiennePortrait"]
+          "placements": [
+            {
+              "viewStateId": "heroSelect.top",
+              "bounds": { "x": 185, "y": 705, "width": 140, "height": 180 },
+              "actionPoint": { "x": 255, "y": 800 },
+              "anchorIds": ["heroSelect.EtiennePortrait"]
+            },
+            {
+              "viewStateId": "heroSelect.bottom",
+              "bounds": { "x": 185, "y": 430, "width": 140, "height": 180 },
+              "actionPoint": { "x": 255, "y": 520 },
+              "anchorIds": ["heroSelect.bottomEtiennePortrait"]
+            }
+          ]
         },
         {
           "id": "heroSelect.Sauda",
           "role": "button",
-          "bounds": { "x": 335, "y": 705, "width": 145, "height": 180 },
-          "actionPoint": { "x": 405, "y": 800 },
-          "anchorIds": ["heroSelect.SaudaPortrait"]
+          "placements": [
+            {
+              "viewStateId": "heroSelect.top",
+              "bounds": { "x": 335, "y": 705, "width": 145, "height": 180 },
+              "actionPoint": { "x": 405, "y": 800 },
+              "anchorIds": ["heroSelect.SaudaPortrait"]
+            },
+            {
+              "viewStateId": "heroSelect.bottom",
+              "bounds": { "x": 335, "y": 430, "width": 145, "height": 180 },
+              "actionPoint": { "x": 405, "y": 520 },
+              "anchorIds": ["heroSelect.bottomSaudaPortrait"]
+            }
+          ]
+        },
+        {
+          "id": "heroSelect.Rosalia",
+          "role": "button",
+          "placements": [
+            {
+              "viewStateId": "heroSelect.top",
+              "bounds": { "x": 30, "y": 895, "width": 145, "height": 185 },
+              "actionPoint": { "x": 100, "y": 990 },
+              "anchorIds": ["heroSelect.RosaliaPortrait"]
+            },
+            {
+              "viewStateId": "heroSelect.bottom",
+              "bounds": { "x": 30, "y": 620, "width": 145, "height": 180 },
+              "actionPoint": { "x": 100, "y": 710 },
+              "anchorIds": ["heroSelect.bottomRosaliaPortrait"]
+            }
+          ]
+        },
+        {
+          "id": "heroSelect.Adora",
+          "role": "button",
+          "placements": [
+            {
+              "viewStateId": "heroSelect.top",
+              "bounds": { "x": 185, "y": 895, "width": 140, "height": 185 },
+              "actionPoint": { "x": 255, "y": 990 },
+              "anchorIds": ["heroSelect.AdoraPortrait"]
+            },
+            {
+              "viewStateId": "heroSelect.bottom",
+              "bounds": { "x": 185, "y": 620, "width": 140, "height": 180 },
+              "actionPoint": { "x": 255, "y": 710 },
+              "anchorIds": ["heroSelect.bottomAdoraPortrait"]
+            }
+          ]
         },
         {
           "id": "heroSelect.AdmiralBrickell",
           "role": "button",
-          "bounds": { "x": 30, "y": 895, "width": 145, "height": 185 },
-          "actionPoint": { "x": 100, "y": 990 },
-          "anchorIds": ["heroSelect.AdmiralBrickellPortrait"]
+          "placements": [
+            {
+              "viewStateId": "heroSelect.top",
+              "bounds": { "x": 335, "y": 895, "width": 145, "height": 185 },
+              "actionPoint": { "x": 405, "y": 990 },
+              "anchorIds": ["heroSelect.AdmiralBrickellPortrait"]
+            },
+            {
+              "viewStateId": "heroSelect.bottom",
+              "bounds": { "x": 335, "y": 620, "width": 145, "height": 180 },
+              "actionPoint": { "x": 405, "y": 710 },
+              "anchorIds": ["heroSelect.bottomAdmiralBrickellPortrait"]
+            }
+          ]
         },
         {
           "id": "heroSelect.Psi",
           "role": "button",
-          "bounds": { "x": 185, "y": 895, "width": 140, "height": 185 },
-          "actionPoint": { "x": 255, "y": 990 },
-          "anchorIds": ["heroSelect.PsiPortrait"]
+          "placements": [
+            {
+              "viewStateId": "heroSelect.bottom",
+              "bounds": { "x": 30, "y": 810, "width": 145, "height": 180 },
+              "actionPoint": { "x": 100, "y": 900 },
+              "anchorIds": ["heroSelect.bottomPsiPortrait"]
+            }
+          ]
         },
         {
           "id": "heroSelect.Geraldo",
           "role": "button",
-          "bounds": { "x": 335, "y": 895, "width": 145, "height": 185 },
-          "actionPoint": { "x": 405, "y": 990 },
-          "anchorIds": ["heroSelect.GeraldoPortrait"]
+          "placements": [
+            {
+              "viewStateId": "heroSelect.bottom",
+              "bounds": { "x": 185, "y": 810, "width": 140, "height": 180 },
+              "actionPoint": { "x": 255, "y": 900 },
+              "anchorIds": ["heroSelect.bottomGeraldoPortrait"]
+            }
+          ]
+        },
+        {
+          "id": "heroSelect.Corvus",
+          "role": "button",
+          "placements": [
+            {
+              "viewStateId": "heroSelect.bottom",
+              "bounds": { "x": 335, "y": 810, "width": 145, "height": 180 },
+              "actionPoint": { "x": 405, "y": 900 },
+              "anchorIds": ["heroSelect.bottomCorvusPortrait"]
+            }
+          ]
         },
         {
           "id": "heroSelect.premiumCurrency",
@@ -2337,6 +2717,328 @@
           "bounds": { "x": 815, "y": 855, "width": 285, "height": 110 },
           "actionPoint": { "x": 960, "y": 910 },
           "anchorIds": ["accessibility.okButton"]
+        }
+      ]
+    },
+    {
+      "id": "extras",
+      "kind": "page",
+      "minimumScore": 0.95,
+      "minimumMatchedAnchors": 3,
+      "positiveHoldout": {
+        "evidence": "samples/extras-top.zh-CN.holdout.json",
+        "evidenceId": "2a941f0e4d684bd49402e3c11cb85cf1",
+        "imageSha256": "7376c61bd7e46095f33d41a92a70281529487fa8f4e9906a8561b118e8f40078"
+      },
+      "anchors": [
+        {
+          "id": "extras.backIcon",
+          "bounds": { "x": 35, "y": 15, "width": 90, "height": 85 },
+          "template": "templates/extras/back.png",
+          "templateSha256": "9af9126407cd0dbc908e821df9329ed705bdd47012f756d1e9e95a7e7ef3124e",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/extras-top.zh-CN.json",
+          "sourceEvidenceId": "9223a211aca543b49eb852f1d065dc6b",
+          "sourceImageSha256": "33b8480384aa385f56bea878f8699c797fd30f6b4b38f7363f9ff868ba5a854f"
+        },
+        {
+          "id": "extras.headerLeft",
+          "bounds": { "x": 560, "y": 0, "width": 110, "height": 105 },
+          "template": "templates/extras/header-left.png",
+          "templateSha256": "32ce28e7d49485fb0144a329b06ca11758f268e72ab6800a24733418dee73c47",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/extras-top.zh-CN.json",
+          "sourceEvidenceId": "9223a211aca543b49eb852f1d065dc6b",
+          "sourceImageSha256": "33b8480384aa385f56bea878f8699c797fd30f6b4b38f7363f9ff868ba5a854f"
+        },
+        {
+          "id": "extras.headerRight",
+          "bounds": { "x": 1250, "y": 0, "width": 110, "height": 105 },
+          "template": "templates/extras/header-right.png",
+          "templateSha256": "e45ef31c21faa38953a8e54d07c9d84544a2efc4ea78a208b02c873fee6b6e61",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/extras-top.zh-CN.json",
+          "sourceEvidenceId": "9223a211aca543b49eb852f1d065dc6b",
+          "sourceImageSha256": "33b8480384aa385f56bea878f8699c797fd30f6b4b38f7363f9ff868ba5a854f"
+        },
+        {
+          "id": "extras.topDoubleCashIcon",
+          "bounds": { "x": 580, "y": 125, "width": 145, "height": 130 },
+          "template": "templates/extras/top-double-cash.png",
+          "templateSha256": "c6ea101249648d26d3741de6a8074d985a0274ef964c41afe61186654798c701",
+          "minimumScore": 0.96,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/extras-top.zh-CN.json",
+          "sourceEvidenceId": "9223a211aca543b49eb852f1d065dc6b",
+          "sourceImageSha256": "33b8480384aa385f56bea878f8699c797fd30f6b4b38f7363f9ff868ba5a854f"
+        },
+        {
+          "id": "extras.topFastTrackIcon",
+          "bounds": { "x": 590, "y": 270, "width": 135, "height": 130 },
+          "template": "templates/extras/top-fast-track.png",
+          "templateSha256": "75c09456de15217841a44fc39dab04a7985d4fd83a02ae073946a8ddb4145035",
+          "minimumScore": 0.96,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/extras-top.zh-CN.json",
+          "sourceEvidenceId": "9223a211aca543b49eb852f1d065dc6b",
+          "sourceImageSha256": "33b8480384aa385f56bea878f8699c797fd30f6b4b38f7363f9ff868ba5a854f"
+        },
+        {
+          "id": "extras.topBigBloonsIcon",
+          "bounds": { "x": 590, "y": 410, "width": 135, "height": 130 },
+          "template": "templates/extras/top-big-bloons.png",
+          "templateSha256": "d041ae35ef0916e9b3126ab9f5ad12413db629957de501f28a574fa7f30fd8bc",
+          "minimumScore": 0.96,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/extras-top.zh-CN.json",
+          "sourceEvidenceId": "9223a211aca543b49eb852f1d065dc6b",
+          "sourceImageSha256": "33b8480384aa385f56bea878f8699c797fd30f6b4b38f7363f9ff868ba5a854f"
+        },
+        {
+          "id": "extras.topSmallBloonsIcon",
+          "bounds": { "x": 590, "y": 550, "width": 135, "height": 130 },
+          "template": "templates/extras/top-small-bloons.png",
+          "templateSha256": "a1726be957b443aaca474843edfbe1dd78367a80022dfd9d9e3a2eab10f69bb6",
+          "minimumScore": 0.96,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/extras-top.zh-CN.json",
+          "sourceEvidenceId": "9223a211aca543b49eb852f1d065dc6b",
+          "sourceImageSha256": "33b8480384aa385f56bea878f8699c797fd30f6b4b38f7363f9ff868ba5a854f"
+        },
+        {
+          "id": "extras.topBigMonkeyTowersIcon",
+          "bounds": { "x": 590, "y": 690, "width": 140, "height": 135 },
+          "template": "templates/extras/top-big-monkey-towers.png",
+          "templateSha256": "2e1663545f59279795a46636d10798b8abfcf9d0cc99a66665772ed90a682d6b",
+          "minimumScore": 0.96,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/extras-top.zh-CN.json",
+          "sourceEvidenceId": "9223a211aca543b49eb852f1d065dc6b",
+          "sourceImageSha256": "33b8480384aa385f56bea878f8699c797fd30f6b4b38f7363f9ff868ba5a854f"
+        },
+        {
+          "id": "extras.topSmallMonkeyTowersIcon",
+          "bounds": { "x": 590, "y": 830, "width": 140, "height": 135 },
+          "template": "templates/extras/top-small-monkey-towers.png",
+          "templateSha256": "b35ac91d3812ef0d23e4b938eb2437270f3ad334cedc5fdd296a86c0f22c9384",
+          "minimumScore": 0.96,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/extras-top.zh-CN.json",
+          "sourceEvidenceId": "9223a211aca543b49eb852f1d065dc6b",
+          "sourceImageSha256": "33b8480384aa385f56bea878f8699c797fd30f6b4b38f7363f9ff868ba5a854f"
+        },
+        {
+          "id": "extras.topSmallBossesIcon",
+          "bounds": { "x": 585, "y": 970, "width": 150, "height": 108 },
+          "template": "templates/extras/top-small-bosses.png",
+          "templateSha256": "73c7281550b07ccbcc1ed5a576742969c71f7abc68060ba7849aa14fc8dc61ea",
+          "minimumScore": 0.96,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/extras-top.zh-CN.json",
+          "sourceEvidenceId": "9223a211aca543b49eb852f1d065dc6b",
+          "sourceImageSha256": "33b8480384aa385f56bea878f8699c797fd30f6b4b38f7363f9ff868ba5a854f"
+        },
+        {
+          "id": "extras.bottomDoubleCashIcon",
+          "bounds": { "x": 580, "y": 55, "width": 145, "height": 130 },
+          "template": "templates/extras/bottom-double-cash.png",
+          "templateSha256": "f12b9ce9e0f213a6ea7577f94a3a957df1a05923da55660b368236dce9363554",
+          "minimumScore": 0.96,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/extras-bottom.zh-CN.json",
+          "sourceEvidenceId": "7eab639e083546c58929f01dc5b2695e",
+          "sourceImageSha256": "f76e6abde08ff5996b8bae61c755fb65b7a8827b331adc749d2ce7f1e09b0604"
+        },
+        {
+          "id": "extras.bottomFastTrackIcon",
+          "bounds": { "x": 590, "y": 199, "width": 135, "height": 130 },
+          "template": "templates/extras/bottom-fast-track.png",
+          "templateSha256": "617e0d68b93ad0faf7b6fe546a29d0c21ed13cfe5323a3179c8551217bbcb80f",
+          "minimumScore": 0.96,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/extras-bottom.zh-CN.json",
+          "sourceEvidenceId": "7eab639e083546c58929f01dc5b2695e",
+          "sourceImageSha256": "f76e6abde08ff5996b8bae61c755fb65b7a8827b331adc749d2ce7f1e09b0604"
+        },
+        {
+          "id": "extras.bottomBigBloonsIcon",
+          "bounds": { "x": 590, "y": 339, "width": 135, "height": 130 },
+          "template": "templates/extras/bottom-big-bloons.png",
+          "templateSha256": "dc8d55754482a5c0da95903766f459068230d30a34c8ed0f610ff774f8133953",
+          "minimumScore": 0.96,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/extras-bottom.zh-CN.json",
+          "sourceEvidenceId": "7eab639e083546c58929f01dc5b2695e",
+          "sourceImageSha256": "f76e6abde08ff5996b8bae61c755fb65b7a8827b331adc749d2ce7f1e09b0604"
+        },
+        {
+          "id": "extras.bottomSmallBloonsIcon",
+          "bounds": { "x": 590, "y": 479, "width": 135, "height": 130 },
+          "template": "templates/extras/bottom-small-bloons.png",
+          "templateSha256": "3c0ef5c4681981a223fb88a2807226e7c7c6663487e650b897f8e352246a66f1",
+          "minimumScore": 0.96,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/extras-bottom.zh-CN.json",
+          "sourceEvidenceId": "7eab639e083546c58929f01dc5b2695e",
+          "sourceImageSha256": "f76e6abde08ff5996b8bae61c755fb65b7a8827b331adc749d2ce7f1e09b0604"
+        },
+        {
+          "id": "extras.bottomBigMonkeyTowersIcon",
+          "bounds": { "x": 590, "y": 619, "width": 140, "height": 135 },
+          "template": "templates/extras/bottom-big-monkey-towers.png",
+          "templateSha256": "8799b84c7f6cc6ed3e1b17ece53be84fa8700b9da554c7099c5713bd297e56e5",
+          "minimumScore": 0.96,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/extras-bottom.zh-CN.json",
+          "sourceEvidenceId": "7eab639e083546c58929f01dc5b2695e",
+          "sourceImageSha256": "f76e6abde08ff5996b8bae61c755fb65b7a8827b331adc749d2ce7f1e09b0604"
+        },
+        {
+          "id": "extras.bottomSmallMonkeyTowersIcon",
+          "bounds": { "x": 590, "y": 759, "width": 140, "height": 135 },
+          "template": "templates/extras/bottom-small-monkey-towers.png",
+          "templateSha256": "9642e59ac13bf2fe5c0610f8e976b1ba7c1a5727a8931594c4abc98df0d28c38",
+          "minimumScore": 0.96,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/extras-bottom.zh-CN.json",
+          "sourceEvidenceId": "7eab639e083546c58929f01dc5b2695e",
+          "sourceImageSha256": "f76e6abde08ff5996b8bae61c755fb65b7a8827b331adc749d2ce7f1e09b0604"
+        },
+        {
+          "id": "extras.bottomSmallBossesIcon",
+          "bounds": { "x": 585, "y": 899, "width": 150, "height": 135 },
+          "template": "templates/extras/bottom-small-bosses.png",
+          "templateSha256": "29afb54bcbb527a87bd21e7d055e7766e213e2adb8f33b5d97aca7bb84373ca8",
+          "minimumScore": 0.96,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/extras-bottom.zh-CN.json",
+          "sourceEvidenceId": "7eab639e083546c58929f01dc5b2695e",
+          "sourceImageSha256": "f76e6abde08ff5996b8bae61c755fb65b7a8827b331adc749d2ce7f1e09b0604"
+        },
+
+        { "id": "extras.topDoubleCashEnabled", "bounds": { "x": 1170, "y": 170, "width": 155, "height": 65 }, "sourceBounds": { "x": 1170, "y": 170, "width": 155, "height": 65 }, "template": "templates/extras/top-double-cash-enabled.png", "templateSha256": "6eb800aa081b429033b1121e2e1e863ab68456da14471577138e88a2298d74a9", "minimumScore": 0.96, "pageAnchor": false, "sourceEvidence": "samples/extras-top.zh-CN.json", "sourceEvidenceId": "9223a211aca543b49eb852f1d065dc6b", "sourceImageSha256": "33b8480384aa385f56bea878f8699c797fd30f6b4b38f7363f9ff868ba5a854f" },
+        { "id": "extras.topDoubleCashDisabled", "bounds": { "x": 1170, "y": 170, "width": 155, "height": 65 }, "sourceBounds": { "x": 1170, "y": 310, "width": 155, "height": 65 }, "template": "templates/extras/top-double-cash-disabled.png", "templateSha256": "791776ceddc16bf1f52a90bfff1da913193c01dc2762c588a537d4cb941f0de4", "minimumScore": 0.96, "pageAnchor": false, "sourceEvidence": "samples/extras-top.zh-CN.json", "sourceEvidenceId": "9223a211aca543b49eb852f1d065dc6b", "sourceImageSha256": "33b8480384aa385f56bea878f8699c797fd30f6b4b38f7363f9ff868ba5a854f" },
+        { "id": "extras.topFastTrackEnabled", "bounds": { "x": 1170, "y": 310, "width": 155, "height": 65 }, "sourceBounds": { "x": 1170, "y": 170, "width": 155, "height": 65 }, "template": "templates/extras/top-fast-track-enabled.png", "templateSha256": "6eb800aa081b429033b1121e2e1e863ab68456da14471577138e88a2298d74a9", "minimumScore": 0.96, "pageAnchor": false, "sourceEvidence": "samples/extras-top.zh-CN.json", "sourceEvidenceId": "9223a211aca543b49eb852f1d065dc6b", "sourceImageSha256": "33b8480384aa385f56bea878f8699c797fd30f6b4b38f7363f9ff868ba5a854f" },
+        { "id": "extras.topFastTrackDisabled", "bounds": { "x": 1170, "y": 310, "width": 155, "height": 65 }, "template": "templates/extras/top-fast-track-disabled.png", "templateSha256": "791776ceddc16bf1f52a90bfff1da913193c01dc2762c588a537d4cb941f0de4", "minimumScore": 0.96, "pageAnchor": false, "sourceEvidence": "samples/extras-top.zh-CN.json", "sourceEvidenceId": "9223a211aca543b49eb852f1d065dc6b", "sourceImageSha256": "33b8480384aa385f56bea878f8699c797fd30f6b4b38f7363f9ff868ba5a854f" },
+
+        { "id": "extras.topBigBloonsEnabled", "bounds": { "x": 1170, "y": 452, "width": 155, "height": 65 }, "sourceBounds": { "x": 1170, "y": 593, "width": 155, "height": 65 }, "template": "templates/extras/top-big-bloons-enabled.png", "templateSha256": "fbf0379e40791bd7c3d0d12743c4f4a3f28572867ea8fa3c927ed316f227fa55", "minimumScore": 0.96, "pageAnchor": false, "sourceEvidence": "samples/extras-top.zh-CN.json", "sourceEvidenceId": "9223a211aca543b49eb852f1d065dc6b", "sourceImageSha256": "33b8480384aa385f56bea878f8699c797fd30f6b4b38f7363f9ff868ba5a854f" },
+        { "id": "extras.topBigBloonsDisabled", "bounds": { "x": 1170, "y": 452, "width": 155, "height": 65 }, "template": "templates/extras/top-big-bloons-disabled.png", "templateSha256": "306d7e02f5f272ae1576cbaad9b25d9e4b57e3df0c3d391ec76424941733b189", "minimumScore": 0.96, "pageAnchor": false, "sourceEvidence": "samples/extras-top.zh-CN.json", "sourceEvidenceId": "9223a211aca543b49eb852f1d065dc6b", "sourceImageSha256": "33b8480384aa385f56bea878f8699c797fd30f6b4b38f7363f9ff868ba5a854f" },
+        { "id": "extras.topSmallBloonsEnabled", "bounds": { "x": 1170, "y": 593, "width": 155, "height": 65 }, "template": "templates/extras/top-small-bloons-enabled.png", "templateSha256": "fbf0379e40791bd7c3d0d12743c4f4a3f28572867ea8fa3c927ed316f227fa55", "minimumScore": 0.96, "pageAnchor": false, "sourceEvidence": "samples/extras-top.zh-CN.json", "sourceEvidenceId": "9223a211aca543b49eb852f1d065dc6b", "sourceImageSha256": "33b8480384aa385f56bea878f8699c797fd30f6b4b38f7363f9ff868ba5a854f" },
+        { "id": "extras.topSmallBloonsDisabled", "bounds": { "x": 1170, "y": 593, "width": 155, "height": 65 }, "sourceBounds": { "x": 1170, "y": 452, "width": 155, "height": 65 }, "template": "templates/extras/top-small-bloons-disabled.png", "templateSha256": "306d7e02f5f272ae1576cbaad9b25d9e4b57e3df0c3d391ec76424941733b189", "minimumScore": 0.96, "pageAnchor": false, "sourceEvidence": "samples/extras-top.zh-CN.json", "sourceEvidenceId": "9223a211aca543b49eb852f1d065dc6b", "sourceImageSha256": "33b8480384aa385f56bea878f8699c797fd30f6b4b38f7363f9ff868ba5a854f" },
+        { "id": "extras.topBigMonkeyTowersEnabled", "bounds": { "x": 1170, "y": 735, "width": 155, "height": 65 }, "sourceBounds": { "x": 1170, "y": 593, "width": 155, "height": 65 }, "template": "templates/extras/top-big-monkey-towers-enabled.png", "templateSha256": "fbf0379e40791bd7c3d0d12743c4f4a3f28572867ea8fa3c927ed316f227fa55", "minimumScore": 0.96, "pageAnchor": false, "sourceEvidence": "samples/extras-top.zh-CN.json", "sourceEvidenceId": "9223a211aca543b49eb852f1d065dc6b", "sourceImageSha256": "33b8480384aa385f56bea878f8699c797fd30f6b4b38f7363f9ff868ba5a854f" },
+        { "id": "extras.topBigMonkeyTowersDisabled", "bounds": { "x": 1170, "y": 735, "width": 155, "height": 65 }, "sourceBounds": { "x": 1170, "y": 452, "width": 155, "height": 65 }, "template": "templates/extras/top-big-monkey-towers-disabled.png", "templateSha256": "306d7e02f5f272ae1576cbaad9b25d9e4b57e3df0c3d391ec76424941733b189", "minimumScore": 0.96, "pageAnchor": false, "sourceEvidence": "samples/extras-top.zh-CN.json", "sourceEvidenceId": "9223a211aca543b49eb852f1d065dc6b", "sourceImageSha256": "33b8480384aa385f56bea878f8699c797fd30f6b4b38f7363f9ff868ba5a854f" },
+        { "id": "extras.topSmallMonkeyTowersEnabled", "bounds": { "x": 1170, "y": 876, "width": 155, "height": 65 }, "sourceBounds": { "x": 1170, "y": 593, "width": 155, "height": 65 }, "template": "templates/extras/top-small-monkey-towers-enabled.png", "templateSha256": "fbf0379e40791bd7c3d0d12743c4f4a3f28572867ea8fa3c927ed316f227fa55", "minimumScore": 0.96, "pageAnchor": false, "sourceEvidence": "samples/extras-top.zh-CN.json", "sourceEvidenceId": "9223a211aca543b49eb852f1d065dc6b", "sourceImageSha256": "33b8480384aa385f56bea878f8699c797fd30f6b4b38f7363f9ff868ba5a854f" },
+        { "id": "extras.topSmallMonkeyTowersDisabled", "bounds": { "x": 1170, "y": 876, "width": 155, "height": 65 }, "sourceBounds": { "x": 1170, "y": 452, "width": 155, "height": 65 }, "template": "templates/extras/top-small-monkey-towers-disabled.png", "templateSha256": "306d7e02f5f272ae1576cbaad9b25d9e4b57e3df0c3d391ec76424941733b189", "minimumScore": 0.96, "pageAnchor": false, "sourceEvidence": "samples/extras-top.zh-CN.json", "sourceEvidenceId": "9223a211aca543b49eb852f1d065dc6b", "sourceImageSha256": "33b8480384aa385f56bea878f8699c797fd30f6b4b38f7363f9ff868ba5a854f" },
+        { "id": "extras.topSmallBossesEnabled", "bounds": { "x": 1170, "y": 1015, "width": 155, "height": 63 }, "sourceBounds": { "x": 1170, "y": 593, "width": 155, "height": 65 }, "template": "templates/extras/top-small-bosses-enabled.png", "templateSha256": "fbf0379e40791bd7c3d0d12743c4f4a3f28572867ea8fa3c927ed316f227fa55", "minimumScore": 0.92, "pageAnchor": false, "sourceEvidence": "samples/extras-top.zh-CN.json", "sourceEvidenceId": "9223a211aca543b49eb852f1d065dc6b", "sourceImageSha256": "33b8480384aa385f56bea878f8699c797fd30f6b4b38f7363f9ff868ba5a854f" },
+        { "id": "extras.topSmallBossesDisabled", "bounds": { "x": 1170, "y": 1015, "width": 155, "height": 63 }, "sourceBounds": { "x": 1170, "y": 452, "width": 155, "height": 65 }, "template": "templates/extras/top-small-bosses-disabled.png", "templateSha256": "306d7e02f5f272ae1576cbaad9b25d9e4b57e3df0c3d391ec76424941733b189", "minimumScore": 0.92, "pageAnchor": false, "sourceEvidence": "samples/extras-top.zh-CN.json", "sourceEvidenceId": "9223a211aca543b49eb852f1d065dc6b", "sourceImageSha256": "33b8480384aa385f56bea878f8699c797fd30f6b4b38f7363f9ff868ba5a854f" },
+
+        { "id": "extras.bottomDoubleCashEnabled", "bounds": { "x": 1170, "y": 99, "width": 155, "height": 65 }, "sourceBounds": { "x": 1170, "y": 170, "width": 155, "height": 65 }, "template": "templates/extras/bottom-double-cash-enabled.png", "templateSha256": "6eb800aa081b429033b1121e2e1e863ab68456da14471577138e88a2298d74a9", "minimumScore": 0.95, "pageAnchor": false, "sourceEvidence": "samples/extras-top.zh-CN.json", "sourceEvidenceId": "9223a211aca543b49eb852f1d065dc6b", "sourceImageSha256": "33b8480384aa385f56bea878f8699c797fd30f6b4b38f7363f9ff868ba5a854f" },
+        { "id": "extras.bottomDoubleCashDisabled", "bounds": { "x": 1170, "y": 99, "width": 155, "height": 65 }, "sourceBounds": { "x": 1170, "y": 310, "width": 155, "height": 65 }, "template": "templates/extras/bottom-double-cash-disabled.png", "templateSha256": "791776ceddc16bf1f52a90bfff1da913193c01dc2762c588a537d4cb941f0de4", "minimumScore": 0.95, "pageAnchor": false, "sourceEvidence": "samples/extras-top.zh-CN.json", "sourceEvidenceId": "9223a211aca543b49eb852f1d065dc6b", "sourceImageSha256": "33b8480384aa385f56bea878f8699c797fd30f6b4b38f7363f9ff868ba5a854f" },
+        { "id": "extras.bottomFastTrackEnabled", "bounds": { "x": 1170, "y": 240, "width": 155, "height": 65 }, "sourceBounds": { "x": 1170, "y": 170, "width": 155, "height": 65 }, "template": "templates/extras/bottom-fast-track-enabled.png", "templateSha256": "6eb800aa081b429033b1121e2e1e863ab68456da14471577138e88a2298d74a9", "minimumScore": 0.96, "pageAnchor": false, "sourceEvidence": "samples/extras-top.zh-CN.json", "sourceEvidenceId": "9223a211aca543b49eb852f1d065dc6b", "sourceImageSha256": "33b8480384aa385f56bea878f8699c797fd30f6b4b38f7363f9ff868ba5a854f" },
+        { "id": "extras.bottomFastTrackDisabled", "bounds": { "x": 1170, "y": 240, "width": 155, "height": 65 }, "sourceBounds": { "x": 1170, "y": 310, "width": 155, "height": 65 }, "template": "templates/extras/bottom-fast-track-disabled.png", "templateSha256": "791776ceddc16bf1f52a90bfff1da913193c01dc2762c588a537d4cb941f0de4", "minimumScore": 0.96, "pageAnchor": false, "sourceEvidence": "samples/extras-top.zh-CN.json", "sourceEvidenceId": "9223a211aca543b49eb852f1d065dc6b", "sourceImageSha256": "33b8480384aa385f56bea878f8699c797fd30f6b4b38f7363f9ff868ba5a854f" },
+        { "id": "extras.bottomBigBloonsEnabled", "bounds": { "x": 1170, "y": 381, "width": 155, "height": 65 }, "sourceBounds": { "x": 1170, "y": 593, "width": 155, "height": 65 }, "template": "templates/extras/bottom-big-bloons-enabled.png", "templateSha256": "fbf0379e40791bd7c3d0d12743c4f4a3f28572867ea8fa3c927ed316f227fa55", "minimumScore": 0.96, "pageAnchor": false, "sourceEvidence": "samples/extras-top.zh-CN.json", "sourceEvidenceId": "9223a211aca543b49eb852f1d065dc6b", "sourceImageSha256": "33b8480384aa385f56bea878f8699c797fd30f6b4b38f7363f9ff868ba5a854f" },
+        { "id": "extras.bottomBigBloonsDisabled", "bounds": { "x": 1170, "y": 381, "width": 155, "height": 65 }, "sourceBounds": { "x": 1170, "y": 452, "width": 155, "height": 65 }, "template": "templates/extras/bottom-big-bloons-disabled.png", "templateSha256": "306d7e02f5f272ae1576cbaad9b25d9e4b57e3df0c3d391ec76424941733b189", "minimumScore": 0.96, "pageAnchor": false, "sourceEvidence": "samples/extras-top.zh-CN.json", "sourceEvidenceId": "9223a211aca543b49eb852f1d065dc6b", "sourceImageSha256": "33b8480384aa385f56bea878f8699c797fd30f6b4b38f7363f9ff868ba5a854f" },
+        { "id": "extras.bottomSmallBloonsEnabled", "bounds": { "x": 1170, "y": 522, "width": 155, "height": 65 }, "sourceBounds": { "x": 1170, "y": 593, "width": 155, "height": 65 }, "template": "templates/extras/bottom-small-bloons-enabled.png", "templateSha256": "fbf0379e40791bd7c3d0d12743c4f4a3f28572867ea8fa3c927ed316f227fa55", "minimumScore": 0.96, "pageAnchor": false, "sourceEvidence": "samples/extras-top.zh-CN.json", "sourceEvidenceId": "9223a211aca543b49eb852f1d065dc6b", "sourceImageSha256": "33b8480384aa385f56bea878f8699c797fd30f6b4b38f7363f9ff868ba5a854f" },
+        { "id": "extras.bottomSmallBloonsDisabled", "bounds": { "x": 1170, "y": 522, "width": 155, "height": 65 }, "sourceBounds": { "x": 1170, "y": 452, "width": 155, "height": 65 }, "template": "templates/extras/bottom-small-bloons-disabled.png", "templateSha256": "306d7e02f5f272ae1576cbaad9b25d9e4b57e3df0c3d391ec76424941733b189", "minimumScore": 0.96, "pageAnchor": false, "sourceEvidence": "samples/extras-top.zh-CN.json", "sourceEvidenceId": "9223a211aca543b49eb852f1d065dc6b", "sourceImageSha256": "33b8480384aa385f56bea878f8699c797fd30f6b4b38f7363f9ff868ba5a854f" },
+        { "id": "extras.bottomBigMonkeyTowersEnabled", "bounds": { "x": 1170, "y": 663, "width": 155, "height": 65 }, "sourceBounds": { "x": 1170, "y": 593, "width": 155, "height": 65 }, "template": "templates/extras/bottom-big-monkey-towers-enabled.png", "templateSha256": "fbf0379e40791bd7c3d0d12743c4f4a3f28572867ea8fa3c927ed316f227fa55", "minimumScore": 0.96, "pageAnchor": false, "sourceEvidence": "samples/extras-top.zh-CN.json", "sourceEvidenceId": "9223a211aca543b49eb852f1d065dc6b", "sourceImageSha256": "33b8480384aa385f56bea878f8699c797fd30f6b4b38f7363f9ff868ba5a854f" },
+        { "id": "extras.bottomBigMonkeyTowersDisabled", "bounds": { "x": 1170, "y": 663, "width": 155, "height": 65 }, "sourceBounds": { "x": 1170, "y": 452, "width": 155, "height": 65 }, "template": "templates/extras/bottom-big-monkey-towers-disabled.png", "templateSha256": "306d7e02f5f272ae1576cbaad9b25d9e4b57e3df0c3d391ec76424941733b189", "minimumScore": 0.96, "pageAnchor": false, "sourceEvidence": "samples/extras-top.zh-CN.json", "sourceEvidenceId": "9223a211aca543b49eb852f1d065dc6b", "sourceImageSha256": "33b8480384aa385f56bea878f8699c797fd30f6b4b38f7363f9ff868ba5a854f" },
+        { "id": "extras.bottomSmallMonkeyTowersEnabled", "bounds": { "x": 1170, "y": 805, "width": 155, "height": 65 }, "sourceBounds": { "x": 1170, "y": 593, "width": 155, "height": 65 }, "template": "templates/extras/bottom-small-monkey-towers-enabled.png", "templateSha256": "fbf0379e40791bd7c3d0d12743c4f4a3f28572867ea8fa3c927ed316f227fa55", "minimumScore": 0.96, "pageAnchor": false, "sourceEvidence": "samples/extras-top.zh-CN.json", "sourceEvidenceId": "9223a211aca543b49eb852f1d065dc6b", "sourceImageSha256": "33b8480384aa385f56bea878f8699c797fd30f6b4b38f7363f9ff868ba5a854f" },
+        { "id": "extras.bottomSmallMonkeyTowersDisabled", "bounds": { "x": 1170, "y": 805, "width": 155, "height": 65 }, "sourceBounds": { "x": 1170, "y": 452, "width": 155, "height": 65 }, "template": "templates/extras/bottom-small-monkey-towers-disabled.png", "templateSha256": "306d7e02f5f272ae1576cbaad9b25d9e4b57e3df0c3d391ec76424941733b189", "minimumScore": 0.96, "pageAnchor": false, "sourceEvidence": "samples/extras-top.zh-CN.json", "sourceEvidenceId": "9223a211aca543b49eb852f1d065dc6b", "sourceImageSha256": "33b8480384aa385f56bea878f8699c797fd30f6b4b38f7363f9ff868ba5a854f" },
+        { "id": "extras.bottomSmallBossesEnabled", "bounds": { "x": 1170, "y": 946, "width": 155, "height": 65 }, "sourceBounds": { "x": 1170, "y": 593, "width": 155, "height": 65 }, "template": "templates/extras/bottom-small-bosses-enabled.png", "templateSha256": "fbf0379e40791bd7c3d0d12743c4f4a3f28572867ea8fa3c927ed316f227fa55", "minimumScore": 0.96, "pageAnchor": false, "sourceEvidence": "samples/extras-top.zh-CN.json", "sourceEvidenceId": "9223a211aca543b49eb852f1d065dc6b", "sourceImageSha256": "33b8480384aa385f56bea878f8699c797fd30f6b4b38f7363f9ff868ba5a854f" },
+        { "id": "extras.bottomSmallBossesDisabled", "bounds": { "x": 1170, "y": 946, "width": 155, "height": 65 }, "sourceBounds": { "x": 1170, "y": 452, "width": 155, "height": 65 }, "template": "templates/extras/bottom-small-bosses-disabled.png", "templateSha256": "306d7e02f5f272ae1576cbaad9b25d9e4b57e3df0c3d391ec76424941733b189", "minimumScore": 0.96, "pageAnchor": false, "sourceEvidence": "samples/extras-top.zh-CN.json", "sourceEvidenceId": "9223a211aca543b49eb852f1d065dc6b", "sourceImageSha256": "33b8480384aa385f56bea878f8699c797fd30f6b4b38f7363f9ff868ba5a854f" }
+      ],
+      "viewStates": [
+        {
+          "id": "extras.top",
+          "minimumScore": 0.97,
+          "minimumMatchedAnchors": 3,
+          "anchorIds": ["extras.topFastTrackIcon", "extras.topBigMonkeyTowersIcon", "extras.topSmallBossesIcon"],
+          "positiveHoldout": {
+            "evidence": "samples/extras-top.zh-CN.holdout.json",
+            "evidenceId": "2a941f0e4d684bd49402e3c11cb85cf1",
+            "imageSha256": "7376c61bd7e46095f33d41a92a70281529487fa8f4e9906a8561b118e8f40078"
+          }
+        },
+        {
+          "id": "extras.bottom",
+          "minimumScore": 0.97,
+          "minimumMatchedAnchors": 3,
+          "anchorIds": ["extras.bottomFastTrackIcon", "extras.bottomBigMonkeyTowersIcon", "extras.bottomSmallBossesIcon"],
+          "positiveHoldout": {
+            "evidence": "samples/extras-bottom.zh-CN.holdout.json",
+            "evidenceId": "b49b54f9383c4791938c1faffbd1a169",
+            "imageSha256": "0f27e82f7ddd7506aab14f1812573fc4218c9cfe30298db3122963362d8f5f9c"
+          }
+        }
+      ],
+      "elements": [
+        {
+          "id": "extras.back",
+          "role": "button",
+          "bounds": { "x": 25, "y": 5, "width": 105, "height": 105 },
+          "actionPoint": { "x": 77, "y": 57 },
+          "anchorIds": ["extras.backIcon"]
+        },
+        {
+          "id": "extras.options",
+          "role": "region",
+          "bounds": { "x": 550, "y": 105, "width": 820, "height": 975 }
+        },
+        {
+          "id": "extras.doubleCash",
+          "role": "toggle",
+          "placements": [
+            { "viewStateId": "extras.top", "bounds": { "x": 565, "y": 140, "width": 790, "height": 122 }, "anchorIds": ["extras.topDoubleCashIcon"], "states": [{ "id": "enabled", "anchorIds": ["extras.topDoubleCashEnabled"] }, { "id": "disabled", "anchorIds": ["extras.topDoubleCashDisabled"] }] },
+            { "viewStateId": "extras.bottom", "bounds": { "x": 565, "y": 68, "width": 790, "height": 122 }, "anchorIds": ["extras.bottomDoubleCashIcon"], "states": [{ "id": "enabled", "anchorIds": ["extras.bottomDoubleCashEnabled"] }, { "id": "disabled", "anchorIds": ["extras.bottomDoubleCashDisabled"] }] }
+          ]
+        },
+        {
+          "id": "extras.fastTrack",
+          "role": "toggle",
+          "placements": [
+            { "viewStateId": "extras.top", "bounds": { "x": 565, "y": 280, "width": 790, "height": 123 }, "anchorIds": ["extras.topFastTrackIcon"], "states": [{ "id": "enabled", "anchorIds": ["extras.topFastTrackEnabled"] }, { "id": "disabled", "anchorIds": ["extras.topFastTrackDisabled"] }] },
+            { "viewStateId": "extras.bottom", "bounds": { "x": 565, "y": 209, "width": 790, "height": 122 }, "anchorIds": ["extras.bottomFastTrackIcon"], "states": [{ "id": "enabled", "anchorIds": ["extras.bottomFastTrackEnabled"] }, { "id": "disabled", "anchorIds": ["extras.bottomFastTrackDisabled"] }] }
+          ]
+        },
+        {
+          "id": "extras.bigBloons",
+          "role": "toggle",
+          "placements": [
+            { "viewStateId": "extras.top", "bounds": { "x": 565, "y": 421, "width": 790, "height": 123 }, "anchorIds": ["extras.topBigBloonsIcon"], "states": [{ "id": "enabled", "anchorIds": ["extras.topBigBloonsEnabled"] }, { "id": "disabled", "anchorIds": ["extras.topBigBloonsDisabled"] }] },
+            { "viewStateId": "extras.bottom", "bounds": { "x": 565, "y": 350, "width": 790, "height": 123 }, "anchorIds": ["extras.bottomBigBloonsIcon"], "states": [{ "id": "enabled", "anchorIds": ["extras.bottomBigBloonsEnabled"] }, { "id": "disabled", "anchorIds": ["extras.bottomBigBloonsDisabled"] }] }
+          ]
+        },
+        {
+          "id": "extras.smallBloons",
+          "role": "toggle",
+          "placements": [
+            { "viewStateId": "extras.top", "bounds": { "x": 565, "y": 562, "width": 790, "height": 123 }, "anchorIds": ["extras.topSmallBloonsIcon"], "states": [{ "id": "enabled", "anchorIds": ["extras.topSmallBloonsEnabled"] }, { "id": "disabled", "anchorIds": ["extras.topSmallBloonsDisabled"] }] },
+            { "viewStateId": "extras.bottom", "bounds": { "x": 565, "y": 491, "width": 790, "height": 123 }, "anchorIds": ["extras.bottomSmallBloonsIcon"], "states": [{ "id": "enabled", "anchorIds": ["extras.bottomSmallBloonsEnabled"] }, { "id": "disabled", "anchorIds": ["extras.bottomSmallBloonsDisabled"] }] }
+          ]
+        },
+        {
+          "id": "extras.bigMonkeyTowers",
+          "role": "toggle",
+          "placements": [
+            { "viewStateId": "extras.top", "bounds": { "x": 565, "y": 704, "width": 790, "height": 122 }, "anchorIds": ["extras.topBigMonkeyTowersIcon"], "states": [{ "id": "enabled", "anchorIds": ["extras.topBigMonkeyTowersEnabled"] }, { "id": "disabled", "anchorIds": ["extras.topBigMonkeyTowersDisabled"] }] },
+            { "viewStateId": "extras.bottom", "bounds": { "x": 565, "y": 632, "width": 790, "height": 123 }, "anchorIds": ["extras.bottomBigMonkeyTowersIcon"], "states": [{ "id": "enabled", "anchorIds": ["extras.bottomBigMonkeyTowersEnabled"] }, { "id": "disabled", "anchorIds": ["extras.bottomBigMonkeyTowersDisabled"] }] }
+          ]
+        },
+        {
+          "id": "extras.smallMonkeyTowers",
+          "role": "toggle",
+          "placements": [
+            { "viewStateId": "extras.top", "bounds": { "x": 565, "y": 845, "width": 790, "height": 123 }, "anchorIds": ["extras.topSmallMonkeyTowersIcon"], "states": [{ "id": "enabled", "anchorIds": ["extras.topSmallMonkeyTowersEnabled"] }, { "id": "disabled", "anchorIds": ["extras.topSmallMonkeyTowersDisabled"] }] },
+            { "viewStateId": "extras.bottom", "bounds": { "x": 565, "y": 774, "width": 790, "height": 122 }, "anchorIds": ["extras.bottomSmallMonkeyTowersIcon"], "states": [{ "id": "enabled", "anchorIds": ["extras.bottomSmallMonkeyTowersEnabled"] }, { "id": "disabled", "anchorIds": ["extras.bottomSmallMonkeyTowersDisabled"] }] }
+          ]
+        },
+        {
+          "id": "extras.smallBosses",
+          "role": "toggle",
+          "placements": [
+            { "viewStateId": "extras.top", "bounds": { "x": 565, "y": 986, "width": 790, "height": 94 }, "anchorIds": ["extras.topSmallBossesIcon"], "states": [{ "id": "enabled", "anchorIds": ["extras.topSmallBossesEnabled"] }, { "id": "disabled", "anchorIds": ["extras.topSmallBossesDisabled"] }] },
+            { "viewStateId": "extras.bottom", "bounds": { "x": 565, "y": 915, "width": 790, "height": 123 }, "anchorIds": ["extras.bottomSmallBossesIcon"], "states": [{ "id": "enabled", "anchorIds": ["extras.bottomSmallBossesEnabled"] }, { "id": "disabled", "anchorIds": ["extras.bottomSmallBossesDisabled"] }] }
+          ]
         }
       ]
     }

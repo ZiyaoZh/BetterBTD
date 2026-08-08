@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "extras.bottom.zh-CN.20260808",
+  "sourceEvidenceId": "7eab639e083546c58929f01dc5b2695e",
+  "sourceImageSha256": "f76e6abde08ff5996b8bae61c755fb65b7a8827b331adc749d2ce7f1e09b0604",
+  "pageId": "extras",
+  "viewStateId": "extras.bottom",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T03:52:43.493Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromPageAnchors": [
+    "extras.scrollableContent",
+    "extras.toggleStates",
+    "extras.localizedText"
+  ],
+  "notes": [
+    "The bottom endpoint exposes the lower portion of Double Cash and complete controls for the remaining six settings.",
+    "Together with extras.top, this endpoint provides complete visual and action coverage for all seven settings.",
+    "The source is an unmodified Game Driver capture with a valid completion marker."
+  ]
+}
