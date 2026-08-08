@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "difficultySelect.zh-CN.20260808.holdout",
+  "sourceEvidenceId": "0eec02de2185460c80f1a90686966ef7",
+  "sourceImageSha256": "03ab584b92e1930e8a3abd9de9c95ce616dd91e370713b9378490123d48c3713",
+  "pageId": "difficultySelect",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "purpose": "positiveHoldout",
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T01:01:00.000Z",
+    "result": "accepted"
+  },
+  "notes": [
+    "This frame came from a separate real map-selection transition and was not used to generate templates.",
+    "Its image hash differs from the template source while preserving the same difficulty-selection state."
+  ]
+}

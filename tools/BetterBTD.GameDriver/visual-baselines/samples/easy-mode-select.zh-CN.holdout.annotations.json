@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "easyModeSelect.zh-CN.20260808.holdout",
+  "sourceEvidenceId": "52824acf3b7549148cd3aa95f8d9296e",
+  "sourceImageSha256": "8b4ca55811693b686ac550548efbfe571cf2d6ee64884dbcef1c3eee0bf69bcf",
+  "pageId": "easyModeSelect",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "purpose": "positiveHoldout",
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T01:04:00.000Z",
+    "result": "accepted"
+  },
+  "notes": [
+    "This frame came from a separate real difficulty-selection transition and was not used to generate templates.",
+    "Its image hash differs from the template source while preserving the same Easy mode-selection state."
+  ]
+}

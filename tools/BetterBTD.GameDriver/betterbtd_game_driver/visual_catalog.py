@@ -39,6 +39,13 @@ class VisualElement:
 
 
 @dataclass(frozen=True, slots=True)
+class VisualPositiveHoldout:
+    evidence_id: str
+    image_sha256: str
+    metadata_path: Path
+
+
+@dataclass(frozen=True, slots=True)
 class VisualPage:
     id: str
     kind: str
@@ -46,6 +53,7 @@ class VisualPage:
     minimum_matched_anchors: int
     anchors: tuple[VisualAnchor, ...]
     elements: tuple[VisualElement, ...]
+    positive_holdout: VisualPositiveHoldout
 
 
 @dataclass(frozen=True, slots=True)
@@ -173,6 +181,14 @@ def _parse_catalog(
                 f"page {page_id} minimumMatchedAnchors exceeds its anchor count"
             )
 
+        positive_holdout = _parse_positive_holdout(
+            page,
+            path,
+            page_id,
+            {anchor.source_image_sha256 for anchor in anchors},
+            source_evidence_cache,
+        )
+
         elements = _parse_elements(
             page,
             reference_width,
@@ -189,6 +205,7 @@ def _parse_catalog(
                 minimum_matched_anchors=minimum_matched_anchors,
                 anchors=tuple(anchors),
                 elements=tuple(elements),
+                positive_holdout=positive_holdout,
             )
         )
 
@@ -204,6 +221,15 @@ def _parse_catalog(
                 metadata_path,
                 metadata_path.with_suffix(".png"),
                 metadata_path.with_name(f"{metadata_path.stem}.complete.json"),
+            )
+        )
+    for page in pages:
+        holdout_path = page.positive_holdout.metadata_path
+        protected_source_paths.update(
+            (
+                holdout_path,
+                holdout_path.with_suffix(".png"),
+                holdout_path.with_name(f"{holdout_path.stem}.complete.json"),
             )
         )
     collisions = set(template_paths) & protected_source_paths
@@ -292,6 +318,47 @@ def _parse_anchors(
             )
         )
     return anchors
+
+
+def _parse_positive_holdout(
+    page: dict[str, Any],
+    catalog_path: Path,
+    page_id: str,
+    source_image_hashes: set[str],
+    evidence_cache: dict[Path, EvidenceBundle],
+) -> VisualPositiveHoldout:
+    holdout = _object(page.get("positiveHoldout"), f"page {page_id} positiveHoldout")
+    catalog_root = catalog_path.parent.resolve()
+    metadata_relative = Path(_nonempty_string(holdout, "evidence"))
+    metadata_path = (catalog_root / metadata_relative).resolve()
+    if not metadata_path.is_relative_to(catalog_root):
+        raise ValueError(f"page {page_id} positive holdout escapes the catalog directory")
+    if metadata_path.suffix.casefold() != ".json" or metadata_path.name.endswith(
+        ".complete.json"
+    ):
+        raise ValueError(f"page {page_id} positive holdout must be capture metadata JSON")
+
+    evidence = evidence_cache.get(metadata_path)
+    if evidence is None:
+        evidence = read_evidence(metadata_path)
+        evidence_cache[metadata_path] = evidence
+    evidence_id = _nonempty_string(holdout, "evidenceId")
+    image_sha256 = _sha256(holdout, "imageSha256")
+    if evidence.evidence_id != evidence_id:
+        raise ValueError(f"page {page_id} positive holdout evidenceId does not match")
+    if evidence.image_sha256 != image_sha256:
+        raise ValueError(f"page {page_id} positive holdout image hash does not match")
+    if not evidence.oracle_eligible:
+        raise ValueError(f"page {page_id} positive holdout is not Oracle eligible")
+    if image_sha256 in source_image_hashes:
+        raise ValueError(
+            f"page {page_id} positive holdout image must differ from every template source image"
+        )
+    return VisualPositiveHoldout(
+        evidence_id=evidence_id,
+        image_sha256=image_sha256,
+        metadata_path=metadata_path,
+    )
 
 
 def _parse_elements(

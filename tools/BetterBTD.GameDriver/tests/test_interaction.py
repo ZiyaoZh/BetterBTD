@@ -90,6 +90,41 @@ class ClickTargetTests(unittest.TestCase):
 
         self.assertEqual((960, 950), target.action_point)
 
+    def test_new_independently_visible_buttons_resolve_expected_action_points(self) -> None:
+        cases = {
+            "welcome.zh-CN.holdout.json": {
+                "welcome.start": (960, 970),
+            },
+            "modified-client-warning.zh-CN.holdout.json": {
+                "modifiedClientWarning.continue": (452, 515),
+            },
+            "difficulty-select.zh-CN.holdout.json": {
+                "difficultySelect.back": (77, 57),
+                "difficultySelect.easy": (630, 400),
+                "difficultySelect.medium": (970, 400),
+                "difficultySelect.hard": (1300, 400),
+            },
+            "easy-mode-select.zh-CN.holdout.json": {
+                "easyModeSelect.back": (77, 57),
+                "easyModeSelect.standard": (630, 590),
+                "easyModeSelect.primaryOnly": (960, 450),
+                "easyModeSelect.deflation": (1300, 450),
+            },
+        }
+        for evidence_name, targets in cases.items():
+            evidence = read_evidence(SAMPLE_ROOT / evidence_name)
+            recognition, page_match = recognize_image(evidence, self.catalog)
+            for element_id, expected_action_point in targets.items():
+                with self.subTest(element_id=element_id):
+                    target = _resolve_click_target(
+                        recognition,
+                        page_match,
+                        element_id,
+                        evidence,
+                    )
+                    self.assertEqual(element_id, target.id)
+                    self.assertEqual(expected_action_point, target.action_point)
+
     def test_element_without_visibility_detector_is_rejected(self) -> None:
         with self.assertRaises(GameDriverError) as context:
             _resolve_click_target(
@@ -100,6 +135,38 @@ class ClickTargetTests(unittest.TestCase):
             )
 
         self.assertEqual("elementVisibilityNotEvaluated", context.exception.code)
+
+    def test_visible_modified_client_unregister_is_not_actionable(self) -> None:
+        evidence = read_evidence(
+            SAMPLE_ROOT / "modified-client-warning.zh-CN.holdout.json"
+        )
+        recognition, page_match = recognize_image(evidence, self.catalog)
+
+        with self.assertRaises(GameDriverError) as context:
+            _resolve_click_target(
+                recognition,
+                page_match,
+                "modifiedClientWarning.unregister",
+                evidence,
+            )
+
+        self.assertEqual("elementNotActionable", context.exception.code)
+
+    def test_visible_modified_client_close_game_is_not_actionable(self) -> None:
+        evidence = read_evidence(
+            SAMPLE_ROOT / "modified-client-warning.zh-CN.holdout.json"
+        )
+        recognition, page_match = recognize_image(evidence, self.catalog)
+
+        with self.assertRaises(GameDriverError) as context:
+            _resolve_click_target(
+                recognition,
+                page_match,
+                "modifiedClientWarning.closeGame",
+                evidence,
+            )
+
+        self.assertEqual("elementNotActionable", context.exception.code)
 
 
 class InteractionOutputTests(unittest.TestCase):

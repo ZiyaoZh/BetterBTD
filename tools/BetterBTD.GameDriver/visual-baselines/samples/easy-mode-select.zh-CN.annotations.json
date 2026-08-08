@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "easyModeSelect.zh-CN.20260808",
+  "sourceEvidenceId": "57b5903fa5554768a4c30267d1616b2a",
+  "sourceImageSha256": "1922da55dc2a342eb34ecfe8ed1a2969ad96fbca99b6f188dc866d14c5962307",
+  "pageId": "easyModeSelect",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T01:04:00.000Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromAnchors": [
+    "easyModeSelect.modeSummary",
+    "easyModeSelect.changeHero",
+    "easyModeSelect.doubleCash",
+    "easyModeSelect.autoStart",
+    "easyModeSelect.changeRounds",
+    "modeCard.localizedTitle",
+    "modeCard.reward",
+    "modeCard.medal"
+  ],
+  "notes": [
+    "The source is the final evidence from an independently observed difficultySelect.easy click transition.",
+    "Mode artwork identifies Standard, PrimaryOnly and Deflation without using localized labels or reward values."
+  ]
+}

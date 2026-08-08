@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "modifiedClientWarning.zh-CN.20260808",
+  "sourceEvidenceId": "ec057049b33b4b538988d9eba8075c5c",
+  "sourceImageSha256": "3cc07bdd5d58bd1a7cbc5a72cf638ad66452de421a92d034f453dce35b4bec88",
+  "pageId": "modifiedClientWarning",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T00:59:00.000Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromAnchors": [
+    "modifiedClientWarning.playerName",
+    "modifiedClientWarning.userIdentity"
+  ],
+  "notes": [
+    "The source is an unmodified Game Driver capture of the blocking warning shown after welcome.start.",
+    "Only continue has an action point. Unregister and closeGame remain independently visible but intentionally non-actionable because they change account or process state."
+  ]
+}

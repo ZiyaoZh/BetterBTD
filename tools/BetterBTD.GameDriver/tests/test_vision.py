@@ -25,6 +25,49 @@ class VisualRecognitionTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.catalog = load_visual_catalog()
 
+    def test_real_holdout_frame_matches_welcome(self) -> None:
+        evidence = read_evidence(SAMPLE_ROOT / "welcome.zh-CN.holdout.json")
+
+        result, match = recognize_image(evidence, self.catalog)
+
+        self.assertIsNotNone(match)
+        self.assertEqual("matched", result["recognition"]["status"])
+        self.assertEqual("welcome", result["recognition"]["page"]["id"])
+        self.assertGreater(result["recognition"]["page"]["score"], 0.97)
+        self.assertEqual(5, len(result["recognition"]["elements"]))
+        self.assertTrue(result["recognition"]["oracleEligible"])
+        start = next(
+            element
+            for element in result["recognition"]["elements"]
+            if element["id"] == "welcome.start"
+        )
+        self.assertEqual("visible", start["visibility"])
+        self.assertTrue(start["visible"])
+
+    def test_real_holdout_frame_matches_modified_client_warning(self) -> None:
+        evidence = read_evidence(
+            SAMPLE_ROOT / "modified-client-warning.zh-CN.holdout.json"
+        )
+
+        result, match = recognize_image(evidence, self.catalog)
+
+        self.assertIsNotNone(match)
+        self.assertEqual("matched", result["recognition"]["status"])
+        self.assertEqual(
+            "modifiedClientWarning",
+            result["recognition"]["page"]["id"],
+        )
+        self.assertGreater(result["recognition"]["page"]["score"], 0.99)
+        self.assertEqual(5, len(result["recognition"]["elements"]))
+        self.assertTrue(result["recognition"]["oracleEligible"])
+        continue_button = next(
+            element
+            for element in result["recognition"]["elements"]
+            if element["id"] == "modifiedClientWarning.continue"
+        )
+        self.assertEqual("visible", continue_button["visibility"])
+        self.assertTrue(continue_button["visible"])
+
     def test_real_holdout_frame_matches_main_menu(self) -> None:
         evidence = read_evidence(SAMPLE_ROOT / "main-menu.zh-CN.holdout.json")
 
@@ -79,6 +122,54 @@ class VisualRecognitionTests(unittest.TestCase):
         self.assertEqual("visible", monkey_meadow["visibility"])
         self.assertTrue(monkey_meadow["visible"])
 
+    def test_real_holdout_frame_matches_difficulty_select(self) -> None:
+        evidence = read_evidence(SAMPLE_ROOT / "difficulty-select.zh-CN.holdout.json")
+
+        result, match = recognize_image(evidence, self.catalog)
+
+        self.assertIsNotNone(match)
+        self.assertEqual("matched", result["recognition"]["status"])
+        self.assertEqual("difficultySelect", result["recognition"]["page"]["id"])
+        self.assertGreater(result["recognition"]["page"]["score"], 0.99)
+        self.assertEqual(9, len(result["recognition"]["elements"]))
+        self.assertTrue(result["recognition"]["oracleEligible"])
+        for element_id in (
+            "difficultySelect.easy",
+            "difficultySelect.medium",
+            "difficultySelect.hard",
+        ):
+            element = next(
+                candidate
+                for candidate in result["recognition"]["elements"]
+                if candidate["id"] == element_id
+            )
+            self.assertEqual("visible", element["visibility"])
+            self.assertTrue(element["visible"])
+
+    def test_real_holdout_frame_matches_easy_mode_select(self) -> None:
+        evidence = read_evidence(SAMPLE_ROOT / "easy-mode-select.zh-CN.holdout.json")
+
+        result, match = recognize_image(evidence, self.catalog)
+
+        self.assertIsNotNone(match)
+        self.assertEqual("matched", result["recognition"]["status"])
+        self.assertEqual("easyModeSelect", result["recognition"]["page"]["id"])
+        self.assertGreater(result["recognition"]["page"]["score"], 0.99)
+        self.assertEqual(9, len(result["recognition"]["elements"]))
+        self.assertTrue(result["recognition"]["oracleEligible"])
+        for element_id in (
+            "easyModeSelect.standard",
+            "easyModeSelect.primaryOnly",
+            "easyModeSelect.deflation",
+        ):
+            element = next(
+                candidate
+                for candidate in result["recognition"]["elements"]
+                if candidate["id"] == element_id
+            )
+            self.assertEqual("visible", element["visibility"])
+            self.assertTrue(element["visible"])
+
     def test_uniform_dark_frame_is_unknown(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             metadata_path = write_test_evidence(
@@ -96,7 +187,7 @@ class VisualRecognitionTests(unittest.TestCase):
             self.assertFalse(result["recognition"]["oracleEligible"])
 
     def test_close_runner_up_below_its_threshold_is_ambiguous(self) -> None:
-        source_page = self.catalog.pages[0]
+        source_page = next(page for page in self.catalog.pages if page.id == "mainMenu")
         second_page = VisualPage(
             id="duplicatePage",
             kind="page",
@@ -104,6 +195,7 @@ class VisualRecognitionTests(unittest.TestCase):
             minimum_matched_anchors=source_page.minimum_matched_anchors,
             anchors=source_page.anchors,
             elements=(),
+            positive_holdout=source_page.positive_holdout,
         )
         catalog = VisualCatalog(
             id="ambiguous-test",

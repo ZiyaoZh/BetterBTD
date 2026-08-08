@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "welcome.zh-CN.20260808",
+  "sourceEvidenceId": "cf601f4f37fb4b4e91f89db75a5b1a2d",
+  "sourceImageSha256": "4d384a7b3043526709ae983eb6d8ba8d9e2372dfc805b0d521664cee4bda7062",
+  "pageId": "welcome",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T00:54:00.000Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromAnchors": [
+    "welcome.playerProfile",
+    "welcome.productVersion",
+    "welcome.userIdentity",
+    "welcome.localizedGreeting",
+    "welcome.localizedSubtitle"
+  ],
+  "notes": [
+    "The source is an unmodified clean Game Driver capture with a valid completion marker.",
+    "The product logo, decorative red balloon and green start-button body are independent anchors; account, version and localized text are not page IDs."
+  ]
+}

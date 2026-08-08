@@ -32,6 +32,8 @@ Game Driver 不导入 BetterBTD Python 模块，也不引用 BetterBTD 或 Fisch
 - 对 `16:9` 真实截图执行离线多锚点识别，输出 `matched`、`unknown` 或 `ambiguous`、锚点分数、元素边界和动作点。
 - 第一组中文主菜单基准：4 个稳定图标锚点、19 个目录元素、一份制模证据、一份不同动画帧的真实正向留出证据和一份真实启动画面负向证据。只有绑定锚点的元素报告独立可见性，其余元素返回 `notEvaluated`。
 - 中文地图选择基准：返回、搜索、左右翻页和猴子草甸 5 个锚点、13 个目录元素，以及不同动画时刻的制模/留出证据。
+- 中文冷启动基准：`welcome` 和阻断式 `modifiedClientWarning`；后者只允许安全的继续动作，不为注销账号或关闭游戏提供动作点。
+- 中文关卡入口基准：`difficultySelect` 的 `Easy/Medium/Hard`，以及 `easyModeSelect` 的 `Standard/PrimaryOnly/Deflation`；这些 ID 与脚本持久化枚举名一致，不使用本地化显示文本。
 - `click` 控制命令：只点击当前已识别页面中具备独立可见性检测的目录按钮，保存操作前后证据和独立轨迹。
 - 操作后按连续帧差异等待画面发生变化并稳定，可用 `--expect-page` 要求最终独立识别到指定页面。
 
@@ -47,7 +49,7 @@ Python 依赖全部锁定在工具自己的虚拟环境。实现和使用说明�
 
 ## 视觉基准与 Oracle 资格
 
-视觉目录位于 `tools/BetterBTD.GameDriver/visual-baselines/`。模板只能从目录内保留的 Game Driver 原始证据裁剪，并记录来源 `evidenceId`、来源图片哈希、裁剪矩形与模板哈希。标注文件和人工复核叠加图属于独立解释层，不能修改或取代原始截图。
+视觉目录位于 `tools/BetterBTD.GameDriver/visual-baselines/`。模板只能从目录内保留的 Game Driver 原始证据裁剪，并记录来源 `evidenceId`、来源图片哈希、裁剪矩形与模板哈希。每页的正向留出证据必须是另一组完整 Oracle 证据，图片哈希不得与任一制模源图相同。标注文件和人工复核叠加图属于独立解释层，不能修改或取代原始截图。
 
 `recognize` 必须以捕获元数据 JSON 为入口，并根据相邻文件名找到 PNG 与完成标记。只有三件套哈希一致、来源为 `BetterBTD.GameDriver`、宽高比适用、无捕获警告且页面唯一匹配时，`recognition.oracleEligible` 才为 `true`。BetterBTD 内部诊断不能写入此字段。
 
@@ -68,10 +70,10 @@ Python 依赖全部锁定在工具自己的虚拟环境。实现和使用说明�
 
 ## 后续迭代
 
-1. 用已具备独立可见性检测的猴子草甸入口扩展难度和模式页面。
-2. 增加按键、文本输入、滚动和元素出现/消失等待，并继续保存操作前后证据。
-3. 扩展英雄、关卡内、暂停、胜负和弹窗的真实视觉基准。
+1. 按 `Medium` 和 `Hard` 的稳定模式拓扑扩展 `mediumModeSelect` 与 `hardModeSelect`。
+2. 扩展 `heroSelect`、加载、关卡内、暂停、胜负和通用弹窗的真实视觉基准。
+3. 增加跨加载中间态的页面等待、按键、文本输入、滚动和元素出现/消失等待，并继续保存操作轨迹。
 4. 增加每个元素的独立文本、数值和选中状态识别。
 5. 与 BetterBTD Test API 组合，但保持截图与识别 Oracle 独立。
 
-桌面 GDI 首版后端要求游戏可见且无遮挡。锁屏、断开的 RDP、独占全屏和部分 DirectFlip 路径可能无法提供有效画面；单帧证据会明确标记 `occlusionSensitive=true` 和 `stabilityCheckPerformed=false`。`click` 的稳定性记录在同目录 `operation.json` 中，测试编排不得把两者混为同一字段。
+桌面 GDI 首版后端要求游戏可见且无遮挡。锁屏、断开的 RDP、独占全屏和部分 DirectFlip 路径可能无法提供有效画面；单帧证据会明确标记 `occlusionSensitive=true` 和 `stabilityCheckPerformed=false`。`click` 的稳定性记录在同目录 `operation.json` 中，测试编排不得把两者混为同一字段。当前 `click` 在第一个变化后稳定画面停止；冷启动等包含加载中间态的流程仍需编排层重复观察，不能假设第一次稳定就是最终目标页。

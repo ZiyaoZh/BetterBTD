@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "modifiedClientWarning.zh-CN.20260808.holdout",
+  "sourceEvidenceId": "8de7ec7f1ed24848b417e9d6a2addd84",
+  "sourceImageSha256": "f8f19d1aab81bb451af09f6086135d8788ec4973f24cb8fa3221c7417e121c01",
+  "pageId": "modifiedClientWarning",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "purpose": "positiveHoldout",
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T00:59:00.000Z",
+    "result": "accepted"
+  },
+  "notes": [
+    "This frame came from a separate real cold start and was not used to generate templates.",
+    "Its visible-pixel fingerprint differs from the template source while preserving the same blocking warning state."
+  ]
+}

@@ -14,9 +14,43 @@ class VisualCatalogTests(unittest.TestCase):
 
         self.assertEqual("btd6-ui-independent", catalog.id)
         self.assertEqual((1920, 1080), (catalog.reference_width, catalog.reference_height))
-        self.assertEqual(["mainMenu", "mapSelect"], [page.id for page in catalog.pages])
+        self.assertEqual(
+            [
+                "welcome",
+                "modifiedClientWarning",
+                "mainMenu",
+                "mapSelect",
+                "difficultySelect",
+                "easyModeSelect",
+            ],
+            [page.id for page in catalog.pages],
+        )
         self.assertEqual(4, len(catalog.pages[0].anchors))
         self.assertEqual(5, len(catalog.pages[1].anchors))
+        self.assertEqual(4, len(catalog.pages[2].anchors))
+        self.assertEqual(5, len(catalog.pages[3].anchors))
+        self.assertEqual(4, len(catalog.pages[4].anchors))
+        self.assertEqual(4, len(catalog.pages[5].anchors))
+        self.assertTrue(all(page.positive_holdout is not None for page in catalog.pages))
+
+    def test_positive_holdout_must_differ_from_template_source(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            catalog_path = _write_minimal_catalog(root)
+            document = json.loads(catalog_path.read_text(encoding="utf-8"))
+            anchor = document["pages"][0]["anchors"][0]
+            document["pages"][0]["positiveHoldout"] = {
+                "evidence": anchor["sourceEvidence"],
+                "evidenceId": anchor["sourceEvidenceId"],
+                "imageSha256": anchor["sourceImageSha256"],
+            }
+            catalog_path.write_text(json.dumps(document), encoding="utf-8")
+
+            with self.assertRaises(GameDriverError) as context:
+                load_visual_catalog(catalog_path)
+
+            self.assertEqual("visualCatalogInvalid", context.exception.code)
+            self.assertIn("must differ", context.exception.message)
 
     def test_template_hash_mismatch_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -90,6 +124,13 @@ def _write_minimal_catalog(root: Path) -> Path:
     )
     source_document = json.loads(source_path.read_text(encoding="utf-8"))
     source_hash = hashlib.sha256((root / "source.png").read_bytes()).hexdigest()
+    holdout_path = write_test_evidence(
+        root,
+        "holdout",
+        Image.new("RGB", (1920, 1080), "white"),
+    )
+    holdout_document = json.loads(holdout_path.read_text(encoding="utf-8"))
+    holdout_hash = hashlib.sha256((root / "holdout.png").read_bytes()).hexdigest()
     document = {
         "schemaVersion": 1,
         "catalogId": "test",
@@ -105,6 +146,11 @@ def _write_minimal_catalog(root: Path) -> Path:
                 "kind": "page",
                 "minimumScore": 0.9,
                 "minimumMatchedAnchors": 1,
+                "positiveHoldout": {
+                    "evidence": "holdout.json",
+                    "evidenceId": holdout_document["evidenceId"],
+                    "imageSha256": holdout_hash,
+                },
                 "anchors": [
                     {
                         "id": "testPage.anchor",
