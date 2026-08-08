@@ -253,6 +253,32 @@ class VisualRecognitionTests(unittest.TestCase):
         self.assertEqual({"x": 535, "y": 270}, ascent["actionPointClient"])
         self.assertEqual("notVisible", elements["mapSelect.ascentLocked"]["visibility"])
 
+    def test_advanced_category_detectors_are_mutually_exclusive(self) -> None:
+        cases = (
+            (
+                "map-select-page-11.zh-CN.holdout.json",
+                "mapSelect.advancedSelected",
+                "mapSelect.advancedUnselected",
+            ),
+            (
+                "map-select-category-clean.zh-CN.holdout.json",
+                "mapSelect.advancedUnselected",
+                "mapSelect.advancedSelected",
+            ),
+        )
+
+        for evidence_name, matched_anchor_id, rejected_anchor_id in cases:
+            with self.subTest(evidence=evidence_name):
+                evidence = read_evidence(SAMPLE_ROOT / evidence_name)
+                result, _ = recognize_image(evidence, self.catalog)
+                page = result["recognition"]["page"]
+                anchors = {anchor["id"]: anchor for anchor in page["anchors"]}
+
+                self.assertTrue(anchors[matched_anchor_id]["matched"])
+                self.assertFalse(anchors[rejected_anchor_id]["matched"])
+                self.assertGreaterEqual(anchors[matched_anchor_id]["score"], 0.95)
+                self.assertLess(anchors[rejected_anchor_id]["score"], 0.95)
+
     def test_real_map_option_holdout_distinguishes_opposite_states(self) -> None:
         evidence = read_evidence(
             SAMPLE_ROOT / "map-select-options-opposite.zh-CN.holdout.json"

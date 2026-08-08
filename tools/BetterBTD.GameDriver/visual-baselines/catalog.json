@@ -2680,14 +2680,14 @@
         {
           "id": "mapSelect.advancedSelected",
           "bounds": {
-            "x": 980,
+            "x": 990,
             "y": 960,
-            "width": 210,
-            "height": 115
+            "width": 190,
+            "height": 55
           },
           "template": "templates/map-select/advanced-selected.png",
-          "templateSha256": "fee3a47050168b9f09c3fa0f790339a2bfcd093c094d9912f2a7a23183c02422",
-          "minimumScore": 0.9,
+          "templateSha256": "f48a110b1ba52cedf2376c48ef5ecbd140d4965dc7ea063d6f7ddf2f8494b4f8",
+          "minimumScore": 0.95,
           "pageAnchor": false,
           "sourceEvidence": "samples/map-select-page-11.zh-CN.json",
           "sourceEvidenceId": "34d5ae3430134a558e18e1e306a0ab35",
@@ -2696,14 +2696,14 @@
         {
           "id": "mapSelect.advancedUnselected",
           "bounds": {
-            "x": 980,
+            "x": 990,
             "y": 960,
-            "width": 210,
-            "height": 115
+            "width": 190,
+            "height": 55
           },
           "template": "templates/map-select/advanced-unselected.png",
-          "templateSha256": "c99e4b0321b5cb0718f8b35a4c2b0bba523d98262bad637ec62b28c66da40a5f",
-          "minimumScore": 0.9,
+          "templateSha256": "9627bc5028bc0ddaff362d16c74359083b70266d4bb3aae434cf9c35de2618ad",
+          "minimumScore": 0.95,
           "pageAnchor": false,
           "sourceEvidence": "samples/map-select-category-clean.zh-CN.json",
           "sourceEvidenceId": "c88b192fcb7c416fad0547e1f24e2992",
