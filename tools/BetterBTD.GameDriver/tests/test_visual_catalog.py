@@ -24,6 +24,7 @@ class VisualCatalogTests(unittest.TestCase):
                 "easyModeSelect",
                 "mediumModeSelect",
                 "hardModeSelect",
+                "heroSelect",
                 "inLevel",
                 "stageSettings",
             ],
@@ -31,14 +32,19 @@ class VisualCatalogTests(unittest.TestCase):
         )
         self.assertEqual(4, len(catalog.pages[0].anchors))
         self.assertEqual(5, len(catalog.pages[1].anchors))
-        self.assertEqual(4, len(catalog.pages[2].anchors))
+        self.assertEqual(5, len(catalog.pages[2].anchors))
         self.assertEqual(5, len(catalog.pages[3].anchors))
         self.assertEqual(4, len(catalog.pages[4].anchors))
         self.assertEqual(4, len(catalog.pages[5].anchors))
         self.assertEqual(6, len(catalog.pages[6].anchors))
         self.assertEqual(9, len(catalog.pages[7].anchors))
-        self.assertEqual(4, len(catalog.pages[8].anchors))
+        self.assertEqual(22, len(catalog.pages[8].anchors))
         self.assertEqual(4, len(catalog.pages[9].anchors))
+        self.assertEqual(4, len(catalog.pages[10].anchors))
+        self.assertEqual(
+            3,
+            sum(anchor.page_anchor for anchor in catalog.pages[8].anchors),
+        )
         self.assertTrue(all(page.positive_holdout is not None for page in catalog.pages))
 
     def test_positive_holdout_must_differ_from_template_source(self) -> None:
@@ -100,6 +106,34 @@ class VisualCatalogTests(unittest.TestCase):
                 load_visual_catalog(catalog_path)
 
             self.assertIn("bounds must be inside", context.exception.message)
+
+    def test_detector_only_anchor_does_not_satisfy_page_minimum(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            catalog_path = _write_minimal_catalog(root)
+            document = json.loads(catalog_path.read_text(encoding="utf-8"))
+            document["pages"][0]["anchors"][0]["pageAnchor"] = False
+            catalog_path.write_text(json.dumps(document), encoding="utf-8")
+
+            with self.assertRaises(GameDriverError) as context:
+                load_visual_catalog(catalog_path)
+
+            self.assertEqual("visualCatalogInvalid", context.exception.code)
+            self.assertIn("page anchor count", context.exception.message)
+
+    def test_page_anchor_must_be_boolean(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            catalog_path = _write_minimal_catalog(root)
+            document = json.loads(catalog_path.read_text(encoding="utf-8"))
+            document["pages"][0]["anchors"][0]["pageAnchor"] = "false"
+            catalog_path.write_text(json.dumps(document), encoding="utf-8")
+
+            with self.assertRaises(GameDriverError) as context:
+                load_visual_catalog(catalog_path)
+
+            self.assertEqual("visualCatalogInvalid", context.exception.code)
+            self.assertIn("pageAnchor must be a boolean", context.exception.message)
 
     def test_template_cannot_overlap_source_evidence(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:

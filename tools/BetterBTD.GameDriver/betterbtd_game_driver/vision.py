@@ -24,6 +24,7 @@ class AnchorMatch:
     score: float
     minimum_score: float
     matched: bool
+    page_anchor: bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -246,11 +247,13 @@ def _match_page(reference_image: Image.Image, page: VisualPage) -> PageMatch:
                 score=score,
                 minimum_score=anchor.minimum_score,
                 matched=score >= anchor.minimum_score,
+                page_anchor=anchor.page_anchor,
             )
         )
 
-    matched_anchor_count = sum(match.matched for match in anchor_matches)
-    score = sum(match.score for match in anchor_matches) / len(anchor_matches)
+    page_anchor_matches = [match for match in anchor_matches if match.page_anchor]
+    matched_anchor_count = sum(match.matched for match in page_anchor_matches)
+    score = sum(match.score for match in page_anchor_matches) / len(page_anchor_matches)
     matched = (
         matched_anchor_count >= page.minimum_matched_anchors
         and score >= page.minimum_score
@@ -341,6 +344,7 @@ def _anchor_result(anchor: AnchorMatch) -> dict[str, object]:
         "score": anchor.score,
         "minimumScore": anchor.minimum_score,
         "matched": anchor.matched,
+        "pageAnchor": anchor.page_anchor,
     }
 
 

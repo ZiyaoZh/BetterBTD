@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "heroSelect.choice.zh-CN.20260808",
+  "sourceEvidenceId": "67d2529756c24f41ae802cf5b2752fa5",
+  "sourceImageSha256": "993bae1340762fe8cbb14005f1e454559eb3bb1fc971da1ca6cc366abedb6b85",
+  "pageId": "heroSelect",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T02:29:00.000Z",
+    "result": "accepted"
+  },
+  "notes": [
+    "The source is an unmodified Game Driver capture of an unlocked hero that is not currently equipped.",
+    "Only the independently visible choose control is used as a detector; localized hero identity and account values are excluded."
+  ]
+}

@@ -249,6 +249,98 @@ class VisualRecognitionTests(unittest.TestCase):
             self.assertEqual("visible", element["visibility"])
             self.assertTrue(element["visible"])
 
+    def test_real_holdout_frame_matches_hero_select(self) -> None:
+        evidence = read_evidence(SAMPLE_ROOT / "hero-select.zh-CN.holdout.json")
+
+        result, match = recognize_image(evidence, self.catalog)
+
+        self.assertIsNotNone(match)
+        self.assertEqual("matched", result["recognition"]["status"])
+        self.assertEqual("heroSelect", result["recognition"]["page"]["id"])
+        self.assertGreater(result["recognition"]["page"]["score"], 0.99)
+        self.assertEqual(3, result["recognition"]["page"]["matchedAnchorCount"])
+        self.assertEqual(24, len(result["recognition"]["elements"]))
+        self.assertTrue(result["recognition"]["oracleEligible"])
+        for element_id in (
+            "heroSelect.Quincy",
+            "heroSelect.Gwendolin",
+            "heroSelect.Geraldo",
+            "heroSelect.back",
+        ):
+            element = next(
+                candidate
+                for candidate in result["recognition"]["elements"]
+                if candidate["id"] == element_id
+            )
+            self.assertEqual("visible", element["visibility"])
+            self.assertTrue(element["visible"])
+        selected = next(
+            element
+            for element in result["recognition"]["elements"]
+            if element["id"] == "heroSelect.selected"
+        )
+        choose = next(
+            element
+            for element in result["recognition"]["elements"]
+            if element["id"] == "heroSelect.choose"
+        )
+        self.assertEqual("visible", selected["visibility"])
+        self.assertEqual("notVisible", choose["visibility"])
+
+    def test_real_choice_frame_distinguishes_choose_from_selected(self) -> None:
+        evidence = read_evidence(SAMPLE_ROOT / "hero-select-choice.zh-CN.json")
+
+        result, match = recognize_image(evidence, self.catalog)
+
+        self.assertIsNotNone(match)
+        self.assertEqual("matched", result["recognition"]["status"])
+        self.assertEqual("heroSelect", result["recognition"]["page"]["id"])
+        self.assertGreater(result["recognition"]["page"]["score"], 0.97)
+        choose = next(
+            element
+            for element in result["recognition"]["elements"]
+            if element["id"] == "heroSelect.choose"
+        )
+        selected = next(
+            element
+            for element in result["recognition"]["elements"]
+            if element["id"] == "heroSelect.selected"
+        )
+        self.assertEqual("visible", choose["visibility"])
+        self.assertEqual("notVisible", selected["visibility"])
+
+    def test_detector_only_hero_portrait_does_not_control_page_match(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            with Image.open(SAMPLE_ROOT / "hero-select.zh-CN.holdout.png") as source:
+                modified = source.convert("RGB")
+                modified.paste((0, 0, 0), (50, 160, 150, 280))
+            metadata_path = write_test_evidence(
+                Path(temporary_directory),
+                "hero-select-with-hidden-quincy",
+                modified,
+            )
+            evidence = read_evidence(metadata_path)
+
+            result, match = recognize_image(evidence, self.catalog)
+
+            self.assertIsNotNone(match)
+            self.assertEqual("matched", result["recognition"]["status"])
+            self.assertEqual("heroSelect", result["recognition"]["page"]["id"])
+            self.assertGreater(result["recognition"]["page"]["score"], 0.99)
+            quincy = next(
+                element
+                for element in result["recognition"]["elements"]
+                if element["id"] == "heroSelect.Quincy"
+            )
+            portrait = next(
+                anchor
+                for anchor in result["recognition"]["page"]["anchors"]
+                if anchor["id"] == "heroSelect.QuincyPortrait"
+            )
+            self.assertEqual("notVisible", quincy["visibility"])
+            self.assertFalse(quincy["visible"])
+            self.assertFalse(portrait["pageAnchor"])
+
     def test_real_holdout_frame_matches_stage_settings(self) -> None:
         evidence = read_evidence(SAMPLE_ROOT / "stage-settings.zh-CN.holdout.json")
 

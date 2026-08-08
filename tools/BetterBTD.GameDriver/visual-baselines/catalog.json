@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "catalogId": "btd6-ui-independent",
-  "catalogVersion": 7,
+  "catalogVersion": 8,
   "game": {
     "id": "BloonsTD6",
     "observedProductVersion": "6000.0.58f2 (92dee566b325)",
@@ -244,6 +244,17 @@
           "sourceEvidence": "samples/main-menu.zh-CN.json",
           "sourceEvidenceId": "467bf2097c15447ca75e1dc687ce279e",
           "sourceImageSha256": "478330a54bd4ce936de618802754338ec02be3b7340f41503983694d4f9ec78b"
+        },
+        {
+          "id": "mainMenu.heroesLabel",
+          "bounds": { "x": 440, "y": 1020, "width": 195, "height": 60 },
+          "template": "templates/main-menu/heroes-label.png",
+          "templateSha256": "7ec82be1d273072b3dccb1a551d38e4c1f810d5d051214a3c8e68ae848b9b43b",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/main-menu.zh-CN.json",
+          "sourceEvidenceId": "467bf2097c15447ca75e1dc687ce279e",
+          "sourceImageSha256": "478330a54bd4ce936de618802754338ec02be3b7340f41503983694d4f9ec78b"
         }
       ],
       "elements": [
@@ -325,7 +336,8 @@
           "id": "mainMenu.heroes",
           "role": "button",
           "bounds": { "x": 440, "y": 850, "width": 195, "height": 230 },
-          "actionPoint": { "x": 535, "y": 950 }
+          "actionPoint": { "x": 535, "y": 950 },
+          "anchorIds": ["mainMenu.heroesLabel"]
         },
         {
           "id": "mainMenu.legends",
@@ -1069,6 +1081,419 @@
           "role": "button",
           "bounds": { "x": 1735, "y": 920, "width": 185, "height": 160 },
           "actionPoint": { "x": 1815, "y": 990 }
+        }
+      ]
+    },
+    {
+      "id": "heroSelect",
+      "kind": "page",
+      "minimumScore": 0.97,
+      "minimumMatchedAnchors": 3,
+      "positiveHoldout": {
+        "evidence": "samples/hero-select.zh-CN.holdout.json",
+        "evidenceId": "e9600d045c61422a93720130656a5adc",
+        "imageSha256": "1748182359fd475e1271f6831b9e9d4e5ec3461fce51db3e9ee03eb84f8ac39b"
+      },
+      "anchors": [
+        {
+          "id": "heroSelect.backIcon",
+          "bounds": { "x": 30, "y": 15, "width": 90, "height": 85 },
+          "template": "templates/hero-select/back.png",
+          "templateSha256": "4148fdbe28b3fedaeca59ae2eaabe14e9fc6082771ba406d64d5662a0e6e4b5b",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/hero-select.zh-CN.json",
+          "sourceEvidenceId": "8e51cb029ec544768218ba711cf630ba",
+          "sourceImageSha256": "703f715a81b3ed97e800cb2f80abf0746beb1d7fcdc3a86e5b2c9d2ba2a7fb5f"
+        },
+        {
+          "id": "heroSelect.gridRail",
+          "bounds": { "x": 10, "y": 150, "width": 15, "height": 695 },
+          "template": "templates/hero-select/grid-rail.png",
+          "templateSha256": "20b6a227a8c1f786d82652db7864cd326e8d2697f8c46410ad810a80aee24ffb",
+          "minimumScore": 0.90,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/hero-select.zh-CN.json",
+          "sourceEvidenceId": "8e51cb029ec544768218ba711cf630ba",
+          "sourceImageSha256": "703f715a81b3ed97e800cb2f80abf0746beb1d7fcdc3a86e5b2c9d2ba2a7fb5f"
+        },
+        {
+          "id": "heroSelect.levelOneIcon",
+          "bounds": { "x": 675, "y": 835, "width": 90, "height": 90 },
+          "template": "templates/hero-select/level-one.png",
+          "templateSha256": "4882773b069e152318cd130596819fa9fab041bea65bc256c320cecf745e4f33",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/hero-select.zh-CN.json",
+          "sourceEvidenceId": "8e51cb029ec544768218ba711cf630ba",
+          "sourceImageSha256": "703f715a81b3ed97e800cb2f80abf0746beb1d7fcdc3a86e5b2c9d2ba2a7fb5f"
+        },
+        {
+          "id": "heroSelect.detailsScrollUpIcon",
+          "bounds": { "x": 1560, "y": 965, "width": 80, "height": 83 },
+          "template": "templates/hero-select/details-scroll-up.png",
+          "templateSha256": "b441d1933178957f87a6eeaf51a5e0ec9e85d2f318fd036e2bdd394d39312cf0",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/hero-select.zh-CN.json",
+          "sourceEvidenceId": "8e51cb029ec544768218ba711cf630ba",
+          "sourceImageSha256": "703f715a81b3ed97e800cb2f80abf0746beb1d7fcdc3a86e5b2c9d2ba2a7fb5f"
+        },
+        {
+          "id": "heroSelect.headerFrame",
+          "bounds": { "x": 1000, "y": 20, "width": 345, "height": 90 },
+          "template": "templates/hero-select/header-frame.png",
+          "templateSha256": "ad5b1f3ef7ae5359593710c3bf446bea19d7df62e5bc57815f1d7b36efcc1b7f",
+          "minimumScore": 0.90,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/hero-select.zh-CN.json",
+          "sourceEvidenceId": "8e51cb029ec544768218ba711cf630ba",
+          "sourceImageSha256": "703f715a81b3ed97e800cb2f80abf0746beb1d7fcdc3a86e5b2c9d2ba2a7fb5f"
+        },
+        {
+          "id": "heroSelect.chooseButton",
+          "bounds": { "x": 965, "y": 565, "width": 300, "height": 100 },
+          "template": "templates/hero-select/choose.png",
+          "templateSha256": "be676fa6bf2a1629bfa639d8dec252fe7aebdae5f6f8a6bad0d51abd23f22354",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/hero-select-choice.zh-CN.json",
+          "sourceEvidenceId": "67d2529756c24f41ae802cf5b2752fa5",
+          "sourceImageSha256": "993bae1340762fe8cbb14005f1e454559eb3bb1fc971da1ca6cc366abedb6b85"
+        },
+        {
+          "id": "heroSelect.selectedState",
+          "bounds": { "x": 1070, "y": 595, "width": 120, "height": 35 },
+          "template": "templates/hero-select/selected.png",
+          "templateSha256": "539b269ebbe970f508657705a4071116cb6db23b0ef0bc54c5404f6e0290509f",
+          "minimumScore": 0.90,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/hero-select.zh-CN.json",
+          "sourceEvidenceId": "8e51cb029ec544768218ba711cf630ba",
+          "sourceImageSha256": "703f715a81b3ed97e800cb2f80abf0746beb1d7fcdc3a86e5b2c9d2ba2a7fb5f"
+        },
+        {
+          "id": "heroSelect.QuincyPortrait",
+          "bounds": { "x": 50, "y": 160, "width": 100, "height": 120 },
+          "template": "templates/hero-select/quincy.png",
+          "templateSha256": "97fa50d36f55039e191f6517eab6a7f7a185c4b7b6f33373f5f2dbe757b18c3a",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/hero-select.zh-CN.json",
+          "sourceEvidenceId": "8e51cb029ec544768218ba711cf630ba",
+          "sourceImageSha256": "703f715a81b3ed97e800cb2f80abf0746beb1d7fcdc3a86e5b2c9d2ba2a7fb5f"
+        },
+        {
+          "id": "heroSelect.GwendolinPortrait",
+          "bounds": { "x": 205, "y": 160, "width": 100, "height": 120 },
+          "template": "templates/hero-select/gwendolin.png",
+          "templateSha256": "d2c6aed6687f4d559be8839ad5e9ec498a3f4a5f937eea09b96275cc26597bb4",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/hero-select.zh-CN.json",
+          "sourceEvidenceId": "8e51cb029ec544768218ba711cf630ba",
+          "sourceImageSha256": "703f715a81b3ed97e800cb2f80abf0746beb1d7fcdc3a86e5b2c9d2ba2a7fb5f"
+        },
+        {
+          "id": "heroSelect.StrikerJonesPortrait",
+          "bounds": { "x": 355, "y": 160, "width": 100, "height": 120 },
+          "template": "templates/hero-select/striker-jones.png",
+          "templateSha256": "8903b51b35c3988c2be48c87c225a1ba8caa95862f441791845abfd5517a73aa",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/hero-select.zh-CN.json",
+          "sourceEvidenceId": "8e51cb029ec544768218ba711cf630ba",
+          "sourceImageSha256": "703f715a81b3ed97e800cb2f80abf0746beb1d7fcdc3a86e5b2c9d2ba2a7fb5f"
+        },
+        {
+          "id": "heroSelect.ObynGreenfootPortrait",
+          "bounds": { "x": 50, "y": 350, "width": 100, "height": 125 },
+          "template": "templates/hero-select/obyn-greenfoot.png",
+          "templateSha256": "184bbebb5579ca1acc9744458d1ac7fe2888a6f9291c2e12b7b17a5ed1878a08",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/hero-select.zh-CN.json",
+          "sourceEvidenceId": "8e51cb029ec544768218ba711cf630ba",
+          "sourceImageSha256": "703f715a81b3ed97e800cb2f80abf0746beb1d7fcdc3a86e5b2c9d2ba2a7fb5f"
+        },
+        {
+          "id": "heroSelect.RosaliaPortrait",
+          "bounds": { "x": 205, "y": 350, "width": 100, "height": 125 },
+          "template": "templates/hero-select/rosalia.png",
+          "templateSha256": "6d47311841f1fc18fce131cb1c417977d3c4d5c829ac10adfdc666cc9f07ae5a",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/hero-select.zh-CN.json",
+          "sourceEvidenceId": "8e51cb029ec544768218ba711cf630ba",
+          "sourceImageSha256": "703f715a81b3ed97e800cb2f80abf0746beb1d7fcdc3a86e5b2c9d2ba2a7fb5f"
+        },
+        {
+          "id": "heroSelect.CaptainChurchillPortrait",
+          "bounds": { "x": 355, "y": 350, "width": 100, "height": 125 },
+          "template": "templates/hero-select/captain-churchill.png",
+          "templateSha256": "5f5e1dfcfe1f310b4d10098763891f9ea2f5b9e368a6e16c3beb420dcd7772ae",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/hero-select.zh-CN.json",
+          "sourceEvidenceId": "8e51cb029ec544768218ba711cf630ba",
+          "sourceImageSha256": "703f715a81b3ed97e800cb2f80abf0746beb1d7fcdc3a86e5b2c9d2ba2a7fb5f"
+        },
+        {
+          "id": "heroSelect.BenjaminPortrait",
+          "bounds": { "x": 50, "y": 540, "width": 100, "height": 125 },
+          "template": "templates/hero-select/benjamin.png",
+          "templateSha256": "b06b201fc38d2889a479c1a03ba9b8cd362302baf210a580b23c050c364693a5",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/hero-select.zh-CN.json",
+          "sourceEvidenceId": "8e51cb029ec544768218ba711cf630ba",
+          "sourceImageSha256": "703f715a81b3ed97e800cb2f80abf0746beb1d7fcdc3a86e5b2c9d2ba2a7fb5f"
+        },
+        {
+          "id": "heroSelect.PatFustyPortrait",
+          "bounds": { "x": 205, "y": 540, "width": 100, "height": 125 },
+          "template": "templates/hero-select/pat-fusty.png",
+          "templateSha256": "03cf03665e0c90127e35afde0daa368fe365f48bec37f277587ee942b8c027ea",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/hero-select.zh-CN.json",
+          "sourceEvidenceId": "8e51cb029ec544768218ba711cf630ba",
+          "sourceImageSha256": "703f715a81b3ed97e800cb2f80abf0746beb1d7fcdc3a86e5b2c9d2ba2a7fb5f"
+        },
+        {
+          "id": "heroSelect.EziliPortrait",
+          "bounds": { "x": 355, "y": 540, "width": 100, "height": 125 },
+          "template": "templates/hero-select/ezili.png",
+          "templateSha256": "808f7a5962f5ccccb9b6252e8f34a5f9e51cb1ce66a8fd81466d7671b267566b",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/hero-select.zh-CN.json",
+          "sourceEvidenceId": "8e51cb029ec544768218ba711cf630ba",
+          "sourceImageSha256": "703f715a81b3ed97e800cb2f80abf0746beb1d7fcdc3a86e5b2c9d2ba2a7fb5f"
+        },
+        {
+          "id": "heroSelect.AdoraPortrait",
+          "bounds": { "x": 50, "y": 735, "width": 100, "height": 120 },
+          "template": "templates/hero-select/adora.png",
+          "templateSha256": "fa3c89a2cf04a73ee0834b1e60eaa70cd13361de74a1e8d0303f00a9ad030904",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/hero-select.zh-CN.json",
+          "sourceEvidenceId": "8e51cb029ec544768218ba711cf630ba",
+          "sourceImageSha256": "703f715a81b3ed97e800cb2f80abf0746beb1d7fcdc3a86e5b2c9d2ba2a7fb5f"
+        },
+        {
+          "id": "heroSelect.EtiennePortrait",
+          "bounds": { "x": 205, "y": 735, "width": 100, "height": 120 },
+          "template": "templates/hero-select/etienne.png",
+          "templateSha256": "e995c37866ba0d5c1dbd7f2d2f7db2c976961da2484a0660f737696e730fcbe4",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/hero-select.zh-CN.json",
+          "sourceEvidenceId": "8e51cb029ec544768218ba711cf630ba",
+          "sourceImageSha256": "703f715a81b3ed97e800cb2f80abf0746beb1d7fcdc3a86e5b2c9d2ba2a7fb5f"
+        },
+        {
+          "id": "heroSelect.SaudaPortrait",
+          "bounds": { "x": 355, "y": 735, "width": 100, "height": 120 },
+          "template": "templates/hero-select/sauda.png",
+          "templateSha256": "e135fbdd127fd152e2bb5506a307061ce25625e9b23bfc53cda18b3775f3dd06",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/hero-select.zh-CN.json",
+          "sourceEvidenceId": "8e51cb029ec544768218ba711cf630ba",
+          "sourceImageSha256": "703f715a81b3ed97e800cb2f80abf0746beb1d7fcdc3a86e5b2c9d2ba2a7fb5f"
+        },
+        {
+          "id": "heroSelect.AdmiralBrickellPortrait",
+          "bounds": { "x": 50, "y": 925, "width": 100, "height": 125 },
+          "template": "templates/hero-select/admiral-brickell.png",
+          "templateSha256": "b39b11f39f05dc0d4cb3596c8020c6460b044643464acb92d0536379a7f32164",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/hero-select.zh-CN.json",
+          "sourceEvidenceId": "8e51cb029ec544768218ba711cf630ba",
+          "sourceImageSha256": "703f715a81b3ed97e800cb2f80abf0746beb1d7fcdc3a86e5b2c9d2ba2a7fb5f"
+        },
+        {
+          "id": "heroSelect.PsiPortrait",
+          "bounds": { "x": 205, "y": 925, "width": 100, "height": 125 },
+          "template": "templates/hero-select/psi.png",
+          "templateSha256": "75ed32cffdf0323af15fc6e88464bb09163ded15c8b2c39abaa52c55ccc2f85b",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/hero-select.zh-CN.json",
+          "sourceEvidenceId": "8e51cb029ec544768218ba711cf630ba",
+          "sourceImageSha256": "703f715a81b3ed97e800cb2f80abf0746beb1d7fcdc3a86e5b2c9d2ba2a7fb5f"
+        },
+        {
+          "id": "heroSelect.GeraldoPortrait",
+          "bounds": { "x": 355, "y": 925, "width": 100, "height": 125 },
+          "template": "templates/hero-select/geraldo.png",
+          "templateSha256": "1be68745c13cc2e128d7839c5c72db53ddfa121694e5965eb485a115c9434bf1",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/hero-select.zh-CN.json",
+          "sourceEvidenceId": "8e51cb029ec544768218ba711cf630ba",
+          "sourceImageSha256": "703f715a81b3ed97e800cb2f80abf0746beb1d7fcdc3a86e5b2c9d2ba2a7fb5f"
+        }
+      ],
+      "elements": [
+        {
+          "id": "heroSelect.back",
+          "role": "button",
+          "bounds": { "x": 25, "y": 5, "width": 105, "height": 105 },
+          "actionPoint": { "x": 77, "y": 57 },
+          "anchorIds": ["heroSelect.backIcon"]
+        },
+        {
+          "id": "heroSelect.collectionProgress",
+          "role": "status",
+          "bounds": { "x": 185, "y": 55, "width": 130, "height": 60 }
+        },
+        {
+          "id": "heroSelect.heroGrid",
+          "role": "region",
+          "bounds": { "x": 10, "y": 120, "width": 475, "height": 960 },
+          "anchorIds": ["heroSelect.gridRail"]
+        },
+        {
+          "id": "heroSelect.Quincy",
+          "role": "button",
+          "bounds": { "x": 30, "y": 130, "width": 145, "height": 185 },
+          "actionPoint": { "x": 100, "y": 220 },
+          "anchorIds": ["heroSelect.QuincyPortrait"]
+        },
+        {
+          "id": "heroSelect.Gwendolin",
+          "role": "button",
+          "bounds": { "x": 185, "y": 130, "width": 140, "height": 185 },
+          "actionPoint": { "x": 255, "y": 220 },
+          "anchorIds": ["heroSelect.GwendolinPortrait"]
+        },
+        {
+          "id": "heroSelect.StrikerJones",
+          "role": "button",
+          "bounds": { "x": 335, "y": 130, "width": 145, "height": 185 },
+          "actionPoint": { "x": 405, "y": 220 },
+          "anchorIds": ["heroSelect.StrikerJonesPortrait"]
+        },
+        {
+          "id": "heroSelect.ObynGreenfoot",
+          "role": "button",
+          "bounds": { "x": 30, "y": 325, "width": 145, "height": 180 },
+          "actionPoint": { "x": 100, "y": 415 },
+          "anchorIds": ["heroSelect.ObynGreenfootPortrait"]
+        },
+        {
+          "id": "heroSelect.Rosalia",
+          "role": "button",
+          "bounds": { "x": 185, "y": 325, "width": 140, "height": 180 },
+          "actionPoint": { "x": 255, "y": 415 },
+          "anchorIds": ["heroSelect.RosaliaPortrait"]
+        },
+        {
+          "id": "heroSelect.CaptainChurchill",
+          "role": "button",
+          "bounds": { "x": 335, "y": 325, "width": 145, "height": 180 },
+          "actionPoint": { "x": 405, "y": 415 },
+          "anchorIds": ["heroSelect.CaptainChurchillPortrait"]
+        },
+        {
+          "id": "heroSelect.Benjamin",
+          "role": "button",
+          "bounds": { "x": 30, "y": 515, "width": 145, "height": 180 },
+          "actionPoint": { "x": 100, "y": 605 },
+          "anchorIds": ["heroSelect.BenjaminPortrait"]
+        },
+        {
+          "id": "heroSelect.PatFusty",
+          "role": "button",
+          "bounds": { "x": 185, "y": 515, "width": 140, "height": 180 },
+          "actionPoint": { "x": 255, "y": 605 },
+          "anchorIds": ["heroSelect.PatFustyPortrait"]
+        },
+        {
+          "id": "heroSelect.Ezili",
+          "role": "button",
+          "bounds": { "x": 335, "y": 515, "width": 145, "height": 180 },
+          "actionPoint": { "x": 405, "y": 605 },
+          "anchorIds": ["heroSelect.EziliPortrait"]
+        },
+        {
+          "id": "heroSelect.Adora",
+          "role": "button",
+          "bounds": { "x": 30, "y": 705, "width": 145, "height": 180 },
+          "actionPoint": { "x": 100, "y": 800 },
+          "anchorIds": ["heroSelect.AdoraPortrait"]
+        },
+        {
+          "id": "heroSelect.Etienne",
+          "role": "button",
+          "bounds": { "x": 185, "y": 705, "width": 140, "height": 180 },
+          "actionPoint": { "x": 255, "y": 800 },
+          "anchorIds": ["heroSelect.EtiennePortrait"]
+        },
+        {
+          "id": "heroSelect.Sauda",
+          "role": "button",
+          "bounds": { "x": 335, "y": 705, "width": 145, "height": 180 },
+          "actionPoint": { "x": 405, "y": 800 },
+          "anchorIds": ["heroSelect.SaudaPortrait"]
+        },
+        {
+          "id": "heroSelect.AdmiralBrickell",
+          "role": "button",
+          "bounds": { "x": 30, "y": 895, "width": 145, "height": 185 },
+          "actionPoint": { "x": 100, "y": 990 },
+          "anchorIds": ["heroSelect.AdmiralBrickellPortrait"]
+        },
+        {
+          "id": "heroSelect.Psi",
+          "role": "button",
+          "bounds": { "x": 185, "y": 895, "width": 140, "height": 185 },
+          "actionPoint": { "x": 255, "y": 990 },
+          "anchorIds": ["heroSelect.PsiPortrait"]
+        },
+        {
+          "id": "heroSelect.Geraldo",
+          "role": "button",
+          "bounds": { "x": 335, "y": 895, "width": 145, "height": 185 },
+          "actionPoint": { "x": 405, "y": 990 },
+          "anchorIds": ["heroSelect.GeraldoPortrait"]
+        },
+        {
+          "id": "heroSelect.premiumCurrency",
+          "role": "status",
+          "bounds": { "x": 1450, "y": 5, "width": 460, "height": 95 }
+        },
+        {
+          "id": "heroSelect.heroDetails",
+          "role": "region",
+          "bounds": { "x": 590, "y": 0, "width": 1070, "height": 1080 },
+          "anchorIds": ["heroSelect.levelOneIcon", "heroSelect.headerFrame"]
+        },
+        {
+          "id": "heroSelect.choose",
+          "role": "button",
+          "bounds": { "x": 965, "y": 565, "width": 300, "height": 100 },
+          "actionPoint": { "x": 1120, "y": 615 },
+          "anchorIds": ["heroSelect.chooseButton"]
+        },
+        {
+          "id": "heroSelect.selected",
+          "role": "status",
+          "bounds": { "x": 965, "y": 565, "width": 300, "height": 100 },
+          "anchorIds": ["heroSelect.selectedState"]
+        },
+        {
+          "id": "heroSelect.skins",
+          "role": "region",
+          "bounds": { "x": 1670, "y": 100, "width": 250, "height": 500 }
+        },
+        {
+          "id": "heroSelect.detailsScrollUp",
+          "role": "button",
+          "bounds": { "x": 1545, "y": 950, "width": 110, "height": 110 },
+          "actionPoint": { "x": 1600, "y": 1005 },
+          "anchorIds": ["heroSelect.detailsScrollUpIcon"]
         }
       ]
     },

@@ -129,6 +129,16 @@ class ClickTargetTests(unittest.TestCase):
                 "hardModeSelect.impoppable": (1280, 740),
                 "hardModeSelect.chimps": (1600, 740),
             },
+            "hero-select.zh-CN.holdout.json": {
+                "heroSelect.back": (77, 57),
+                "heroSelect.Quincy": (100, 220),
+                "heroSelect.Gwendolin": (255, 220),
+                "heroSelect.Geraldo": (405, 990),
+                "heroSelect.detailsScrollUp": (1600, 1005),
+            },
+            "hero-select-choice.zh-CN.json": {
+                "heroSelect.choose": (1120, 615),
+            },
             "in-level.zh-CN.holdout.json": {
                 "inLevel.settings": (1600, 50),
                 "inLevel.startOrFastForward": (1840, 1020),

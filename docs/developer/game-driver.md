@@ -30,11 +30,13 @@ Game Driver 不导入 BetterBTD Python 模块，也不引用 BetterBTD 或 Fisch
 - 版本化独立视觉目录、稳定页面/元素 ID、模板来源证据和全链路 SHA-256 校验。
 - 从已校验来源证据确定性重建模板，不读取 BetterBTD OCR 或模板资源。
 - 对 `16:9` 真实截图执行离线多锚点识别，输出 `matched`、`unknown` 或 `ambiguous`、锚点分数、元素边界和动作点。
+- 页面锚点与 detector-only 元素模板分离；`pageAnchor=false` 的动态或可滚动元素不参与页面分数和最少页面锚点数。
 - 第一组中文主菜单基准：4 个稳定图标锚点、19 个目录元素、一份制模证据、一份不同动画帧的真实正向留出证据和一份真实启动画面负向证据。只有绑定锚点的元素报告独立可见性，其余元素返回 `notEvaluated`。
 - 中文地图选择基准：返回、搜索、左右翻页和猴子草甸 5 个锚点、13 个目录元素，以及不同动画时刻的制模/留出证据。
 - 中文冷启动基准：`welcome` 和阻断式 `modifiedClientWarning`；后者只允许安全的继续动作，不为注销账号或关闭游戏提供动作点。
 - 中文关卡入口基准：`difficultySelect` 的 `Easy/Medium/Hard`，以及 `easyModeSelect` 的 `Standard/PrimaryOnly/Deflation`；这些 ID 与脚本持久化枚举名一致，不使用本地化显示文本。
 - 中文中级/困难模式基准：覆盖 `MilitaryOnly`、`Apopalypse`、`Reverse`、`MagicOnly`、`DoubleHpMoabs`、`HalfCash`、`AlternateBloonsRounds`、`Impoppable` 和 `CHIMPS`，并保留可见的 `Sandbox`。
+- 中文英雄选择基准：页面 Oracle 使用固定控件，首屏 15 个头像使用主项目 `HeroType` 稳定英文名作为 detector-only 按钮，并独立区分 `choose` 与 `selected` 状态；真实验证 Quincy/Gwendolin 选择和恢复。
 - 中文关卡内与暂停基准：`inLevel` 只使用跨难度公共 HUD，`stageSettings` 使用底部命令图标；真实验证简单/困难标准关卡、暂停继续和暂停返回主页。
 - `click` 控制命令：只点击当前已识别页面中具备独立可见性检测的目录按钮，保存操作前后证据和独立轨迹。
 - 操作后按连续帧差异等待画面发生变化并稳定，可用 `--expect-page` 要求最终独立识别到指定页面。
@@ -55,7 +57,7 @@ Python 依赖全部锁定在工具自己的虚拟环境。实现和使用说明�
 
 `recognize` 必须以捕获元数据 JSON 为入口，并根据相邻文件名找到 PNG 与完成标记。只有三件套哈希一致、来源为 `BetterBTD.GameDriver`、宽高比适用、无捕获警告且页面唯一匹配时，`recognition.oracleEligible` 才为 `true`。BetterBTD 内部诊断不能写入此字段。
 
-首版比较器将截图规范化到基准尺寸，在固定稳定区域比较多个独立模板。页面必须同时满足最少锚点数和总分阈值；未达到阈值返回 `unknown`，多个页面分数过近返回 `ambiguous`，两者都不能作为通过条件。
+首版比较器将截图规范化到基准尺寸，在固定稳定区域比较多个独立模板。`pageAnchor` 缺省为 `true`；设为 `false` 的模板仍可判断元素可见性，但不能抬高或拉低页面分数，也不能满足最少页面锚点数。页面必须同时满足最少锚点数和总分阈值；未达到阈值返回 `unknown`，多个页面分数过近返回 `ambiguous`，两者都不能作为通过条件。
 
 ## 输入所有权
 
@@ -72,10 +74,9 @@ Python 依赖全部锁定在工具自己的虚拟环境。实现和使用说明�
 
 ## 后续迭代
 
-1. 扩展 `heroSelect`、其他地图、活动回合、胜负、奖励和通用弹窗的真实视觉基准。
+1. 扩展 `heroSelect` 的 `Corvus`/`Silas` 滚动路径，以及其他地图、活动回合、胜负、奖励和通用弹窗的真实视觉基准。
 2. 增加跨加载中间态的页面等待、按键、文本输入、滚动和元素出现/消失等待，并继续保存操作轨迹。
 3. 增加生命、金币、回合及其他元素的独立文本、数值和选中状态识别。
-4. 将页面识别锚点与轮播元素检测器分离，避免不可同时可见的元素拉低页面分数。
-5. 与 BetterBTD Test API 组合，但保持截图与识别 Oracle 独立。
+4. 与 BetterBTD Test API 组合，但保持截图与识别 Oracle 独立。
 
 桌面 GDI 首版后端要求游戏可见且无遮挡。锁屏、断开的 RDP、独占全屏和部分 DirectFlip 路径可能无法提供有效画面；单帧证据会明确标记 `occlusionSensitive=true` 和 `stabilityCheckPerformed=false`。`click` 的稳定性记录在同目录 `operation.json` 中，测试编排不得把两者混为同一字段。当前 `click` 在第一个变化后稳定画面停止；冷启动等包含加载中间态的流程仍需编排层重复观察，不能假设第一次稳定就是最终目标页。

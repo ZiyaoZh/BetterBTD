@@ -27,6 +27,7 @@ class VisualAnchor:
     source_image_sha256: str
     source_metadata_path: Path
     template_bytes: bytes | None
+    page_anchor: bool = True
 
 
 @dataclass(frozen=True, slots=True)
@@ -176,9 +177,10 @@ def _parse_catalog(
             verify_templates,
             source_evidence_cache,
         )
-        if minimum_matched_anchors > len(anchors):
+        page_anchor_count = sum(anchor.page_anchor for anchor in anchors)
+        if minimum_matched_anchors > page_anchor_count:
             raise ValueError(
-                f"page {page_id} minimumMatchedAnchors exceeds its anchor count"
+                f"page {page_id} minimumMatchedAnchors exceeds its page anchor count"
             )
 
         positive_holdout = _parse_positive_holdout(
@@ -315,6 +317,7 @@ def _parse_anchors(
                 source_image_sha256=source_image_sha256,
                 source_metadata_path=source_metadata_path,
                 template_bytes=template_bytes,
+                page_anchor=_optional_boolean(anchor, "pageAnchor", True),
             )
         )
     return anchors
@@ -445,6 +448,13 @@ def _integer(value: dict[str, Any], name: str) -> int:
     result = value.get(name)
     if not isinstance(result, int) or isinstance(result, bool):
         raise TypeError(f"{name} must be an integer")
+    return result
+
+
+def _optional_boolean(value: dict[str, Any], name: str, default: bool) -> bool:
+    result = value.get(name, default)
+    if not isinstance(result, bool):
+        raise TypeError(f"{name} must be a boolean")
     return result
 
 
