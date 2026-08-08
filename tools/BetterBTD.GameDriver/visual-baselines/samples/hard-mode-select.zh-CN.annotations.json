@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "hardModeSelect.zh-CN.20260808",
+  "sourceEvidenceId": "c889c015fabe4d9888f3217bcf45998b",
+  "sourceImageSha256": "6055d578352cdb5f691bc671a817da23baee53ec59104ce322ac98a97312ef3d",
+  "pageId": "hardModeSelect",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T01:59:00.000Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromAnchors": [
+    "hardModeSelect.modeSummary",
+    "hardModeSelect.changeHero",
+    "hardModeSelect.doubleCash",
+    "hardModeSelect.autoStart",
+    "hardModeSelect.changeRounds",
+    "modeCard.localizedTitle",
+    "modeCard.reward",
+    "modeCard.medal"
+  ],
+  "notes": [
+    "The source is the final evidence from an independently recognized difficultySelect.hard click.",
+    "Mode artwork identifies all visible hard paths and Sandbox without localized labels, reward values or medal state."
+  ]
+}

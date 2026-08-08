@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "hardModeSelect.zh-CN.holdout.20260808",
+  "sourceEvidenceId": "79a6aa35d5b44e229efe5679416a15f4",
+  "sourceImageSha256": "1d74198d7faf3ad961b6cbd1516412ed113feb286ee3343f398d900f944eb13d",
+  "pageId": "hardModeSelect",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T02:00:00.000Z",
+    "result": "accepted"
+  },
+  "notes": [
+    "This holdout records a real reversible auto-start toggle state and was not used to build templates.",
+    "The setting was restored immediately after capture; mode artwork and page anchors are unchanged."
+  ]
+}

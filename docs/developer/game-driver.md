@@ -34,6 +34,8 @@ Game Driver 不导入 BetterBTD Python 模块，也不引用 BetterBTD 或 Fisch
 - 中文地图选择基准：返回、搜索、左右翻页和猴子草甸 5 个锚点、13 个目录元素，以及不同动画时刻的制模/留出证据。
 - 中文冷启动基准：`welcome` 和阻断式 `modifiedClientWarning`；后者只允许安全的继续动作，不为注销账号或关闭游戏提供动作点。
 - 中文关卡入口基准：`difficultySelect` 的 `Easy/Medium/Hard`，以及 `easyModeSelect` 的 `Standard/PrimaryOnly/Deflation`；这些 ID 与脚本持久化枚举名一致，不使用本地化显示文本。
+- 中文中级/困难模式基准：覆盖 `MilitaryOnly`、`Apopalypse`、`Reverse`、`MagicOnly`、`DoubleHpMoabs`、`HalfCash`、`AlternateBloonsRounds`、`Impoppable` 和 `CHIMPS`，并保留可见的 `Sandbox`。
+- 中文关卡内与暂停基准：`inLevel` 只使用跨难度公共 HUD，`stageSettings` 使用底部命令图标；真实验证简单/困难标准关卡、暂停继续和暂停返回主页。
 - `click` 控制命令：只点击当前已识别页面中具备独立可见性检测的目录按钮，保存操作前后证据和独立轨迹。
 - 操作后按连续帧差异等待画面发生变化并稳定，可用 `--expect-page` 要求最终独立识别到指定页面。
 
@@ -70,10 +72,10 @@ Python 依赖全部锁定在工具自己的虚拟环境。实现和使用说明�
 
 ## 后续迭代
 
-1. 按 `Medium` 和 `Hard` 的稳定模式拓扑扩展 `mediumModeSelect` 与 `hardModeSelect`。
-2. 扩展 `heroSelect`、加载、关卡内、暂停、胜负和通用弹窗的真实视觉基准。
-3. 增加跨加载中间态的页面等待、按键、文本输入、滚动和元素出现/消失等待，并继续保存操作轨迹。
-4. 增加每个元素的独立文本、数值和选中状态识别。
+1. 扩展 `heroSelect`、其他地图、活动回合、胜负、奖励和通用弹窗的真实视觉基准。
+2. 增加跨加载中间态的页面等待、按键、文本输入、滚动和元素出现/消失等待，并继续保存操作轨迹。
+3. 增加生命、金币、回合及其他元素的独立文本、数值和选中状态识别。
+4. 将页面识别锚点与轮播元素检测器分离，避免不可同时可见的元素拉低页面分数。
 5. 与 BetterBTD Test API 组合，但保持截图与识别 Oracle 独立。
 
 桌面 GDI 首版后端要求游戏可见且无遮挡。锁屏、断开的 RDP、独占全屏和部分 DirectFlip 路径可能无法提供有效画面；单帧证据会明确标记 `occlusionSensitive=true` 和 `stabilityCheckPerformed=false`。`click` 的稳定性记录在同目录 `operation.json` 中，测试编排不得把两者混为同一字段。当前 `click` 在第一个变化后稳定画面停止；冷启动等包含加载中间态的流程仍需编排层重复观察，不能假设第一次稳定就是最终目标页。

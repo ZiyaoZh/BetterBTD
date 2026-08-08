@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "mediumModeSelect.zh-CN.20260808",
+  "sourceEvidenceId": "fd64808b362c4365a223c4a166730428",
+  "sourceImageSha256": "394b1520dfd65ebdaa1c80138bf3e03c0ae64bdfbf376f3415f202dba2cd55c6",
+  "pageId": "mediumModeSelect",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T01:54:00.000Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromAnchors": [
+    "mediumModeSelect.modeSummary",
+    "mediumModeSelect.changeHero",
+    "mediumModeSelect.doubleCash",
+    "mediumModeSelect.autoStart",
+    "mediumModeSelect.changeRounds",
+    "modeCard.localizedTitle",
+    "modeCard.reward",
+    "modeCard.medal"
+  ],
+  "notes": [
+    "The source is the final evidence from an independently recognized difficultySelect.medium click.",
+    "Mode artwork identifies Standard, MilitaryOnly, Apopalypse, Reverse and Sandbox without localized labels or reward values."
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "mediumModeSelect.zh-CN.holdout.20260808",
+  "sourceEvidenceId": "08de1342d20e4f7d9811bbeaf1d800d3",
+  "sourceImageSha256": "54f8d9f3191ecc1bd7a584eea36192f6067e56c3a7492156184b71d04dea73ad",
+  "pageId": "mediumModeSelect",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T01:56:00.000Z",
+    "result": "accepted"
+  },
+  "notes": [
+    "This holdout records a real reversible auto-start toggle state and was not used to build templates.",
+    "The setting was restored immediately after capture; mode artwork and page anchors are unchanged."
+  ]
+}

@@ -110,6 +110,33 @@ class ClickTargetTests(unittest.TestCase):
                 "easyModeSelect.primaryOnly": (960, 450),
                 "easyModeSelect.deflation": (1300, 450),
             },
+            "medium-mode-select.zh-CN.holdout.json": {
+                "mediumModeSelect.back": (77, 57),
+                "mediumModeSelect.standard": (630, 590),
+                "mediumModeSelect.militaryOnly": (960, 450),
+                "mediumModeSelect.apopalypse": (1280, 450),
+                "mediumModeSelect.reverse": (960, 740),
+                "mediumModeSelect.sandbox": (1280, 740),
+            },
+            "hard-mode-select.zh-CN.holdout.json": {
+                "hardModeSelect.back": (77, 57),
+                "hardModeSelect.sandbox": (300, 590),
+                "hardModeSelect.standard": (630, 590),
+                "hardModeSelect.magicOnly": (960, 450),
+                "hardModeSelect.doubleHpMoabs": (1280, 450),
+                "hardModeSelect.halfCash": (1600, 450),
+                "hardModeSelect.alternateBloonsRounds": (960, 740),
+                "hardModeSelect.impoppable": (1280, 740),
+                "hardModeSelect.chimps": (1600, 740),
+            },
+            "in-level.zh-CN.holdout.json": {
+                "inLevel.settings": (1600, 50),
+                "inLevel.startOrFastForward": (1840, 1020),
+            },
+            "stage-settings.zh-CN.holdout.json": {
+                "stageSettings.home": (850, 840),
+                "stageSettings.continue": (1295, 840),
+            },
         }
         for evidence_name, targets in cases.items():
             evidence = read_evidence(SAMPLE_ROOT / evidence_name)

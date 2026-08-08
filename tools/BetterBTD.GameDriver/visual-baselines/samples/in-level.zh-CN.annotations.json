@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "inLevel.zh-CN.20260808",
+  "sourceEvidenceId": "6b55112e34a1441ba073fd298c9735c1",
+  "sourceImageSha256": "4e2b40d8ee1ff6598a84e7e8cbf7acbe3fb9380bfb2bf8abf17c04a9d8715076",
+  "pageId": "inLevel",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T01:44:00.000Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromAnchors": [
+    "inLevel.map",
+    "inLevel.healthValue",
+    "inLevel.cashValue",
+    "inLevel.roundValue",
+    "inLevel.heroSlot",
+    "inLevel.towerInventory",
+    "inLevel.powerCount",
+    "inLevel.playStateIcon"
+  ],
+  "notes": [
+    "The source is a real MonkeyMeadow Easy Standard frame captured after the mode selection completed.",
+    "Page anchors use common HUD chrome and icons rather than map pixels, localized values, selected hero or tower inventory content.",
+    "Cross-map, restricted-mode and active-round recognition remain to be validated independently."
+  ]
+}

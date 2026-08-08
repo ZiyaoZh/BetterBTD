@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "catalogId": "btd6-ui-independent",
-  "catalogVersion": 3,
+  "catalogVersion": 7,
   "game": {
     "id": "BloonsTD6",
     "observedProductVersion": "6000.0.58f2 (92dee566b325)",
@@ -730,6 +730,538 @@
           "role": "button",
           "bounds": { "x": 1735, "y": 920, "width": 185, "height": 160 },
           "actionPoint": { "x": 1815, "y": 990 }
+        }
+      ]
+    },
+    {
+      "id": "mediumModeSelect",
+      "kind": "page",
+      "minimumScore": 0.95,
+      "minimumMatchedAnchors": 5,
+      "positiveHoldout": {
+        "evidence": "samples/medium-mode-select.zh-CN.holdout.json",
+        "evidenceId": "08de1342d20e4f7d9811bbeaf1d800d3",
+        "imageSha256": "54f8d9f3191ecc1bd7a584eea36192f6067e56c3a7492156184b71d04dea73ad"
+      },
+      "anchors": [
+        {
+          "id": "mediumModeSelect.backIcon",
+          "bounds": { "x": 30, "y": 10, "width": 95, "height": 95 },
+          "template": "templates/medium-mode-select/back.png",
+          "templateSha256": "5cdd210f638256b21b7b04a7608f09fa4d2ba9cfad598c9f153e50d760bbdaf2",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/medium-mode-select.zh-CN.json",
+          "sourceEvidenceId": "fd64808b362c4365a223c4a166730428",
+          "sourceImageSha256": "394b1520dfd65ebdaa1c80138bf3e03c0ae64bdfbf376f3415f202dba2cd55c6"
+        },
+        {
+          "id": "mediumModeSelect.standardIcon",
+          "bounds": { "x": 585, "y": 525, "width": 100, "height": 115 },
+          "template": "templates/medium-mode-select/standard.png",
+          "templateSha256": "6d8afed665026515b02a3a6a3336a795ce30870874d158658e3b452e5c862137",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/medium-mode-select.zh-CN.json",
+          "sourceEvidenceId": "fd64808b362c4365a223c4a166730428",
+          "sourceImageSha256": "394b1520dfd65ebdaa1c80138bf3e03c0ae64bdfbf376f3415f202dba2cd55c6"
+        },
+        {
+          "id": "mediumModeSelect.militaryOnlyIcon",
+          "bounds": { "x": 900, "y": 390, "width": 120, "height": 115 },
+          "template": "templates/medium-mode-select/military-only.png",
+          "templateSha256": "542ab11509cc0c7b584016314c012ef1e6c2ee5dfe1c6237288dfa0be41da85e",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/medium-mode-select.zh-CN.json",
+          "sourceEvidenceId": "fd64808b362c4365a223c4a166730428",
+          "sourceImageSha256": "394b1520dfd65ebdaa1c80138bf3e03c0ae64bdfbf376f3415f202dba2cd55c6"
+        },
+        {
+          "id": "mediumModeSelect.apopalypseIcon",
+          "bounds": { "x": 1220, "y": 385, "width": 120, "height": 120 },
+          "template": "templates/medium-mode-select/apopalypse.png",
+          "templateSha256": "db678463a15be29b38a86e77dd4552d2eb36970bd673c7ae2e1ff527ece0932b",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/medium-mode-select.zh-CN.json",
+          "sourceEvidenceId": "fd64808b362c4365a223c4a166730428",
+          "sourceImageSha256": "394b1520dfd65ebdaa1c80138bf3e03c0ae64bdfbf376f3415f202dba2cd55c6"
+        },
+        {
+          "id": "mediumModeSelect.reverseIcon",
+          "bounds": { "x": 900, "y": 680, "width": 120, "height": 110 },
+          "template": "templates/medium-mode-select/reverse.png",
+          "templateSha256": "abb980f8489166e635097f29b35347178d6ca3352d5b16a76114f399bb88eb56",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/medium-mode-select.zh-CN.json",
+          "sourceEvidenceId": "fd64808b362c4365a223c4a166730428",
+          "sourceImageSha256": "394b1520dfd65ebdaa1c80138bf3e03c0ae64bdfbf376f3415f202dba2cd55c6"
+        },
+        {
+          "id": "mediumModeSelect.sandboxIcon",
+          "bounds": { "x": 1210, "y": 680, "width": 130, "height": 120 },
+          "template": "templates/medium-mode-select/sandbox.png",
+          "templateSha256": "3f9ce57f3010cf6396a93400d009eb21ff27297654d54e7262e3ab2c5c1ecb66",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/medium-mode-select.zh-CN.json",
+          "sourceEvidenceId": "fd64808b362c4365a223c4a166730428",
+          "sourceImageSha256": "394b1520dfd65ebdaa1c80138bf3e03c0ae64bdfbf376f3415f202dba2cd55c6"
+        }
+      ],
+      "elements": [
+        {
+          "id": "mediumModeSelect.back",
+          "role": "button",
+          "bounds": { "x": 20, "y": 0, "width": 120, "height": 115 },
+          "actionPoint": { "x": 77, "y": 57 },
+          "anchorIds": ["mediumModeSelect.backIcon"]
+        },
+        {
+          "id": "mediumModeSelect.modeSummary",
+          "role": "status",
+          "bounds": { "x": 290, "y": 0, "width": 1340, "height": 230 }
+        },
+        {
+          "id": "mediumModeSelect.standard",
+          "role": "button",
+          "bounds": { "x": 510, "y": 480, "width": 250, "height": 310 },
+          "actionPoint": { "x": 630, "y": 590 },
+          "anchorIds": ["mediumModeSelect.standardIcon"]
+        },
+        {
+          "id": "mediumModeSelect.militaryOnly",
+          "role": "button",
+          "bounds": { "x": 835, "y": 340, "width": 250, "height": 310 },
+          "actionPoint": { "x": 960, "y": 450 },
+          "anchorIds": ["mediumModeSelect.militaryOnlyIcon"]
+        },
+        {
+          "id": "mediumModeSelect.apopalypse",
+          "role": "button",
+          "bounds": { "x": 1160, "y": 340, "width": 250, "height": 310 },
+          "actionPoint": { "x": 1280, "y": 450 },
+          "anchorIds": ["mediumModeSelect.apopalypseIcon"]
+        },
+        {
+          "id": "mediumModeSelect.reverse",
+          "role": "button",
+          "bounds": { "x": 835, "y": 640, "width": 250, "height": 320 },
+          "actionPoint": { "x": 960, "y": 740 },
+          "anchorIds": ["mediumModeSelect.reverseIcon"]
+        },
+        {
+          "id": "mediumModeSelect.sandbox",
+          "role": "button",
+          "bounds": { "x": 1160, "y": 640, "width": 250, "height": 320 },
+          "actionPoint": { "x": 1280, "y": 740 },
+          "anchorIds": ["mediumModeSelect.sandboxIcon"]
+        },
+        {
+          "id": "mediumModeSelect.changeHero",
+          "role": "button",
+          "bounds": { "x": 20, "y": 915, "width": 165, "height": 165 },
+          "actionPoint": { "x": 100, "y": 990 }
+        },
+        {
+          "id": "mediumModeSelect.doubleCash",
+          "role": "toggle",
+          "bounds": { "x": 200, "y": 930, "width": 100, "height": 60 }
+        },
+        {
+          "id": "mediumModeSelect.autoStart",
+          "role": "toggle",
+          "bounds": { "x": 200, "y": 990, "width": 100, "height": 60 }
+        },
+        {
+          "id": "mediumModeSelect.changeRounds",
+          "role": "button",
+          "bounds": { "x": 1735, "y": 920, "width": 185, "height": 160 },
+          "actionPoint": { "x": 1815, "y": 990 }
+        }
+      ]
+    },
+    {
+      "id": "hardModeSelect",
+      "kind": "page",
+      "minimumScore": 0.95,
+      "minimumMatchedAnchors": 8,
+      "positiveHoldout": {
+        "evidence": "samples/hard-mode-select.zh-CN.holdout.json",
+        "evidenceId": "79a6aa35d5b44e229efe5679416a15f4",
+        "imageSha256": "1d74198d7faf3ad961b6cbd1516412ed113feb286ee3343f398d900f944eb13d"
+      },
+      "anchors": [
+        {
+          "id": "hardModeSelect.backIcon",
+          "bounds": { "x": 30, "y": 10, "width": 95, "height": 95 },
+          "template": "templates/hard-mode-select/back.png",
+          "templateSha256": "5cdd210f638256b21b7b04a7608f09fa4d2ba9cfad598c9f153e50d760bbdaf2",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/hard-mode-select.zh-CN.json",
+          "sourceEvidenceId": "c889c015fabe4d9888f3217bcf45998b",
+          "sourceImageSha256": "6055d578352cdb5f691bc671a817da23baee53ec59104ce322ac98a97312ef3d"
+        },
+        {
+          "id": "hardModeSelect.sandboxIcon",
+          "bounds": { "x": 230, "y": 510, "width": 140, "height": 130 },
+          "template": "templates/hard-mode-select/sandbox.png",
+          "templateSha256": "0fde548c7901333f9109305e01a92a036174cdd6172f3713e85446bc3346dd91",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/hard-mode-select.zh-CN.json",
+          "sourceEvidenceId": "c889c015fabe4d9888f3217bcf45998b",
+          "sourceImageSha256": "6055d578352cdb5f691bc671a817da23baee53ec59104ce322ac98a97312ef3d"
+        },
+        {
+          "id": "hardModeSelect.standardIcon",
+          "bounds": { "x": 585, "y": 525, "width": 100, "height": 115 },
+          "template": "templates/hard-mode-select/standard.png",
+          "templateSha256": "2c4110e803c1421b9cb21d504185ff702ec0ec0fa289252706e1801914916a2a",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/hard-mode-select.zh-CN.json",
+          "sourceEvidenceId": "c889c015fabe4d9888f3217bcf45998b",
+          "sourceImageSha256": "6055d578352cdb5f691bc671a817da23baee53ec59104ce322ac98a97312ef3d"
+        },
+        {
+          "id": "hardModeSelect.magicOnlyIcon",
+          "bounds": { "x": 900, "y": 390, "width": 120, "height": 115 },
+          "template": "templates/hard-mode-select/magic-only.png",
+          "templateSha256": "f182ca34646853ffc3563419588d139a49169793fe28a433cc488a91d6657623",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/hard-mode-select.zh-CN.json",
+          "sourceEvidenceId": "c889c015fabe4d9888f3217bcf45998b",
+          "sourceImageSha256": "6055d578352cdb5f691bc671a817da23baee53ec59104ce322ac98a97312ef3d"
+        },
+        {
+          "id": "hardModeSelect.doubleHpMoabsIcon",
+          "bounds": { "x": 1220, "y": 385, "width": 120, "height": 120 },
+          "template": "templates/hard-mode-select/double-hp-moabs.png",
+          "templateSha256": "d5ff4df2193a350a0af4a95126540e17541f024a02945d3e416f76fba0443329",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/hard-mode-select.zh-CN.json",
+          "sourceEvidenceId": "c889c015fabe4d9888f3217bcf45998b",
+          "sourceImageSha256": "6055d578352cdb5f691bc671a817da23baee53ec59104ce322ac98a97312ef3d"
+        },
+        {
+          "id": "hardModeSelect.halfCashIcon",
+          "bounds": { "x": 1540, "y": 385, "width": 125, "height": 120 },
+          "template": "templates/hard-mode-select/half-cash.png",
+          "templateSha256": "a97801014c88e695cc97af7125b397f42430136c2fbc5239f08691946d5cc677",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/hard-mode-select.zh-CN.json",
+          "sourceEvidenceId": "c889c015fabe4d9888f3217bcf45998b",
+          "sourceImageSha256": "6055d578352cdb5f691bc671a817da23baee53ec59104ce322ac98a97312ef3d"
+        },
+        {
+          "id": "hardModeSelect.alternateBloonsRoundsIcon",
+          "bounds": { "x": 900, "y": 680, "width": 125, "height": 110 },
+          "template": "templates/hard-mode-select/alternate-bloons-rounds.png",
+          "templateSha256": "e012e899c033033c31754bdd35e0977686a49a4ba707d080456011599093d787",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/hard-mode-select.zh-CN.json",
+          "sourceEvidenceId": "c889c015fabe4d9888f3217bcf45998b",
+          "sourceImageSha256": "6055d578352cdb5f691bc671a817da23baee53ec59104ce322ac98a97312ef3d"
+        },
+        {
+          "id": "hardModeSelect.impoppableIcon",
+          "bounds": { "x": 1220, "y": 680, "width": 120, "height": 110 },
+          "template": "templates/hard-mode-select/impoppable.png",
+          "templateSha256": "cb2da1751fc10feabce05bc344cabe8ab4adf90abadaa5a87752feea3eaa94ed",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/hard-mode-select.zh-CN.json",
+          "sourceEvidenceId": "c889c015fabe4d9888f3217bcf45998b",
+          "sourceImageSha256": "6055d578352cdb5f691bc671a817da23baee53ec59104ce322ac98a97312ef3d"
+        },
+        {
+          "id": "hardModeSelect.chimpsIcon",
+          "bounds": { "x": 1540, "y": 680, "width": 120, "height": 110 },
+          "template": "templates/hard-mode-select/chimps.png",
+          "templateSha256": "0240f7fba81234423b2b85b47267757c83684b7a433ece362fdd8cf272418bbf",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/hard-mode-select.zh-CN.json",
+          "sourceEvidenceId": "c889c015fabe4d9888f3217bcf45998b",
+          "sourceImageSha256": "6055d578352cdb5f691bc671a817da23baee53ec59104ce322ac98a97312ef3d"
+        }
+      ],
+      "elements": [
+        {
+          "id": "hardModeSelect.back",
+          "role": "button",
+          "bounds": { "x": 20, "y": 0, "width": 120, "height": 115 },
+          "actionPoint": { "x": 77, "y": 57 },
+          "anchorIds": ["hardModeSelect.backIcon"]
+        },
+        {
+          "id": "hardModeSelect.modeSummary",
+          "role": "status",
+          "bounds": { "x": 290, "y": 0, "width": 1340, "height": 230 }
+        },
+        {
+          "id": "hardModeSelect.sandbox",
+          "role": "button",
+          "bounds": { "x": 190, "y": 480, "width": 230, "height": 320 },
+          "actionPoint": { "x": 300, "y": 590 },
+          "anchorIds": ["hardModeSelect.sandboxIcon"]
+        },
+        {
+          "id": "hardModeSelect.standard",
+          "role": "button",
+          "bounds": { "x": 510, "y": 480, "width": 250, "height": 310 },
+          "actionPoint": { "x": 630, "y": 590 },
+          "anchorIds": ["hardModeSelect.standardIcon"]
+        },
+        {
+          "id": "hardModeSelect.magicOnly",
+          "role": "button",
+          "bounds": { "x": 835, "y": 340, "width": 250, "height": 310 },
+          "actionPoint": { "x": 960, "y": 450 },
+          "anchorIds": ["hardModeSelect.magicOnlyIcon"]
+        },
+        {
+          "id": "hardModeSelect.doubleHpMoabs",
+          "role": "button",
+          "bounds": { "x": 1160, "y": 340, "width": 250, "height": 310 },
+          "actionPoint": { "x": 1280, "y": 450 },
+          "anchorIds": ["hardModeSelect.doubleHpMoabsIcon"]
+        },
+        {
+          "id": "hardModeSelect.halfCash",
+          "role": "button",
+          "bounds": { "x": 1480, "y": 340, "width": 250, "height": 310 },
+          "actionPoint": { "x": 1600, "y": 450 },
+          "anchorIds": ["hardModeSelect.halfCashIcon"]
+        },
+        {
+          "id": "hardModeSelect.alternateBloonsRounds",
+          "role": "button",
+          "bounds": { "x": 835, "y": 640, "width": 250, "height": 320 },
+          "actionPoint": { "x": 960, "y": 740 },
+          "anchorIds": ["hardModeSelect.alternateBloonsRoundsIcon"]
+        },
+        {
+          "id": "hardModeSelect.impoppable",
+          "role": "button",
+          "bounds": { "x": 1160, "y": 640, "width": 250, "height": 320 },
+          "actionPoint": { "x": 1280, "y": 740 },
+          "anchorIds": ["hardModeSelect.impoppableIcon"]
+        },
+        {
+          "id": "hardModeSelect.chimps",
+          "role": "button",
+          "bounds": { "x": 1480, "y": 640, "width": 250, "height": 320 },
+          "actionPoint": { "x": 1600, "y": 740 },
+          "anchorIds": ["hardModeSelect.chimpsIcon"]
+        },
+        {
+          "id": "hardModeSelect.changeHero",
+          "role": "button",
+          "bounds": { "x": 20, "y": 915, "width": 165, "height": 165 },
+          "actionPoint": { "x": 100, "y": 990 }
+        },
+        {
+          "id": "hardModeSelect.doubleCash",
+          "role": "toggle",
+          "bounds": { "x": 200, "y": 930, "width": 100, "height": 60 }
+        },
+        {
+          "id": "hardModeSelect.autoStart",
+          "role": "toggle",
+          "bounds": { "x": 200, "y": 990, "width": 100, "height": 60 }
+        },
+        {
+          "id": "hardModeSelect.changeRounds",
+          "role": "button",
+          "bounds": { "x": 1735, "y": 920, "width": 185, "height": 160 },
+          "actionPoint": { "x": 1815, "y": 990 }
+        }
+      ]
+    },
+    {
+      "id": "inLevel",
+      "kind": "page",
+      "minimumScore": 0.94,
+      "minimumMatchedAnchors": 3,
+      "positiveHoldout": {
+        "evidence": "samples/in-level.zh-CN.holdout.json",
+        "evidenceId": "b6fe048cc00b45efb2d57add520d5bf4",
+        "imageSha256": "8c939259fff3909c58d00c7dde3ad161654eed03dffe2e772d858a6594a0a7f9"
+      },
+      "anchors": [
+        {
+          "id": "inLevel.healthIcon",
+          "bounds": { "x": 45, "y": 5, "width": 95, "height": 80 },
+          "template": "templates/in-level/health.png",
+          "templateSha256": "1d49cbd84818a0d618ffc70423225bf39b64f73e0131fdaa78dac254ad94a333",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/in-level.zh-CN.json",
+          "sourceEvidenceId": "6b55112e34a1441ba073fd298c9735c1",
+          "sourceImageSha256": "4e2b40d8ee1ff6598a84e7e8cbf7acbe3fb9380bfb2bf8abf17c04a9d8715076"
+        },
+        {
+          "id": "inLevel.settingsIcon",
+          "bounds": { "x": 1565, "y": 10, "width": 70, "height": 70 },
+          "template": "templates/in-level/settings.png",
+          "templateSha256": "55dc2ce5277812df8d93bee6b588dec61787e1abf64cca2abd68ecfda791f13b",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/in-level.zh-CN.json",
+          "sourceEvidenceId": "6b55112e34a1441ba073fd298c9735c1",
+          "sourceImageSha256": "4e2b40d8ee1ff6598a84e7e8cbf7acbe3fb9380bfb2bf8abf17c04a9d8715076"
+        },
+        {
+          "id": "inLevel.sidebarFrame",
+          "bounds": { "x": 1638, "y": 145, "width": 20, "height": 760 },
+          "template": "templates/in-level/sidebar-frame.png",
+          "templateSha256": "b4766023bf13d0c1e6863a88076c0fc09a86707d8ef7f0ae69450ae5c131ca92",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/in-level.zh-CN.json",
+          "sourceEvidenceId": "6b55112e34a1441ba073fd298c9735c1",
+          "sourceImageSha256": "4e2b40d8ee1ff6598a84e7e8cbf7acbe3fb9380bfb2bf8abf17c04a9d8715076"
+        },
+        {
+          "id": "inLevel.startButtonFrame",
+          "bounds": { "x": 1780, "y": 965, "width": 105, "height": 105 },
+          "template": "templates/in-level/start-button-frame.png",
+          "templateSha256": "bb68526ea1d82e44800be60edf8ba59124ef0d0d7640200087cb194f54e396aa",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/in-level.zh-CN.json",
+          "sourceEvidenceId": "6b55112e34a1441ba073fd298c9735c1",
+          "sourceImageSha256": "4e2b40d8ee1ff6598a84e7e8cbf7acbe3fb9380bfb2bf8abf17c04a9d8715076"
+        }
+      ],
+      "elements": [
+        {
+          "id": "inLevel.map",
+          "role": "status",
+          "bounds": { "x": 0, "y": 0, "width": 1640, "height": 1080 }
+        },
+        {
+          "id": "inLevel.health",
+          "role": "value",
+          "bounds": { "x": 35, "y": 0, "width": 210, "height": 105 },
+          "anchorIds": ["inLevel.healthIcon"]
+        },
+        {
+          "id": "inLevel.cash",
+          "role": "value",
+          "bounds": { "x": 280, "y": 0, "width": 300, "height": 105 }
+        },
+        {
+          "id": "inLevel.round",
+          "role": "value",
+          "bounds": { "x": 1435, "y": 0, "width": 125, "height": 105 }
+        },
+        {
+          "id": "inLevel.settings",
+          "role": "button",
+          "bounds": { "x": 1555, "y": 0, "width": 95, "height": 100 },
+          "actionPoint": { "x": 1600, "y": 50 },
+          "anchorIds": ["inLevel.settingsIcon"]
+        },
+        {
+          "id": "inLevel.towerInventory",
+          "role": "region",
+          "bounds": { "x": 1650, "y": 85, "width": 270, "height": 870 },
+          "anchorIds": ["inLevel.sidebarFrame"]
+        },
+        {
+          "id": "inLevel.powers",
+          "role": "button",
+          "bounds": { "x": 1650, "y": 955, "width": 125, "height": 125 },
+          "actionPoint": { "x": 1715, "y": 1020 }
+        },
+        {
+          "id": "inLevel.startOrFastForward",
+          "role": "button",
+          "bounds": { "x": 1775, "y": 955, "width": 135, "height": 125 },
+          "actionPoint": { "x": 1840, "y": 1020 },
+          "anchorIds": ["inLevel.startButtonFrame"]
+        }
+      ]
+    },
+    {
+      "id": "stageSettings",
+      "kind": "page",
+      "minimumScore": 0.94,
+      "minimumMatchedAnchors": 3,
+      "positiveHoldout": {
+        "evidence": "samples/stage-settings.zh-CN.holdout.json",
+        "evidenceId": "517937bc24fb4d288eb101ae2868c4a2",
+        "imageSha256": "a0a5fbdee9fc5f055e44da8de96e84ee77fcbc51743968acd787e27f3ce3e018"
+      },
+      "anchors": [
+        {
+          "id": "stageSettings.storeIcon",
+          "bounds": { "x": 580, "y": 790, "width": 85, "height": 85 },
+          "template": "templates/stage-settings/store.png",
+          "templateSha256": "ca05a3d3eb3023127f9778277c4685f1c552b5c624407bbaf581a630c492998c",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/stage-settings.zh-CN.json",
+          "sourceEvidenceId": "036b7696a3da4850b358a6f79a446dd3",
+          "sourceImageSha256": "bfdd3c172927ea16e490fefc25e736dea9c376c54b3f4063a314a9d00d1e8da9"
+        },
+        {
+          "id": "stageSettings.homeIcon",
+          "bounds": { "x": 805, "y": 790, "width": 85, "height": 85 },
+          "template": "templates/stage-settings/home.png",
+          "templateSha256": "ff3d039a1a30c312363950e360642cf01cc97225a0b3b2c8e9e901de837dd879",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/stage-settings.zh-CN.json",
+          "sourceEvidenceId": "036b7696a3da4850b358a6f79a446dd3",
+          "sourceImageSha256": "bfdd3c172927ea16e490fefc25e736dea9c376c54b3f4063a314a9d00d1e8da9"
+        },
+        {
+          "id": "stageSettings.restartIcon",
+          "bounds": { "x": 1030, "y": 790, "width": 85, "height": 85 },
+          "template": "templates/stage-settings/restart.png",
+          "templateSha256": "9e2ab4cc91780400ee5c2572121c1a389c7b0142d1f5d175c42ca1108932d2c0",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/stage-settings.zh-CN.json",
+          "sourceEvidenceId": "036b7696a3da4850b358a6f79a446dd3",
+          "sourceImageSha256": "bfdd3c172927ea16e490fefc25e736dea9c376c54b3f4063a314a9d00d1e8da9"
+        },
+        {
+          "id": "stageSettings.continueIcon",
+          "bounds": { "x": 1250, "y": 790, "width": 85, "height": 85 },
+          "template": "templates/stage-settings/continue.png",
+          "templateSha256": "ce28634bb9e01f686251577a678a0343e418d480acdf84d041936e0b9c419eef",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/stage-settings.zh-CN.json",
+          "sourceEvidenceId": "036b7696a3da4850b358a6f79a446dd3",
+          "sourceImageSha256": "bfdd3c172927ea16e490fefc25e736dea9c376c54b3f4063a314a9d00d1e8da9"
+        }
+      ],
+      "elements": [
+        {
+          "id": "stageSettings.dialog",
+          "role": "status",
+          "bounds": { "x": 260, "y": 0, "width": 1220, "height": 965 }
+        },
+        {
+          "id": "stageSettings.options",
+          "role": "region",
+          "bounds": { "x": 440, "y": 205, "width": 1010, "height": 560 }
+        },
+        {
+          "id": "stageSettings.store",
+          "role": "button",
+          "bounds": { "x": 550, "y": 770, "width": 145, "height": 195 },
+          "anchorIds": ["stageSettings.storeIcon"]
+        },
+        {
+          "id": "stageSettings.home",
+          "role": "button",
+          "bounds": { "x": 775, "y": 770, "width": 145, "height": 195 },
+          "actionPoint": { "x": 850, "y": 840 },
+          "anchorIds": ["stageSettings.homeIcon"]
+        },
+        {
+          "id": "stageSettings.restart",
+          "role": "button",
+          "bounds": { "x": 1000, "y": 770, "width": 145, "height": 195 },
+          "anchorIds": ["stageSettings.restartIcon"]
+        },
+        {
+          "id": "stageSettings.continue",
+          "role": "button",
+          "bounds": { "x": 1220, "y": 770, "width": 150, "height": 195 },
+          "actionPoint": { "x": 1295, "y": 840 },
+          "anchorIds": ["stageSettings.continueIcon"]
         }
       ]
     }

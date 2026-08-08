@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "stageSettings.zh-CN.holdout.20260808",
+  "sourceEvidenceId": "517937bc24fb4d288eb101ae2868c4a2",
+  "sourceImageSha256": "a0a5fbdee9fc5f055e44da8de96e84ee77fcbc51743968acd787e27f3ce3e018",
+  "pageId": "stageSettings",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T01:49:00.000Z",
+    "result": "accepted"
+  },
+  "notes": [
+    "This independently captured pause frame was not used to build any template.",
+    "Its image hash differs from the template source while retaining the same visible command layout."
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "inLevel.zh-CN.holdout.20260808",
+  "sourceEvidenceId": "b6fe048cc00b45efb2d57add520d5bf4",
+  "sourceImageSha256": "8c939259fff3909c58d00c7dde3ad161654eed03dffe2e772d858a6594a0a7f9",
+  "pageId": "inLevel",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T01:45:00.000Z",
+    "result": "accepted"
+  },
+  "notes": [
+    "This independently captured frame was not used to build any template.",
+    "Its image hash differs from the template source while preserving the same visible pre-round game state."
+  ]
+}

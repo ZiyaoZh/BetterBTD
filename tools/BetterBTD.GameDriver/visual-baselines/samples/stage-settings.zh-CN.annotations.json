@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "stageSettings.zh-CN.20260808",
+  "sourceEvidenceId": "036b7696a3da4850b358a6f79a446dd3",
+  "sourceImageSha256": "bfdd3c172927ea16e490fefc25e736dea9c376c54b3f4063a314a9d00d1e8da9",
+  "pageId": "stageSettings",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T01:48:00.000Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromAnchors": [
+    "stageSettings.title",
+    "stageSettings.options",
+    "stageSettings.audioValues",
+    "stageSettings.nowPlaying",
+    "stageSettings.twitch",
+    "stageSettings.hotkeys",
+    "stageSettings.accessibility",
+    "stageSettings.mods"
+  ],
+  "notes": [
+    "The source is the final evidence from an independently recognized inLevel.settings click.",
+    "Bottom command artwork identifies Store, Home, Restart and Continue without localized labels or mutable option values.",
+    "Continue resumes the stage; Home is also actionable for Recover after the orchestrator has confirmed that BetterBTD stopped. Store and Restart remain non-actionable."
+  ]
+}

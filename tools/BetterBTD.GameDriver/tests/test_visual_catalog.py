@@ -22,6 +22,10 @@ class VisualCatalogTests(unittest.TestCase):
                 "mapSelect",
                 "difficultySelect",
                 "easyModeSelect",
+                "mediumModeSelect",
+                "hardModeSelect",
+                "inLevel",
+                "stageSettings",
             ],
             [page.id for page in catalog.pages],
         )
@@ -31,6 +35,10 @@ class VisualCatalogTests(unittest.TestCase):
         self.assertEqual(5, len(catalog.pages[3].anchors))
         self.assertEqual(4, len(catalog.pages[4].anchors))
         self.assertEqual(4, len(catalog.pages[5].anchors))
+        self.assertEqual(6, len(catalog.pages[6].anchors))
+        self.assertEqual(9, len(catalog.pages[7].anchors))
+        self.assertEqual(4, len(catalog.pages[8].anchors))
+        self.assertEqual(4, len(catalog.pages[9].anchors))
         self.assertTrue(all(page.positive_holdout is not None for page in catalog.pages))
 
     def test_positive_holdout_must_differ_from_template_source(self) -> None:

@@ -170,6 +170,110 @@ class VisualRecognitionTests(unittest.TestCase):
             self.assertEqual("visible", element["visibility"])
             self.assertTrue(element["visible"])
 
+    def test_real_holdout_frame_matches_in_level(self) -> None:
+        evidence = read_evidence(SAMPLE_ROOT / "in-level.zh-CN.holdout.json")
+
+        result, match = recognize_image(evidence, self.catalog)
+
+        self.assertIsNotNone(match)
+        self.assertEqual("matched", result["recognition"]["status"])
+        self.assertEqual("inLevel", result["recognition"]["page"]["id"])
+        self.assertGreater(result["recognition"]["page"]["score"], 0.99)
+        self.assertEqual(8, len(result["recognition"]["elements"]))
+        self.assertTrue(result["recognition"]["oracleEligible"])
+        settings = next(
+            element
+            for element in result["recognition"]["elements"]
+            if element["id"] == "inLevel.settings"
+        )
+        cash = next(
+            element
+            for element in result["recognition"]["elements"]
+            if element["id"] == "inLevel.cash"
+        )
+        self.assertEqual("visible", settings["visibility"])
+        self.assertTrue(settings["visible"])
+        self.assertEqual("notEvaluated", cash["visibility"])
+
+    def test_real_holdout_frame_matches_medium_mode_select(self) -> None:
+        evidence = read_evidence(SAMPLE_ROOT / "medium-mode-select.zh-CN.holdout.json")
+
+        result, match = recognize_image(evidence, self.catalog)
+
+        self.assertIsNotNone(match)
+        self.assertEqual("matched", result["recognition"]["status"])
+        self.assertEqual("mediumModeSelect", result["recognition"]["page"]["id"])
+        self.assertGreater(result["recognition"]["page"]["score"], 0.99)
+        self.assertEqual(11, len(result["recognition"]["elements"]))
+        self.assertTrue(result["recognition"]["oracleEligible"])
+        for element_id in (
+            "mediumModeSelect.standard",
+            "mediumModeSelect.militaryOnly",
+            "mediumModeSelect.apopalypse",
+            "mediumModeSelect.reverse",
+            "mediumModeSelect.sandbox",
+        ):
+            element = next(
+                candidate
+                for candidate in result["recognition"]["elements"]
+                if candidate["id"] == element_id
+            )
+            self.assertEqual("visible", element["visibility"])
+            self.assertTrue(element["visible"])
+
+    def test_real_holdout_frame_matches_hard_mode_select(self) -> None:
+        evidence = read_evidence(SAMPLE_ROOT / "hard-mode-select.zh-CN.holdout.json")
+
+        result, match = recognize_image(evidence, self.catalog)
+
+        self.assertIsNotNone(match)
+        self.assertEqual("matched", result["recognition"]["status"])
+        self.assertEqual("hardModeSelect", result["recognition"]["page"]["id"])
+        self.assertGreater(result["recognition"]["page"]["score"], 0.99)
+        self.assertEqual(14, len(result["recognition"]["elements"]))
+        self.assertTrue(result["recognition"]["oracleEligible"])
+        for element_id in (
+            "hardModeSelect.standard",
+            "hardModeSelect.magicOnly",
+            "hardModeSelect.doubleHpMoabs",
+            "hardModeSelect.halfCash",
+            "hardModeSelect.alternateBloonsRounds",
+            "hardModeSelect.impoppable",
+            "hardModeSelect.chimps",
+        ):
+            element = next(
+                candidate
+                for candidate in result["recognition"]["elements"]
+                if candidate["id"] == element_id
+            )
+            self.assertEqual("visible", element["visibility"])
+            self.assertTrue(element["visible"])
+
+    def test_real_holdout_frame_matches_stage_settings(self) -> None:
+        evidence = read_evidence(SAMPLE_ROOT / "stage-settings.zh-CN.holdout.json")
+
+        result, match = recognize_image(evidence, self.catalog)
+
+        self.assertIsNotNone(match)
+        self.assertEqual("matched", result["recognition"]["status"])
+        self.assertEqual("stageSettings", result["recognition"]["page"]["id"])
+        self.assertGreater(result["recognition"]["page"]["score"], 0.99)
+        self.assertEqual(6, len(result["recognition"]["elements"]))
+        self.assertTrue(result["recognition"]["oracleEligible"])
+        continue_button = next(
+            element
+            for element in result["recognition"]["elements"]
+            if element["id"] == "stageSettings.continue"
+        )
+        in_level = next(
+            candidate
+            for candidate in result["recognition"]["candidates"]
+            if candidate["id"] == "inLevel"
+        )
+        self.assertEqual("visible", continue_button["visibility"])
+        self.assertTrue(continue_button["visible"])
+        self.assertFalse(in_level["matched"])
+
     def test_uniform_dark_frame_is_unknown(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             metadata_path = write_test_evidence(

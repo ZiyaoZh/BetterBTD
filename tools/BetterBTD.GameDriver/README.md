@@ -105,7 +105,7 @@ screenY = clientOriginOnScreenY + clientY
 
 ## 视觉目录协议
 
-版本化目录位于 `visual-baselines/`。当前覆盖中文 `welcome`、`modifiedClientWarning`、`mainMenu`、`mapSelect`、`difficultySelect` 和 `easyModeSelect`，共 26 个独立模板和 60 个目录元素。主流程已能独立选择 `MonkeyMeadow -> Easy -> Standard|PrimaryOnly|Deflation`，并逐页返回主菜单。玩家名、用户 ID、版本号、货币、活动入口、本地化标签、奖励数值、地图勋章、星光和动态徽章不会成为页面 ID 或锚点。
+版本化目录位于 `visual-baselines/`。当前覆盖 10 个中文页面：`welcome`、`modifiedClientWarning`、`mainMenu`、`mapSelect`、`difficultySelect`、三种难度的模式选择、`inLevel` 和 `stageSettings`，共 49 个独立模板和 99 个目录元素。主流程已能独立选择 `MonkeyMeadow` 的简单、中级和困难模式入口；真实验证已进入简单/困难标准关卡，并通过暂停菜单继续游戏或返回主菜单。玩家名、用户 ID、版本号、货币、活动入口、本地化标签、奖励数值、地图勋章、星光和动态徽章不会成为页面 ID 或锚点。
 
 每个模板记录来源 `evidenceId`、来源图片 SHA-256、裁剪矩形和模板 SHA-256。每页还必须绑定一组 Oracle 可用的正向留出证据，且其图片哈希不能与任何制模源图相同。`catalog` 和 `baseline build` 会重新校验完整证据链。识别代码只依赖 Game Driver 自己的目录和 Pillow，不加载 BetterBTD 截图、OCR 模板、OpenCvSharp 资源或运行时状态。
 
@@ -117,8 +117,9 @@ screenY = clientOriginOnScreenY + clientY
 - 通知、顶置窗口和覆盖层会进入截图。这是可见证据的一部分，但测试编排需要据此判定现场是否有效。
 - 连续帧等待目前只用于 `click` 操作，采用规范化全画面差异阈值；不同分辨率、动画强度和显示布局仍需要真实校准。
 - `click` 在第一个明显变化且连续稳定的画面停止；若操作经过可稳定停留的加载页，它不会自动跨越中间态等待更后的目标页。
-- 真实游戏视觉验证目前覆盖中文冷启动、修改客户端警告、主菜单、初学者地图选择首个轮播页、难度选择和简单模式选择；中级/困难模式、英雄、关卡内、暂停、胜负和通用弹窗仍需要独立采集与标注。
-- 当前 24 个目录元素具备独立可见性探测器，其中 19 个具备动作点；其他元素明确返回 `notEvaluated`，不能由 `click` 操作控制。
+- 真实游戏视觉验证目前覆盖中文冷启动、修改客户端警告、主菜单、初学者地图选择首个轮播页、三种难度模式页、简单/困难标准关卡、暂停继续和暂停返回主页；英雄、活动回合、其他地图、胜负、奖励和通用弹窗仍需要独立采集与标注。
+- `inLevel.health` 已检测公共 HUD 图标，但生命、金币和回合数值尚未解析；跨地图、受限模式和已开局动态画面仍需扩大真实样本。
+- 当前 47 个目录元素具备独立可见性探测器，其中 38 个具备动作点；其他元素明确返回 `notEvaluated`，不能由 `click` 操作控制。
 - 当前只实现按元素 ID 左键点击和画面变化/稳定等待；客户区原始坐标点击、键盘、文本输入、滚动及元素出现/消失等通用等待尚未实现。
 
 ## 测试
