@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "mapSelect.advanced03.zh-CN.20260808",
+  "sourceEvidenceId": "d85c98be2c1e4c65804c7eb305305437",
+  "sourceImageSha256": "a394b012045924206f07884fe1d0a972fe2af4a6e8848c8db191ae0246b4b7a5",
+  "pageId": "mapSelect",
+  "viewStateId": "mapSelect.advanced03",
+  "language": "zh-CN",
+  "clientSize": {
+    "width": 1920,
+    "height": 1080
+  },
+  "maps": [
+    "Mesa",
+    "Geared",
+    "Spillway",
+    "Cargo",
+    "PatsPond",
+    "Peninsula"
+  ],
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T07:32:50.021Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromPageAnchors": [
+    "mapSelect.pageIndicator",
+    "mapSelect.changeHero",
+    "mapSelect.options",
+    "mapSelect.categorySelection",
+    "mapSelect.communityNotification",
+    "mapCard.medals",
+    "mapCard.localizedTitle",
+    "mapCard.sparkles",
+    "mapCard.eventMarkers"
+  ],
+  "notes": [
+    "The raw Game Driver evidence was captured directly from the visible BTD6 client.",
+    "Map thumbnail crops exclude localized titles, medal rows, sparkles, and event markers.",
+    "The page indicator and independently cropped map thumbnails identify this carousel viewport."
+  ]
+}

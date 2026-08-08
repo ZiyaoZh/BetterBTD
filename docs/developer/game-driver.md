@@ -33,7 +33,7 @@ Game Driver 不导入 BetterBTD Python 模块，也不引用 BetterBTD 或 Fisch
 - 页面锚点与 detector-only 元素模板分离；`pageAnchor=false` 的动态或可滚动元素不参与页面分数和最少页面锚点数。
 - catalog schema v2 在稳定页面之下识别独立 `viewState`，并按视口解析元素 placement、可见性、动作点与元素状态；加载器保持对 schema v1 的兼容。
 - 第一组中文主菜单基准：4 个稳定图标锚点、19 个目录元素、一份制模证据、一份不同动画帧的真实正向留出证据和一份真实启动画面负向证据。只有绑定锚点的元素报告独立可见性，其余元素返回 `notEvaluated`。
-- 中文地图选择基准：返回、搜索、左右翻页和猴子草甸 5 个锚点、13 个目录元素，以及不同动画时刻的制模/留出证据。
+- 中文地图选择基准：4 个固定页面锚点和 17 个独立轮播视口，覆盖初级 5 页、中级 5 页、高级 4 页、专家 3 页及共 87 张可见地图；每个视口均绑定独立 source/holdout 证据、页指示锚点、地图卡检测与 placement。四个分类按钮和两个底部选项具有独立状态检测；官方 `Ascent` 分为解锁按钮和锁定状态两个互斥元素，账号状态不参与视口身份。
 - 中文冷启动基准：`welcome` 和阻断式 `modifiedClientWarning`；后者只允许安全的继续动作，不为注销账号或关闭游戏提供动作点。
 - 中文关卡入口基准：`difficultySelect` 的 `Easy/Medium/Hard`，以及 `easyModeSelect` 的 `Standard/PrimaryOnly/Deflation`；这些 ID 与脚本持久化枚举名一致，不使用本地化显示文本。
 - 中文中级/困难模式基准：覆盖 `MilitaryOnly`、`Apopalypse`、`Reverse`、`MagicOnly`、`DoubleHpMoabs`、`HalfCash`、`AlternateBloonsRounds`、`Impoppable` 和 `CHIMPS`，并保留可见的 `Sandbox`。
@@ -41,11 +41,11 @@ Game Driver 不导入 BetterBTD Python 模块，也不引用 BetterBTD 或 Fisch
 - 中文关卡内与暂停基准：`inLevel` 只使用跨难度公共 HUD，`stageSettings` 使用底部命令图标；真实验证简单/困难标准关卡、暂停继续和暂停返回主页。
 - 中文设置基准：`settings`、`hotkeys` 和 `accessibility` 完整声明当前可见控件，配置、账号和外部链接保持不可操作；真实验证从主菜单进入、子页往返和恢复主菜单。
 - 中文额外设置基准：`extras.top`/`extras.bottom` 覆盖全部 7 个开关、14 个视口 placement 和 28 个 `enabled`/`disabled` 状态声明；开关不提供动作点，真实验证包括上下端点滚动和边界 `unchangedStable`。
-- `click` 控制命令：只点击当前已识别页面中具备独立可见性检测的目录按钮，保存操作前后证据和独立轨迹。
-- `click-point` 控制命令：按 `1920 x 1080` 参考客户区坐标执行引导采集，并保留相同的输入所有权、窗口校验、前后证据和独立轨迹；它不要求操作前页面已识别，因此不能充当元素 Oracle。
+- `click` 控制命令：只点击当前已识别页面中具备独立可见性检测的目录按钮，保存操作前后证据和独立轨迹，并可独立断言最终页面与视口。
+- `click-point` 控制命令：按 `1920 x 1080` 参考客户区坐标执行引导采集，并保留相同的输入所有权、窗口校验、前后证据和独立轨迹；它不要求操作前页面已识别，因此不能充当元素 Oracle，但仍可独立断言最终页面与视口。
 - `scroll-point` 控制命令：在参考客户区点发送指定方向和档位的垂直滚轮输入；默认要求画面变化后稳定，只有显式 `--allow-no-change` 才接受滚动边界的 `unchangedStable`，并可用 `--expect-view-state` 独立确认最终视口。
 - `drag-point` 控制命令：将两个参考点分别换算到客户区，按指定 `duration-ms` 和 `steps` 执行线性左键拖动；底层用 `finally` 保证 mouse-up 清理，也支持变化/稳定、`--allow-no-change` 和视口期望。
-- 所有控制操作都保存前后证据和 `operation.json`，按连续帧差异等待画面稳定；可用 `--expect-page`，滚动和拖动还可用 `--expect-view-state`。
+- 所有控制操作都保存前后证据和 `operation.json`，按连续帧差异等待画面稳定，并可用 `--expect-page` 和 `--expect-view-state` 声明独立最终状态断言。
 
 Python 依赖全部锁定在工具自己的虚拟环境。实现和使用说明见 [Game Driver README](../../tools/BetterBTD.GameDriver/README.md)。
 
@@ -65,7 +65,7 @@ Python 依赖全部锁定在工具自己的虚拟环境。实现和使用说明�
 
 首版比较器将截图规范化到基准尺寸，在固定稳定区域比较多个独立模板。`pageAnchor` 缺省为 `true`；设为 `false` 的模板仍可判断元素可见性，但不能抬高或拉低页面分数，也不能满足最少页面锚点数。页面必须同时满足最少锚点数和总分阈值；未达到阈值返回 `unknown`，多个页面分数过近返回 `ambiguous`，两者都不能作为通过条件。
 
-当前 catalog v12 使用 schema v2，共 15 个页面、168 个模板、171 个元素、4 个视口状态和 44 个元素 placement。`page` 表示稳定逻辑页面，`viewState` 表示同页内可独立识别的滚动视口。元素可按视口声明 `placements`，每项包含该视口中的边界、动作点、检测锚点和可选 `states`；识别结果仅采用当前已识别视口对应的 placement。页面 `score` 只计算页面锚点，`rankingScore` 可合入视口分数以参与跨页面候选竞争。元素状态使用独立锚点返回 `matched`、`ambiguous` 或 `unknown`。
+当前 catalog v13 使用 schema v2，共 15 个页面、289 个模板、260 个元素、21 个视口状态和 251 个元素 placement。`page` 表示稳定逻辑页面，`viewState` 表示同页内可独立识别的轮播或滚动视口。元素可按视口声明 `placements`，每项包含该视口中的边界、动作点、检测锚点和可选 `states`；识别结果仅采用当前已识别视口对应的 placement。页面 `score` 只计算页面锚点，`rankingScore` 可合入视口分数以参与跨页面候选竞争。元素状态使用独立锚点返回 `matched`、`ambiguous` 或 `unknown`。当前 212 个元素具有独立可见性探测器，其中 164 个按钮同时具有动作点。
 
 schema v2 锚点的 `sourceBounds` 表示从来源证据确定性裁剪模板的位置，运行时仍在 `bounds` 指定的位置比较。schema v1 目录继续受支持：页面没有 `viewStates`，元素沿用顶层几何与锚点，且未声明 `sourceBounds` 时令其等于 `bounds`。目录 schema 升级不改变截图证据或识别输出各自已有的 schema 版本。
 
@@ -78,15 +78,15 @@ schema v2 锚点的 `sourceBounds` 表示从来源证据确定性裁剪模板的
 | Assert | 无或 BetterBTD | 独立判断可见结果 |
 | Recover | Game Driver | API 确认脚本停止后才恢复现场 |
 
-`capture`、`recognize` 和 `catalog` 是观察命令；`click`、`click-point`、`scroll-point` 与 `drag-point` 是控制命令。控制命令强制要求 `--phase arrange` 或 `--phase recover`，不接受 Act/Assert，但 CLI 无法独立证明 BetterBTD 脚本是否正在执行。测试编排层必须保证 Arrange 尚未启动脚本，Recover 则已通过 API 停止脚本并确认停止后再调用 Game Driver。
+`capture`、`recognize` 和 `catalog` 是观察命令；`click`、`click-point`、`scroll-point` 与 `drag-point` 是控制命令。四种控制命令都支持 `--expect-page` 和 `--expect-view-state`，并要求视口存在；若同时声明目标页，视口还必须归属该页。控制命令强制要求 `--phase arrange` 或 `--phase recover`，不接受 Act/Assert，但 CLI 无法独立证明 BetterBTD 脚本是否正在执行。测试编排层必须保证 Arrange 尚未启动脚本，Recover 则已通过 API 停止脚本并确认停止后再调用 Game Driver。
 
-元素点击前必须同时满足：当前原始证据完整且无警告、页面唯一匹配、目标元素属于当前页、需要视口 placement 时视口也唯一匹配、角色为按钮、当前动作点有效、绑定锚点全部可见。坐标点击、滚动和拖动不具备这些元素前置条件，只适用于显式探索与引导采集。滚轮、拖动或点击的 Win32 调用成功不构成通过条件；只有独立截图轨迹达到所要求的变化/稳定状态，并在指定时匹配 `--expect-page` 和 `--expect-view-state`，命令才成功。拖动输入无论正常完成还是中途异常都会在清理路径发送 mouse-up，但该安全语义同样不证明游戏接受了手势。
+元素点击前必须同时满足：当前原始证据完整且无警告、页面唯一匹配、目标元素属于当前页、需要视口 placement 时视口也唯一匹配、角色为按钮、当前动作点有效、绑定锚点全部可见。坐标点击、滚动和拖动不具备这些元素前置条件，只适用于显式探索与引导采集。滚轮、拖动或点击的 Win32 调用成功不构成通过条件；只有独立截图轨迹达到所要求的变化/稳定状态，最终证据和视口仍为 Oracle eligible，并在指定时匹配 `--expect-page` 和 `--expect-view-state`，命令才成功。ID 匹配但最终证据失去 Oracle 资格时分别返回 `expectedPageNotOracleEligible` 或 `expectedViewStateNotOracleEligible`。拖动输入无论正常完成还是中途异常都会在清理路径发送 mouse-up，但该安全语义同样不证明游戏接受了手势。
 
 ## 后续迭代
 
 1. 扩展完整热键表及更多滚动中间视口，并为适合拖动的页面补充真实手势验证；`extras` 与 `heroSelect` 上下视口已完成真实滚轮、状态观察和现场恢复验证。
 2. 增加跨加载中间态的页面等待、按键、文本输入和元素出现/消失等待，并继续保存操作轨迹。
 3. 增加生命、金币、回合及其他元素的独立文本、数值和选中状态识别。
-4. 扩展其他地图、活动回合、胜负、奖励和通用弹窗的真实视觉基准，并与 BetterBTD Test API 组合，同时保持截图与识别 Oracle 独立。
+4. 扩展英文界面、更多账号状态、活动回合、胜负、奖励和通用弹窗的真实视觉基准，并与 BetterBTD Test API 组合，同时保持截图与识别 Oracle 独立。
 
-桌面 GDI 首版后端要求游戏可见且无遮挡。锁屏、断开的 RDP、独占全屏和部分 DirectFlip 路径可能无法提供有效画面；单帧证据会明确标记 `occlusionSensitive=true` 和 `stabilityCheckPerformed=false`。控制命令的稳定性记录在同目录 `operation.json` 中，测试编排不得把两者混为同一字段。当前操作在第一个满足条件的稳定画面停止；冷启动等包含加载中间态的流程仍需编排层重复观察，不能假设第一次稳定就是最终目标页。真实 `extras` 验证覆盖上下端点和边界无变化；真实英雄验证覆盖底部页面分数 `0.991168`、底部视口分数 `0.999160`、Corvus/Silas 元素点击、滚轮回到顶部视口分数 `0.999807`，以及恢复 Quincy 后返回主菜单分数 `0.999120`。英雄网格拖动没有滚动，不能作为该页面的成功操作路径。
+桌面 GDI 首版后端要求游戏可见且无遮挡。锁屏、断开的 RDP、独占全屏和部分 DirectFlip 路径可能无法提供有效画面；单帧证据会明确标记 `occlusionSensitive=true` 和 `stabilityCheckPerformed=false`。控制命令的稳定性记录在同目录 `operation.json` 中，测试编排不得把两者混为同一字段。当前操作在第一个满足条件的稳定画面停止；冷启动等包含加载中间态的流程仍需编排层重复观察，不能假设第一次稳定就是最终目标页。地图选择的 34 张独立 source/holdout 截图全部匹配正确视口，最低 holdout 视口分数 `0.996790`；额外证据覆盖锁定/解锁 `Ascent` 和不带未读徽章的分类状态。真实输入验证覆盖分类切换、轮播翻页、地图进入/返回、锁定地图拒绝及解锁 `Ascent` 进入难度选择，最终恢复 `mainMenu` 的独立识别分数为 `0.999301`，页面断言和 Oracle 资格均通过。真实 `extras` 验证覆盖上下端点和边界无变化；真实英雄验证覆盖底部页面分数 `0.991168`、底部视口分数 `0.999160`、Corvus/Silas 元素点击、滚轮回到顶部视口分数 `0.999807`，以及恢复 Quincy 后返回主菜单。英雄网格拖动没有滚动，不能作为该页面的成功操作路径。

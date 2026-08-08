@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "evidenceId": "eff47c67457343f9a5b162d09700042e",
+  "evidenceRole": "rawExternalObservation",
+  "source": "BetterBTD.GameDriver",
+  "capturedAtUtc": "2026-08-08T07:55:05.775Z",
+  "capture": {
+    "backend": "desktop-gdi-bitblt",
+    "startedAtUtc": "2026-08-08T07:55:05.663Z",
+    "durationMs": 111.752,
+    "settleMs": 750,
+    "dwmFlushSucceeded": true,
+    "occlusionSensitive": true,
+    "requiresVisibleDesktop": true,
+    "stabilityCheckPerformed": false
+  },
+  "window": {
+    "handle": "0x000000000006064E",
+    "processId": 1656,
+    "processName": "BloonsTD6",
+    "title": "BloonsTD6",
+    "visible": true,
+    "minimized": false,
+    "foreground": true,
+    "dpi": 192,
+    "scaleFactor": 2.0,
+    "windowRectOnScreen": {
+      "x": 607,
+      "y": 138,
+      "width": 1946,
+      "height": 1151,
+      "right": 2553,
+      "bottom": 1289
+    },
+    "clientRectOnScreen": {
+      "x": 620,
+      "y": 196,
+      "width": 1920,
+      "height": 1080,
+      "right": 2540,
+      "bottom": 1276
+    }
+  },
+  "windowAfterCapture": {
+    "visible": true,
+    "minimized": false,
+    "foreground": true
+  },
+  "launch": {
+    "startedByDriver": false
+  },
+  "coordinateSystem": {
+    "id": "clientPhysicalPixels",
+    "origin": "clientTopLeft",
+    "xAxis": "right",
+    "yAxis": "down",
+    "bounds": {
+      "xMinimum": 0,
+      "yMinimum": 0,
+      "xMaximumExclusive": 1920,
+      "yMaximumExclusive": 1080
+    },
+    "clientOriginOnScreen": {
+      "x": 620,
+      "y": 196
+    },
+    "dpiAwareness": "PerMonitorV2",
+    "referenceSpace": {
+      "id": "btd6Reference1920x1080",
+      "width": 1920,
+      "height": 1080
+    },
+    "referenceToClientScale": {
+      "x": 1.0,
+      "y": 1.0
+    },
+    "hasReferenceAspectRatio": true,
+    "pointFormula": "round(reference / referenceSize * actualSize), clamped to [0, actualSize)",
+    "rectangleConvention": "halfOpen"
+  },
+  "frameFingerprint": {
+    "algorithm": "sha256(width-le32|height-le32|rgb24-top-down)",
+    "value": "9c8eb5ad72609a8b67aed30dccc773746cb29687b66ef0f73ee5e9b6549503be"
+  },
+  "frameAnalysis": {
+    "pixelCount": 2073600,
+    "minimumRgb": {
+      "r": 0,
+      "g": 0,
+      "b": 0
+    },
+    "maximumRgb": {
+      "r": 255,
+      "g": 255,
+      "b": 255
+    },
+    "meanRgb": {
+      "r": 85.259,
+      "g": 106.007,
+      "b": 88.059
+    },
+    "isUniform": false,
+    "isNearBlack": false
+  },
+  "files": {
+    "image": {
+      "path": "E:\\source\\repos\\BetterBTD\\artifacts\\game-driver\\2026-08-08\\ascent-unlocked-holdout.png",
+      "format": "png-rgb8",
+      "sourcePixelFormat": "bgrx32-top-down",
+      "bytes": 1654012,
+      "sha256": "79ac9f085a98b37ad89c4eeae94ea156ab5de38dd732fa910933680c4abc0e42"
+    },
+    "metadata": {
+      "path": "E:\\source\\repos\\BetterBTD\\artifacts\\game-driver\\2026-08-08\\ascent-unlocked-holdout.json"
+    },
+    "completion": {
+      "path": "E:\\source\\repos\\BetterBTD\\artifacts\\game-driver\\2026-08-08\\ascent-unlocked-holdout.complete.json",
+      "required": true,
+      "protocol": "evidence-commit-marker-v1"
+    }
+  },
+  "warnings": []
+}

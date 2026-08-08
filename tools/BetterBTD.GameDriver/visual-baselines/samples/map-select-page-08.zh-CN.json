@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "evidenceId": "35ee4c9779284df2bc76660966748237",
+  "evidenceRole": "rawExternalObservation",
+  "source": "BetterBTD.GameDriver",
+  "capturedAtUtc": "2026-08-08T07:14:16.140Z",
+  "capture": {
+    "backend": "desktop-gdi-bitblt",
+    "startedAtUtc": "2026-08-08T07:14:16.049Z",
+    "durationMs": 91.561,
+    "settleMs": 750,
+    "dwmFlushSucceeded": true,
+    "occlusionSensitive": true,
+    "requiresVisibleDesktop": true,
+    "stabilityCheckPerformed": false
+  },
+  "window": {
+    "handle": "0x000000000006064E",
+    "processId": 1656,
+    "processName": "BloonsTD6",
+    "title": "BloonsTD6",
+    "visible": true,
+    "minimized": false,
+    "foreground": true,
+    "dpi": 192,
+    "scaleFactor": 2.0,
+    "windowRectOnScreen": {
+      "x": 607,
+      "y": 138,
+      "width": 1946,
+      "height": 1151,
+      "right": 2553,
+      "bottom": 1289
+    },
+    "clientRectOnScreen": {
+      "x": 620,
+      "y": 196,
+      "width": 1920,
+      "height": 1080,
+      "right": 2540,
+      "bottom": 1276
+    }
+  },
+  "windowAfterCapture": {
+    "visible": true,
+    "minimized": false,
+    "foreground": true
+  },
+  "launch": {
+    "startedByDriver": false
+  },
+  "coordinateSystem": {
+    "id": "clientPhysicalPixels",
+    "origin": "clientTopLeft",
+    "xAxis": "right",
+    "yAxis": "down",
+    "bounds": {
+      "xMinimum": 0,
+      "yMinimum": 0,
+      "xMaximumExclusive": 1920,
+      "yMaximumExclusive": 1080
+    },
+    "clientOriginOnScreen": {
+      "x": 620,
+      "y": 196
+    },
+    "dpiAwareness": "PerMonitorV2",
+    "referenceSpace": {
+      "id": "btd6Reference1920x1080",
+      "width": 1920,
+      "height": 1080
+    },
+    "referenceToClientScale": {
+      "x": 1.0,
+      "y": 1.0
+    },
+    "hasReferenceAspectRatio": true,
+    "pointFormula": "round(reference / referenceSize * actualSize), clamped to [0, actualSize)",
+    "rectangleConvention": "halfOpen"
+  },
+  "frameFingerprint": {
+    "algorithm": "sha256(width-le32|height-le32|rgb24-top-down)",
+    "value": "10511f532a75131e97496df2534fda08825ee388f23f37ed5491498190cd1c1a"
+  },
+  "frameAnalysis": {
+    "pixelCount": 2073600,
+    "minimumRgb": {
+      "r": 0,
+      "g": 0,
+      "b": 0
+    },
+    "maximumRgb": {
+      "r": 255,
+      "g": 255,
+      "b": 255
+    },
+    "meanRgb": {
+      "r": 85.922,
+      "g": 106.601,
+      "b": 83.429
+    },
+    "isUniform": false,
+    "isNearBlack": false
+  },
+  "files": {
+    "image": {
+      "path": "E:\\source\\repos\\BetterBTD\\tools\\BetterBTD.GameDriver\\visual-baselines\\samples\\map-select-page-08.zh-CN.png",
+      "format": "png-rgb8",
+      "sourcePixelFormat": "bgrx32-top-down",
+      "bytes": 1707250,
+      "sha256": "07a4b7198f339f6143a7086ff91997003baabf992d9756f6919b727ec69a2653"
+    },
+    "metadata": {
+      "path": "E:\\source\\repos\\BetterBTD\\tools\\BetterBTD.GameDriver\\visual-baselines\\samples\\map-select-page-08.zh-CN.json"
+    },
+    "completion": {
+      "path": "E:\\source\\repos\\BetterBTD\\tools\\BetterBTD.GameDriver\\visual-baselines\\samples\\map-select-page-08.zh-CN.complete.json",
+      "required": true,
+      "protocol": "evidence-commit-marker-v1"
+    }
+  },
+  "warnings": []
+}

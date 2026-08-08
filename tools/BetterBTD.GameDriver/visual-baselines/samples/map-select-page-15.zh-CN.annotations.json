@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "mapSelect.expert01.zh-CN.20260808",
+  "sourceEvidenceId": "a5cb2b991fe2464a9c75f688cca37a23",
+  "sourceImageSha256": "d620dac6427b17b685588e7ed3068ec84fbcc55d0f48152d9b71355de8ded686",
+  "pageId": "mapSelect",
+  "viewStateId": "mapSelect.expert01",
+  "language": "zh-CN",
+  "clientSize": {
+    "width": 1920,
+    "height": 1080
+  },
+  "maps": [
+    "TrickyTracks",
+    "GlacialTrail",
+    "DarkDungeon",
+    "Sanctuary",
+    "Ravine",
+    "FloodedValley"
+  ],
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T07:32:50.021Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromPageAnchors": [
+    "mapSelect.pageIndicator",
+    "mapSelect.changeHero",
+    "mapSelect.options",
+    "mapSelect.categorySelection",
+    "mapSelect.communityNotification",
+    "mapCard.medals",
+    "mapCard.localizedTitle",
+    "mapCard.sparkles",
+    "mapCard.eventMarkers"
+  ],
+  "notes": [
+    "The raw Game Driver evidence was captured directly from the visible BTD6 client.",
+    "Map thumbnail crops exclude localized titles, medal rows, sparkles, and event markers.",
+    "The page indicator and independently cropped map thumbnails identify this carousel viewport."
+  ]
+}

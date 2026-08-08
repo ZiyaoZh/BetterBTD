@@ -49,10 +49,11 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\BetterBTD.GameDriver\g
   --element mainMenu.start `
   --phase arrange `
   --expect-page mapSelect `
+  --expect-view-state mapSelect.beginner01 `
   --output-dir artifacts\game-driver\manual\main-to-map-select
 ```
 
-`click` 只接受目录内具备动作点和独立可见性检测器的 `button`。输入前必须唯一识别当前页且证据为 Oracle 可用；输入后会等待画面相对操作前明显变化并连续稳定，再捕获最终证据和识别目标页。`--phase` 必须显式为 `arrange` 或 `recover`，CLI 不接受 `act` 或 `assert`。Recover 阶段仍须由测试编排层先通过 BetterBTD Test API 确认脚本已经停止。
+`click` 只接受目录内具备动作点和独立可见性检测器的 `button`。输入前必须唯一识别当前页且证据为 Oracle 可用；输入后会等待画面相对操作前明显变化并连续稳定，再捕获最终证据和识别目标页及视口。`--phase` 必须显式为 `arrange` 或 `recover`，CLI 不接受 `act` 或 `assert`。Recover 阶段仍须由测试编排层先通过 BetterBTD Test API 确认脚本已经停止。
 
 早期探索尚未入库的页面时，可按 `1920 x 1080` 参考客户区坐标点击：
 
@@ -64,7 +65,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\BetterBTD.GameDriver\g
   --output-dir artifacts\game-driver\manual\reference-point
 ```
 
-`click-point` 使用与 `click` 相同的输入所有权、窗口一致性、前后证据和变化/稳定等待协议，但不要求操作前页面已被目录识别，因此不能把坐标点击本身当作元素级 Oracle。若指定 `--expect-page`，操作后仍必须独立识别到该页面。轨迹同时记录参考坐标、换算后的客户区物理坐标和屏幕物理坐标。
+`click-point` 使用与 `click` 相同的输入所有权、窗口一致性、前后证据和变化/稳定等待协议，但不要求操作前页面已被目录识别，因此不能把坐标点击本身当作元素级 Oracle。若指定 `--expect-page` 或 `--expect-view-state`，操作后仍必须独立识别到相应页面和视口。轨迹同时记录参考坐标、换算后的客户区物理坐标和屏幕物理坐标。`--expect-view-state` 现在由 `click`、`click-point`、`scroll-point` 和 `drag-point` 共同支持；它引用的视口必须存在且属于同时声明的目标页。
+
+最终 ID 相符本身仍不足以通过断言：目标页证据和目标视口必须继续为 Oracle eligible。捕获警告或其他证据资格问题会分别返回 `expectedPageNotOracleEligible` 或 `expectedViewStateNotOracleEligible`，并保留失败轨迹。
 
 在参考客户区坐标发送垂直滚轮输入，并要求操作后识别到指定视口状态：
 
@@ -155,7 +158,7 @@ screenY = clientOriginOnScreenY + clientY
 
 ## 视觉目录协议
 
-版本化目录位于 `visual-baselines/`。当前 catalog v12 使用 schema v2，覆盖 15 个中文页面、168 个独立模板、171 个目录元素、4 个视口状态和 44 个元素 placement。页面包括 `welcome`、`modifiedClientWarning`、`mainMenu`、`mapSelect`、`difficultySelect`、三种难度的模式选择、`heroSelect`、`inLevel`、`stageSettings`、`settings`、`hotkeys`、`accessibility` 和 `extras`。主流程已能独立选择 `MonkeyMeadow` 的简单、中级和困难模式入口；`heroSelect.top`/`heroSelect.bottom` 合并覆盖 18 个稳定 `HeroType`，`extras.top`/`extras.bottom` 覆盖全部 7 个开关及其 `enabled`/`disabled` 状态。玩家名、用户 ID、版本号、货币、活动入口、本地化标签、奖励数值、地图勋章、星光和动态徽章不会成为页面 ID 或页面识别锚点。
+版本化目录位于 `visual-baselines/`。当前 catalog v13 使用 schema v2，覆盖 15 个中文页面、289 个独立模板、260 个目录元素、21 个视口状态和 251 个元素 placement。页面包括 `welcome`、`modifiedClientWarning`、`mainMenu`、`mapSelect`、`difficultySelect`、三种难度的模式选择、`heroSelect`、`inLevel`、`stageSettings`、`settings`、`hotkeys`、`accessibility` 和 `extras`。`mapSelect` 的 17 个视口覆盖初级 5 页、中级 5 页、高级 4 页和专家 3 页，共 87 张可见地图；官方英文名为 `Ascent` 的“攀升”同时建模为解锁时可操作的 `mapSelect.ascent` 和锁定时不可操作的 `mapSelect.ascentLocked`，账号状态不参与高级第一页的视口判定。四个分类按钮可区分 `selected`/`unselected`，`doubleCash` 与 `autoStart` 可区分 `enabled`/`disabled`。`heroSelect.top`/`heroSelect.bottom` 合并覆盖 18 个稳定 `HeroType`，`extras.top`/`extras.bottom` 覆盖全部 7 个开关及其状态。玩家名、用户 ID、版本号、货币、活动入口、本地化标签、奖励数值、地图勋章、星光和动态徽章不会成为页面 ID 或页面识别锚点。
 
 每个模板记录来源 `evidenceId`、来源图片 SHA-256、裁剪矩形和模板 SHA-256。每页还必须绑定一组 Oracle 可用的正向留出证据，且其图片哈希不能与任何制模源图相同。`catalog` 和 `baseline build` 会重新校验完整证据链。识别代码只依赖 Game Driver 自己的目录和 Pillow，不加载 BetterBTD 截图、OCR 模板、OpenCvSharp 资源或运行时状态。
 
@@ -169,9 +172,9 @@ schema v2 在页面身份之下增加 `viewStates`，并允许元素按视口声
 - 通知、顶置窗口和覆盖层会进入截图。这是可见证据的一部分，但测试编排需要据此判定现场是否有效。
 - 连续帧等待用于 `click`、`click-point`、`scroll-point` 和 `drag-point`，采用规范化全画面差异阈值；不同分辨率、动画强度和显示布局仍需要真实校准。滚动和拖动只在显式 `--allow-no-change` 时接受连续稳定的无变化画面。
 - 控制命令在第一个明显变化且连续稳定的画面停止；若操作经过可稳定停留的加载页，它不会自动跨越中间态等待更后的目标页。
-- 现有真实游戏验证覆盖中文冷启动、修改客户端警告、主菜单、设置/热键/辅助功能往返、初学者地图选择首个轮播页、三种难度模式页、简单/困难标准关卡、暂停继续和暂停返回主页。`extras` 已真实验证上下端点滚动及边界 `unchangedStable`。英雄页已真实识别底部视口（页面分数 `0.991168`、视口分数 `0.999160`），按元素 ID 点击 Corvus、Silas 均返回 `changedStable`，在左侧滚动指示区向上 20 档后独立识别 `heroSelect.top`（视口分数 `0.999807`），随后恢复选中 Quincy 并返回 `mainMenu`（分数 `0.999120`）。英雄网格的真实拖动探针没有产生滚动，因此不把拖动声明为英雄页成功路径。
+- 现有真实游戏验证覆盖中文冷启动、修改客户端警告、主菜单、设置/热键/辅助功能往返、地图选择全部 17 个轮播视口、地图分类切换、地图卡进入/返回、三种难度模式页、简单/困难标准关卡、暂停继续和暂停返回主页。34 张地图 source/holdout 证据均独立识别为正确视口，最低 holdout 视口分数为 `0.996790`，没有跨视口误判；真实回归验证了专家到高级、高级到初级、初级翻页、`TreeStump` 进入难度选择、锁定 `Ascent` 拒绝输入，以及解锁后按 `mapSelect.ascent` 进入难度选择（操作前视口分数 `1.0`、操作后页面分数 `0.99915975`）。高级分类未选中模板已用无“新”徽章的独立 source/holdout 校准，并把检测区域限制在徽章之外。`doubleCash` 已恢复为 enabled，`autoStart` 已恢复为 disabled。`extras` 已真实验证上下端点滚动及边界 `unchangedStable`。英雄页已真实识别底部视口（页面分数 `0.991168`、视口分数 `0.999160`），按元素 ID 点击 Corvus、Silas 均返回 `changedStable`，在左侧滚动指示区向上 20 档后独立识别 `heroSelect.top`（视口分数 `0.999807`），随后恢复选中 Quincy 并返回 `mainMenu`。英雄网格的真实拖动探针没有产生滚动，因此不把拖动声明为英雄页成功路径。
 - `inLevel.health` 已检测公共 HUD 图标，但生命、金币和回合数值尚未解析；跨地图、受限模式和已开局动态画面仍需扩大真实样本。
-- 当前 115 个目录元素具备独立可见性探测器，其中 71 个按钮具备可点击动作点；其余元素明确返回 `notEvaluated`。只有当前页面和视口均独立识别、对应 placement 可见且动作点有效的按钮才能由 `click` 控制。`extras` 开关只有独立状态检测，不提供会修改配置的动作点。
+- 当前 212 个目录元素具备独立可见性探测器，其中 164 个按钮同时具备可点击动作点；其余元素明确返回 `notEvaluated`。只有当前页面和视口均独立识别、对应 placement 可见且动作点有效的按钮才能由 `click` 控制。`mapSelect.ascentLocked` 和 `extras` 开关只有独立状态检测，不提供动作点。
 - 当前实现支持元素/坐标点击、坐标滚轮和坐标拖动；键盘、文本输入以及元素出现/消失等通用等待尚未实现。
 
 ## 测试

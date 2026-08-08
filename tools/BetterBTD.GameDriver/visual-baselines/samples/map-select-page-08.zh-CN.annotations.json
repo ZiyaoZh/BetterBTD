@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "mapSelect.intermediate03.zh-CN.20260808",
+  "sourceEvidenceId": "35ee4c9779284df2bc76660966748237",
+  "sourceImageSha256": "07a4b7198f339f6143a7086ff91997003baabf992d9756f6919b727ec69a2653",
+  "pageId": "mapSelect",
+  "viewStateId": "mapSelect.intermediate03",
+  "language": "zh-CN",
+  "clientSize": {
+    "width": 1920,
+    "height": 1080
+  },
+  "maps": [
+    "Bazaar",
+    "AdorasTemple",
+    "SpringSpring",
+    "KartMonkey",
+    "MoonLanding",
+    "Haunted"
+  ],
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T07:32:50.021Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromPageAnchors": [
+    "mapSelect.pageIndicator",
+    "mapSelect.changeHero",
+    "mapSelect.options",
+    "mapSelect.categorySelection",
+    "mapSelect.communityNotification",
+    "mapCard.medals",
+    "mapCard.localizedTitle",
+    "mapCard.sparkles",
+    "mapCard.eventMarkers"
+  ],
+  "notes": [
+    "The raw Game Driver evidence was captured directly from the visible BTD6 client.",
+    "Map thumbnail crops exclude localized titles, medal rows, sparkles, and event markers.",
+    "The page indicator and independently cropped map thumbnails identify this carousel viewport."
+  ]
+}

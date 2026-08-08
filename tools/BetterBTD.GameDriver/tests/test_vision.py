@@ -19,6 +19,26 @@ from visual_test_support import write_test_evidence
 
 SAMPLE_ROOT = DEFAULT_CATALOG_PATH.parent / "samples"
 
+MAP_SELECT_VIEWPORTS = (
+    ("map-select.zh-CN.holdout.json", "mapSelect.beginner01", "beginner", ("monkeyMeadow", "inTheLoop", "skullTweak", "threeMilesRound", "spaPits", "tinkerTon")),
+    ("map-select-page-02.zh-CN.holdout.json", "mapSelect.beginner02", "beginner", ("treeStump", "townCenter", "middleOfTheRoad", "oneTwoTree", "scrapYard", "theCabin")),
+    ("map-select-page-03.zh-CN.holdout.json", "mapSelect.beginner03", "beginner", ("resort", "skates", "lotusIsland", "candyFalls", "winterPark", "carved")),
+    ("map-select-page-04.zh-CN.holdout.json", "mapSelect.beginner04", "beginner", ("parkPath", "alpineRun", "frozenOver", "cubism", "fourCircles", "hedge")),
+    ("map-select-page-05.zh-CN.holdout.json", "mapSelect.beginner05", "beginner", ("logs", "endOfTheRoad")),
+    ("map-select-page-06.zh-CN.holdout.json", "mapSelect.intermediate01", "intermediate", ("lostCrevasse", "luminousCove", "ancientPortal", "sulfurSprings", "waterPark", "polyphemus")),
+    ("map-select-page-07.zh-CN.holdout.json", "mapSelect.intermediate02", "intermediate", ("coveredGarden", "quarry", "quietStreet", "bloonariusPrime", "balance", "encrypted")),
+    ("map-select-page-08.zh-CN.holdout.json", "mapSelect.intermediate03", "intermediate", ("bazaar", "adorasTemple", "springSpring", "kartMonkey", "moonLanding", "haunted")),
+    ("map-select-page-09.zh-CN.holdout.json", "mapSelect.intermediate04", "intermediate", ("downstream", "firingRange", "cracked", "streambed", "chutes", "rake")),
+    ("map-select-page-10.zh-CN.holdout.json", "mapSelect.intermediate05", "intermediate", ("spiceIslands",)),
+    ("map-select-page-11.zh-CN.holdout.json", "mapSelect.advanced01", "advanced", ("ascent", "mushroomGortto", "partyParade", "sunsetGulch", "enchantedGlade", "lastResort")),
+    ("map-select-page-12.zh-CN.holdout.json", "mapSelect.advanced02", "advanced", ("castleRevenge", "darkPath", "erosion", "midnightMansion", "sunkenColumns", "xFactor")),
+    ("map-select-page-13.zh-CN.holdout.json", "mapSelect.advanced03", "advanced", ("mesa", "geared", "spillway", "cargo", "patsPond", "peninsula")),
+    ("map-select-page-14.zh-CN.holdout.json", "mapSelect.advanced04", "advanced", ("highFinance", "anotherBrick", "offTheCoast", "cornfield", "underground")),
+    ("map-select-page-15.zh-CN.holdout.json", "mapSelect.expert01", "expert", ("trickyTracks", "glacialTrail", "darkDungeon", "sanctuary", "ravine", "floodedValley")),
+    ("map-select-page-16.zh-CN.holdout.json", "mapSelect.expert02", "expert", ("infernal", "bloodyPuddles", "workshop", "quad", "darkCastle", "muddyPuddles")),
+    ("map-select-page-17.zh-CN.holdout.json", "mapSelect.expert03", "expert", ("ouch",)),
+)
+
 
 class VisualRecognitionTests(unittest.TestCase):
     @classmethod
@@ -112,8 +132,11 @@ class VisualRecognitionTests(unittest.TestCase):
         self.assertEqual("matched", result["recognition"]["status"])
         self.assertEqual("mapSelect", result["recognition"]["page"]["id"])
         self.assertGreater(result["recognition"]["page"]["score"], 0.99)
-        self.assertEqual(13, len(result["recognition"]["elements"]))
+        self.assertEqual(102, len(result["recognition"]["elements"]))
         self.assertTrue(result["recognition"]["oracleEligible"])
+        view_state = result["recognition"]["page"]["viewState"]
+        self.assertEqual("matched", view_state["status"])
+        self.assertEqual("mapSelect.beginner01", view_state["state"]["id"])
         monkey_meadow = next(
             element
             for element in result["recognition"]["elements"]
@@ -121,6 +144,128 @@ class VisualRecognitionTests(unittest.TestCase):
         )
         self.assertEqual("visible", monkey_meadow["visibility"])
         self.assertTrue(monkey_meadow["visible"])
+
+    def test_all_real_map_holdouts_match_viewports_maps_and_controls(self) -> None:
+        all_map_ids = {
+            f"mapSelect.{map_name}"
+            for _, _, _, map_names in MAP_SELECT_VIEWPORTS
+            for map_name in map_names
+        }
+        action_points = (
+            {"x": 535, "y": 270},
+            {"x": 955, "y": 270},
+            {"x": 1375, "y": 270},
+            {"x": 535, "y": 585},
+            {"x": 955, "y": 585},
+            {"x": 1375, "y": 585},
+        )
+        categories = ("beginner", "intermediate", "advanced", "expert")
+
+        for evidence_name, expected_view, expected_tier, map_names in MAP_SELECT_VIEWPORTS:
+            with self.subTest(evidence=evidence_name):
+                evidence = read_evidence(SAMPLE_ROOT / evidence_name)
+
+                result, match = recognize_image(evidence, self.catalog)
+
+                self.assertIsNotNone(match)
+                recognition = result["recognition"]
+                self.assertEqual("matched", recognition["status"])
+                self.assertTrue(recognition["oracleEligible"])
+                self.assertEqual("mapSelect", recognition["page"]["id"])
+                self.assertGreater(recognition["page"]["score"], 0.99)
+                view_state = recognition["page"]["viewState"]
+                self.assertEqual("matched", view_state["status"])
+                self.assertTrue(view_state["oracleEligible"])
+                self.assertEqual(expected_view, view_state["state"]["id"])
+                self.assertGreater(view_state["state"]["score"], 0.99)
+
+                elements = {
+                    element["id"]: element for element in recognition["elements"]
+                }
+                current_map_ids = {f"mapSelect.{name}" for name in map_names}
+                for slot, map_name in enumerate(map_names):
+                    element = elements[f"mapSelect.{map_name}"]
+                    if map_name == "ascent":
+                        self.assertEqual("button", element["role"])
+                        self.assertEqual("notVisible", element["visibility"])
+                        self.assertFalse(element["visible"])
+                        self.assertEqual(action_points[slot], element["actionPointClient"])
+                        locked = elements["mapSelect.ascentLocked"]
+                        self.assertEqual("status", locked["role"])
+                        self.assertEqual("visible", locked["visibility"])
+                        self.assertIsNone(locked["actionPointClient"])
+                        self.assertEqual("locked", locked["state"]["id"])
+                    else:
+                        self.assertEqual("visible", element["visibility"])
+                        self.assertTrue(element["visible"])
+                        self.assertEqual("button", element["role"])
+                        self.assertEqual(action_points[slot], element["actionPointClient"])
+                for map_id in all_map_ids - current_map_ids:
+                    element = elements[map_id]
+                    self.assertEqual("viewStateUnknown", element["visibility"])
+                    self.assertIsNone(element["actionPointClient"])
+
+                for category in categories:
+                    element = elements[f"mapSelect.{category}"]
+                    self.assertEqual("visible", element["visibility"])
+                    self.assertEqual(
+                        "selected" if category == expected_tier else "unselected",
+                        element["state"]["id"],
+                    )
+                self.assertEqual(
+                    "enabled",
+                    elements["mapSelect.doubleCash"]["state"]["id"],
+                )
+                self.assertEqual(
+                    "disabled",
+                    elements["mapSelect.autoStart"]["state"]["id"],
+                )
+                for element_id in (
+                    "mapSelect.pageIndicator",
+                    "mapSelect.changeHero",
+                    "mapSelect.friends",
+                    "mapSelect.community",
+                ):
+                    self.assertEqual("visible", elements[element_id]["visibility"])
+
+    def test_real_unlocked_ascent_holdout_is_actionable(self) -> None:
+        evidence = read_evidence(
+            SAMPLE_ROOT / "map-select-ascent-unlocked.zh-CN.holdout.json"
+        )
+
+        result, match = recognize_image(evidence, self.catalog)
+
+        self.assertIsNotNone(match)
+        recognition = result["recognition"]
+        self.assertEqual("matched", recognition["status"])
+        self.assertTrue(recognition["oracleEligible"])
+        self.assertEqual("mapSelect", recognition["page"]["id"])
+        view_state = recognition["page"]["viewState"]
+        self.assertEqual("matched", view_state["status"])
+        self.assertEqual("mapSelect.advanced01", view_state["state"]["id"])
+        self.assertGreater(view_state["state"]["score"], 0.99)
+        elements = {
+            element["id"]: element for element in recognition["elements"]
+        }
+        ascent = elements["mapSelect.ascent"]
+        self.assertEqual("button", ascent["role"])
+        self.assertEqual("visible", ascent["visibility"])
+        self.assertEqual({"x": 535, "y": 270}, ascent["actionPointClient"])
+        self.assertEqual("notVisible", elements["mapSelect.ascentLocked"]["visibility"])
+
+    def test_real_map_option_holdout_distinguishes_opposite_states(self) -> None:
+        evidence = read_evidence(
+            SAMPLE_ROOT / "map-select-options-opposite.zh-CN.holdout.json"
+        )
+
+        result, match = recognize_image(evidence, self.catalog)
+
+        self.assertIsNotNone(match)
+        elements = {
+            element["id"]: element for element in result["recognition"]["elements"]
+        }
+        self.assertEqual("disabled", elements["mapSelect.doubleCash"]["state"]["id"])
+        self.assertEqual("enabled", elements["mapSelect.autoStart"]["state"]["id"])
 
     def test_real_holdout_frame_matches_difficulty_select(self) -> None:
         evidence = read_evidence(SAMPLE_ROOT / "difficulty-select.zh-CN.holdout.json")

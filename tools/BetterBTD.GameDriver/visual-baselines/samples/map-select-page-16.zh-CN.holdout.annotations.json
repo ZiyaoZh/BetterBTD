@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "mapSelect.expert02.zh-CN.20260808.holdout",
+  "sourceEvidenceId": "5e60c4b53ffd43a38ce67882535334a5",
+  "sourceImageSha256": "691178fd103f57804a2996db37a45bd2b3202ff3f627449b33dfcd752e2c32be",
+  "pageId": "mapSelect",
+  "viewStateId": "mapSelect.expert02",
+  "language": "zh-CN",
+  "clientSize": {
+    "width": 1920,
+    "height": 1080
+  },
+  "maps": [
+    "Infernal",
+    "BloodyPuddles",
+    "Workshop",
+    "Quad",
+    "DarkCastle",
+    "MuddyPuddles"
+  ],
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T07:32:50.021Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromPageAnchors": [
+    "mapSelect.pageIndicator",
+    "mapSelect.changeHero",
+    "mapSelect.options",
+    "mapSelect.categorySelection",
+    "mapSelect.communityNotification",
+    "mapCard.medals",
+    "mapCard.localizedTitle",
+    "mapCard.sparkles",
+    "mapCard.eventMarkers"
+  ],
+  "notes": [
+    "The raw Game Driver evidence was captured directly from the visible BTD6 client.",
+    "Map thumbnail crops exclude localized titles, medal rows, sparkles, and event markers.",
+    "The page indicator and independently cropped map thumbnails identify this carousel viewport."
+  ]
+}

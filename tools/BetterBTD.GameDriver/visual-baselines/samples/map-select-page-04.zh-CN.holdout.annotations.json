@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "mapSelect.beginner04.zh-CN.20260808.holdout",
+  "sourceEvidenceId": "d3ebb0aad8cf40adac91470eab45945f",
+  "sourceImageSha256": "e81866d39e3b5783fed9de6903b84311c8855cb401a516c32da4ef414ae59880",
+  "pageId": "mapSelect",
+  "viewStateId": "mapSelect.beginner04",
+  "language": "zh-CN",
+  "clientSize": {
+    "width": 1920,
+    "height": 1080
+  },
+  "maps": [
+    "ParkPath",
+    "AlpineRun",
+    "FrozenOver",
+    "Cubism",
+    "FourCircles",
+    "Hedge"
+  ],
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T07:32:50.021Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromPageAnchors": [
+    "mapSelect.pageIndicator",
+    "mapSelect.changeHero",
+    "mapSelect.options",
+    "mapSelect.categorySelection",
+    "mapSelect.communityNotification",
+    "mapCard.medals",
+    "mapCard.localizedTitle",
+    "mapCard.sparkles",
+    "mapCard.eventMarkers"
+  ],
+  "notes": [
+    "The raw Game Driver evidence was captured directly from the visible BTD6 client.",
+    "Map thumbnail crops exclude localized titles, medal rows, sparkles, and event markers.",
+    "The page indicator and independently cropped map thumbnails identify this carousel viewport."
+  ]
+}

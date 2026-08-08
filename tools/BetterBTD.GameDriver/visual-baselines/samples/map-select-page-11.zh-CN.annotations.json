@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "mapSelect.advanced01.zh-CN.20260808",
+  "sourceEvidenceId": "34d5ae3430134a558e18e1e306a0ab35",
+  "sourceImageSha256": "2d285008cace7940e2985fa536a9285b00f6dd138a97f414979dd38af3360912",
+  "pageId": "mapSelect",
+  "viewStateId": "mapSelect.advanced01",
+  "language": "zh-CN",
+  "clientSize": {
+    "width": 1920,
+    "height": 1080
+  },
+  "maps": [
+    "Ascent",
+    "MushroomGortto",
+    "PartyParade",
+    "SunsetGulch",
+    "EnchantedGlade",
+    "LastResort"
+  ],
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T07:32:50.021Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromPageAnchors": [
+    "mapSelect.pageIndicator",
+    "mapSelect.changeHero",
+    "mapSelect.options",
+    "mapSelect.categorySelection",
+    "mapSelect.communityNotification",
+    "mapCard.medals",
+    "mapCard.localizedTitle",
+    "mapCard.sparkles",
+    "mapCard.eventMarkers"
+  ],
+  "notes": [
+    "The raw Game Driver evidence was captured directly from the visible BTD6 client.",
+    "Map thumbnail crops exclude localized titles, medal rows, sparkles, and event markers; the locked Ascent detector uses only the central lock region.",
+    "The page indicator and independently cropped map thumbnails identify this carousel viewport.",
+    "Ascent was independently observed as locked on this account and is represented by mapSelect.ascentLocked without an action point."
+  ]
+}

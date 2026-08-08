@@ -54,12 +54,14 @@ class InteractionRequest:
 @dataclass(frozen=True, slots=True)
 class ClickRequest(InteractionRequest):
     element_id: str
+    expected_view_state_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
 class PointClickRequest(InteractionRequest):
     reference_x: int
     reference_y: int
+    expected_view_state_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -69,7 +71,7 @@ class ScrollPointRequest(InteractionRequest):
     direction: str
     notches: int
     allow_no_change: bool
-    expected_view_state_id: str | None
+    expected_view_state_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -81,7 +83,7 @@ class DragPointRequest(InteractionRequest):
     duration_ms: int
     steps: int
     allow_no_change: bool
-    expected_view_state_id: str | None
+    expected_view_state_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -257,29 +259,28 @@ class InteractionDriver:
             page.id for page in catalog.pages
         }:
             raise UsageError(f"Unknown expected page ID: {request.expected_page_id}")
-        if isinstance(request, (ScrollPointRequest, DragPointRequest)):
-            view_state_pages = {
-                view_state.id: page.id
-                for page in catalog.pages
-                for view_state in page.view_states
-            }
-            if (
-                request.expected_view_state_id is not None
-                and request.expected_view_state_id not in view_state_pages
-            ):
-                raise UsageError(
-                    f"Unknown expected view state ID: {request.expected_view_state_id}"
-                )
-            if (
-                request.expected_view_state_id is not None
-                and request.expected_page_id is not None
-                and view_state_pages[request.expected_view_state_id]
-                != request.expected_page_id
-            ):
-                raise UsageError(
-                    f"View state {request.expected_view_state_id} does not belong to "
-                    f"page {request.expected_page_id}."
-                )
+        view_state_pages = {
+            view_state.id: page.id
+            for page in catalog.pages
+            for view_state in page.view_states
+        }
+        if (
+            request.expected_view_state_id is not None
+            and request.expected_view_state_id not in view_state_pages
+        ):
+            raise UsageError(
+                f"Unknown expected view state ID: {request.expected_view_state_id}"
+            )
+        if (
+            request.expected_view_state_id is not None
+            and request.expected_page_id is not None
+            and view_state_pages[request.expected_view_state_id]
+            != request.expected_page_id
+        ):
+            raise UsageError(
+                f"View state {request.expected_view_state_id} does not belong to "
+                f"page {request.expected_page_id}."
+            )
 
         output_directory = resolve_interaction_output_directory(
             request.output_directory,
@@ -417,18 +418,38 @@ class InteractionDriver:
         after_recognition, _ = recognize_image(after_evidence, catalog)
         after_page_id = _recognized_page_id(after_recognition)
         after_view_state_id = _recognized_view_state_id(after_recognition)
-        expected_page_matched = (
-            request.expected_page_id is None
-            or after_page_id == request.expected_page_id
+        recognition_result = after_recognition.get("recognition")
+        after_page_oracle_eligible = (
+            isinstance(recognition_result, dict)
+            and recognition_result.get("oracleEligible") is True
         )
-        expected_view_state_id = (
-            request.expected_view_state_id
-            if isinstance(request, (ScrollPointRequest, DragPointRequest))
+        page_result = (
+            recognition_result.get("page")
+            if isinstance(recognition_result, dict)
             else None
         )
+        view_state_result = (
+            page_result.get("viewState") if isinstance(page_result, dict) else None
+        )
+        after_view_state_oracle_eligible = (
+            after_page_oracle_eligible
+            and isinstance(view_state_result, dict)
+            and view_state_result.get("oracleEligible") is True
+        )
+        expected_page_matched = (
+            request.expected_page_id is None
+            or (
+                after_page_id == request.expected_page_id
+                and after_page_oracle_eligible
+            )
+        )
+        expected_view_state_id = request.expected_view_state_id
         expected_view_state_matched = (
             expected_view_state_id is None
-            or after_view_state_id == expected_view_state_id
+            or (
+                after_view_state_id == expected_view_state_id
+                and after_view_state_oracle_eligible
+            )
         )
 
         if isinstance(request, DragPointRequest):
@@ -502,8 +523,10 @@ class InteractionDriver:
             "expectation": {
                 "pageId": request.expected_page_id,
                 "matched": expected_page_matched,
+                "pageOracleEligible": after_page_oracle_eligible,
                 "viewStateId": expected_view_state_id,
                 "viewStateMatched": expected_view_state_matched,
+                "viewStateOracleEligible": after_view_state_oracle_eligible,
             },
         }
         timestamp_field = (
@@ -536,6 +559,17 @@ class InteractionDriver:
             )
         if not expected_page_matched:
             actual_page = after_page_id or "unknown"
+            if (
+                after_page_id == request.expected_page_id
+                and not after_page_oracle_eligible
+            ):
+                raise GameDriverError(
+                    "expectedPageNotOracleEligible",
+                    f"Expected page {request.expected_page_id} was recognized after the "
+                    f"interaction, but its evidence is not Oracle eligible. Evidence: "
+                    f"{trace_path}",
+                    6,
+                )
             raise GameDriverError(
                 "expectedPageNotObserved",
                 f"Expected page {request.expected_page_id} after the interaction, found "
@@ -544,6 +578,17 @@ class InteractionDriver:
             )
         if not expected_view_state_matched:
             actual_view_state = after_view_state_id or "unknown"
+            if (
+                after_view_state_id == expected_view_state_id
+                and not after_view_state_oracle_eligible
+            ):
+                raise GameDriverError(
+                    "expectedViewStateNotOracleEligible",
+                    f"Expected view state {expected_view_state_id} was recognized after "
+                    f"the interaction, but it is not Oracle eligible. Evidence: "
+                    f"{trace_path}",
+                    6,
+                )
             raise GameDriverError(
                 "expectedViewStateNotObserved",
                 f"Expected view state {expected_view_state_id} after the interaction, found "

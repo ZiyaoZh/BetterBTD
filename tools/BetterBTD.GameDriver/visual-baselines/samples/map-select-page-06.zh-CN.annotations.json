@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "mapSelect.intermediate01.zh-CN.20260808",
+  "sourceEvidenceId": "97a0e6acb9114956ad6a1668129fe280",
+  "sourceImageSha256": "7509ea88f4d8ac81f4882deabf7e3b144735c6374d2160de7458cd31fd79bc92",
+  "pageId": "mapSelect",
+  "viewStateId": "mapSelect.intermediate01",
+  "language": "zh-CN",
+  "clientSize": {
+    "width": 1920,
+    "height": 1080
+  },
+  "maps": [
+    "LostCrevasse",
+    "LuminousCove",
+    "AncientPortal",
+    "SulfurSprings",
+    "WaterPark",
+    "Polyphemus"
+  ],
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T07:32:50.021Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromPageAnchors": [
+    "mapSelect.pageIndicator",
+    "mapSelect.changeHero",
+    "mapSelect.options",
+    "mapSelect.categorySelection",
+    "mapSelect.communityNotification",
+    "mapCard.medals",
+    "mapCard.localizedTitle",
+    "mapCard.sparkles",
+    "mapCard.eventMarkers"
+  ],
+  "notes": [
+    "The raw Game Driver evidence was captured directly from the visible BTD6 client.",
+    "Map thumbnail crops exclude localized titles, medal rows, sparkles, and event markers.",
+    "The page indicator and independently cropped map thumbnails identify this carousel viewport."
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "mapSelect.intermediate05.zh-CN.20260808.holdout",
+  "sourceEvidenceId": "cff28961ea234c06b1f56a33107baf1b",
+  "sourceImageSha256": "3d9f608c95921203de7ee8dab2699ce80121f50ab29af37ce1685bde0cd538d7",
+  "pageId": "mapSelect",
+  "viewStateId": "mapSelect.intermediate05",
+  "language": "zh-CN",
+  "clientSize": {
+    "width": 1920,
+    "height": 1080
+  },
+  "maps": [
+    "SpiceIslands"
+  ],
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T07:32:50.021Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromPageAnchors": [
+    "mapSelect.pageIndicator",
+    "mapSelect.changeHero",
+    "mapSelect.options",
+    "mapSelect.categorySelection",
+    "mapSelect.communityNotification",
+    "mapCard.medals",
+    "mapCard.localizedTitle",
+    "mapCard.sparkles",
+    "mapCard.eventMarkers"
+  ],
+  "notes": [
+    "The raw Game Driver evidence was captured directly from the visible BTD6 client.",
+    "Map thumbnail crops exclude localized titles, medal rows, sparkles, and event markers.",
+    "The page indicator and independently cropped map thumbnails identify this carousel viewport."
+  ]
+}

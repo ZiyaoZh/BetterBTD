@@ -1,18 +1,42 @@
 {
   "schemaVersion": 1,
-  "annotationId": "mapSelect.zh-CN.holdout.20260807",
+  "annotationId": "mapSelect.beginner01.zh-CN.20260808.holdout",
   "sourceEvidenceId": "97381e7565fb49b59fe85f0da25c2326",
   "sourceImageSha256": "581f42b1c30334accf69cfcc747c75b88386b18c4fbcfea67dc3ea5e6ee1c2f0",
   "pageId": "mapSelect",
+  "viewStateId": "mapSelect.beginner01",
   "language": "zh-CN",
-  "clientSize": { "width": 1920, "height": 1080 },
+  "clientSize": {
+    "width": 1920,
+    "height": 1080
+  },
+  "maps": [
+    "MonkeyMeadow",
+    "InTheLoop",
+    "SkullTweak",
+    "ThreeMilesRound",
+    "SpaPits",
+    "TinkerTon"
+  ],
   "review": {
     "method": "agentImageView",
-    "reviewedAtUtc": "2026-08-07T15:13:00.000Z",
+    "reviewedAtUtc": "2026-08-08T07:32:50.021Z",
     "result": "accepted"
   },
+  "dynamicRegionsExcludedFromPageAnchors": [
+    "mapSelect.pageIndicator",
+    "mapSelect.changeHero",
+    "mapSelect.options",
+    "mapSelect.categorySelection",
+    "mapSelect.communityNotification",
+    "mapCard.medals",
+    "mapCard.localizedTitle",
+    "mapCard.sparkles",
+    "mapCard.eventMarkers"
+  ],
   "notes": [
-    "This real holdout capture was taken at a different animation instant and did not supply template pixels.",
-    "Map-card sparkle positions differ from the source and remain outside the Monkey Meadow template crop."
+    "The raw Game Driver evidence was captured directly from the visible BTD6 client.",
+    "Map thumbnail crops exclude localized titles, medal rows, sparkles, and event markers.",
+    "The page indicator and independently cropped map thumbnails identify this carousel viewport."
   ]
 }

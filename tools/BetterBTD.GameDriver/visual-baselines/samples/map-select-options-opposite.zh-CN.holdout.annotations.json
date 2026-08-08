@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "mapSelect.optionsOpposite.zh-CN.20260808.holdout",
+  "sourceEvidenceId": "ae0472bcaa3749439be2e52e10e82058",
+  "sourceImageSha256": "90716fa4affd396ea31b58b97212eb06e4819be99dcd3f3a32d85dbc6963fa1c",
+  "pageId": "mapSelect",
+  "viewStateId": "mapSelect.expert03",
+  "language": "zh-CN",
+  "clientSize": {
+    "width": 1920,
+    "height": 1080
+  },
+  "states": {
+    "doubleCash": "disabled",
+    "autoStart": "enabled"
+  },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T07:32:50.021Z",
+    "result": "accepted"
+  },
+  "notes": [
+    "This evidence supplies the opposite states for the two map-page option detectors.",
+    "The original values were independently observed as restored after collection."
+  ]
+}

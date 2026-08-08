@@ -64,6 +64,7 @@ class CommandLineTests(unittest.TestCase):
         self.assertEqual(3, parsed.stable_samples)
         self.assertEqual(0.05, parsed.change_threshold)
         self.assertEqual(0.02, parsed.stability_threshold)
+        self.assertIsNone(parsed.expect_view_state)
 
     def test_click_launch_cannot_be_combined_with_exact_process(self) -> None:
         with self.assertRaisesRegex(UsageError, "--launch cannot be combined"):
@@ -86,6 +87,26 @@ class CommandLineTests(unittest.TestCase):
             parse_args(
                 ["click", "--element", "mainMenu.start", "--phase", "act"]
             )
+
+    def test_click_and_click_point_accept_expected_view_state(self) -> None:
+        cases = (
+            ["click", "--element", "mainMenu.start"],
+            ["click-point", "--x", "960", "--y", "540"],
+        )
+
+        for arguments in cases:
+            with self.subTest(command=arguments[0]):
+                parsed = parse_args(
+                    [
+                        *arguments,
+                        "--phase",
+                        "arrange",
+                        "--expect-view-state",
+                        "heroSelect.bottom",
+                    ]
+                )
+
+                self.assertEqual("heroSelect.bottom", parsed.expect_view_state)
 
     def test_click_point_uses_reference_coordinates_and_transition_defaults(self) -> None:
         parsed = parse_args(

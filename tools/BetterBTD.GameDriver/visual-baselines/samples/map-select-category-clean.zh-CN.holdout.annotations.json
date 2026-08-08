@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "mapSelect.categoryClean.zh-CN.20260808.holdout",
+  "sourceEvidenceId": "5d7d2cf1541b40a2b0dac48212c561d6",
+  "sourceImageSha256": "01dc8ce9f66b24a34591aa180e4fbd36e9251eeafa825a254c2d51e11bb394d8",
+  "pageId": "mapSelect",
+  "viewStateId": "mapSelect.beginner01",
+  "language": "zh-CN",
+  "clientSize": {
+    "width": 1920,
+    "height": 1080
+  },
+  "elementStates": {
+    "mapSelect.beginner": "selected",
+    "mapSelect.advanced": "unselected"
+  },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T08:02:20.000Z",
+    "result": "accepted"
+  },
+  "notes": [
+    "This holdout was captured separately from the template source and has a distinct image hash.",
+    "The Advanced unselected detector must remain independent of unread-content badges."
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "mapSelect.beginner05.zh-CN.20260808.holdout",
+  "sourceEvidenceId": "ac0eea7dac8545b8a9842a0e0b25bebc",
+  "sourceImageSha256": "aa8d2b8567063ed3abe8102fa547933a9e26d8e67b42c16b023444e14e0f39b1",
+  "pageId": "mapSelect",
+  "viewStateId": "mapSelect.beginner05",
+  "language": "zh-CN",
+  "clientSize": {
+    "width": 1920,
+    "height": 1080
+  },
+  "maps": [
+    "Logs",
+    "EndOfTheRoad"
+  ],
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T07:32:50.021Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromPageAnchors": [
+    "mapSelect.pageIndicator",
+    "mapSelect.changeHero",
+    "mapSelect.options",
+    "mapSelect.categorySelection",
+    "mapSelect.communityNotification",
+    "mapCard.medals",
+    "mapCard.localizedTitle",
+    "mapCard.sparkles",
+    "mapCard.eventMarkers"
+  ],
+  "notes": [
+    "The raw Game Driver evidence was captured directly from the visible BTD6 client.",
+    "Map thumbnail crops exclude localized titles, medal rows, sparkles, and event markers.",
+    "The page indicator and independently cropped map thumbnails identify this carousel viewport."
+  ]
+}

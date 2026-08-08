@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "mapSelect.advanced01.ascentUnlocked.zh-CN.20260808",
+  "sourceEvidenceId": "cbe2c6b8f233435abb054ef3d8a0ecbb",
+  "sourceImageSha256": "66d1851d2033c4a2bcc4812fe97622487bdcab337aceb4ecd7d8f224dad91944",
+  "pageId": "mapSelect",
+  "viewStateId": "mapSelect.advanced01",
+  "language": "zh-CN",
+  "clientSize": {
+    "width": 1920,
+    "height": 1080
+  },
+  "elementStates": {
+    "mapSelect.ascent": "unlocked",
+    "mapSelect.ascentLocked": "notVisible"
+  },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T07:55:30.000Z",
+    "result": "accepted"
+  },
+  "notes": [
+    "The raw Game Driver evidence was captured directly from the visible BTD6 client.",
+    "The official stable English map name is Ascent.",
+    "The thumbnail crop excludes the localized title, medal row, sparkles, and event markers.",
+    "The unlocked map card is independently detectable and may expose a button action point."
+  ]
+}

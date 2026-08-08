@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "mapSelect.advanced02.zh-CN.20260808",
+  "sourceEvidenceId": "e31aecca6b8d41cc8d2b19ea6639ec25",
+  "sourceImageSha256": "546b28c3db1d45c4f74f77b93271902275f478bea764696baec7d2cbf96380b3",
+  "pageId": "mapSelect",
+  "viewStateId": "mapSelect.advanced02",
+  "language": "zh-CN",
+  "clientSize": {
+    "width": 1920,
+    "height": 1080
+  },
+  "maps": [
+    "CastleRevenge",
+    "DarkPath",
+    "Erosion",
+    "MidnightMansion",
+    "SunkenColumns",
+    "XFactor"
+  ],
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T07:32:50.021Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromPageAnchors": [
+    "mapSelect.pageIndicator",
+    "mapSelect.changeHero",
+    "mapSelect.options",
+    "mapSelect.categorySelection",
+    "mapSelect.communityNotification",
+    "mapCard.medals",
+    "mapCard.localizedTitle",
+    "mapCard.sparkles",
+    "mapCard.eventMarkers"
+  ],
+  "notes": [
+    "The raw Game Driver evidence was captured directly from the visible BTD6 client.",
+    "Map thumbnail crops exclude localized titles, medal rows, sparkles, and event markers.",
+    "The page indicator and independently cropped map thumbnails identify this carousel viewport."
+  ]
+}

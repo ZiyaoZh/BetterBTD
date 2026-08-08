@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "mapSelect.categoryClean.zh-CN.20260808",
+  "sourceEvidenceId": "c88b192fcb7c416fad0547e1f24e2992",
+  "sourceImageSha256": "0c25c10ca3d0ed5082866059eebd0a9cc0ae67b5ec98401e50cda0cef32d5620",
+  "pageId": "mapSelect",
+  "viewStateId": "mapSelect.beginner01",
+  "language": "zh-CN",
+  "clientSize": {
+    "width": 1920,
+    "height": 1080
+  },
+  "elementStates": {
+    "mapSelect.beginner": "selected",
+    "mapSelect.advanced": "unselected"
+  },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T08:01:30.000Z",
+    "result": "accepted"
+  },
+  "notes": [
+    "The raw Game Driver evidence was captured after the account's Advanced new-content badge was cleared.",
+    "The Advanced unselected crop uses only the stable lower control region and excludes the badge area.",
+    "The Community new-content badge remains outside every category detector."
+  ]
+}

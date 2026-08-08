@@ -13,8 +13,10 @@ from PIL import Image
 from betterbtd_game_driver.evidence import read_evidence
 from betterbtd_game_driver.errors import GameDriverError
 from betterbtd_game_driver.interaction import (
+    ClickRequest,
     DragPointRequest,
     InteractionDriver,
+    PointClickRequest,
     ScrollPointRequest,
     VisualTransitionTracker,
     _validate_interaction_outputs,
@@ -238,6 +240,51 @@ class ClickTargetTests(unittest.TestCase):
                     self.assertEqual(element_id, target.id)
                     self.assertEqual(expected_action_point, target.action_point)
 
+    def test_unlocked_ascent_is_actionable_and_locked_variant_is_not(self) -> None:
+        unlocked_evidence = read_evidence(
+            SAMPLE_ROOT / "map-select-ascent-unlocked.zh-CN.holdout.json"
+        )
+        unlocked_recognition, unlocked_page = recognize_image(
+            unlocked_evidence,
+            self.catalog,
+        )
+
+        target = _resolve_click_target(
+            unlocked_recognition,
+            unlocked_page,
+            "mapSelect.ascent",
+            unlocked_evidence,
+        )
+
+        self.assertEqual((535, 270), target.action_point)
+
+        locked_evidence = read_evidence(
+            SAMPLE_ROOT / "map-select-page-11.zh-CN.holdout.json"
+        )
+        locked_recognition, locked_page = recognize_image(
+            locked_evidence,
+            self.catalog,
+        )
+        with self.assertRaises(GameDriverError) as context:
+            _resolve_click_target(
+                locked_recognition,
+                locked_page,
+                "mapSelect.ascent",
+                locked_evidence,
+            )
+
+        self.assertEqual("elementNotVisible", context.exception.code)
+
+        with self.assertRaises(GameDriverError) as context:
+            _resolve_click_target(
+                locked_recognition,
+                locked_page,
+                "mapSelect.ascentLocked",
+                locked_evidence,
+            )
+
+        self.assertEqual("elementNotActionable", context.exception.code)
+
     def test_hero_without_a_placement_in_current_view_state_is_rejected(self) -> None:
         evidence = read_evidence(SAMPLE_ROOT / "hero-select.zh-CN.holdout.json")
         recognition, page_match = recognize_image(evidence, self.catalog)
@@ -338,6 +385,201 @@ class InteractionOutputTests(unittest.TestCase):
             self.assertTrue(old_after.exists())
             self.assertFalse(old_completion.exists())
             self.assertFalse(old_trace.exists())
+
+
+class ClickViewStateExpectationTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.catalog = load_visual_catalog()
+        cls.snapshot = WindowSnapshot(
+            handle=123,
+            process_id=456,
+            process_name="BloonsTD6",
+            title="BloonsTD6",
+            visible=True,
+            minimized=False,
+            foreground=True,
+            dpi=192,
+            window_rect=Rect(607, 138, 1946, 1151),
+            client_rect=Rect(620, 196, 1920, 1080),
+        )
+
+    def test_click_and_click_point_record_matching_final_view_state(self) -> None:
+        cases = (
+            ("click", "clickElement"),
+            ("click-point", "clickClientPoint"),
+        )
+
+        for request_kind, expected_operation in cases:
+            with (
+                self.subTest(request_kind=request_kind),
+                tempfile.TemporaryDirectory() as temporary_directory,
+            ):
+                output_directory = Path(temporary_directory) / request_kind
+                game_driver = self._game_driver_with_frames(
+                    SAMPLE_ROOT / "hero-select.zh-CN.holdout.png",
+                    SAMPLE_ROOT / "hero-select-bottom.zh-CN.holdout.png",
+                )
+                common = self._request_arguments(output_directory)
+                request = (
+                    ClickRequest(element_id="heroSelect.Silas", **common)
+                    if request_kind == "click"
+                    else PointClickRequest(reference_x=100, reference_y=800, **common)
+                )
+                interaction = InteractionDriver(game_driver)
+
+                with patch.object(
+                    interaction,
+                    "_wait_for_transition",
+                    return_value=([{"elapsedMs": 200}], "changedStable"),
+                ):
+                    result = (
+                        interaction.click(request, self.catalog)
+                        if isinstance(request, ClickRequest)
+                        else interaction.click_point(request, self.catalog)
+                    )
+
+                trace = json.loads(
+                    (output_directory / "operation.json").read_text(encoding="utf-8")
+                )
+
+            self.assertEqual(expected_operation, result["operation"])
+            self.assertEqual(
+                "heroSelect.bottom",
+                trace["expectation"]["viewStateId"],
+            )
+            self.assertTrue(trace["expectation"]["viewStateMatched"])
+
+    def test_click_point_rejects_mismatched_final_view_state_after_writing_trace(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            output_directory = Path(temporary_directory) / "mismatch"
+            game_driver = self._game_driver_with_frames(
+                SAMPLE_ROOT / "hero-select.zh-CN.holdout.png",
+                SAMPLE_ROOT / "hero-select.zh-CN.holdout.png",
+            )
+            request = PointClickRequest(
+                reference_x=100,
+                reference_y=800,
+                **self._request_arguments(output_directory),
+            )
+            interaction = InteractionDriver(game_driver)
+
+            with (
+                patch.object(
+                    interaction,
+                    "_wait_for_transition",
+                    return_value=([{"elapsedMs": 200}], "changedStable"),
+                ),
+                self.assertRaises(GameDriverError) as context,
+            ):
+                interaction.click_point(request, self.catalog)
+
+            trace = json.loads(
+                (output_directory / "operation.json").read_text(encoding="utf-8")
+            )
+
+        self.assertEqual("expectedViewStateNotObserved", context.exception.code)
+        self.assertEqual("heroSelect.bottom", trace["expectation"]["viewStateId"])
+        self.assertFalse(trace["expectation"]["viewStateMatched"])
+
+    def test_final_expectations_reject_non_oracle_evidence(self) -> None:
+        cases = (
+            ("page", "heroSelect", "expectedPageNotOracleEligible"),
+            ("view", None, "expectedViewStateNotOracleEligible"),
+        )
+
+        for case_name, expected_page_id, expected_code in cases:
+            with (
+                self.subTest(case=case_name),
+                tempfile.TemporaryDirectory() as temporary_directory,
+            ):
+                output_directory = Path(temporary_directory) / case_name
+                game_driver = self._game_driver_with_frames(
+                    SAMPLE_ROOT / "hero-select.zh-CN.holdout.png",
+                    SAMPLE_ROOT / "hero-select-bottom.zh-CN.holdout.png",
+                    after_warnings=[
+                        {"code": "testWarning", "message": "Synthetic warning."}
+                    ],
+                )
+                arguments = self._request_arguments(output_directory)
+                arguments["expected_page_id"] = expected_page_id
+                request = PointClickRequest(
+                    reference_x=100,
+                    reference_y=800,
+                    **arguments,
+                )
+                interaction = InteractionDriver(game_driver)
+
+                with (
+                    patch.object(
+                        interaction,
+                        "_wait_for_transition",
+                        return_value=([{"elapsedMs": 200}], "changedStable"),
+                    ),
+                    self.assertRaises(GameDriverError) as context,
+                ):
+                    interaction.click_point(request, self.catalog)
+
+                trace = json.loads(
+                    (output_directory / "operation.json").read_text(encoding="utf-8")
+                )
+
+            self.assertEqual(expected_code, context.exception.code)
+            self.assertFalse(trace["expectation"]["pageOracleEligible"])
+            self.assertFalse(trace["expectation"]["viewStateOracleEligible"])
+            if expected_page_id is not None:
+                self.assertFalse(trace["expectation"]["matched"])
+            self.assertFalse(trace["expectation"]["viewStateMatched"])
+
+    def _request_arguments(self, output_directory: Path) -> dict[str, object]:
+        return {
+            "selector": WindowSelector(handle=123),
+            "phase": "arrange",
+            "output_directory": output_directory,
+            "launch_path": None,
+            "overwrite": False,
+            "expected_page_id": "heroSelect",
+            "expected_view_state_id": "heroSelect.bottom",
+            "settle_ms": 0,
+            "activation_timeout_ms": 1_000,
+            "window_timeout_ms": 0,
+            "launch_timeout_ms": 0,
+            "transition_timeout_ms": 5_000,
+            "poll_interval_ms": 100,
+            "stable_sample_count": 2,
+            "change_threshold": 0.005,
+            "stability_threshold": 0.002,
+        }
+
+    def _game_driver_with_frames(
+        self,
+        before: Path,
+        after: Path,
+        *,
+        after_warnings: list[dict[str, str]] | None = None,
+    ) -> MagicMock:
+        window_api = MagicMock()
+        window_api.activate.return_value = True
+        window_api.snapshot.return_value = self.snapshot
+        window_api.click_client_point.return_value = (720, 996)
+        game_driver = MagicMock()
+        game_driver.window_api = window_api
+        frames = iter(((before, None), (after, after_warnings)))
+
+        def capture(request):
+            request.output_path.parent.mkdir(parents=True, exist_ok=True)
+            frame, warnings = next(frames)
+            with Image.open(frame) as source:
+                write_test_evidence(
+                    request.output_path.parent,
+                    request.output_path.stem,
+                    source.convert("RGB"),
+                    warnings=warnings,
+                )
+            return {"window": self.snapshot.to_dict()}
+
+        game_driver.capture.side_effect = capture
+        return game_driver
 
 
 class DragInteractionTests(unittest.TestCase):

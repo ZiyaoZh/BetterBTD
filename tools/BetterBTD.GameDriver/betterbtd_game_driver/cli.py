@@ -178,10 +178,6 @@ def create_parser() -> DriverArgumentParser:
         action="store_true",
         help="Accept an unchanged stable frame, for example at a scroll boundary.",
     )
-    scroll_parser.add_argument(
-        "--expect-view-state",
-        help="Require an independently recognized catalog view state after scrolling.",
-    )
     _add_interaction_arguments(scroll_parser, default_change_threshold=0.005)
 
     drag_parser = subparsers.add_parser(
@@ -233,10 +229,6 @@ def create_parser() -> DriverArgumentParser:
         "--allow-no-change",
         action="store_true",
         help="Accept an unchanged stable frame, for example at a drag boundary.",
-    )
-    drag_parser.add_argument(
-        "--expect-view-state",
-        help="Require an independently recognized catalog view state after dragging.",
     )
     _add_interaction_arguments(drag_parser, default_change_threshold=0.005)
 
@@ -327,6 +319,10 @@ def _add_interaction_arguments(
     parser.add_argument(
         "--expect-page",
         help="Require this independently recognized page after the transition.",
+    )
+    parser.add_argument(
+        "--expect-view-state",
+        help="Require this independently recognized catalog view state after the transition.",
     )
     parser.add_argument(
         "--overwrite",
@@ -487,6 +483,7 @@ def main(arguments: Sequence[str] | None = None) -> int:
                     launch_path=parsed.launch,
                     overwrite=parsed.overwrite,
                     expected_page_id=parsed.expect_page,
+                    expected_view_state_id=parsed.expect_view_state,
                     settle_ms=parsed.settle_ms,
                     activation_timeout_ms=parsed.activation_timeout_ms,
                     window_timeout_ms=parsed.window_timeout_ms,
@@ -510,6 +507,7 @@ def main(arguments: Sequence[str] | None = None) -> int:
                     launch_path=parsed.launch,
                     overwrite=parsed.overwrite,
                     expected_page_id=parsed.expect_page,
+                    expected_view_state_id=parsed.expect_view_state,
                     settle_ms=parsed.settle_ms,
                     activation_timeout_ms=parsed.activation_timeout_ms,
                     window_timeout_ms=parsed.window_timeout_ms,

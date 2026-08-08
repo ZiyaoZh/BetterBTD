@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "mapSelect.advanced01.ascentUnlocked.zh-CN.20260808.holdout",
+  "sourceEvidenceId": "eff47c67457343f9a5b162d09700042e",
+  "sourceImageSha256": "79ac9f085a98b37ad89c4eeae94ea156ab5de38dd732fa910933680c4abc0e42",
+  "pageId": "mapSelect",
+  "viewStateId": "mapSelect.advanced01",
+  "language": "zh-CN",
+  "clientSize": {
+    "width": 1920,
+    "height": 1080
+  },
+  "elementStates": {
+    "mapSelect.ascent": "unlocked",
+    "mapSelect.ascentLocked": "notVisible"
+  },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T07:56:10.000Z",
+    "result": "accepted"
+  },
+  "notes": [
+    "This holdout was captured separately from the template source and has a distinct image hash.",
+    "The official stable English map name is Ascent.",
+    "The unlocked Ascent detector must match independently without making account state part of the view-state Oracle."
+  ]
+}

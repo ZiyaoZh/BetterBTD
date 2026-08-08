@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "mapSelect.intermediate02.zh-CN.20260808.holdout",
+  "sourceEvidenceId": "9b3b809d2f7347b2801e947879559d0a",
+  "sourceImageSha256": "01733b2acace5c514a6cb704623fb61827729baf859856a2bad820edb8531dd3",
+  "pageId": "mapSelect",
+  "viewStateId": "mapSelect.intermediate02",
+  "language": "zh-CN",
+  "clientSize": {
+    "width": 1920,
+    "height": 1080
+  },
+  "maps": [
+    "CoveredGarden",
+    "Quarry",
+    "QuietStreet",
+    "BloonariusPrime",
+    "Balance",
+    "Encrypted"
+  ],
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T07:32:50.021Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromPageAnchors": [
+    "mapSelect.pageIndicator",
+    "mapSelect.changeHero",
+    "mapSelect.options",
+    "mapSelect.categorySelection",
+    "mapSelect.communityNotification",
+    "mapCard.medals",
+    "mapCard.localizedTitle",
+    "mapCard.sparkles",
+    "mapCard.eventMarkers"
+  ],
+  "notes": [
+    "The raw Game Driver evidence was captured directly from the visible BTD6 client.",
+    "Map thumbnail crops exclude localized titles, medal rows, sparkles, and event markers.",
+    "The page indicator and independently cropped map thumbnails identify this carousel viewport."
+  ]
+}

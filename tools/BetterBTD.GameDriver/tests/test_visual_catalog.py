@@ -17,7 +17,7 @@ class VisualCatalogTests(unittest.TestCase):
 
         self.assertEqual("btd6-ui-independent", catalog.id)
         self.assertEqual(2, catalog.schema_version)
-        self.assertEqual(12, catalog.version)
+        self.assertEqual(13, catalog.version)
         self.assertEqual((1920, 1080), (catalog.reference_width, catalog.reference_height))
         self.assertEqual(
             [
@@ -42,7 +42,7 @@ class VisualCatalogTests(unittest.TestCase):
         self.assertEqual(4, len(catalog.pages[0].anchors))
         self.assertEqual(5, len(catalog.pages[1].anchors))
         self.assertEqual(5, len(catalog.pages[2].anchors))
-        self.assertEqual(5, len(catalog.pages[3].anchors))
+        self.assertEqual(126, len(catalog.pages[3].anchors))
         self.assertEqual(4, len(catalog.pages[4].anchors))
         self.assertEqual(4, len(catalog.pages[5].anchors))
         self.assertEqual(6, len(catalog.pages[6].anchors))
@@ -58,6 +58,28 @@ class VisualCatalogTests(unittest.TestCase):
             3,
             sum(anchor.page_anchor for anchor in catalog.pages[8].anchors),
         )
+        map_select = catalog.pages[3]
+        self.assertEqual(4, sum(anchor.page_anchor for anchor in map_select.anchors))
+        self.assertEqual(17, len(map_select.view_states))
+        self.assertEqual(102, len(map_select.elements))
+        self.assertEqual(
+            207,
+            sum(len(element.placements) for element in map_select.elements),
+        )
+        ascent = next(
+            element
+            for element in map_select.elements
+            if element.id == "mapSelect.ascent"
+        )
+        self.assertEqual("button", ascent.role)
+        self.assertEqual((535, 270), ascent.placements[0].action_point)
+        ascent_locked = next(
+            element
+            for element in map_select.elements
+            if element.id == "mapSelect.ascentLocked"
+        )
+        self.assertEqual("status", ascent_locked.role)
+        self.assertIsNone(ascent_locked.placements[0].action_point)
         self.assertEqual(
             [5, 6, 5],
             [
@@ -122,10 +144,10 @@ class VisualCatalogTests(unittest.TestCase):
             {
                 "valid": True,
                 "pageCount": 15,
-                "templateCount": 168,
-                "elementCount": 171,
-                "viewStateCount": 4,
-                "placementCount": 44,
+                "templateCount": 289,
+                "elementCount": 260,
+                "viewStateCount": 21,
+                "placementCount": 251,
             },
             summary["validation"],
         )

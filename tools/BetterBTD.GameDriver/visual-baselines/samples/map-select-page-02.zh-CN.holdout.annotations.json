@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "mapSelect.beginner02.zh-CN.20260808.holdout",
+  "sourceEvidenceId": "a33c521b186e4df3916c3b97756daa15",
+  "sourceImageSha256": "bdfc772a01920732d4e0ee91cd338d26b019d61c0137efae00f3ff84aac23106",
+  "pageId": "mapSelect",
+  "viewStateId": "mapSelect.beginner02",
+  "language": "zh-CN",
+  "clientSize": {
+    "width": 1920,
+    "height": 1080
+  },
+  "maps": [
+    "TreeStump",
+    "TownCenter",
+    "MiddleOfTheRoad",
+    "OneTwoTree",
+    "ScrapYard",
+    "TheCabin"
+  ],
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T07:32:50.021Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromPageAnchors": [
+    "mapSelect.pageIndicator",
+    "mapSelect.changeHero",
+    "mapSelect.options",
+    "mapSelect.categorySelection",
+    "mapSelect.communityNotification",
+    "mapCard.medals",
+    "mapCard.localizedTitle",
+    "mapCard.sparkles",
+    "mapCard.eventMarkers"
+  ],
+  "notes": [
+    "The raw Game Driver evidence was captured directly from the visible BTD6 client.",
+    "Map thumbnail crops exclude localized titles, medal rows, sparkles, and event markers.",
+    "The page indicator and independently cropped map thumbnails identify this carousel viewport."
+  ]
+}
