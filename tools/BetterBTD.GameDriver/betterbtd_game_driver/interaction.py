@@ -27,9 +27,8 @@ TRANSITION_COMPARISON_SIZE = (160, 90)
 
 
 @dataclass(frozen=True, slots=True)
-class ClickRequest:
+class InteractionRequest:
     selector: WindowSelector
-    element_id: str
     phase: str
     output_directory: Path | None
     launch_path: Path | None
@@ -44,6 +43,17 @@ class ClickRequest:
     stable_sample_count: int
     change_threshold: float
     stability_threshold: float
+
+
+@dataclass(frozen=True, slots=True)
+class ClickRequest(InteractionRequest):
+    element_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class PointClickRequest(InteractionRequest):
+    reference_x: int
+    reference_y: int
 
 
 class VisualTransitionTracker:
@@ -106,13 +116,41 @@ class InteractionDriver:
         self._sleep = sleep
 
     def click(self, request: ClickRequest, catalog: VisualCatalog) -> dict[str, object]:
+        return self._click(request, catalog)
+
+    def click_point(
+        self,
+        request: PointClickRequest,
+        catalog: VisualCatalog,
+    ) -> dict[str, object]:
+        return self._click(request, catalog)
+
+    def _click(
+        self,
+        request: ClickRequest | PointClickRequest,
+        catalog: VisualCatalog,
+    ) -> dict[str, object]:
         if request.phase not in ("arrange", "recover"):
             raise UsageError("Click phase must be arrange or recover.")
-        catalog_element_ids = {
-            element.id for page in catalog.pages for element in page.elements
-        }
-        if request.element_id not in catalog_element_ids:
-            raise UsageError(f"Unknown catalog element ID: {request.element_id}")
+        if isinstance(request, ClickRequest):
+            catalog_element_ids = {
+                element.id for page in catalog.pages for element in page.elements
+            }
+            if request.element_id not in catalog_element_ids:
+                raise UsageError(f"Unknown catalog element ID: {request.element_id}")
+            operation_target = request.element_id
+        else:
+            if not 0 <= request.reference_x < catalog.reference_width:
+                raise UsageError(
+                    f"--x must be inside the reference client: 0 through "
+                    f"{catalog.reference_width - 1}."
+                )
+            if not 0 <= request.reference_y < catalog.reference_height:
+                raise UsageError(
+                    f"--y must be inside the reference client: 0 through "
+                    f"{catalog.reference_height - 1}."
+                )
+            operation_target = f"point-{request.reference_x}-{request.reference_y}"
         if request.expected_page_id is not None and request.expected_page_id not in {
             page.id for page in catalog.pages
         }:
@@ -120,7 +158,7 @@ class InteractionDriver:
 
         output_directory = resolve_interaction_output_directory(
             request.output_directory,
-            request.element_id,
+            operation_target,
             _utc_now(),
         )
         _validate_interaction_outputs(output_directory, request.overwrite)
@@ -141,12 +179,17 @@ class InteractionDriver:
         )
         before_evidence = read_evidence(before_metadata_path)
         before_recognition, before_match = recognize_image(before_evidence, catalog)
-        target = _resolve_click_target(
-            before_recognition,
-            before_match,
-            request.element_id,
-            before_evidence,
-        )
+        if isinstance(request, ClickRequest):
+            target = _resolve_click_target(
+                before_recognition,
+                before_match,
+                request.element_id,
+                before_evidence,
+            )
+            reference_x, reference_y = target.action_point
+        else:
+            target = None
+            reference_x, reference_y = request.reference_x, request.reference_y
 
         window_handle = int(str(before_result["window"]["handle"]), 0)
         expected_window = _window_snapshot_from_evidence(before_result)
@@ -172,8 +215,8 @@ class InteractionDriver:
         )
 
         action_x, action_y = reference_to_client(
-            target.action_point[0],
-            target.action_point[1],
+            reference_x,
+            reference_y,
             current_window.client_rect.width,
             current_window.client_rect.height,
         )
@@ -216,13 +259,13 @@ class InteractionDriver:
             "schemaVersion": 1,
             "operationRole": "independentInputTrace",
             "source": "BetterBTD.GameDriver",
-            "operation": "clickElement",
-            "elementId": request.element_id,
+            "operation": "clickElement" if target is not None else "clickClientPoint",
             "clickedAtUtc": _format_timestamp(clicked_at),
             "inputOwnershipPhase": request.phase,
             "input": {
                 "button": "left",
                 "coordinateSystem": "clientPhysicalPixels",
+                "referencePoint": {"x": reference_x, "y": reference_y},
                 "clientPoint": {"x": action_x, "y": action_y},
                 "screenPoint": {"x": screen_x, "y": screen_y},
             },
@@ -248,6 +291,8 @@ class InteractionDriver:
                 "matched": expected_page_matched,
             },
         }
+        if target is not None:
+            result["elementId"] = target.id
         trace_path = output_directory / "operation.json"
         _write_json_atomic(trace_path, result, overwrite=request.overwrite)
         result["trace"] = {"path": str(trace_path)}
@@ -274,7 +319,7 @@ class InteractionDriver:
         window_handle: int,
         expected_window: WindowSnapshot,
         tracker: VisualTransitionTracker,
-        request: ClickRequest,
+        request: InteractionRequest,
     ) -> tuple[list[dict[str, object]], bool]:
         started = self._monotonic()
         deadline = started + request.transition_timeout_ms / 1000

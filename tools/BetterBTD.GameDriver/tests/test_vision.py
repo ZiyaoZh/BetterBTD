@@ -366,6 +366,59 @@ class VisualRecognitionTests(unittest.TestCase):
         self.assertTrue(continue_button["visible"])
         self.assertFalse(in_level["matched"])
 
+    def test_real_holdout_frame_matches_settings_and_reports_disabled_jukebox(self) -> None:
+        evidence = read_evidence(SAMPLE_ROOT / "settings.zh-CN.holdout.json")
+
+        result, match = recognize_image(evidence, self.catalog)
+
+        self.assertIsNotNone(match)
+        self.assertEqual("matched", result["recognition"]["status"])
+        self.assertEqual("settings", result["recognition"]["page"]["id"])
+        self.assertGreater(result["recognition"]["page"]["score"], 0.99)
+        self.assertEqual(18, len(result["recognition"]["elements"]))
+        jukebox_enabled = next(
+            element
+            for element in result["recognition"]["elements"]
+            if element["id"] == "settings.jukeboxEnabled"
+        )
+        self.assertEqual("notVisible", jukebox_enabled["visibility"])
+        self.assertFalse(jukebox_enabled["visible"])
+
+    def test_real_holdout_frame_matches_hotkeys_with_changed_cursor_state(self) -> None:
+        evidence = read_evidence(SAMPLE_ROOT / "hotkeys.zh-CN.holdout.json")
+
+        result, match = recognize_image(evidence, self.catalog)
+
+        self.assertIsNotNone(match)
+        self.assertEqual("matched", result["recognition"]["status"])
+        self.assertEqual("hotkeys", result["recognition"]["page"]["id"])
+        self.assertGreater(result["recognition"]["page"]["score"], 0.99)
+        self.assertEqual(7, len(result["recognition"]["elements"]))
+        normal_cursor = next(
+            element
+            for element in result["recognition"]["elements"]
+            if element["id"] == "hotkeys.normalCursorSelected"
+        )
+        self.assertEqual("notVisible", normal_cursor["visibility"])
+
+    def test_real_holdout_frame_matches_accessibility_with_changed_toggle(self) -> None:
+        evidence = read_evidence(SAMPLE_ROOT / "accessibility.zh-CN.holdout.json")
+
+        result, match = recognize_image(evidence, self.catalog)
+
+        self.assertIsNotNone(match)
+        self.assertEqual("matched", result["recognition"]["status"])
+        self.assertEqual("accessibility", result["recognition"]["page"]["id"])
+        self.assertGreater(result["recognition"]["page"]["score"], 0.99)
+        self.assertEqual(11, len(result["recognition"]["elements"]))
+        map_effects = next(
+            element
+            for element in result["recognition"]["elements"]
+            if element["id"] == "accessibility.mapEffects"
+        )
+        self.assertEqual("notVisible", map_effects["visibility"])
+        self.assertFalse(map_effects["visible"])
+
     def test_uniform_dark_frame_is_unknown(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             metadata_path = write_test_evidence(

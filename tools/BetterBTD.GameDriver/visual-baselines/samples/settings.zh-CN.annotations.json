@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "settings.zh-CN.20260808",
+  "sourceEvidenceId": "f240cd5d41e74b48b8d83a185f4edd79",
+  "sourceImageSha256": "6a36a11796c0d05d75b32617dcaa00e2950ab8c906429fbfdcc5503b13678028",
+  "pageId": "settings",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T02:47:40.000Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromPageAnchors": [
+    "settings.localizedText",
+    "settings.screenSizeValue",
+    "settings.volumeValues",
+    "settings.volumeThumbs",
+    "settings.jukeboxEnabledState",
+    "settings.versionAndUserId"
+  ],
+  "notes": [
+    "The source is an unmodified Game Driver capture with a valid completion marker.",
+    "Five stable frame and audio-control icons participate in page recognition; remaining controls are detector-only.",
+    "Account, unregister, language, setting mutation, and external-link controls intentionally have no action point."
+  ]
+}

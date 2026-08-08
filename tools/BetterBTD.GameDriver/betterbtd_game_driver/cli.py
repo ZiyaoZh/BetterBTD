@@ -13,7 +13,7 @@ from .baseline import build_templates
 from .driver import DEFAULT_PROCESS_NAMES, DEFAULT_WINDOW_TITLES, CaptureRequest, GameDriver
 from .evidence import read_evidence
 from .errors import GameDriverError, UsageError
-from .interaction import ClickRequest, InteractionDriver
+from .interaction import ClickRequest, InteractionDriver, PointClickRequest
 from .models import WindowSelector
 from .vision import recognize_image, write_annotation
 from .visual_catalog import load_visual_catalog, visual_catalog_summary
@@ -106,94 +106,26 @@ def create_parser() -> DriverArgumentParser:
         required=True,
         help="Stable catalog element ID to click, such as mainMenu.start.",
     )
-    click_parser.add_argument(
-        "--phase",
+    _add_interaction_arguments(click_parser)
+
+    point_click_parser = subparsers.add_parser(
+        "click-point",
+        help="Click a 1920x1080 reference-space client point and observe the transition.",
+    )
+    _add_selector_arguments(point_click_parser)
+    point_click_parser.add_argument(
+        "--x",
+        type=lambda value: _bounded_integer(value, 0, 1919, "--x"),
         required=True,
-        choices=("arrange", "recover"),
-        help="Input ownership phase; control is forbidden during act and assert.",
+        help="Reference-space client X coordinate (0 through 1919).",
     )
-    click_parser.add_argument(
-        "--output-dir",
-        type=Path,
-        help="Directory for before/after evidence and the operation trace.",
+    point_click_parser.add_argument(
+        "--y",
+        type=lambda value: _bounded_integer(value, 0, 1079, "--y"),
+        required=True,
+        help="Reference-space client Y coordinate (0 through 1079).",
     )
-    click_parser.add_argument(
-        "--launch",
-        type=Path,
-        help="Start this executable only when no matching BTD6 window exists.",
-    )
-    click_parser.add_argument(
-        "--catalog",
-        type=Path,
-        help="Catalog JSON path. Defaults to the bundled BTD6 visual catalog.",
-    )
-    click_parser.add_argument(
-        "--expect-page",
-        help="Require this independently recognized page after the transition.",
-    )
-    click_parser.add_argument(
-        "--overwrite",
-        action="store_true",
-        help="Replace the command's fixed evidence and trace files.",
-    )
-    click_parser.add_argument(
-        "--settle-ms",
-        type=lambda value: _bounded_integer(value, 0, 10_000, "--settle-ms"),
-        default=500,
-        help="Delay after activation before pre-input capture (default: 500).",
-    )
-    click_parser.add_argument(
-        "--activation-timeout-ms",
-        type=lambda value: _bounded_integer(
-            value, 100, 30_000, "--activation-timeout-ms"
-        ),
-        default=3_000,
-        help="Foreground verification timeout (default: 3000).",
-    )
-    click_parser.add_argument(
-        "--window-timeout-ms",
-        type=lambda value: _bounded_integer(value, 0, 120_000, "--window-timeout-ms"),
-        default=3_000,
-        help="Wait for an existing matching window (default: 3000).",
-    )
-    click_parser.add_argument(
-        "--launch-timeout-ms",
-        type=lambda value: _bounded_integer(value, 100, 300_000, "--launch-timeout-ms"),
-        default=60_000,
-        help="Wait for a newly launched game window (default: 60000).",
-    )
-    click_parser.add_argument(
-        "--transition-timeout-ms",
-        type=lambda value: _bounded_integer(
-            value, 500, 120_000, "--transition-timeout-ms"
-        ),
-        default=10_000,
-        help="Wait for a changed and stable frame (default: 10000).",
-    )
-    click_parser.add_argument(
-        "--poll-interval-ms",
-        type=lambda value: _bounded_integer(value, 50, 2_000, "--poll-interval-ms"),
-        default=200,
-        help="Visual transition sampling interval (default: 200).",
-    )
-    click_parser.add_argument(
-        "--stable-samples",
-        type=lambda value: _bounded_integer(value, 1, 20, "--stable-samples"),
-        default=3,
-        help="Consecutive low-difference frames required (default: 3).",
-    )
-    click_parser.add_argument(
-        "--change-threshold",
-        type=lambda value: _bounded_float(value, 0.001, 1.0, "--change-threshold"),
-        default=0.05,
-        help="Normalized difference required from the pre-input frame (default: 0.05).",
-    )
-    click_parser.add_argument(
-        "--stability-threshold",
-        type=lambda value: _bounded_float(value, 0.001, 1.0, "--stability-threshold"),
-        default=0.02,
-        help="Maximum normalized difference between stable frames (default: 0.02).",
-    )
+    _add_interaction_arguments(point_click_parser)
 
     catalog_parser = subparsers.add_parser(
         "catalog",
@@ -253,6 +185,97 @@ def create_parser() -> DriverArgumentParser:
     return parser
 
 
+def _add_interaction_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--phase",
+        required=True,
+        choices=("arrange", "recover"),
+        help="Input ownership phase; control is forbidden during act and assert.",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        help="Directory for before/after evidence and the operation trace.",
+    )
+    parser.add_argument(
+        "--launch",
+        type=Path,
+        help="Start this executable only when no matching BTD6 window exists.",
+    )
+    parser.add_argument(
+        "--catalog",
+        type=Path,
+        help="Catalog JSON path. Defaults to the bundled BTD6 visual catalog.",
+    )
+    parser.add_argument(
+        "--expect-page",
+        help="Require this independently recognized page after the transition.",
+    )
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Replace the command's fixed evidence and trace files.",
+    )
+    parser.add_argument(
+        "--settle-ms",
+        type=lambda value: _bounded_integer(value, 0, 10_000, "--settle-ms"),
+        default=500,
+        help="Delay after activation before pre-input capture (default: 500).",
+    )
+    parser.add_argument(
+        "--activation-timeout-ms",
+        type=lambda value: _bounded_integer(
+            value, 100, 30_000, "--activation-timeout-ms"
+        ),
+        default=3_000,
+        help="Foreground verification timeout (default: 3000).",
+    )
+    parser.add_argument(
+        "--window-timeout-ms",
+        type=lambda value: _bounded_integer(value, 0, 120_000, "--window-timeout-ms"),
+        default=3_000,
+        help="Wait for an existing matching window (default: 3000).",
+    )
+    parser.add_argument(
+        "--launch-timeout-ms",
+        type=lambda value: _bounded_integer(value, 100, 300_000, "--launch-timeout-ms"),
+        default=60_000,
+        help="Wait for a newly launched game window (default: 60000).",
+    )
+    parser.add_argument(
+        "--transition-timeout-ms",
+        type=lambda value: _bounded_integer(
+            value, 500, 120_000, "--transition-timeout-ms"
+        ),
+        default=10_000,
+        help="Wait for a changed and stable frame (default: 10000).",
+    )
+    parser.add_argument(
+        "--poll-interval-ms",
+        type=lambda value: _bounded_integer(value, 50, 2_000, "--poll-interval-ms"),
+        default=200,
+        help="Visual transition sampling interval (default: 200).",
+    )
+    parser.add_argument(
+        "--stable-samples",
+        type=lambda value: _bounded_integer(value, 1, 20, "--stable-samples"),
+        default=3,
+        help="Consecutive low-difference frames required (default: 3).",
+    )
+    parser.add_argument(
+        "--change-threshold",
+        type=lambda value: _bounded_float(value, 0.000001, 1.0, "--change-threshold"),
+        default=0.05,
+        help="Normalized difference required from the pre-input frame (default: 0.05).",
+    )
+    parser.add_argument(
+        "--stability-threshold",
+        type=lambda value: _bounded_float(value, 0.001, 1.0, "--stability-threshold"),
+        default=0.02,
+        help="Maximum normalized difference between stable frames (default: 0.02).",
+    )
+
+
 def parse_args(arguments: Sequence[str]) -> argparse.Namespace:
     parser = create_parser()
     if not arguments:
@@ -260,7 +283,7 @@ def parse_args(arguments: Sequence[str]) -> argparse.Namespace:
     parsed = parser.parse_args(arguments)
     if parsed.command == "baseline" and parsed.baseline_command is None:
         raise UsageError("baseline requires a subcommand such as 'build'.")
-    if parsed.command in ("capture", "click"):
+    if parsed.command in ("capture", "click", "click-point"):
         if parsed.launch is not None and (
             parsed.window_handle is not None or parsed.process_id is not None
         ):
@@ -327,6 +350,29 @@ def main(arguments: Sequence[str] | None = None) -> int:
                 ClickRequest(
                     selector=selector,
                     element_id=parsed.element,
+                    phase=parsed.phase,
+                    output_directory=parsed.output_dir,
+                    launch_path=parsed.launch,
+                    overwrite=parsed.overwrite,
+                    expected_page_id=parsed.expect_page,
+                    settle_ms=parsed.settle_ms,
+                    activation_timeout_ms=parsed.activation_timeout_ms,
+                    window_timeout_ms=parsed.window_timeout_ms,
+                    launch_timeout_ms=parsed.launch_timeout_ms,
+                    transition_timeout_ms=parsed.transition_timeout_ms,
+                    poll_interval_ms=parsed.poll_interval_ms,
+                    stable_sample_count=parsed.stable_samples,
+                    change_threshold=parsed.change_threshold,
+                    stability_threshold=parsed.stability_threshold,
+                ),
+                load_visual_catalog(parsed.catalog),
+            )
+        elif parsed.command == "click-point":
+            result = InteractionDriver(driver).click_point(
+                PointClickRequest(
+                    selector=selector,
+                    reference_x=parsed.x,
+                    reference_y=parsed.y,
                     phase=parsed.phase,
                     output_directory=parsed.output_dir,
                     launch_path=parsed.launch,

@@ -14,8 +14,8 @@ class BaselineBuildTests(unittest.TestCase):
         with patch("betterbtd_game_driver.baseline._write_template") as write_template:
             result = build_templates(catalog, overwrite=True)
 
-        self.assertEqual(72, len(result["templates"]))
-        self.assertEqual(72, write_template.call_count)
+        self.assertEqual(108, len(result["templates"]))
+        self.assertEqual(108, write_template.call_count)
 
     def test_late_validation_failure_writes_no_templates(self) -> None:
         catalog = load_visual_catalog()

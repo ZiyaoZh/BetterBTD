@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "accessibility.zh-CN.20260808",
+  "sourceEvidenceId": "9eb15e8e5ae247a083cd4937c1eb078d",
+  "sourceImageSha256": "3f048c69d655d82717d4890261ee670a0aefe186765cad44996276e7b0ca1ed5",
+  "pageId": "accessibility",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T02:57:35.000Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromPageAnchors": [
+    "accessibility.effectsScaleValue",
+    "accessibility.toggleStates",
+    "accessibility.rangeCircleSelection"
+  ],
+  "notes": [
+    "All visible settings are modeled, but only OK and back are safe element actions.",
+    "The current map-effects, placement-snapping, and range-circle visuals have independent detector-only templates."
+  ]
+}

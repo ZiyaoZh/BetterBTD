@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "settings.zh-CN.holdout.20260808",
+  "sourceEvidenceId": "49292bdbb9184cb5b48925ce2e7c5459",
+  "sourceImageSha256": "4b7a7b50db1c54b317ac39e825a268f4f380cd000d6d1337f17ceabf8c95afb5",
+  "pageId": "settings",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T02:50:20.000Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromPageAnchors": [
+    "settings.jukeboxEnabledState"
+  ],
+  "notes": [
+    "The holdout was captured with the jukebox enable toggle off and was not used to build templates.",
+    "The reversible setting was restored immediately after capture and verified by exact source-image SHA-256."
+  ]
+}

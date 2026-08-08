@@ -147,6 +147,22 @@ class ClickTargetTests(unittest.TestCase):
                 "stageSettings.home": (850, 840),
                 "stageSettings.continue": (1295, 840),
             },
+            "settings.zh-CN.holdout.json": {
+                "settings.back": (77, 57),
+                "settings.screenSize": (1875, 87),
+                "settings.jukebox": (480, 480),
+                "settings.hotkeys": (1155, 705),
+                "settings.accessibility": (1355, 705),
+                "settings.extras": (1550, 705),
+                "settings.patchNotes": (100, 980),
+            },
+            "hotkeys.zh-CN.holdout.json": {
+                "hotkeys.back": (77, 57),
+            },
+            "accessibility.zh-CN.holdout.json": {
+                "accessibility.back": (77, 57),
+                "accessibility.ok": (960, 910),
+            },
         }
         for evidence_name, targets in cases.items():
             evidence = read_evidence(SAMPLE_ROOT / evidence_name)
@@ -200,6 +216,20 @@ class ClickTargetTests(unittest.TestCase):
                 recognition,
                 page_match,
                 "modifiedClientWarning.closeGame",
+                evidence,
+            )
+
+        self.assertEqual("elementNotActionable", context.exception.code)
+
+    def test_visible_settings_unregister_is_not_actionable(self) -> None:
+        evidence = read_evidence(SAMPLE_ROOT / "settings.zh-CN.holdout.json")
+        recognition, page_match = recognize_image(evidence, self.catalog)
+
+        with self.assertRaises(GameDriverError) as context:
+            _resolve_click_target(
+                recognition,
+                page_match,
+                "settings.unregister",
                 evidence,
             )
 

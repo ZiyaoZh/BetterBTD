@@ -87,6 +87,40 @@ class CommandLineTests(unittest.TestCase):
                 ["click", "--element", "mainMenu.start", "--phase", "act"]
             )
 
+    def test_click_point_uses_reference_coordinates_and_transition_defaults(self) -> None:
+        parsed = parse_args(
+            [
+                "click-point",
+                "--x",
+                "960",
+                "--y",
+                "540",
+                "--phase",
+                "arrange",
+                "--change-threshold",
+                "0.00005",
+            ]
+        )
+        selector = _selector_from_args(parsed)
+
+        self.assertEqual((960, 540), (parsed.x, parsed.y))
+        self.assertEqual(DEFAULT_PROCESS_NAMES, selector.process_names)
+        self.assertEqual(10_000, parsed.transition_timeout_ms)
+        self.assertEqual(3, parsed.stable_samples)
+        self.assertEqual(0.00005, parsed.change_threshold)
+
+    def test_click_point_rejects_coordinates_outside_reference_client(self) -> None:
+        with self.assertRaisesRegex(UsageError, "--x must be between 0 and 1919"):
+            parse_args(
+                ["click-point", "--x", "1920", "--y", "540", "--phase", "arrange"]
+            )
+
+    def test_click_point_rejects_act_phase(self) -> None:
+        with self.assertRaisesRegex(UsageError, "invalid choice"):
+            parse_args(
+                ["click-point", "--x", "960", "--y", "540", "--phase", "act"]
+            )
+
     def test_baseline_requires_subcommand(self) -> None:
         with self.assertRaisesRegex(UsageError, "requires a subcommand"):
             parse_args(["baseline"])

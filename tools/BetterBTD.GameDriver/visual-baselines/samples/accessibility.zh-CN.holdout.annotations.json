@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "accessibility.zh-CN.holdout.20260808",
+  "sourceEvidenceId": "525d95629a284686838780415f153ef5",
+  "sourceImageSha256": "5169dd9fbb88b9923c7965141b201be8d4e4a6c746d3fc1534a6370edfd5c7df",
+  "pageId": "accessibility",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T02:57:55.000Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromPageAnchors": ["accessibility.mapEffects"],
+  "notes": [
+    "The holdout was captured after one reversible map-effects toggle and was not used to build templates.",
+    "The original toggle state was restored before OK returned to settings."
+  ]
+}

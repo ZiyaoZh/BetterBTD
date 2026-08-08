@@ -38,7 +38,9 @@ Game Driver 不导入 BetterBTD Python 模块，也不引用 BetterBTD 或 Fisch
 - 中文中级/困难模式基准：覆盖 `MilitaryOnly`、`Apopalypse`、`Reverse`、`MagicOnly`、`DoubleHpMoabs`、`HalfCash`、`AlternateBloonsRounds`、`Impoppable` 和 `CHIMPS`，并保留可见的 `Sandbox`。
 - 中文英雄选择基准：页面 Oracle 使用固定控件，首屏 15 个头像使用主项目 `HeroType` 稳定英文名作为 detector-only 按钮，并独立区分 `choose` 与 `selected` 状态；真实验证 Quincy/Gwendolin 选择和恢复。
 - 中文关卡内与暂停基准：`inLevel` 只使用跨难度公共 HUD，`stageSettings` 使用底部命令图标；真实验证简单/困难标准关卡、暂停继续和暂停返回主页。
+- 中文设置基准：`settings`、`hotkeys` 和 `accessibility` 完整声明当前可见控件，配置、账号和外部链接保持不可操作；真实验证从主菜单进入、子页往返和恢复主菜单。
 - `click` 控制命令：只点击当前已识别页面中具备独立可见性检测的目录按钮，保存操作前后证据和独立轨迹。
+- `click-point` 控制命令：按 `1920 x 1080` 参考客户区坐标执行引导采集，并保留相同的输入所有权、窗口校验、前后证据和独立轨迹；它不要求操作前页面已识别，因此不能充当元素 Oracle。
 - 操作后按连续帧差异等待画面发生变化并稳定，可用 `--expect-page` 要求最终独立识别到指定页面。
 
 Python 依赖全部锁定在工具自己的虚拟环境。实现和使用说明见 [Game Driver README](../../tools/BetterBTD.GameDriver/README.md)。
@@ -68,15 +70,15 @@ Python 依赖全部锁定在工具自己的虚拟环境。实现和使用说明�
 | Assert | 无或 BetterBTD | 独立判断可见结果 |
 | Recover | Game Driver | API 确认脚本停止后才恢复现场 |
 
-`capture`、`recognize` 和 `catalog` 是观察命令；`click` 是控制命令。`click` 强制要求 `--phase arrange` 或 `--phase recover`，不接受 Act/Assert，但 CLI 无法独立证明 BetterBTD 脚本是否正在执行。测试编排层必须保证 Arrange 尚未启动脚本，Recover 则已通过 API 停止脚本并确认停止后再调用 Game Driver。
+`capture`、`recognize` 和 `catalog` 是观察命令；`click` 与 `click-point` 是控制命令。控制命令强制要求 `--phase arrange` 或 `--phase recover`，不接受 Act/Assert，但 CLI 无法独立证明 BetterBTD 脚本是否正在执行。测试编排层必须保证 Arrange 尚未启动脚本，Recover 则已通过 API 停止脚本并确认停止后再调用 Game Driver。
 
-点击前必须同时满足：当前原始证据完整且无警告、页面唯一匹配、目标元素属于当前页、角色为按钮、动作点有效、绑定锚点全部可见。点击后 Win32 输入调用成功不构成通过条件；只有独立截图轨迹观察到明显变化、连续稳定，并在指定时匹配 `--expect-page`，命令才成功。
+元素点击前必须同时满足：当前原始证据完整且无警告、页面唯一匹配、目标元素属于当前页、角色为按钮、动作点有效、绑定锚点全部可见。坐标点击不具备这些元素前置条件，只适用于显式探索与引导采集。点击后 Win32 输入调用成功不构成通过条件；只有独立截图轨迹观察到明显变化、连续稳定，并在指定时匹配 `--expect-page`，命令才成功。
 
 ## 后续迭代
 
 1. 扩展 `heroSelect` 的 `Corvus`/`Silas` 滚动路径，以及其他地图、活动回合、胜负、奖励和通用弹窗的真实视觉基准。
-2. 增加跨加载中间态的页面等待、按键、文本输入、滚动和元素出现/消失等待，并继续保存操作轨迹。
+2. 增加跨加载中间态的页面等待、按键、文本输入、滚动和元素出现/消失等待，并继续保存操作轨迹；滚动优先用于 `extras`、完整热键表和剩余英雄。
 3. 增加生命、金币、回合及其他元素的独立文本、数值和选中状态识别。
 4. 与 BetterBTD Test API 组合，但保持截图与识别 Oracle 独立。
 
-桌面 GDI 首版后端要求游戏可见且无遮挡。锁屏、断开的 RDP、独占全屏和部分 DirectFlip 路径可能无法提供有效画面；单帧证据会明确标记 `occlusionSensitive=true` 和 `stabilityCheckPerformed=false`。`click` 的稳定性记录在同目录 `operation.json` 中，测试编排不得把两者混为同一字段。当前 `click` 在第一个变化后稳定画面停止；冷启动等包含加载中间态的流程仍需编排层重复观察，不能假设第一次稳定就是最终目标页。
+桌面 GDI 首版后端要求游戏可见且无遮挡。锁屏、断开的 RDP、独占全屏和部分 DirectFlip 路径可能无法提供有效画面；单帧证据会明确标记 `occlusionSensitive=true` 和 `stabilityCheckPerformed=false`。点击命令的稳定性记录在同目录 `operation.json` 中，测试编排不得把两者混为同一字段。当前点击在第一个变化后稳定画面停止；冷启动等包含加载中间态的流程仍需编排层重复观察，不能假设第一次稳定就是最终目标页。

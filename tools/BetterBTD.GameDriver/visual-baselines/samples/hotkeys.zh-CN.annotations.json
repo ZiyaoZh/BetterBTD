@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "hotkeys.zh-CN.20260808",
+  "sourceEvidenceId": "f74645db2e4c47f886832784a83c22bf",
+  "sourceImageSha256": "c2702d487f88501a2ea6d8202d0b4d78069964ba96a999b0ac27be4e98c8dd73",
+  "pageId": "hotkeys",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T02:56:15.000Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromPageAnchors": [
+    "hotkeys.userAssignedKeys",
+    "hotkeys.cursorSelectionState"
+  ],
+  "notes": [
+    "The three binding groups are modeled as regions because changing individual key assignments is outside safe test arrangement.",
+    "Reset default and cursor-size controls are visible but intentionally not actionable by element ID."
+  ]
+}

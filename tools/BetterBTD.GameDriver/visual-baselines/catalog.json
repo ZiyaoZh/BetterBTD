@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "catalogId": "btd6-ui-independent",
-  "catalogVersion": 8,
+  "catalogVersion": 10,
   "game": {
     "id": "BloonsTD6",
     "observedProductVersion": "6000.0.58f2 (92dee566b325)",
@@ -1687,6 +1687,656 @@
           "bounds": { "x": 1220, "y": 770, "width": 150, "height": 195 },
           "actionPoint": { "x": 1295, "y": 840 },
           "anchorIds": ["stageSettings.continueIcon"]
+        }
+      ]
+    },
+    {
+      "id": "settings",
+      "kind": "page",
+      "minimumScore": 0.94,
+      "minimumMatchedAnchors": 4,
+      "positiveHoldout": {
+        "evidence": "samples/settings.zh-CN.holdout.json",
+        "evidenceId": "49292bdbb9184cb5b48925ce2e7c5459",
+        "imageSha256": "4b7a7b50db1c54b317ac39e825a268f4f380cd000d6d1337f17ceabf8c95afb5"
+      },
+      "anchors": [
+        {
+          "id": "settings.backIcon",
+          "bounds": { "x": 35, "y": 15, "width": 90, "height": 90 },
+          "template": "templates/settings/back-icon.png",
+          "templateSha256": "74ea59a3ec3a983e4237a02a25e4a2f3eb88ae505d879325203185dc71909956",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/settings.zh-CN.json",
+          "sourceEvidenceId": "f240cd5d41e74b48b8d83a185f4edd79",
+          "sourceImageSha256": "6a36a11796c0d05d75b32617dcaa00e2950ab8c906429fbfdcc5503b13678028"
+        },
+        {
+          "id": "settings.jukeboxCabinet",
+          "bounds": { "x": 405, "y": 280, "width": 155, "height": 160 },
+          "template": "templates/settings/jukebox-cabinet.png",
+          "templateSha256": "aeb6cf39be0093cc53420a7a76a5ffb8fed8a60e7e3cd134a8478067437669df",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/settings.zh-CN.json",
+          "sourceEvidenceId": "f240cd5d41e74b48b8d83a185f4edd79",
+          "sourceImageSha256": "6a36a11796c0d05d75b32617dcaa00e2950ab8c906429fbfdcc5503b13678028"
+        },
+        {
+          "id": "settings.musicIcon",
+          "bounds": { "x": 625, "y": 330, "width": 75, "height": 65 },
+          "template": "templates/settings/music-icon.png",
+          "templateSha256": "5826c31c81639c1b51f5264c85aea2f09ca03d61f8d7f734cd383e6bfcd6b64c",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/settings.zh-CN.json",
+          "sourceEvidenceId": "f240cd5d41e74b48b8d83a185f4edd79",
+          "sourceImageSha256": "6a36a11796c0d05d75b32617dcaa00e2950ab8c906429fbfdcc5503b13678028"
+        },
+        {
+          "id": "settings.soundIcon",
+          "bounds": { "x": 625, "y": 430, "width": 75, "height": 70 },
+          "template": "templates/settings/sound-icon.png",
+          "templateSha256": "51cf77851cb8373289d88b101a5a844f5a04b270f33523c0dc27358d87fb4764",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/settings.zh-CN.json",
+          "sourceEvidenceId": "f240cd5d41e74b48b8d83a185f4edd79",
+          "sourceImageSha256": "6a36a11796c0d05d75b32617dcaa00e2950ab8c906429fbfdcc5503b13678028"
+        },
+        {
+          "id": "settings.effectsIcon",
+          "bounds": { "x": 625, "y": 530, "width": 75, "height": 70 },
+          "template": "templates/settings/effects-icon.png",
+          "templateSha256": "5424d0479fd83cf65e8058bdfcf2d55e0a889cdbcba2513933a8bd6101fea077",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/settings.zh-CN.json",
+          "sourceEvidenceId": "f240cd5d41e74b48b8d83a185f4edd79",
+          "sourceImageSha256": "6a36a11796c0d05d75b32617dcaa00e2950ab8c906429fbfdcc5503b13678028"
+        },
+        {
+          "id": "settings.screenSizeIcon",
+          "bounds": { "x": 1840, "y": 62, "width": 70, "height": 58 },
+          "template": "templates/settings/screen-size.png",
+          "templateSha256": "cd3b9e2a025f4644a51847680c1623973f4d517a2d138231ace308857faca4cf",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/settings.zh-CN.json",
+          "sourceEvidenceId": "f240cd5d41e74b48b8d83a185f4edd79",
+          "sourceImageSha256": "6a36a11796c0d05d75b32617dcaa00e2950ab8c906429fbfdcc5503b13678028"
+        },
+        {
+          "id": "settings.backupIcon",
+          "bounds": { "x": 310, "y": 645, "width": 115, "height": 120 },
+          "template": "templates/settings/backup.png",
+          "templateSha256": "c71651b0c350a353de0e885f53623455cd96c822900320be2955c4227309af7f",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/settings.zh-CN.json",
+          "sourceEvidenceId": "f240cd5d41e74b48b8d83a185f4edd79",
+          "sourceImageSha256": "6a36a11796c0d05d75b32617dcaa00e2950ab8c906429fbfdcc5503b13678028"
+        },
+        {
+          "id": "settings.accountIcon",
+          "bounds": { "x": 505, "y": 645, "width": 115, "height": 120 },
+          "template": "templates/settings/account.png",
+          "templateSha256": "9fa2fc27f82ef0188b408039630101376b36dbbc6cf1f5e1ccfc7213494f8596",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/settings.zh-CN.json",
+          "sourceEvidenceId": "f240cd5d41e74b48b8d83a185f4edd79",
+          "sourceImageSha256": "6a36a11796c0d05d75b32617dcaa00e2950ab8c906429fbfdcc5503b13678028"
+        },
+        {
+          "id": "settings.unregisterIcon",
+          "bounds": { "x": 700, "y": 645, "width": 120, "height": 120 },
+          "template": "templates/settings/unregister.png",
+          "templateSha256": "e68108abe22c97e5e27f2f10c13f2cc3b392bbde5e2763cefc3504848673c720",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/settings.zh-CN.json",
+          "sourceEvidenceId": "f240cd5d41e74b48b8d83a185f4edd79",
+          "sourceImageSha256": "6a36a11796c0d05d75b32617dcaa00e2950ab8c906429fbfdcc5503b13678028"
+        },
+        {
+          "id": "settings.languageIcon",
+          "bounds": { "x": 900, "y": 645, "width": 120, "height": 120 },
+          "template": "templates/settings/language.png",
+          "templateSha256": "6e9393b69d23560b85e6f387e6cbf4b5031b74676b57e07eab3eb154971c962a",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/settings.zh-CN.json",
+          "sourceEvidenceId": "f240cd5d41e74b48b8d83a185f4edd79",
+          "sourceImageSha256": "6a36a11796c0d05d75b32617dcaa00e2950ab8c906429fbfdcc5503b13678028"
+        },
+        {
+          "id": "settings.hotkeysIcon",
+          "bounds": { "x": 1095, "y": 645, "width": 120, "height": 120 },
+          "template": "templates/settings/hotkeys.png",
+          "templateSha256": "f703eaf8d2fb90f9354657c6e6ebf28d8a7f8a4ed04ba25ca4c84f4f2b7aa437",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/settings.zh-CN.json",
+          "sourceEvidenceId": "f240cd5d41e74b48b8d83a185f4edd79",
+          "sourceImageSha256": "6a36a11796c0d05d75b32617dcaa00e2950ab8c906429fbfdcc5503b13678028"
+        },
+        {
+          "id": "settings.accessibilityIcon",
+          "bounds": { "x": 1295, "y": 645, "width": 120, "height": 120 },
+          "template": "templates/settings/accessibility.png",
+          "templateSha256": "90413f38fc902aff2ea0b0feee7cc8a8f54e58dbffd1b7806dae3cc9c7a628f2",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/settings.zh-CN.json",
+          "sourceEvidenceId": "f240cd5d41e74b48b8d83a185f4edd79",
+          "sourceImageSha256": "6a36a11796c0d05d75b32617dcaa00e2950ab8c906429fbfdcc5503b13678028"
+        },
+        {
+          "id": "settings.extrasIcon",
+          "bounds": { "x": 1490, "y": 645, "width": 120, "height": 120 },
+          "template": "templates/settings/extras.png",
+          "templateSha256": "14aa3b1e5d0a9c7e97411abefe95e597d2ba3b507feb2470cbe211b0521022b9",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/settings.zh-CN.json",
+          "sourceEvidenceId": "f240cd5d41e74b48b8d83a185f4edd79",
+          "sourceImageSha256": "6a36a11796c0d05d75b32617dcaa00e2950ab8c906429fbfdcc5503b13678028"
+        },
+        {
+          "id": "settings.patchNotesIcon",
+          "bounds": { "x": 30, "y": 910, "width": 145, "height": 150 },
+          "template": "templates/settings/patch-notes.png",
+          "templateSha256": "cbbb51a39c2266dcd4e1802b5487278e4bb8355f1c9633b4c13696e951ac6b11",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/settings.zh-CN.json",
+          "sourceEvidenceId": "f240cd5d41e74b48b8d83a185f4edd79",
+          "sourceImageSha256": "6a36a11796c0d05d75b32617dcaa00e2950ab8c906429fbfdcc5503b13678028"
+        },
+        {
+          "id": "settings.accessibilityToolsIcon",
+          "bounds": { "x": 1445, "y": 940, "width": 95, "height": 85 },
+          "template": "templates/settings/accessibility-tools.png",
+          "templateSha256": "19fcab69d5d7edf30c756e562c258cd0959f6ca74d8956792c3d6d1d82761fa8",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/settings.zh-CN.json",
+          "sourceEvidenceId": "f240cd5d41e74b48b8d83a185f4edd79",
+          "sourceImageSha256": "6a36a11796c0d05d75b32617dcaa00e2950ab8c906429fbfdcc5503b13678028"
+        },
+        {
+          "id": "settings.creatorSupportIcon",
+          "bounds": { "x": 1615, "y": 940, "width": 95, "height": 85 },
+          "template": "templates/settings/creator-support.png",
+          "templateSha256": "fad2178d518d9b9f454ddbd500517a09826c1874f542a59325445b30308f4584",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/settings.zh-CN.json",
+          "sourceEvidenceId": "f240cd5d41e74b48b8d83a185f4edd79",
+          "sourceImageSha256": "6a36a11796c0d05d75b32617dcaa00e2950ab8c906429fbfdcc5503b13678028"
+        },
+        {
+          "id": "settings.twitchIcon",
+          "bounds": { "x": 1780, "y": 940, "width": 95, "height": 85 },
+          "template": "templates/settings/twitch.png",
+          "templateSha256": "e9e3ae889995c46c9310db589118b5a989b175e7999d0aa1e02feebf8188a58a",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/settings.zh-CN.json",
+          "sourceEvidenceId": "f240cd5d41e74b48b8d83a185f4edd79",
+          "sourceImageSha256": "6a36a11796c0d05d75b32617dcaa00e2950ab8c906429fbfdcc5503b13678028"
+        },
+        {
+          "id": "settings.jukeboxEnabledState",
+          "bounds": { "x": 550, "y": 552, "width": 23, "height": 26 },
+          "template": "templates/settings/jukebox-enabled.png",
+          "templateSha256": "1765b7cf308b3561b5616a79599821d75267cd3b0cc443e1f38767faaa6144d8",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/settings.zh-CN.json",
+          "sourceEvidenceId": "f240cd5d41e74b48b8d83a185f4edd79",
+          "sourceImageSha256": "6a36a11796c0d05d75b32617dcaa00e2950ab8c906429fbfdcc5503b13678028"
+        }
+      ],
+      "elements": [
+        {
+          "id": "settings.back",
+          "role": "button",
+          "bounds": { "x": 25, "y": 5, "width": 105, "height": 105 },
+          "actionPoint": { "x": 77, "y": 57 },
+          "anchorIds": ["settings.backIcon"]
+        },
+        {
+          "id": "settings.screenSize",
+          "role": "button",
+          "bounds": { "x": 1630, "y": 25, "width": 290, "height": 100 },
+          "actionPoint": { "x": 1875, "y": 87 },
+          "anchorIds": ["settings.screenSizeIcon"]
+        },
+        {
+          "id": "settings.jukebox",
+          "role": "button",
+          "bounds": { "x": 370, "y": 275, "width": 225, "height": 250 },
+          "actionPoint": { "x": 480, "y": 480 },
+          "anchorIds": ["settings.jukeboxCabinet"]
+        },
+        {
+          "id": "settings.jukeboxEnabled",
+          "role": "toggle",
+          "bounds": { "x": 375, "y": 535, "width": 215, "height": 60 },
+          "anchorIds": ["settings.jukeboxEnabledState"]
+        },
+        {
+          "id": "settings.musicVolume",
+          "role": "slider",
+          "bounds": { "x": 610, "y": 315, "width": 945, "height": 95 },
+          "anchorIds": ["settings.musicIcon"]
+        },
+        {
+          "id": "settings.soundVolume",
+          "role": "slider",
+          "bounds": { "x": 610, "y": 415, "width": 945, "height": 95 },
+          "anchorIds": ["settings.soundIcon"]
+        },
+        {
+          "id": "settings.effectsVolume",
+          "role": "slider",
+          "bounds": { "x": 610, "y": 515, "width": 945, "height": 100 },
+          "anchorIds": ["settings.effectsIcon"]
+        },
+        {
+          "id": "settings.backup",
+          "role": "button",
+          "bounds": { "x": 300, "y": 635, "width": 135, "height": 180 },
+          "anchorIds": ["settings.backupIcon"]
+        },
+        {
+          "id": "settings.account",
+          "role": "button",
+          "bounds": { "x": 495, "y": 635, "width": 135, "height": 180 },
+          "anchorIds": ["settings.accountIcon"]
+        },
+        {
+          "id": "settings.unregister",
+          "role": "button",
+          "bounds": { "x": 690, "y": 635, "width": 140, "height": 180 },
+          "anchorIds": ["settings.unregisterIcon"]
+        },
+        {
+          "id": "settings.language",
+          "role": "button",
+          "bounds": { "x": 890, "y": 635, "width": 140, "height": 180 },
+          "anchorIds": ["settings.languageIcon"]
+        },
+        {
+          "id": "settings.hotkeys",
+          "role": "button",
+          "bounds": { "x": 1085, "y": 635, "width": 140, "height": 180 },
+          "actionPoint": { "x": 1155, "y": 705 },
+          "anchorIds": ["settings.hotkeysIcon"]
+        },
+        {
+          "id": "settings.accessibility",
+          "role": "button",
+          "bounds": { "x": 1285, "y": 635, "width": 140, "height": 180 },
+          "actionPoint": { "x": 1355, "y": 705 },
+          "anchorIds": ["settings.accessibilityIcon"]
+        },
+        {
+          "id": "settings.extras",
+          "role": "button",
+          "bounds": { "x": 1480, "y": 635, "width": 140, "height": 180 },
+          "actionPoint": { "x": 1550, "y": 705 },
+          "anchorIds": ["settings.extrasIcon"]
+        },
+        {
+          "id": "settings.patchNotes",
+          "role": "button",
+          "bounds": { "x": 20, "y": 900, "width": 165, "height": 180 },
+          "actionPoint": { "x": 100, "y": 980 },
+          "anchorIds": ["settings.patchNotesIcon"]
+        },
+        {
+          "id": "settings.accessibilityTools",
+          "role": "button",
+          "bounds": { "x": 1435, "y": 930, "width": 115, "height": 150 },
+          "anchorIds": ["settings.accessibilityToolsIcon"]
+        },
+        {
+          "id": "settings.creatorSupport",
+          "role": "button",
+          "bounds": { "x": 1605, "y": 930, "width": 115, "height": 150 },
+          "anchorIds": ["settings.creatorSupportIcon"]
+        },
+        {
+          "id": "settings.twitch",
+          "role": "button",
+          "bounds": { "x": 1770, "y": 930, "width": 115, "height": 150 },
+          "anchorIds": ["settings.twitchIcon"]
+        }
+      ]
+    },
+    {
+      "id": "hotkeys",
+      "kind": "page",
+      "minimumScore": 0.94,
+      "minimumMatchedAnchors": 5,
+      "positiveHoldout": {
+        "evidence": "samples/hotkeys.zh-CN.holdout.json",
+        "evidenceId": "3aa025c911284842bad6a75d17d5a98f",
+        "imageSha256": "6d12b629554eec0204b991c7cf870f96dd27167f447a8bbfa12b00ef38c7f460"
+      },
+      "anchors": [
+        {
+          "id": "hotkeys.backIcon",
+          "bounds": { "x": 35, "y": 15, "width": 90, "height": 90 },
+          "template": "templates/hotkeys/back.png",
+          "templateSha256": "6fa654ad6c44ae06474c52de12b414f3412cdd817c5b8db95345d9b7753e1c4a",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/hotkeys.zh-CN.json",
+          "sourceEvidenceId": "f74645db2e4c47f886832784a83c22bf",
+          "sourceImageSha256": "c2702d487f88501a2ea6d8202d0b4d78069964ba96a999b0ac27be4e98c8dd73"
+        },
+        {
+          "id": "hotkeys.resetDefaultButton",
+          "bounds": { "x": 1660, "y": 10, "width": 240, "height": 80 },
+          "template": "templates/hotkeys/reset-default.png",
+          "templateSha256": "0e54ea4cc25c25f96798561b86b5e3817f40b35772a61b2b3d7b410b3515072a",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/hotkeys.zh-CN.json",
+          "sourceEvidenceId": "f74645db2e4c47f886832784a83c22bf",
+          "sourceImageSha256": "c2702d487f88501a2ea6d8202d0b4d78069964ba96a999b0ac27be4e98c8dd73"
+        },
+        {
+          "id": "hotkeys.monkeyKeyFrame",
+          "bounds": { "x": 485, "y": 190, "width": 205, "height": 60 },
+          "template": "templates/hotkeys/monkey-key-frame.png",
+          "templateSha256": "be6c57f1438fe8bc029e9580a8f60fa946d3d3f6174f0059e76e94797a7efd23",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/hotkeys.zh-CN.json",
+          "sourceEvidenceId": "f74645db2e4c47f886832784a83c22bf",
+          "sourceImageSha256": "c2702d487f88501a2ea6d8202d0b4d78069964ba96a999b0ac27be4e98c8dd73"
+        },
+        {
+          "id": "hotkeys.gameplayKeyFrame",
+          "bounds": { "x": 1010, "y": 190, "width": 205, "height": 60 },
+          "template": "templates/hotkeys/gameplay-key-frame.png",
+          "templateSha256": "7eba980d10e848ec59cecc51e88650bdbdd2d53b901861a4df072ae2e33dff26",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/hotkeys.zh-CN.json",
+          "sourceEvidenceId": "f74645db2e4c47f886832784a83c22bf",
+          "sourceImageSha256": "c2702d487f88501a2ea6d8202d0b4d78069964ba96a999b0ac27be4e98c8dd73"
+        },
+        {
+          "id": "hotkeys.cursorPanel",
+          "bounds": { "x": 1225, "y": 190, "width": 515, "height": 140 },
+          "template": "templates/hotkeys/cursor-panel.png",
+          "templateSha256": "1843fa4d9de0458f826d9c0fb1b6270e6c02a6ffb6ee432df6966d65ba7ac62b",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/hotkeys.zh-CN.json",
+          "sourceEvidenceId": "f74645db2e4c47f886832784a83c22bf",
+          "sourceImageSha256": "c2702d487f88501a2ea6d8202d0b4d78069964ba96a999b0ac27be4e98c8dd73"
+        },
+        {
+          "id": "hotkeys.sandboxKeyFrame",
+          "bounds": { "x": 1535, "y": 365, "width": 205, "height": 65 },
+          "template": "templates/hotkeys/sandbox-key-frame.png",
+          "templateSha256": "d9da171d73b65e3636479a4aef36b574c4811d2fa3b25791ea09c117a7228b03",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/hotkeys.zh-CN.json",
+          "sourceEvidenceId": "f74645db2e4c47f886832784a83c22bf",
+          "sourceImageSha256": "c2702d487f88501a2ea6d8202d0b4d78069964ba96a999b0ac27be4e98c8dd73"
+        },
+        {
+          "id": "hotkeys.normalCursorSelected",
+          "bounds": { "x": 1280, "y": 215, "width": 65, "height": 65 },
+          "template": "templates/hotkeys/normal-cursor-selected.png",
+          "templateSha256": "a60f6f1c641f068f5837c793fe55e57c923164021e320411bc143dcdca973913",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/hotkeys.zh-CN.json",
+          "sourceEvidenceId": "f74645db2e4c47f886832784a83c22bf",
+          "sourceImageSha256": "c2702d487f88501a2ea6d8202d0b4d78069964ba96a999b0ac27be4e98c8dd73"
+        }
+      ],
+      "elements": [
+        {
+          "id": "hotkeys.back",
+          "role": "button",
+          "bounds": { "x": 25, "y": 5, "width": 105, "height": 105 },
+          "actionPoint": { "x": 77, "y": 57 },
+          "anchorIds": ["hotkeys.backIcon"]
+        },
+        {
+          "id": "hotkeys.resetDefault",
+          "role": "button",
+          "bounds": { "x": 1650, "y": 5, "width": 260, "height": 95 },
+          "anchorIds": ["hotkeys.resetDefaultButton"]
+        },
+        {
+          "id": "hotkeys.monkeyBindings",
+          "role": "region",
+          "bounds": { "x": 170, "y": 165, "width": 520, "height": 915 },
+          "anchorIds": ["hotkeys.monkeyKeyFrame"]
+        },
+        {
+          "id": "hotkeys.gameplayBindings",
+          "role": "region",
+          "bounds": { "x": 700, "y": 165, "width": 515, "height": 915 },
+          "anchorIds": ["hotkeys.gameplayKeyFrame"]
+        },
+        {
+          "id": "hotkeys.sandboxBindings",
+          "role": "region",
+          "bounds": { "x": 1225, "y": 355, "width": 515, "height": 725 },
+          "anchorIds": ["hotkeys.sandboxKeyFrame"]
+        },
+        {
+          "id": "hotkeys.cursorSize",
+          "role": "optionGroup",
+          "bounds": { "x": 1225, "y": 190, "width": 515, "height": 140 },
+          "anchorIds": ["hotkeys.cursorPanel"]
+        },
+        {
+          "id": "hotkeys.normalCursorSelected",
+          "role": "selectedState",
+          "bounds": { "x": 1280, "y": 215, "width": 65, "height": 65 },
+          "anchorIds": ["hotkeys.normalCursorSelected"]
+        }
+      ]
+    },
+    {
+      "id": "accessibility",
+      "kind": "page",
+      "minimumScore": 0.94,
+      "minimumMatchedAnchors": 4,
+      "positiveHoldout": {
+        "evidence": "samples/accessibility.zh-CN.holdout.json",
+        "evidenceId": "525d95629a284686838780415f153ef5",
+        "imageSha256": "5169dd9fbb88b9923c7965141b201be8d4e4a6c746d3fc1534a6370edfd5c7df"
+      },
+      "anchors": [
+        {
+          "id": "accessibility.backIcon",
+          "bounds": { "x": 35, "y": 15, "width": 90, "height": 90 },
+          "template": "templates/accessibility/back.png",
+          "templateSha256": "ffd364f28bef332425f7ba880e424e94c305d4eb1ada1f87f21b0a5ae85ecd70",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/accessibility.zh-CN.json",
+          "sourceEvidenceId": "9eb15e8e5ae247a083cd4937c1eb078d",
+          "sourceImageSha256": "3f048c69d655d82717d4890261ee670a0aefe186765cad44996276e7b0ca1ed5"
+        },
+        {
+          "id": "accessibility.fxIcon",
+          "bounds": { "x": 585, "y": 240, "width": 65, "height": 70 },
+          "template": "templates/accessibility/fx.png",
+          "templateSha256": "9bc27df3a0b00da660ffe156e1f1153c4bfbf9e895bb2a56ed0263cd02d5baa0",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/accessibility.zh-CN.json",
+          "sourceEvidenceId": "9eb15e8e5ae247a083cd4937c1eb078d",
+          "sourceImageSha256": "3f048c69d655d82717d4890261ee670a0aefe186765cad44996276e7b0ca1ed5"
+        },
+        {
+          "id": "accessibility.sliderFrame",
+          "bounds": { "x": 680, "y": 255, "width": 560, "height": 35 },
+          "template": "templates/accessibility/slider-frame.png",
+          "templateSha256": "4303754b2f29d2b29576e66dd2468cc991d714850b7d624bbdd0388eee4412dc",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/accessibility.zh-CN.json",
+          "sourceEvidenceId": "9eb15e8e5ae247a083cd4937c1eb078d",
+          "sourceImageSha256": "3f048c69d655d82717d4890261ee670a0aefe186765cad44996276e7b0ca1ed5"
+        },
+        {
+          "id": "accessibility.dialogCorner",
+          "bounds": { "x": 525, "y": 145, "width": 125, "height": 70 },
+          "template": "templates/accessibility/dialog-corner.png",
+          "templateSha256": "3dbb7dcc8e1e50304dcf7972c9f9d1fcb151b454c16082315839c15bed77b9e8",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/accessibility.zh-CN.json",
+          "sourceEvidenceId": "9eb15e8e5ae247a083cd4937c1eb078d",
+          "sourceImageSha256": "3f048c69d655d82717d4890261ee670a0aefe186765cad44996276e7b0ca1ed5"
+        },
+        {
+          "id": "accessibility.okButton",
+          "bounds": { "x": 825, "y": 865, "width": 265, "height": 90 },
+          "template": "templates/accessibility/ok.png",
+          "templateSha256": "fcf8f66d5d634141da9c693927f997f4714724cc2abb640e272c11de11de2360",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/accessibility.zh-CN.json",
+          "sourceEvidenceId": "9eb15e8e5ae247a083cd4937c1eb078d",
+          "sourceImageSha256": "3f048c69d655d82717d4890261ee670a0aefe186765cad44996276e7b0ca1ed5"
+        },
+        {
+          "id": "accessibility.mapEffectsState",
+          "bounds": { "x": 1180, "y": 485, "width": 120, "height": 50 },
+          "template": "templates/accessibility/map-effects.png",
+          "templateSha256": "e106f6f6e6735c76872af29479ac209fdff456837126798ed0e978dc0e03e274",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/accessibility.zh-CN.json",
+          "sourceEvidenceId": "9eb15e8e5ae247a083cd4937c1eb078d",
+          "sourceImageSha256": "3f048c69d655d82717d4890261ee670a0aefe186765cad44996276e7b0ca1ed5"
+        },
+        {
+          "id": "accessibility.placementSnappingState",
+          "bounds": { "x": 1180, "y": 590, "width": 120, "height": 50 },
+          "template": "templates/accessibility/placement-snapping.png",
+          "templateSha256": "0b60c14243a77f9b55b5e3e404e7fd22a91ea7f8997f4fc47e11937cc0959b0a",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/accessibility.zh-CN.json",
+          "sourceEvidenceId": "9eb15e8e5ae247a083cd4937c1eb078d",
+          "sourceImageSha256": "3f048c69d655d82717d4890261ee670a0aefe186765cad44996276e7b0ca1ed5"
+        },
+        {
+          "id": "accessibility.defaultRangeCircle",
+          "bounds": { "x": 625, "y": 720, "width": 110, "height": 80 },
+          "template": "templates/accessibility/range-default.png",
+          "templateSha256": "bf0f88814a676875b6906ec08429693c0e5f6930508d22afcda43a43cf9a0b00",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/accessibility.zh-CN.json",
+          "sourceEvidenceId": "9eb15e8e5ae247a083cd4937c1eb078d",
+          "sourceImageSha256": "3f048c69d655d82717d4890261ee670a0aefe186765cad44996276e7b0ca1ed5"
+        },
+        {
+          "id": "accessibility.highContrastRangeCircle",
+          "bounds": { "x": 820, "y": 720, "width": 80, "height": 80 },
+          "template": "templates/accessibility/range-high-contrast.png",
+          "templateSha256": "926fb7503395f116ae4675502228060031d270701dbe6d05f4e8973dbf895adf",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/accessibility.zh-CN.json",
+          "sourceEvidenceId": "9eb15e8e5ae247a083cd4937c1eb078d",
+          "sourceImageSha256": "3f048c69d655d82717d4890261ee670a0aefe186765cad44996276e7b0ca1ed5"
+        },
+        {
+          "id": "accessibility.colorBlindRangeCircle",
+          "bounds": { "x": 1015, "y": 720, "width": 85, "height": 80 },
+          "template": "templates/accessibility/range-color-blind.png",
+          "templateSha256": "596da9e9d2aa955db5a533a0cde9a3c07b8ace43b6b558cebdc8aa4738fbcbbf",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/accessibility.zh-CN.json",
+          "sourceEvidenceId": "9eb15e8e5ae247a083cd4937c1eb078d",
+          "sourceImageSha256": "3f048c69d655d82717d4890261ee670a0aefe186765cad44996276e7b0ca1ed5"
+        },
+        {
+          "id": "accessibility.combinedRangeCircle",
+          "bounds": { "x": 1210, "y": 720, "width": 90, "height": 80 },
+          "template": "templates/accessibility/range-combined.png",
+          "templateSha256": "17c5a79b7ca9fe918f792c51b43e911b206d6dc5db364f2ba9c98f82fbe21ee7",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/accessibility.zh-CN.json",
+          "sourceEvidenceId": "9eb15e8e5ae247a083cd4937c1eb078d",
+          "sourceImageSha256": "3f048c69d655d82717d4890261ee670a0aefe186765cad44996276e7b0ca1ed5"
+        }
+      ],
+      "elements": [
+        {
+          "id": "accessibility.back",
+          "role": "button",
+          "bounds": { "x": 25, "y": 5, "width": 105, "height": 105 },
+          "actionPoint": { "x": 77, "y": 57 },
+          "anchorIds": ["accessibility.backIcon"]
+        },
+        {
+          "id": "accessibility.dialog",
+          "role": "region",
+          "bounds": { "x": 525, "y": 145, "width": 870, "height": 790 },
+          "anchorIds": ["accessibility.dialogCorner"]
+        },
+        {
+          "id": "accessibility.effectsScale",
+          "role": "slider",
+          "bounds": { "x": 570, "y": 230, "width": 780, "height": 220 },
+          "anchorIds": ["accessibility.fxIcon", "accessibility.sliderFrame"]
+        },
+        {
+          "id": "accessibility.mapEffects",
+          "role": "toggle",
+          "bounds": { "x": 565, "y": 465, "width": 790, "height": 95 },
+          "anchorIds": ["accessibility.mapEffectsState"]
+        },
+        {
+          "id": "accessibility.placementSnapping",
+          "role": "toggle",
+          "bounds": { "x": 565, "y": 570, "width": 790, "height": 95 },
+          "anchorIds": ["accessibility.placementSnappingState"]
+        },
+        {
+          "id": "accessibility.rangeCircleModes",
+          "role": "optionGroup",
+          "bounds": { "x": 545, "y": 685, "width": 810, "height": 175 }
+        },
+        {
+          "id": "accessibility.defaultRangeCircle",
+          "role": "option",
+          "bounds": { "x": 600, "y": 715, "width": 145, "height": 135 },
+          "anchorIds": ["accessibility.defaultRangeCircle"]
+        },
+        {
+          "id": "accessibility.highContrastRangeCircle",
+          "role": "option",
+          "bounds": { "x": 790, "y": 715, "width": 145, "height": 135 },
+          "anchorIds": ["accessibility.highContrastRangeCircle"]
+        },
+        {
+          "id": "accessibility.colorBlindRangeCircle",
+          "role": "option",
+          "bounds": { "x": 985, "y": 715, "width": 145, "height": 135 },
+          "anchorIds": ["accessibility.colorBlindRangeCircle"]
+        },
+        {
+          "id": "accessibility.combinedRangeCircle",
+          "role": "option",
+          "bounds": { "x": 1180, "y": 715, "width": 145, "height": 135 },
+          "anchorIds": ["accessibility.combinedRangeCircle"]
+        },
+        {
+          "id": "accessibility.ok",
+          "role": "button",
+          "bounds": { "x": 815, "y": 855, "width": 285, "height": 110 },
+          "actionPoint": { "x": 960, "y": 910 },
+          "anchorIds": ["accessibility.okButton"]
         }
       ]
     }

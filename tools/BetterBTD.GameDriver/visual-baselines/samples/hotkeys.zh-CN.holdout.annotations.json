@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "hotkeys.zh-CN.holdout.20260808",
+  "sourceEvidenceId": "3aa025c911284842bad6a75d17d5a98f",
+  "sourceImageSha256": "6d12b629554eec0204b991c7cf870f96dd27167f447a8bbfa12b00ef38c7f460",
+  "pageId": "hotkeys",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-08T02:56:40.000Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromPageAnchors": ["hotkeys.cursorSelectionState"],
+  "notes": [
+    "The holdout uses the large cursor setting and was not used to build templates.",
+    "The normal cursor setting was restored before leaving the page; a follow-up capture showed only a 0.00000491 full-frame difference localized to the selected control."
+  ]
+}

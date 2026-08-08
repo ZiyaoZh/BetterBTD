@@ -27,6 +27,9 @@ class VisualCatalogTests(unittest.TestCase):
                 "heroSelect",
                 "inLevel",
                 "stageSettings",
+                "settings",
+                "hotkeys",
+                "accessibility",
             ],
             [page.id for page in catalog.pages],
         )
@@ -41,9 +44,19 @@ class VisualCatalogTests(unittest.TestCase):
         self.assertEqual(22, len(catalog.pages[8].anchors))
         self.assertEqual(4, len(catalog.pages[9].anchors))
         self.assertEqual(4, len(catalog.pages[10].anchors))
+        self.assertEqual(18, len(catalog.pages[11].anchors))
+        self.assertEqual(7, len(catalog.pages[12].anchors))
+        self.assertEqual(11, len(catalog.pages[13].anchors))
         self.assertEqual(
             3,
             sum(anchor.page_anchor for anchor in catalog.pages[8].anchors),
+        )
+        self.assertEqual(
+            [5, 6, 5],
+            [
+                sum(anchor.page_anchor for anchor in page.anchors)
+                for page in catalog.pages[11:]
+            ],
         )
         self.assertTrue(all(page.positive_holdout is not None for page in catalog.pages))
 
