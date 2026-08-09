@@ -1123,6 +1123,13 @@ public sealed class ManagedScriptLibraryServiceTests
         Assert.Contains(slots, x => x.SlotId == ManagedScriptSlotIdFactory.CreateGoldBalloonSlotId(GameMapType.MonkeyMeadow));
         Assert.Contains(GameElementCatalog.Maps, x => x.Type == GameMapType.SkullTweak && x.Tier == MapDifficultyTier.Beginner);
         Assert.Contains(slots, x => x.SlotId == ManagedScriptSlotIdFactory.CreateGoldBalloonSlotId(GameMapType.SkullTweak));
+
+        Assert.Contains(GameElementCatalog.Maps, x => x.Type == GameMapType.Ascent && x.Tier == MapDifficultyTier.Advanced);
+        Assert.Contains(slots, x => x.SlotId == ManagedScriptSlotIdFactory.CreateBlackBorderSlotId(
+            GameMapType.Ascent,
+            StageDifficulty.Easy,
+            StageMode.Standard));
+
         Assert.Contains(slots, x => x.SlotId == ManagedScriptSlotIdFactory.CreateBlackBorderSlotId(
             GameMapType.MonkeyMeadow,
             StageDifficulty.Easy,

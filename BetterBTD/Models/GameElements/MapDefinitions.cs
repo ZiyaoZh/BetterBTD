@@ -98,7 +98,8 @@ public enum GameMapType
     MuddyPuddles,
     Ouch,
     TrickyTracks,
-    SkullTweak
+    SkullTweak,
+    Ascent
 }
 
 public enum StageDifficulty
