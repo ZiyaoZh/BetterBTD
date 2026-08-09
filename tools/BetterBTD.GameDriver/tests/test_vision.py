@@ -2,12 +2,18 @@ from pathlib import Path
 import tempfile
 import unittest
 from dataclasses import replace
+from io import BytesIO
 
 from PIL import Image, ImageDraw
 
 from betterbtd_game_driver.evidence import read_evidence
 from betterbtd_game_driver.errors import GameDriverError
-from betterbtd_game_driver.vision import recognize_frame, recognize_image, write_annotation
+from betterbtd_game_driver.vision import (
+    _number_model_signatures,
+    recognize_frame,
+    recognize_image,
+    write_annotation,
+)
 from betterbtd_game_driver.visual_catalog import (
     DEFAULT_CATALOG_PATH,
     VisualCatalog,
@@ -392,6 +398,26 @@ class VisualRecognitionTests(unittest.TestCase):
                 "inLevel.cash": 1516,
                 "inLevel.round": 13,
             },
+            "in-level-monkey-meadow.zh-CN.map-holdout.json": {
+                "inLevel.health": 200,
+                "inLevel.cash": 1700,
+                "inLevel.round": 1,
+            },
+            "in-level-frozen-over.zh-CN.map-holdout.json": {
+                "inLevel.health": 200,
+                "inLevel.cash": 1700,
+                "inLevel.round": 1,
+            },
+            "in-level-midnight-mansion.zh-CN.map-holdout.json": {
+                "inLevel.health": 200,
+                "inLevel.cash": 1700,
+                "inLevel.round": 1,
+            },
+            "in-level-spice-islands.zh-CN.map-holdout.json": {
+                "inLevel.health": 200,
+                "inLevel.cash": 1700,
+                "inLevel.round": 1,
+            },
         }
         for evidence_name, expected_values in cases.items():
             with self.subTest(evidence=evidence_name):
@@ -400,11 +426,182 @@ class VisualRecognitionTests(unittest.TestCase):
                 result, match = recognize_image(evidence, self.catalog)
 
                 self.assertIsNotNone(match)
-                self.assertEqual("inLevel", result["recognition"]["page"]["id"])
+                recognition = result["recognition"]
+                self.assertEqual("inLevel", recognition["page"]["id"])
                 self.assertEqual(
                     expected_values,
-                    _matched_number_values(result["recognition"]["elements"]),
+                    _matched_number_values(recognition["elements"]),
                 )
+                self.assertTrue(
+                    all(
+                        element["number"]["segmentationMode"] == "strictNeutral"
+                        for element in recognition["elements"]
+                        if element["number"] is not None
+                    )
+                )
+                self.assertTrue(
+                    all(
+                        element["number"]["oracleEligible"]
+                        for element in recognition["elements"]
+                        if element["number"] is not None
+                    )
+                )
+                self.assertFalse(
+                    any(
+                        candidate["matched"]
+                        for candidate in recognition["candidates"]
+                        if candidate["id"] != "inLevel"
+                    )
+                )
+                if evidence_name == "in-level-frozen-over.zh-CN.map-holdout.json":
+                    anchors = {
+                        anchor["id"]: anchor for anchor in recognition["page"]["anchors"]
+                    }
+                    self.assertEqual(
+                        0.92,
+                        anchors["inLevel.settingsIcon"]["minimumScore"],
+                    )
+                    self.assertGreaterEqual(
+                        anchors["inLevel.settingsIcon"]["score"],
+                        anchors["inLevel.settingsIcon"]["minimumScore"],
+                    )
+                    self.assertLess(anchors["inLevel.settingsIcon"]["score"], 0.93)
+                    self.assertEqual(
+                        0.90,
+                        anchors["inLevel.sidebarFrame"]["minimumScore"],
+                    )
+                    self.assertGreaterEqual(
+                        anchors["inLevel.sidebarFrame"]["score"],
+                        anchors["inLevel.sidebarFrame"]["minimumScore"],
+                    )
+                    self.assertLess(anchors["inLevel.sidebarFrame"]["score"], 0.93)
+
+    def test_near_white_map_background_is_excluded_before_number_fallback(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            with Image.open(SAMPLE_ROOT / "in-level.zh-CN.holdout.png") as source:
+                modified = source.convert("RGB")
+            draw = ImageDraw.Draw(modified)
+            draw.rectangle((244, 20, 259, 40), fill=(205, 220, 230))
+            metadata_path = write_test_evidence(
+                Path(temporary_directory),
+                "in-level-near-white-background",
+                modified,
+            )
+            evidence = read_evidence(metadata_path)
+
+            result, match = recognize_image(evidence, self.catalog)
+
+        self.assertIsNotNone(match)
+        recognition = result["recognition"]
+        self.assertEqual("inLevel", recognition["page"]["id"])
+        self.assertEqual(
+            {
+                "inLevel.health": 200,
+                "inLevel.cash": 1700,
+                "inLevel.round": 1,
+            },
+            _matched_number_values(recognition["elements"]),
+        )
+        health = _element_by_id(recognition["elements"], "inLevel.health")
+        self.assertEqual("strictNeutral", health["number"]["segmentationMode"])
+
+    def test_strict_and_tolerant_number_disagreement_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            with Image.open(SAMPLE_ROOT / "in-level.zh-CN.holdout.png") as source:
+                modified = source.convert("RGB")
+            model = self.catalog.number_models[0]
+            digit_one = model.glyphs[1]
+            self.assertIsNotNone(digit_one.template_bytes)
+            with Image.open(BytesIO(digit_one.template_bytes)) as template:
+                mask = template.getchannel("A")
+            draw = ImageDraw.Draw(modified)
+            draw.rectangle((210, 31, 220, 50), fill=(0, 0, 0))
+            tinted_digit = Image.new("RGB", mask.size, (205, 215, 225))
+            modified.paste(tinted_digit, (210, 31), mask)
+            metadata_path = write_test_evidence(
+                Path(temporary_directory),
+                "in-level-segmentation-disagreement",
+                modified,
+            )
+            evidence = read_evidence(metadata_path)
+
+            result, match = recognize_image(evidence, self.catalog)
+
+        self.assertIsNotNone(match)
+        health = _element_by_id(result["recognition"]["elements"], "inLevel.health")
+        number = health["number"]
+        self.assertEqual("ambiguous", number["status"])
+        self.assertEqual("segmentationDisagreement", number["reason"])
+        self.assertEqual(200, number["strictNeutralValue"])
+        self.assertEqual(2001, number["channelDeltaValue"])
+        self.assertIsNone(number["value"])
+        self.assertFalse(number["oracleEligible"])
+
+    def test_number_template_signatures_ignore_transparent_rgb(self) -> None:
+        model = self.catalog.number_models[0]
+        expected = _number_model_signatures(model)[0]
+        glyph = model.glyphs[0]
+        self.assertIsNotNone(glyph.template_bytes)
+        with Image.open(BytesIO(glyph.template_bytes)) as source:
+            template = source.convert("RGBA")
+        pixels = template.load()
+        for y in range(template.height):
+            for x in range(template.width):
+                red, green, blue, alpha = pixels[x, y]
+                if alpha == 0:
+                    pixels[x, y] = (255, 255, 255, 0)
+        content = BytesIO()
+        template.save(content, format="PNG")
+        modified_glyph = replace(glyph, template_bytes=content.getvalue())
+        modified_model = replace(
+            model,
+            glyphs=(modified_glyph, *model.glyphs[1:]),
+        )
+
+        actual = _number_model_signatures(modified_model)[0]
+
+        self.assertEqual(expected, actual)
+
+    def test_schema_v3_rgb_number_templates_remain_supported(self) -> None:
+        model = self.catalog.number_models[0]
+        expected = _number_model_signatures(model)
+        legacy_glyphs = []
+        for glyph in model.glyphs:
+            self.assertIsNotNone(glyph.template_bytes)
+            with Image.open(BytesIO(glyph.template_bytes)) as source:
+                alpha = source.convert("RGBA").getchannel("A")
+            template = Image.new("RGB", alpha.size, "black")
+            template.paste(Image.new("RGB", alpha.size, "white"), mask=alpha)
+            content = BytesIO()
+            template.save(content, format="PNG")
+            legacy_glyphs.append(replace(glyph, template_bytes=content.getvalue()))
+        legacy_model = replace(
+            model,
+            glyphs=tuple(legacy_glyphs),
+            uses_binary_alpha_mask=False,
+        )
+
+        actual = _number_model_signatures(legacy_model)
+
+        self.assertEqual(expected, actual)
+
+    def test_number_template_without_alpha_fails_closed(self) -> None:
+        model = self.catalog.number_models[0]
+        glyph = model.glyphs[0]
+        self.assertIsNotNone(glyph.template_bytes)
+        with Image.open(BytesIO(glyph.template_bytes)) as source:
+            template = source.convert("RGB")
+        content = BytesIO()
+        template.save(content, format="PNG")
+        invalid_model = replace(
+            model,
+            glyphs=(replace(glyph, template_bytes=content.getvalue()), *model.glyphs[1:]),
+        )
+
+        with self.assertRaises(GameDriverError) as context:
+            _number_model_signatures(invalid_model)
+
+        self.assertEqual("visualCatalogInvalid", context.exception.code)
 
     def test_real_sandbox_frames_report_exact_independent_numbers(self) -> None:
         cases = {
@@ -585,6 +782,7 @@ class VisualRecognitionTests(unittest.TestCase):
             (2560, 1440),
             (3840, 2160),
         )
+        segmentation_modes: set[str] = set()
         for width, height in sizes:
             with self.subTest(size=(width, height)):
                 with tempfile.TemporaryDirectory() as temporary_directory:
@@ -615,6 +813,11 @@ class VisualRecognitionTests(unittest.TestCase):
                     },
                     _matched_number_values(recognition["elements"]),
                 )
+                segmentation_modes.update(
+                    element["number"]["segmentationMode"]
+                    for element in recognition["elements"]
+                    if element["number"] is not None
+                )
                 if (width, height) == (1280, 720):
                     health = _element_by_id(
                         recognition["elements"],
@@ -631,6 +834,7 @@ class VisualRecognitionTests(unittest.TestCase):
                         },
                         health["number"]["boundsClient"],
                     )
+        self.assertIn("channelDeltaFallback", segmentation_modes)
 
     def test_number_from_non_oracle_evidence_is_diagnostic_only(self) -> None:
         evidence = replace(

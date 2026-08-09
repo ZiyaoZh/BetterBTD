@@ -665,7 +665,11 @@ def _number_model_signatures(
         try:
             with Image.open(BytesIO(glyph.template_bytes)) as source:
                 source.load()
-                glyph_image = source.convert("RGB")
+                glyph_image = (
+                    source.copy()
+                    if model.uses_binary_alpha_mask
+                    else source.convert("RGB")
+                )
         except (OSError, ValueError) as error:
             raise GameDriverError(
                 "visualCatalogInvalid",
@@ -673,7 +677,33 @@ def _number_model_signatures(
                 f"{error}",
                 3,
             ) from error
-        components = _significant_components(glyph_image, model)
+        if model.uses_binary_alpha_mask:
+            if glyph_image.mode != "RGBA":
+                raise GameDriverError(
+                    "visualCatalogInvalid",
+                    f"Number glyph template must use RGBA mode: {model.id} "
+                    f"digit {glyph.digit}.",
+                    3,
+                )
+            alpha = glyph_image.getchannel("A")
+            alpha_values = set(alpha.get_flattened_data())
+            if alpha_values != {0, 255}:
+                raise GameDriverError(
+                    "visualCatalogInvalid",
+                    f"Number glyph template must use a non-empty binary alpha mask: "
+                    f"{model.id} digit {glyph.digit}.",
+                    3,
+                )
+            components = _components_from_foreground(
+                {
+                    (x, y)
+                    for y in range(alpha.height)
+                    for x in range(alpha.width)
+                    if alpha.getpixel((x, y)) == 255
+                }
+            )
+        else:
+            components = _significant_components(glyph_image, model)
         if len(components) != 1:
             raise GameDriverError(
                 "visualCatalogInvalid",
@@ -698,6 +728,62 @@ def _number_model_signatures(
 
 
 def _recognize_number(
+    image: Image.Image,
+    number: VisualNumber,
+    model: VisualNumberModel,
+    signatures: dict[int, NumberGlyphSignature],
+    client_width: int,
+    client_height: int,
+    evidence_oracle_eligible: bool,
+) -> dict[str, object]:
+    strict_model = replace(model, maximum_channel_delta=0)
+    strict_result = _recognize_number_pass(
+        image,
+        number,
+        strict_model,
+        signatures,
+        client_width,
+        client_height,
+        evidence_oracle_eligible,
+    )
+    strict_result["segmentationMode"] = "strictNeutral"
+    if model.maximum_channel_delta == 0:
+        return strict_result
+
+    tolerant_result = _recognize_number_pass(
+        image,
+        number,
+        model,
+        signatures,
+        client_width,
+        client_height,
+        evidence_oracle_eligible,
+    )
+    tolerant_result["segmentationMode"] = "channelDeltaFallback"
+    if strict_result["status"] != "matched":
+        return tolerant_result
+    if tolerant_result["status"] != "matched":
+        return strict_result
+    if strict_result["value"] == tolerant_result["value"]:
+        return strict_result
+
+    strict_value = strict_result["value"]
+    tolerant_value = tolerant_result["value"]
+    strict_result.update(
+        {
+            "status": "ambiguous",
+            "value": None,
+            "text": None,
+            "oracleEligible": False,
+            "reason": "segmentationDisagreement",
+            "strictNeutralValue": strict_value,
+            "channelDeltaValue": tolerant_value,
+        }
+    )
+    return strict_result
+
+
+def _recognize_number_pass(
     image: Image.Image,
     number: VisualNumber,
     model: VisualNumberModel,
@@ -951,6 +1037,12 @@ def _white_components(
         if min(pixels[x, y]) >= model.foreground_minimum
         and max(pixels[x, y]) - min(pixels[x, y]) <= model.maximum_channel_delta
     }
+    return _components_from_foreground(foreground)
+
+
+def _components_from_foreground(
+    foreground: set[tuple[int, int]],
+) -> list[BinaryComponent]:
     components: list[BinaryComponent] = []
     while foreground:
         seed = foreground.pop()

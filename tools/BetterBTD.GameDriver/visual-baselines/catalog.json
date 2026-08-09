@@ -1,7 +1,7 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "catalogId": "btd6-ui-independent",
-  "catalogVersion": 18,
+  "catalogVersion": 19,
   "game": {
     "id": "BloonsTD6",
     "observedProductVersion": "6000.0.58f2 (92dee566b325)",
@@ -35,7 +35,7 @@
           "digit": 0,
           "sourceBounds": { "x": 162, "y": 31, "width": 13, "height": 19 },
           "template": "templates/numbers/btd6-hud-white/digit-0.png",
-          "templateSha256": "0cbfe17415ed69cc0a55ebb07c04f2a064ba0142bfec98e646565f849b1707b0",
+          "templateSha256": "3a8855e5c0808fa2a8ee8f6c09538212934a69ad105a5c4d54800e8839df91c8",
           "sourceEvidence": "samples/sandbox.zh-CN.json",
           "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
           "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
@@ -44,7 +44,7 @@
           "digit": 1,
           "sourceBounds": { "x": 207, "y": 31, "width": 11, "height": 20 },
           "template": "templates/numbers/btd6-hud-white/digit-1.png",
-          "templateSha256": "546fd60d8740cc5854a168ebe43d0052b4debe45e7acebbc159f142cd8857e89",
+          "templateSha256": "ca0a60e91193d02e63184b2ec2da4e103700819543284ffe4119fd4af5fe13ab",
           "sourceEvidence": "samples/sandbox.zh-CN.json",
           "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
           "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
@@ -53,7 +53,7 @@
           "digit": 2,
           "sourceBounds": { "x": 240, "y": 31, "width": 12, "height": 20 },
           "template": "templates/numbers/btd6-hud-white/digit-2.png",
-          "templateSha256": "11330e62f0e2bc8335dd4eb78aae5a300fba35c19f7d13487e14b9075d006e5b",
+          "templateSha256": "1aa03ccc7eb8e4714e24274b9f0fe7674d7c25f331e6c01f7d71a8cbf43bc511",
           "sourceEvidence": "samples/sandbox.zh-CN.json",
           "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
           "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
@@ -62,7 +62,7 @@
           "digit": 3,
           "sourceBounds": { "x": 368, "y": 31, "width": 12, "height": 19 },
           "template": "templates/numbers/btd6-hud-white/digit-3.png",
-          "templateSha256": "7fbf341ecfa74cb3ef737265e6c7e32e550932e93413ffecd4598378cf88caf3",
+          "templateSha256": "8b69b97073bc8d9271c5550a3632e167d59213e131df0a63d7903b442849cf35",
           "sourceEvidence": "samples/sandbox.zh-CN.json",
           "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
           "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
@@ -71,7 +71,7 @@
           "digit": 4,
           "sourceBounds": { "x": 395, "y": 31, "width": 14, "height": 20 },
           "template": "templates/numbers/btd6-hud-white/digit-4.png",
-          "templateSha256": "41b0c9701857339c8fb817de513a22f9571ae9b1dd406fd0361203c99dd5732b",
+          "templateSha256": "00bccca83e79d69e6f6c6cf409df170130616d0aa7daf9fcd8c98bea3292f3c7",
           "sourceEvidence": "samples/sandbox.zh-CN.json",
           "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
           "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
@@ -80,7 +80,7 @@
           "digit": 5,
           "sourceBounds": { "x": 412, "y": 31, "width": 12, "height": 19 },
           "template": "templates/numbers/btd6-hud-white/digit-5.png",
-          "templateSha256": "15792e7be9f4cb63f387e295356ff518df13ae8a442f13df558b7ee7f639b5df",
+          "templateSha256": "82f5d7fe546088ea4ac434edd347da0ec76b468afd82b16ad50eadf11c66c86a",
           "sourceEvidence": "samples/sandbox.zh-CN.json",
           "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
           "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
@@ -89,7 +89,7 @@
           "digit": 6,
           "sourceBounds": { "x": 429, "y": 31, "width": 13, "height": 19 },
           "template": "templates/numbers/btd6-hud-white/digit-6.png",
-          "templateSha256": "a62a1cc83bc38663e94406862554389fba9e772f60d3b7244319551b93c808f1",
+          "templateSha256": "03eb9647a2cfc8b4ec3f1432a303fe2fae254663f963b800cc57b0332f50510d",
           "sourceEvidence": "samples/sandbox.zh-CN.json",
           "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
           "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
@@ -98,7 +98,7 @@
           "digit": 7,
           "sourceBounds": { "x": 456, "y": 31, "width": 12, "height": 19 },
           "template": "templates/numbers/btd6-hud-white/digit-7.png",
-          "templateSha256": "b10c9e3e2006122bd2936899a78414af4b34e5d997a6346223143cfc0c4a02d8",
+          "templateSha256": "56e361dceb5ee6efa172a0c9e9cae10a2012a89f7f27745cb54ec9f5a602f6ad",
           "sourceEvidence": "samples/sandbox.zh-CN.json",
           "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
           "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
@@ -107,7 +107,7 @@
           "digit": 8,
           "sourceBounds": { "x": 473, "y": 31, "width": 13, "height": 19 },
           "template": "templates/numbers/btd6-hud-white/digit-8.png",
-          "templateSha256": "f81d4de71aa967098fba44eff8d84c809a91146cec4902657ee8a3a47543c83f",
+          "templateSha256": "8f9dd05a791333bae196a3826b1e51bc7c5a6fdc391527bc5849f7f33bff1743",
           "sourceEvidence": "samples/sandbox.zh-CN.json",
           "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
           "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
@@ -116,7 +116,7 @@
           "digit": 9,
           "sourceBounds": { "x": 491, "y": 31, "width": 12, "height": 20 },
           "template": "templates/numbers/btd6-hud-white/digit-9.png",
-          "templateSha256": "cb5155267a1f7f1cc5183658a1da2a652a0549b4d3885a4b8bf4ce85ac95bf35",
+          "templateSha256": "269a28c3b3724514056b62b3afcc86e0124d9fa6b4827f2cfbcb1945cee58288",
           "sourceEvidence": "samples/sandbox.zh-CN.json",
           "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
           "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
@@ -10387,7 +10387,7 @@
           },
           "template": "templates/in-level/settings.png",
           "templateSha256": "55dc2ce5277812df8d93bee6b588dec61787e1abf64cca2abd68ecfda791f13b",
-          "minimumScore": 0.93,
+          "minimumScore": 0.92,
           "sourceEvidence": "samples/in-level.zh-CN.json",
           "sourceEvidenceId": "6b55112e34a1441ba073fd298c9735c1",
           "sourceImageSha256": "4e2b40d8ee1ff6598a84e7e8cbf7acbe3fb9380bfb2bf8abf17c04a9d8715076"
@@ -10402,7 +10402,7 @@
           },
           "template": "templates/in-level/sidebar-frame.png",
           "templateSha256": "b4766023bf13d0c1e6863a88076c0fc09a86707d8ef7f0ae69450ae5c131ca92",
-          "minimumScore": 0.93,
+          "minimumScore": 0.9,
           "sourceEvidence": "samples/in-level.zh-CN.json",
           "sourceEvidenceId": "6b55112e34a1441ba073fd298c9735c1",
           "sourceImageSha256": "4e2b40d8ee1ff6598a84e7e8cbf7acbe3fb9380bfb2bf8abf17c04a9d8715076"

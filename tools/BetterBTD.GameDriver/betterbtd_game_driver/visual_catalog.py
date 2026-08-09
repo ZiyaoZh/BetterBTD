@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import hashlib
 import json
+from io import BytesIO
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
+from PIL import Image
 
 from .evidence import EvidenceBundle, read_evidence
 from .errors import GameDriverError
@@ -71,6 +74,7 @@ class VisualNumberModel:
     minimum_component_width: int
     minimum_component_height: int
     glyphs: tuple[VisualNumberGlyph, ...]
+    uses_binary_alpha_mask: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -219,8 +223,8 @@ def _parse_catalog(
 ) -> VisualCatalog:
     root = _object(document, "catalog root")
     schema_version = _integer(root, "schemaVersion")
-    if schema_version not in (1, 2, 3):
-        raise ValueError("schemaVersion must be 1, 2 or 3")
+    if schema_version not in (1, 2, 3, 4):
+        raise ValueError("schemaVersion must be 1, 2, 3 or 4")
 
     catalog_id = _nonempty_string(root, "catalogId")
     catalog_version = _positive_integer(root, "catalogVersion")
@@ -489,6 +493,17 @@ def _parse_number_models(
                         f"number model {model_id} digit {digit} template hash "
                         f"mismatch: expected {template_sha256}, found {actual_sha256}"
                     )
+                if schema_version >= 4:
+                    try:
+                        _validate_number_glyph_alpha_mask(
+                            template_bytes,
+                            minimum_component_width,
+                            minimum_component_height,
+                        )
+                    except ValueError as error:
+                        raise ValueError(
+                            f"number model {model_id} digit {digit} template {error}"
+                        ) from error
 
             source_metadata_path = (
                 catalog_root / Path(_nonempty_string(glyph, "sourceEvidence"))
@@ -549,9 +564,58 @@ def _parse_number_models(
                 minimum_component_width=minimum_component_width,
                 minimum_component_height=minimum_component_height,
                 glyphs=tuple(sorted(glyphs, key=lambda item: item.digit)),
+                uses_binary_alpha_mask=schema_version >= 4,
             )
         )
     return models
+
+
+def _validate_number_glyph_alpha_mask(
+    template_bytes: bytes,
+    minimum_component_width: int,
+    minimum_component_height: int,
+) -> None:
+    try:
+        with Image.open(BytesIO(template_bytes)) as source:
+            source.load()
+            if source.mode != "RGBA":
+                raise ValueError("must use RGBA mode")
+            alpha = source.getchannel("A")
+    except OSError as error:
+        raise ValueError(f"is not a readable PNG: {error}") from error
+
+    alpha_values = set(alpha.get_flattened_data())
+    if alpha_values != {0, 255}:
+        raise ValueError("must use a non-empty binary alpha mask")
+
+    foreground = {
+        (x, y)
+        for y in range(alpha.height)
+        for x in range(alpha.width)
+        if alpha.getpixel((x, y)) == 255
+    }
+    seed = next(iter(foreground))
+    component = {seed}
+    pending = [seed]
+    while pending:
+        x, y = pending.pop()
+        for neighbor_y in range(y - 1, y + 2):
+            for neighbor_x in range(x - 1, x + 2):
+                neighbor = (neighbor_x, neighbor_y)
+                if neighbor in foreground and neighbor not in component:
+                    component.add(neighbor)
+                    pending.append(neighbor)
+    if component != foreground:
+        raise ValueError("must contain one alpha-mask component")
+
+    xs = [point[0] for point in component]
+    ys = [point[1] for point in component]
+    width = max(xs) - min(xs) + 1
+    height = max(ys) - min(ys) + 1
+    if width < minimum_component_width or height < minimum_component_height:
+        raise ValueError(
+            "alpha-mask component is smaller than minimumComponentSize"
+        )
 
 
 def _parse_anchors(

@@ -340,6 +340,14 @@ class ScenarioValidationTests(unittest.TestCase):
         self.assertIn("no anchors", error)
         self.assertIn("positiveHoldout", error)
 
+    def test_game_driver_catalog_schema_v3_remains_supported(self) -> None:
+        catalog = self._game_driver_catalog()
+        catalog["schemaVersion"] = 3
+
+        index = _build_catalog_index(catalog)
+
+        self.assertIn("inLevel.round", index.numeric_elements)
+
     def test_match_groups_count_as_one_page_anchor(self) -> None:
         catalog = self._game_driver_catalog()
         in_level = next(page for page in catalog["pages"] if page["id"] == "inLevel")

@@ -63,7 +63,7 @@ Test API 的 operation 状态、脚本进度、检查点、重试、结果和日
 | `ElementState` | `Equals` | `elementId`, `state` | `PageRecognition`, `ElementVisibility`, `ElementState` |
 | `ElementNumber` | `Equals` / `GreaterThanOrEqual` / `LessThanOrEqual` | `elementId`, `value` | `PageRecognition`, `ElementNumber` |
 
-页面、视口、元素和状态 ID 必须存在于当前 Game Driver catalog，视口必须归属指定页面。`Element Visible` 只接受已有独立可见性 detector 的元素；仅声明几何边界或动作点不够。`ElementNumber` 只接受 role 为 `value` 且带有效 schema v3 `number` 声明的元素；边界、value 角色或 BetterBTD 内部 OCR 都不能单独提供该能力。
+页面、视口、元素和状态 ID 必须存在于当前 Game Driver catalog，视口必须归属指定页面。`Element Visible` 只接受已有独立可见性 detector 的元素；仅声明几何边界或动作点不够。`ElementNumber` 只接受 role 为 `value` 且带有效 schema v3/v4 `number` 声明的元素；边界、value 角色或 BetterBTD 内部 OCR 都不能单独提供该能力。
 
 胜利可表达为 `Page OneOf [victoryPlayerStats, victorySummary]`，失败页为 `defeatSummary`。`assert.all` 中每个 `Eventually` predicate 独立求值，必须在自身 `observationWindow` 内至少由一个 Oracle-eligible 采样满足；不同 predicate 可以引用不同采样，因此能组合执行中回合数与执行后的胜利页面。两个 predicate 表示两者都必须分别发生；互斥页面的“任一”关系必须写成一个 `Page OneOf`。
 
@@ -71,7 +71,7 @@ Test API 的 operation 状态、脚本进度、检查点、重试、结果和日
 
 `assert.neverObserved` 在整个 Act 和 Assert 采样时间线上求值；其准确语义是“按配置的采样间隔未观察到”，不能表述为连续时间上从未出现。任一合格采样命中 predicate 时立即失败；证据损坏、有捕获警告或识别为 `unknown` / `ambiguous` 的采样不能证明负向条件，最终结果必须是 `InfrastructureError`，不得忽略该采样后通过。
 
-当前 `ElementNumber` 支持 `inLevel`、`sandbox` 和 `sandboxTower` 各自的 `health`、`cash`、`round`。数值识别必须返回 `status=matched` 且 `oracleEligible=true` 才可求值；`unknown`、`ambiguous` 或来自非 Oracle 证据的匹配都属于不可求值采样。schema v3 预检会拒绝不完整字形集、非法匹配参数、越出参考空间或元素边界的数值区域，以及带视口 placement 的数值元素，避免把 Game Driver 无法加载的目录误报为能力可用。`defeatSummary.roundReached`、`victorySummary.reward` 等尚未声明独立数值模型的 value 会在场景预检中以“没有独立数值识别”拒绝，编排器不得改用 BetterBTD OCR、脚本进度或日志判定。
+当前 `ElementNumber` 支持 `inLevel`、`sandbox` 和 `sandboxTower` 各自的 `health`、`cash`、`round`。数值识别必须返回 `status=matched` 且 `oracleEligible=true` 才可求值；`unknown`、`ambiguous` 或来自非 Oracle 证据的匹配都属于不可求值采样。schema v3/v4 预检会拒绝不完整字形集、非法匹配参数、越出参考空间或元素边界的数值区域，以及带视口 placement 的数值元素，避免把 Game Driver 无法加载的目录误报为能力可用；Game Driver 自身还会在 schema v4 目录加载时校验字形 alpha mask。`defeatSummary.roundReached`、`victorySummary.reward` 等尚未声明独立数值模型的 value 会在场景预检中以“没有独立数值识别”拒绝，编排器不得改用 BetterBTD OCR、脚本进度或日志判定。
 
 ## 编排状态机
 

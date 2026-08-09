@@ -4,6 +4,8 @@ from pathlib import Path
 import tempfile
 import unittest
 
+from PIL import Image
+
 from betterbtd_game_driver.errors import GameDriverError
 from betterbtd_game_driver.visual_catalog import (
     VisualElement,
@@ -17,8 +19,8 @@ class VisualCatalogTests(unittest.TestCase):
         catalog = load_visual_catalog()
 
         self.assertEqual("btd6-ui-independent", catalog.id)
-        self.assertEqual(3, catalog.schema_version)
-        self.assertEqual(18, catalog.version)
+        self.assertEqual(4, catalog.schema_version)
+        self.assertEqual(19, catalog.version)
         self.assertEqual((1920, 1080), (catalog.reference_width, catalog.reference_height))
         self.assertEqual(
             [
@@ -370,6 +372,35 @@ class VisualCatalogTests(unittest.TestCase):
         self.assertEqual(["testDigits"], [model.id for model in catalog.number_models])
         self.assertEqual(list(range(10)), [glyph.digit for glyph in catalog.number_models[0].glyphs])
         self.assertEqual("testDigits", catalog.pages[0].elements[0].number.model_id)
+
+    def test_schema_v4_requires_valid_number_glyph_alpha_masks(self) -> None:
+        cases = ("RGB", "nonbinary", "multipleComponents")
+        for invalid_kind in cases:
+            with self.subTest(invalid_kind=invalid_kind):
+                with tempfile.TemporaryDirectory() as temporary_directory:
+                    root = Path(temporary_directory)
+                    catalog_path = _write_minimal_catalog(root, schema_version=4)
+                    document = _read_catalog(catalog_path)
+                    template_path = root / "digit-0.png"
+                    if invalid_kind == "RGB":
+                        image = Image.new("RGB", (10, 10), "white")
+                    else:
+                        image = Image.new("RGBA", (10, 10), (0, 0, 0, 0))
+                        alpha = 128 if invalid_kind == "nonbinary" else 255
+                        image.putpixel((1, 1), (255, 255, 255, alpha))
+                        if invalid_kind == "multipleComponents":
+                            image.putpixel((8, 8), (255, 255, 255, 255))
+                    image.save(template_path)
+                    document["numberModels"][0]["glyphs"][0]["templateSha256"] = (
+                        hashlib.sha256(template_path.read_bytes()).hexdigest()
+                    )
+                    _write_catalog(catalog_path, document)
+
+                    with self.assertRaises(GameDriverError) as context:
+                        load_visual_catalog(catalog_path)
+
+                self.assertEqual("visualCatalogInvalid", context.exception.code)
+                self.assertIn("digit 0", context.exception.message)
 
     def test_number_models_require_schema_v3(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -741,7 +772,6 @@ def _write_minimal_catalog(root: Path, *, schema_version: int = 1) -> Path:
     template_path = root / "template.png"
     template_path.write_bytes(b"template")
     template_hash = hashlib.sha256(template_path.read_bytes()).hexdigest()
-    from PIL import Image
     from visual_test_support import write_test_evidence
 
     source_path = write_test_evidence(
@@ -866,11 +896,21 @@ def _write_minimal_catalog(root: Path, *, schema_version: int = 1) -> Path:
                 ],
             }
         ]
-    if schema_version == 3:
+    if schema_version >= 3:
         glyphs = []
         for digit in range(10):
             digit_template_path = root / f"digit-{digit}.png"
-            digit_template_path.write_bytes(f"digit-{digit}".encode("ascii"))
+            if schema_version >= 4:
+                digit_template = Image.new("RGBA", (10, 10), (0, 0, 0, 0))
+                for y in range(2, 8):
+                    for x in range(2, 8):
+                        digit_template.putpixel((x, y), (255, 255, 255, 255))
+            else:
+                digit_template = Image.new("RGB", (10, 10), "black")
+                for y in range(2, 8):
+                    for x in range(2, 8):
+                        digit_template.putpixel((x, y), (255, 255, 255))
+            digit_template.save(digit_template_path)
             glyphs.append(
                 {
                     "digit": digit,

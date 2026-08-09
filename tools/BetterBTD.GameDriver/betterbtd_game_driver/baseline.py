@@ -19,12 +19,17 @@ def build_templates(
     overwrite: bool,
 ) -> dict[str, object]:
     template_sources: list[
-        tuple[VisualAnchor | VisualNumberGlyph, str, dict[str, object]]
+        tuple[
+            VisualAnchor | VisualNumberGlyph,
+            str,
+            dict[str, object],
+            int | None,
+        ]
     ] = []
     for page in catalog.pages:
         for anchor in page.anchors:
             template_sources.append(
-                (anchor, f"Anchor {anchor.id}", {"anchorId": anchor.id})
+                (anchor, f"Anchor {anchor.id}", {"anchorId": anchor.id}, None)
             )
     for model in catalog.number_models:
         for glyph in model.glyphs:
@@ -33,6 +38,11 @@ def build_templates(
                     glyph,
                     f"Number model {model.id} digit {glyph.digit}",
                     {"numberModelId": model.id, "digit": glyph.digit},
+                    (
+                        model.foreground_minimum
+                        if model.uses_binary_alpha_mask
+                        else None
+                    ),
                 )
             )
 
@@ -41,7 +51,12 @@ def build_templates(
     ] = []
     evidence_cache: dict[Path, tuple[EvidenceBundle, Image.Image]] = {}
     try:
-        for template_source, source_label, descriptor in template_sources:
+        for (
+            template_source,
+            source_label,
+            descriptor,
+            number_foreground_minimum,
+        ) in template_sources:
             cached = evidence_cache.get(template_source.source_metadata_path)
             if cached is None:
                 evidence = read_evidence(template_source.source_metadata_path)
@@ -86,6 +101,11 @@ def build_templates(
                     template_source.source_bounds.bottom,
                 )
             )
+            if number_foreground_minimum is not None:
+                template = _number_glyph_mask(
+                    template,
+                    number_foreground_minimum,
+                )
             content = _encode_png(template)
             actual_sha256 = hashlib.sha256(content).hexdigest()
             if actual_sha256 != template_source.template_sha256:
@@ -135,6 +155,22 @@ def _encode_png(image: Image.Image) -> bytes:
     buffer = BytesIO()
     image.save(buffer, format="PNG", optimize=False, compress_level=9)
     return buffer.getvalue()
+
+
+def _number_glyph_mask(
+    image: Image.Image,
+    foreground_minimum: int,
+) -> Image.Image:
+    rgb = image.convert("RGB")
+    source_pixels = rgb.load()
+    masked = Image.new("RGBA", rgb.size, (0, 0, 0, 0))
+    masked_pixels = masked.load()
+    for y in range(rgb.height):
+        for x in range(rgb.width):
+            red, green, blue = source_pixels[x, y]
+            if red == green == blue and red >= foreground_minimum:
+                masked_pixels[x, y] = (255, 255, 255, 255)
+    return masked
 
 
 def _write_template(path: Path, content: bytes, *, overwrite: bool) -> None:

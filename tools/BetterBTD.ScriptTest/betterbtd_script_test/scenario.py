@@ -403,8 +403,8 @@ def _build_catalog_index(catalog: Mapping[str, Any]) -> _CatalogIndex:
     errors: list[str] = []
 
     schema_version = catalog.get("schemaVersion")
-    if schema_version not in (1, 2, 3):
-        errors.append("Game Driver catalog schemaVersion must be 1, 2 or 3")
+    if schema_version not in (1, 2, 3, 4):
+        errors.append("Game Driver catalog schemaVersion must be 1, 2, 3 or 4")
     if catalog.get("catalogId") != "btd6-ui-independent":
         errors.append(
             "Game Driver catalog catalogId must be 'btd6-ui-independent'"
@@ -602,8 +602,8 @@ def _number_model_ids(
     if not isinstance(raw_models, list):
         errors.append("Game Driver catalog numberModels must be an array")
         return frozenset()
-    if raw_models and schema_version != 3:
-        errors.append("Game Driver catalog numberModels require schemaVersion 3")
+    if raw_models and schema_version not in (3, 4):
+        errors.append("Game Driver catalog numberModels require schemaVersion 3 or 4")
 
     seen_model_ids: set[str] = set()
     valid_model_ids: set[str] = set()
@@ -734,8 +734,8 @@ def _valid_number_declaration(
     errors: list[str],
 ) -> bool:
     prefix = f"Game Driver element {element_id!r} number"
-    if schema_version != 3:
-        errors.append(f"{prefix} requires catalog schemaVersion 3")
+    if schema_version not in (3, 4):
+        errors.append(f"{prefix} requires catalog schemaVersion 3 or 4")
         return False
     if element.get("role") != "value":
         errors.append(f"{prefix} requires role 'value'")

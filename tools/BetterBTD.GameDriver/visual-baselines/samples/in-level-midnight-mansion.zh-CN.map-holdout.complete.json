@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "protocol": "evidence-commit-marker-v1",
+  "evidenceId": "97c5dae46b6b4fb4ba7e91b7053b4e3c",
+  "imageSha256": "1b3d82ec9b75664fcd6c4337a4c152188c729784e032aca770915508cc8cf761",
+  "metadataSha256": "b1228ff123d4fb101196254a1833168f9476a9b7b001b2bbdbab611812188550"
+}
