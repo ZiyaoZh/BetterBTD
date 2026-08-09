@@ -1,0 +1,4 @@
+interface:
+  display_name: "BetterBTD Script Test"
+  short_description: "Run black-box BetterBTD script scenarios"
+  default_prompt: "Use $betterbtd-script-test to run a black-box BetterBTD script scenario against real BTD6."

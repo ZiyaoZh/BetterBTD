@@ -145,6 +145,34 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\BetterBTD.ScriptTest\v
 
 正式执行预检应增加 `--check-script-path`。退出码 `0` 表示格式有效且能力满足，`2` 表示场景无效，`3` 表示格式有效但缺少 Oracle 能力。该校验不启动 BetterBTD、不连接 Test API，也不捕获或控制游戏。
 
+## 阶段化编排 CLI
+
+仓库级 [`betterbtd-script-test` Skill](../../.agents/skills/betterbtd-script-test/SKILL.md) 使用 `tools/BetterBTD.ScriptTest/script-test.ps1`，把 Agent 导航与易错的运行时事务分开：
+
+```powershell
+# 在 Arrange 前生成 runId、证据目录和绑定场景哈希的 session.json
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\BetterBTD.ScriptTest\script-test.ps1 `
+  prepare <scenario.json>
+
+# Agent 达到 readyWhen 后，由确定性状态机接管 Act/Assert
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\BetterBTD.ScriptTest\script-test.ps1 `
+  run-act-assert <scenario.json> --run-id <run-id>
+
+# 进程中断后先取消并等待完整 Recover gate
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\BetterBTD.ScriptTest\script-test.ps1 `
+  cancel-and-gate <scenario.json> --run-id <run-id>
+
+# 获得授权并由 Agent 恢复后，独立验证 targetWhen
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\BetterBTD.ScriptTest\script-test.ps1 `
+  verify-recover <scenario.json> --run-id <run-id>
+```
+
+`run-act-assert` 在 execute 前重新运行 Game Driver `catalog` 和新鲜 Arrange 观察，检查 Test API 空闲状态，把该观察的同一窗口句柄交给 BetterBTD 捕获器，然后执行脚本摘要比较与 SHA-256 绑定。execute 后 Game Driver 子进程使用移除凭据变量的环境，且只能执行非激活 `capture` 和 `recognize`。运行器持续保存 `journal.json`，结束时原子写入 `report.json`；异常清理写入 `abort.json`。
+
+退出码 `0` / `1` / `3` 分别表示 `Passed` / `Failed` / 预检或 `InfrastructureError`，但退出码本身不授予输入。只有输出和 session 同时记录 `recoverAuthorized=true` 才能执行第一个 Recover 操作。API 永久失联、终态但按键/租约未释放、或动态门槛超时都保持 `RecoverBlocked`，不得用游戏点击探测。
+
+场景 `result` 只分类被测 Act 与外部断言；Recover 是现场清理状态。`verify-recover` 成功后 session 才从 `Recover` 进入 `Completed`。未达到 `targetWhen` 时保留原报告与 `Recover` 状态，Agent 可继续安全恢复后重试，不伪造或覆盖已完成的断言结果。
+
 协议 v1 的字段和语义冻结。新增可选实现私有数据只能放入 `extensions`，但字段名仍不得包含 Token、Authorization、credential、password、secret、API key 等敏感凭据，也不能保存动态脚本哈希；新增必填字段或改变既有判定语义必须升级 `schemaVersion`。
 
 返回 [开发者文档](README.md) · [BetterBTD Test API](test-api.md) · [独立 BTD6 Game Driver](game-driver.md)

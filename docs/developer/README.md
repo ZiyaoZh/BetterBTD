@@ -13,6 +13,11 @@
 - [脚本测试场景协议](script-test-scenario.md)
 - [新增地图维护流程](map-update-workflow.md)
 
+## Agent Skills
+
+- [`btd6-game-driver`](../../.agents/skills/btd6-game-driver/SKILL.md)：独立观察和操控真实 BTD6，只在 Arrange/Recover 取得输入。
+- [`betterbtd-script-test`](../../.agents/skills/betterbtd-script-test/SKILL.md)：按场景协议编排 Test API 与 Game Driver，生成黑盒证据报告。
+
 ## 内部参考
 
 以下文档记录自动化模块的设计约束和基于 `1920 × 1080` 的识别参数，主要用于维护现有实现：

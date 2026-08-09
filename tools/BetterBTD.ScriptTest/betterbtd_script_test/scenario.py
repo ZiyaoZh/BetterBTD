@@ -256,6 +256,11 @@ def validate_script_summary(
         raise ScenarioValidationError(mismatches)
 
 
+def load_scenario_document(scenario_path: Path | str) -> dict[str, Any]:
+    """Load a scenario with the protocol's strict JSON rules."""
+    return _read_json_object(Path(scenario_path).resolve(), "scenario")
+
+
 def _read_json_object(path: Path, description: str) -> dict[str, Any]:
     try:
         with path.open("r", encoding="utf-8") as stream:

@@ -1,0 +1,4 @@
+interface:
+  display_name: "BTD6 Game Driver"
+  short_description: "Observe and control real BTD6 independently"
+  default_prompt: "Use $btd6-game-driver to independently observe and arrange the real BTD6 window."
