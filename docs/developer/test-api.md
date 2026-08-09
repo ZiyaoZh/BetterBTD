@@ -192,4 +192,4 @@ GET /api/test/v1/operations/logs?operationId=test-...&afterSequence=0&limit=200
 
 常用状态码：`400` 请求或脚本无效，`401` Token 无效，`404` 路由或 operation 不存在，`409` 共享资源忙或状态转换无效，`500` 未预期服务错误。
 
-返回 [开发者文档](README.md) · [独立 BTD6 Game Driver](game-driver.md) · [脚本执行引擎](reference/script-engine.md)
+返回 [开发者文档](README.md) · [独立 BTD6 Game Driver](game-driver.md) · [脚本测试场景协议](script-test-scenario.md) · [脚本执行引擎](reference/script-engine.md)

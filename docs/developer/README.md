@@ -10,6 +10,7 @@
 - [机器人控制 HTTP 协议](robot-control-http-api.md)
 - [BetterBTD Test API](test-api.md)
 - [独立 BTD6 Game Driver](game-driver.md)
+- [脚本测试场景协议](script-test-scenario.md)
 - [新增地图维护流程](map-update-workflow.md)
 
 ## 内部参考

@@ -1,0 +1,97 @@
+{
+  "schema": "betterbtd/script-test-scenario",
+  "schemaVersion": 1,
+  "id": "easy-standard-victory",
+  "description": "Run an Easy Standard script and require independently observed victory without sampled defeat.",
+  "requiredCapabilities": [
+    "PageRecognition",
+    "ViewStateRecognition"
+  ],
+  "script": {
+    "path": "../../../test-scripts/easy-standard-victory.json",
+    "timeoutMs": 600000,
+    "startStepIndex": 0,
+    "intervalStrategy": "InstructionCustom",
+    "commonOperationIntervalMs": 200
+  },
+  "arrange": {
+    "timeoutMs": 120000,
+    "gameState": {
+      "map": "MonkeyMeadow",
+      "difficulty": "Easy",
+      "mode": "Standard",
+      "hero": "Quincy"
+    },
+    "readyWhen": [
+      {
+        "id": "arrange-in-level",
+        "kind": "Page",
+        "operator": "Equals",
+        "pageId": "inLevel"
+      },
+      {
+        "id": "arrange-round-ready",
+        "kind": "ViewState",
+        "operator": "Equals",
+        "pageId": "inLevel",
+        "viewStateId": "inLevel.roundReady"
+      }
+    ]
+  },
+  "act": {
+    "gameDriverInput": "ObserveOnly",
+    "observationIntervalMs": 1000,
+    "expectedTerminalStatus": "Completed"
+  },
+  "assert": {
+    "timeoutMs": 30000,
+    "observationIntervalMs": 500,
+    "all": [
+      {
+        "id": "victory-visible",
+        "quantifier": "Eventually",
+        "observationWindow": "Assert",
+        "kind": "Page",
+        "operator": "OneOf",
+        "pageIds": [
+          "victoryPlayerStats",
+          "victorySummary"
+        ]
+      }
+    ],
+    "neverObserved": [
+      {
+        "id": "defeat-not-observed",
+        "kind": "Page",
+        "operator": "Equals",
+        "pageId": "defeatSummary"
+      }
+    ]
+  },
+  "recover": {
+    "timeoutMs": 120000,
+    "inputGate": {
+      "operationTerminal": true,
+      "inputOwner": "None",
+      "inputControlReleased": true,
+      "canGameDriverRecover": true
+    },
+    "targetWhen": [
+      {
+        "id": "recover-main-menu",
+        "kind": "Page",
+        "operator": "Equals",
+        "pageId": "mainMenu"
+      }
+    ]
+  },
+  "failureArtifacts": {
+    "directory": "artifacts/script-tests/{scenarioId}/{runId}",
+    "gameDriverEvidence": true,
+    "gameDriverRecognitions": true,
+    "gameDriverObservationTrace": true,
+    "gameDriverInputTraces": true,
+    "testApiOperationStatus": true,
+    "testApiLogs": true
+  }
+}

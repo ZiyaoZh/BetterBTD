@@ -1,0 +1,533 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://betterbtd.local/schemas/script-test-scenario-v1.json",
+  "title": "BetterBTD Script Test Scenario v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "schemaVersion",
+    "id",
+    "requiredCapabilities",
+    "script",
+    "arrange",
+    "act",
+    "assert",
+    "recover",
+    "failureArtifacts"
+  ],
+  "properties": {
+    "schema": {
+      "const": "betterbtd/script-test-scenario"
+    },
+    "schemaVersion": {
+      "const": 1
+    },
+    "id": {
+      "$ref": "#/$defs/scenarioId"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000
+    },
+    "requiredCapabilities": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "PageRecognition",
+          "ViewStateRecognition",
+          "ElementVisibility",
+          "ElementState",
+          "ElementNumber"
+        ]
+      }
+    },
+    "script": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "timeoutMs"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "timeoutMs": {
+          "$ref": "#/$defs/operationTimeoutMs"
+        },
+        "startStepIndex": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "intervalStrategy": {
+          "enum": [
+            "InstructionCustom",
+            "CommonOperationInterval"
+          ]
+        },
+        "commonOperationIntervalMs": {
+          "type": "integer",
+          "minimum": 50,
+          "maximum": 1000
+        }
+      }
+    },
+    "arrange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "timeoutMs",
+        "gameState",
+        "readyWhen"
+      ],
+      "properties": {
+        "timeoutMs": {
+          "$ref": "#/$defs/operationTimeoutMs"
+        },
+        "gameState": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "map",
+            "difficulty",
+            "mode",
+            "hero"
+          ],
+          "properties": {
+            "map": {
+              "$ref": "#/$defs/stableName"
+            },
+            "difficulty": {
+              "$ref": "#/$defs/stableName"
+            },
+            "mode": {
+              "$ref": "#/$defs/stableName"
+            },
+            "hero": {
+              "$ref": "#/$defs/stableName"
+            }
+          }
+        },
+        "readyWhen": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/predicate"
+          }
+        }
+      }
+    },
+    "act": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "gameDriverInput",
+        "observationIntervalMs",
+        "expectedTerminalStatus"
+      ],
+      "properties": {
+        "gameDriverInput": {
+          "const": "ObserveOnly"
+        },
+        "observationIntervalMs": {
+          "$ref": "#/$defs/observationIntervalMs"
+        },
+        "expectedTerminalStatus": {
+          "const": "Completed"
+        }
+      }
+    },
+    "assert": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "timeoutMs",
+        "observationIntervalMs",
+        "all",
+        "neverObserved"
+      ],
+      "properties": {
+        "timeoutMs": {
+          "$ref": "#/$defs/operationTimeoutMs"
+        },
+        "observationIntervalMs": {
+          "$ref": "#/$defs/observationIntervalMs"
+        },
+        "all": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/predicate"
+          }
+        },
+        "neverObserved": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/predicate"
+          }
+        }
+      }
+    },
+    "recover": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "timeoutMs",
+        "inputGate",
+        "targetWhen"
+      ],
+      "properties": {
+        "timeoutMs": {
+          "$ref": "#/$defs/operationTimeoutMs"
+        },
+        "inputGate": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "operationTerminal",
+            "inputOwner",
+            "inputControlReleased",
+            "canGameDriverRecover"
+          ],
+          "properties": {
+            "operationTerminal": {
+              "const": true
+            },
+            "inputOwner": {
+              "const": "None"
+            },
+            "inputControlReleased": {
+              "const": true
+            },
+            "canGameDriverRecover": {
+              "const": true
+            }
+          }
+        },
+        "targetWhen": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/predicate"
+          }
+        }
+      }
+    },
+    "failureArtifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "directory",
+        "gameDriverEvidence",
+        "gameDriverRecognitions",
+        "gameDriverObservationTrace",
+        "gameDriverInputTraces",
+        "testApiOperationStatus",
+        "testApiLogs"
+      ],
+      "properties": {
+        "directory": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096,
+          "pattern": "^artifacts/(?:[A-Za-z0-9][A-Za-z0-9._-]*|\\{scenarioId\\}|\\{runId\\})(?:/(?:[A-Za-z0-9][A-Za-z0-9._-]*|\\{scenarioId\\}|\\{runId\\}))*$"
+        },
+        "gameDriverEvidence": {
+          "const": true
+        },
+        "gameDriverRecognitions": {
+          "const": true
+        },
+        "gameDriverObservationTrace": {
+          "const": true
+        },
+        "gameDriverInputTraces": {
+          "const": true
+        },
+        "testApiOperationStatus": {
+          "const": true
+        },
+        "testApiLogs": {
+          "const": true
+        }
+      }
+    },
+    "extensions": {
+      "type": "object"
+    }
+  },
+  "$defs": {
+    "scenarioId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[a-z0-9][a-z0-9._-]*$"
+    },
+    "assertionId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[a-z][A-Za-z0-9._-]*$"
+    },
+    "stableName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z][A-Za-z0-9]*$"
+    },
+    "stableId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^[A-Za-z0-9._-]+$"
+    },
+    "operationTimeoutMs": {
+      "type": "integer",
+      "minimum": 1000,
+      "maximum": 86400000
+    },
+    "observationIntervalMs": {
+      "type": "integer",
+      "minimum": 100,
+      "maximum": 60000
+    },
+    "assertionQuantifier": {
+      "const": "Eventually"
+    },
+    "observationWindow": {
+      "enum": [
+        "ActAndAssert",
+        "Assert"
+      ]
+    },
+    "predicate": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/pageEqualsPredicate"
+        },
+        {
+          "$ref": "#/$defs/pageOneOfPredicate"
+        },
+        {
+          "$ref": "#/$defs/viewStatePredicate"
+        },
+        {
+          "$ref": "#/$defs/elementPredicate"
+        },
+        {
+          "$ref": "#/$defs/elementStatePredicate"
+        },
+        {
+          "$ref": "#/$defs/elementNumberPredicate"
+        }
+      ]
+    },
+    "pageEqualsPredicate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "operator",
+        "pageId"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/assertionId"
+        },
+        "kind": {
+          "const": "Page"
+        },
+        "operator": {
+          "const": "Equals"
+        },
+        "pageId": {
+          "$ref": "#/$defs/stableId"
+        },
+        "quantifier": {
+          "$ref": "#/$defs/assertionQuantifier"
+        },
+        "observationWindow": {
+          "$ref": "#/$defs/observationWindow"
+        }
+      }
+    },
+    "pageOneOfPredicate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "operator",
+        "pageIds"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/assertionId"
+        },
+        "kind": {
+          "const": "Page"
+        },
+        "operator": {
+          "const": "OneOf"
+        },
+        "pageIds": {
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/stableId"
+          }
+        },
+        "quantifier": {
+          "$ref": "#/$defs/assertionQuantifier"
+        },
+        "observationWindow": {
+          "$ref": "#/$defs/observationWindow"
+        }
+      }
+    },
+    "viewStatePredicate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "operator",
+        "pageId",
+        "viewStateId"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/assertionId"
+        },
+        "kind": {
+          "const": "ViewState"
+        },
+        "operator": {
+          "const": "Equals"
+        },
+        "pageId": {
+          "$ref": "#/$defs/stableId"
+        },
+        "viewStateId": {
+          "$ref": "#/$defs/stableId"
+        },
+        "quantifier": {
+          "$ref": "#/$defs/assertionQuantifier"
+        },
+        "observationWindow": {
+          "$ref": "#/$defs/observationWindow"
+        }
+      }
+    },
+    "elementPredicate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "operator",
+        "elementId"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/assertionId"
+        },
+        "kind": {
+          "const": "Element"
+        },
+        "operator": {
+          "const": "Visible"
+        },
+        "elementId": {
+          "$ref": "#/$defs/stableId"
+        },
+        "quantifier": {
+          "$ref": "#/$defs/assertionQuantifier"
+        },
+        "observationWindow": {
+          "$ref": "#/$defs/observationWindow"
+        }
+      }
+    },
+    "elementStatePredicate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "operator",
+        "elementId",
+        "state"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/assertionId"
+        },
+        "kind": {
+          "const": "ElementState"
+        },
+        "operator": {
+          "const": "Equals"
+        },
+        "elementId": {
+          "$ref": "#/$defs/stableId"
+        },
+        "state": {
+          "$ref": "#/$defs/stableName"
+        },
+        "quantifier": {
+          "$ref": "#/$defs/assertionQuantifier"
+        },
+        "observationWindow": {
+          "$ref": "#/$defs/observationWindow"
+        }
+      }
+    },
+    "elementNumberPredicate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "operator",
+        "elementId",
+        "value"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/assertionId"
+        },
+        "kind": {
+          "const": "ElementNumber"
+        },
+        "operator": {
+          "enum": [
+            "Equals",
+            "GreaterThanOrEqual",
+            "LessThanOrEqual"
+          ]
+        },
+        "elementId": {
+          "$ref": "#/$defs/stableId"
+        },
+        "value": {
+          "type": "integer"
+        },
+        "quantifier": {
+          "$ref": "#/$defs/assertionQuantifier"
+        },
+        "observationWindow": {
+          "$ref": "#/$defs/observationWindow"
+        }
+      }
+    }
+  }
+}
