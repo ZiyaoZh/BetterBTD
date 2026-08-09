@@ -9,7 +9,6 @@ import unittest
 
 from betterbtd_script_test.__main__ import main
 from betterbtd_script_test.scenario import (
-    CURRENT_CAPABILITIES,
     ScenarioValidationError,
     _build_catalog_index,
     validate_scenario,
@@ -142,21 +141,34 @@ class ScenarioValidationTests(unittest.TestCase):
 
         self.assertIn("unknown state 'missing'", str(error))
 
-    def test_numeric_predicate_is_valid_but_reports_missing_capability(self) -> None:
+    def test_supported_numeric_predicate_is_valid_and_compatible(self) -> None:
         document = self._numeric_document()
 
         result = self._validate(document)
 
-        self.assertFalse(result.capability_compatible)
-        self.assertEqual(frozenset({"ElementNumber"}), result.missing_capabilities)
+        self.assertTrue(result.capability_compatible)
+        self.assertEqual(frozenset(), result.missing_capabilities)
+
+    def test_unsupported_value_element_is_rejected_as_numeric_oracle(self) -> None:
+        for element_id in (
+            "defeatSummary.roundReached",
+            "victorySummary.reward",
+        ):
+            with self.subTest(element_id=element_id):
+                document = self._numeric_document()
+                document["assert"]["all"][-1]["elementId"] = element_id
+
+                error = self._validate_invalid(document)
+
+                self.assertIn(
+                    f"element {element_id!r} has no independent numeric recognition",
+                    str(error),
+                )
 
     def test_victory_and_round_can_use_independent_observation_windows(self) -> None:
         document = self._numeric_document()
 
-        result = self._validate(
-            document,
-            available_capabilities=(*CURRENT_CAPABILITIES, "ElementNumber"),
-        )
+        result = self._validate(document)
 
         self.assertTrue(result.capability_compatible)
         self.assertEqual(
@@ -328,6 +340,159 @@ class ScenarioValidationTests(unittest.TestCase):
         self.assertIn("no anchors", error)
         self.assertIn("positiveHoldout", error)
 
+    def test_match_groups_count_as_one_page_anchor(self) -> None:
+        catalog = self._game_driver_catalog()
+        in_level = next(page for page in catalog["pages"] if page["id"] == "inLevel")
+        in_level["minimumMatchedAnchors"] = 5
+
+        with self.assertRaises(ScenarioValidationError) as context:
+            _build_catalog_index(catalog)
+
+        self.assertIn("page anchor group count", str(context.exception))
+
+    def test_match_group_requires_page_anchor_and_page_scoped_id(self) -> None:
+        cases = (
+            ("inLevel.healthIcon", "inLevel.healthMode", "requires a page anchor"),
+            ("inLevel.powersAvailable", "sandbox.powersMode", "must start with inLevel."),
+        )
+        for anchor_id, match_group, expected_error in cases:
+            with self.subTest(anchor=anchor_id):
+                catalog = self._game_driver_catalog()
+                in_level = next(
+                    page for page in catalog["pages"] if page["id"] == "inLevel"
+                )
+                anchor = next(
+                    item for item in in_level["anchors"] if item["id"] == anchor_id
+                )
+                anchor["matchGroup"] = match_group
+
+                with self.assertRaises(ScenarioValidationError) as context:
+                    _build_catalog_index(catalog)
+
+                self.assertIn(expected_error, str(context.exception))
+
+    def test_malformed_number_declaration_is_not_indexed(self) -> None:
+        catalog = self._game_driver_catalog()
+        in_level = next(page for page in catalog["pages"] if page["id"] == "inLevel")
+        round_element = next(
+            element
+            for element in in_level["elements"]
+            if element["id"] == "inLevel.round"
+        )
+        round_element["number"]["format"] = "decimal"
+
+        with self.assertRaises(ScenarioValidationError) as context:
+            _build_catalog_index(catalog)
+
+        self.assertIn("number has an invalid format", str(context.exception))
+
+    def test_number_model_requires_all_digit_glyphs(self) -> None:
+        catalog = self._game_driver_catalog()
+        catalog["numberModels"][0]["glyphs"] = []
+
+        with self.assertRaises(ScenarioValidationError) as context:
+            _build_catalog_index(catalog)
+
+        self.assertIn("must contain digits 0 through 9", str(context.exception))
+
+    def test_number_model_rejects_invalid_matching_parameters(self) -> None:
+        cases = (
+            ("minimumScore", 1.01, "invalid minimumScore"),
+            ("minimumMargin", -0.01, "invalid minimumMargin"),
+        )
+        for field, value, expected_error in cases:
+            with self.subTest(field=field):
+                catalog = self._game_driver_catalog()
+                catalog["numberModels"][0][field] = value
+
+                with self.assertRaises(ScenarioValidationError) as context:
+                    _build_catalog_index(catalog)
+
+                self.assertIn(expected_error, str(context.exception))
+
+    def test_number_glyph_requires_provenance_fields(self) -> None:
+        cases = (
+            ("sourceEvidence", "", "invalid sourceEvidence path"),
+            ("sourceEvidenceId", "", "invalid sourceEvidenceId"),
+            ("sourceImageSha256", "invalid", "invalid sourceImageSha256"),
+            ("templateSha256", "invalid", "invalid templateSha256"),
+        )
+        for field, value, expected_error in cases:
+            with self.subTest(field=field):
+                catalog = self._game_driver_catalog()
+                catalog["numberModels"][0]["glyphs"][0][field] = value
+
+                with self.assertRaises(ScenarioValidationError) as context:
+                    _build_catalog_index(catalog)
+
+                self.assertIn(expected_error, str(context.exception))
+
+    def test_number_glyph_source_bounds_must_be_in_reference_space(self) -> None:
+        catalog = self._game_driver_catalog()
+        catalog["numberModels"][0]["glyphs"][0]["sourceBounds"] = {
+            "x": 1915,
+            "y": 0,
+            "width": 10,
+            "height": 10,
+        }
+
+        with self.assertRaises(ScenarioValidationError) as context:
+            _build_catalog_index(catalog)
+
+        self.assertIn("invalid sourceBounds", str(context.exception))
+
+    def test_element_number_bounds_must_be_in_reference_space(self) -> None:
+        catalog = self._game_driver_catalog()
+        round_element = self._catalog_element(catalog, "inLevel", "inLevel.round")
+        round_element["number"]["bounds"] = {
+            "x": 1915,
+            "y": 0,
+            "width": 10,
+            "height": 10,
+        }
+
+        with self.assertRaises(ScenarioValidationError) as context:
+            _build_catalog_index(catalog)
+
+        self.assertIn(
+            "number bounds must be inside the reference space",
+            str(context.exception),
+        )
+
+    def test_element_number_bounds_must_be_inside_element_bounds(self) -> None:
+        catalog = self._game_driver_catalog()
+        round_element = self._catalog_element(catalog, "inLevel", "inLevel.round")
+        round_element["number"]["bounds"] = {
+            "x": 0,
+            "y": 100,
+            "width": 10,
+            "height": 10,
+        }
+
+        with self.assertRaises(ScenarioValidationError) as context:
+            _build_catalog_index(catalog)
+
+        self.assertIn(
+            "number bounds must be inside element bounds",
+            str(context.exception),
+        )
+
+    def test_element_number_does_not_support_placements(self) -> None:
+        catalog = self._game_driver_catalog()
+        round_element = self._catalog_element(catalog, "inLevel", "inLevel.round")
+        round_element["placements"] = [
+            {
+                "viewStateId": "inLevel.roundIdle",
+                "bounds": round_element["bounds"],
+                "anchorIds": [],
+            }
+        ]
+
+        with self.assertRaises(ScenarioValidationError) as context:
+            _build_catalog_index(catalog)
+
+        self.assertIn("number does not support placements", str(context.exception))
+
     def test_duplicate_json_properties_are_rejected(self) -> None:
         source = EXAMPLE_PATH.read_text(encoding="utf-8")
         duplicate = source.replace(
@@ -378,7 +543,7 @@ class ScenarioValidationTests(unittest.TestCase):
             catalog["heroes"],
         )
 
-    def test_cli_uses_distinct_exit_code_for_missing_capability(self) -> None:
+    def test_cli_accepts_supported_numeric_oracle(self) -> None:
         document = self._numeric_document()
         with tempfile.TemporaryDirectory(dir=TOOL_ROOT) as temporary_directory:
             scenario_path = Path(temporary_directory) / "numeric.scenario.json"
@@ -390,11 +555,29 @@ class ScenarioValidationTests(unittest.TestCase):
                 exit_code = main([str(scenario_path)])
 
         response = json.loads(output.getvalue())
-        self.assertEqual(3, exit_code)
+        self.assertEqual(0, exit_code)
         self.assertTrue(response["valid"])
-        self.assertFalse(response["capabilityCompatible"])
-        self.assertEqual(["ElementNumber"], response["missingCapabilities"])
+        self.assertTrue(response["capabilityCompatible"])
+        self.assertEqual([], response["missingCapabilities"])
         self.assertEqual("", errors.getvalue())
+
+    def test_current_catalog_indexes_all_independent_numeric_oracles(self) -> None:
+        index = _build_catalog_index(self._game_driver_catalog())
+
+        self.assertEqual(
+            {
+                "inLevel.health",
+                "inLevel.cash",
+                "inLevel.round",
+                "sandbox.health",
+                "sandbox.cash",
+                "sandbox.round",
+                "sandboxTower.health",
+                "sandboxTower.cash",
+                "sandboxTower.round",
+            },
+            set(index.numeric_elements),
+        )
 
     def _numeric_document(self) -> dict[str, object]:
         document = self._example()
@@ -411,6 +594,28 @@ class ScenarioValidationTests(unittest.TestCase):
             }
         )
         return document
+
+    @staticmethod
+    def _game_driver_catalog() -> dict[str, object]:
+        catalog_path = (
+            REPOSITORY_ROOT
+            / "tools"
+            / "BetterBTD.GameDriver"
+            / "visual-baselines"
+            / "catalog.json"
+        )
+        return json.loads(catalog_path.read_text(encoding="utf-8"))
+
+    @staticmethod
+    def _catalog_element(
+        catalog: dict[str, object],
+        page_id: str,
+        element_id: str,
+    ) -> dict[str, object]:
+        page = next(page for page in catalog["pages"] if page["id"] == page_id)
+        return next(
+            element for element in page["elements"] if element["id"] == element_id
+        )
 
     @staticmethod
     def _enum_members(path: Path, enum_name: str) -> list[str]:

@@ -14,15 +14,24 @@ class BaselineBuildTests(unittest.TestCase):
         with patch("betterbtd_game_driver.baseline._write_template") as write_template:
             result = build_templates(catalog, overwrite=True)
 
-        self.assertEqual(339, len(result["templates"]))
-        self.assertEqual(339, write_template.call_count)
+        self.assertEqual(421, len(result["templates"]))
+        self.assertEqual(421, write_template.call_count)
+        number_templates = [
+            template
+            for template in result["templates"]
+            if template.get("numberModelId") == "btd6HudWhiteDigits"
+        ]
+        self.assertEqual(list(range(10)), [item["digit"] for item in number_templates])
 
     def test_late_validation_failure_writes_no_templates(self) -> None:
         catalog = load_visual_catalog()
-        page = catalog.pages[0]
-        invalid_anchor = replace(page.anchors[-1], template_sha256="0" * 64)
-        invalid_page = replace(page, anchors=(*page.anchors[:-1], invalid_anchor))
-        invalid_catalog = replace(catalog, pages=(invalid_page,))
+        model = catalog.number_models[-1]
+        invalid_glyph = replace(model.glyphs[-1], template_sha256="0" * 64)
+        invalid_model = replace(model, glyphs=(*model.glyphs[:-1], invalid_glyph))
+        invalid_catalog = replace(
+            catalog,
+            number_models=(*catalog.number_models[:-1], invalid_model),
+        )
 
         with patch("betterbtd_game_driver.baseline._write_template") as write_template:
             with self.assertRaises(GameDriverError) as context:

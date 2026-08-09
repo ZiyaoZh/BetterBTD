@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "sandbox.zh-CN.holdout.20260809",
+  "sourceEvidenceId": "b68f35e92f7b4ef08ebdafccd9563bb2",
+  "sourceImageSha256": "d219d5e8a74d561784d90afc75da1e46bba916d8ad1a61cebde9fa11832a3e6c",
+  "pageId": "sandbox",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-09T08:00:00.000Z",
+    "result": "accepted"
+  },
+  "expectedValues": [
+    { "elementId": "sandbox.health", "format": "integer", "value": 345689 },
+    { "elementId": "sandbox.cash", "format": "currency", "value": 9081726 },
+    { "elementId": "sandbox.round", "format": "integer", "value": 57 }
+  ],
+  "notes": [
+    "This independently captured frame was not used to build page or digit templates.",
+    "Health, cash and round all differ from the source values; the temporary plus-five health decoration is outside the declared numeric recognition bounds."
+  ]
+}

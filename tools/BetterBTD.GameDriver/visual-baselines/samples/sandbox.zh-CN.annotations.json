@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "sandbox.zh-CN.20260809",
+  "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+  "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a",
+  "pageId": "sandbox",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-09T08:00:00.000Z",
+    "result": "accepted"
+  },
+  "expectedValues": [
+    { "elementId": "sandbox.health", "format": "integer", "value": 908172 },
+    { "elementId": "sandbox.cash", "format": "currency", "value": 3456789 },
+    { "elementId": "sandbox.round", "format": "integer", "value": 84 }
+  ],
+  "dynamicRegionsExcludedFromPageAnchors": [
+    "sandbox.map",
+    "sandbox.health",
+    "sandbox.cash",
+    "sandbox.round",
+    "sandbox.roundInput",
+    "sandbox.intervalInput",
+    "sandbox.countInput",
+    "sandbox.bloons"
+  ],
+  "notes": [
+    "The source was arranged through the real Sandbox controls and independently recaptured after balloons were cleared.",
+    "All ten HUD digits occur in the health and cash values, allowing deterministic glyph templates to be derived from this single source evidence bundle.",
+    "Page anchors use Sandbox-only control chrome and exclude the map, numeric fields and spawned balloons."
+  ]
+}

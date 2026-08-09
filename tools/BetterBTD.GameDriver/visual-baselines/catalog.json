@@ -1,7 +1,7 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "catalogId": "btd6-ui-independent",
-  "catalogVersion": 16,
+  "catalogVersion": 18,
   "game": {
     "id": "BloonsTD6",
     "observedProductVersion": "6000.0.58f2 (92dee566b325)",
@@ -13,6 +13,117 @@
     "height": 1080,
     "rectangleConvention": "halfOpen"
   },
+  "numberModels": [
+    {
+      "id": "btd6HudWhiteDigits",
+      "minimumScore": 0.75,
+      "minimumMargin": 0.03,
+      "foreground": {
+        "minimumChannel": 175,
+        "maximumChannelDelta": 45
+      },
+      "normalizedSize": {
+        "width": 24,
+        "height": 32
+      },
+      "minimumComponentSize": {
+        "width": 8,
+        "height": 15
+      },
+      "glyphs": [
+        {
+          "digit": 0,
+          "sourceBounds": { "x": 162, "y": 31, "width": 13, "height": 19 },
+          "template": "templates/numbers/btd6-hud-white/digit-0.png",
+          "templateSha256": "0cbfe17415ed69cc0a55ebb07c04f2a064ba0142bfec98e646565f849b1707b0",
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        },
+        {
+          "digit": 1,
+          "sourceBounds": { "x": 207, "y": 31, "width": 11, "height": 20 },
+          "template": "templates/numbers/btd6-hud-white/digit-1.png",
+          "templateSha256": "546fd60d8740cc5854a168ebe43d0052b4debe45e7acebbc159f142cd8857e89",
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        },
+        {
+          "digit": 2,
+          "sourceBounds": { "x": 240, "y": 31, "width": 12, "height": 20 },
+          "template": "templates/numbers/btd6-hud-white/digit-2.png",
+          "templateSha256": "11330e62f0e2bc8335dd4eb78aae5a300fba35c19f7d13487e14b9075d006e5b",
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        },
+        {
+          "digit": 3,
+          "sourceBounds": { "x": 368, "y": 31, "width": 12, "height": 19 },
+          "template": "templates/numbers/btd6-hud-white/digit-3.png",
+          "templateSha256": "7fbf341ecfa74cb3ef737265e6c7e32e550932e93413ffecd4598378cf88caf3",
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        },
+        {
+          "digit": 4,
+          "sourceBounds": { "x": 395, "y": 31, "width": 14, "height": 20 },
+          "template": "templates/numbers/btd6-hud-white/digit-4.png",
+          "templateSha256": "41b0c9701857339c8fb817de513a22f9571ae9b1dd406fd0361203c99dd5732b",
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        },
+        {
+          "digit": 5,
+          "sourceBounds": { "x": 412, "y": 31, "width": 12, "height": 19 },
+          "template": "templates/numbers/btd6-hud-white/digit-5.png",
+          "templateSha256": "15792e7be9f4cb63f387e295356ff518df13ae8a442f13df558b7ee7f639b5df",
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        },
+        {
+          "digit": 6,
+          "sourceBounds": { "x": 429, "y": 31, "width": 13, "height": 19 },
+          "template": "templates/numbers/btd6-hud-white/digit-6.png",
+          "templateSha256": "a62a1cc83bc38663e94406862554389fba9e772f60d3b7244319551b93c808f1",
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        },
+        {
+          "digit": 7,
+          "sourceBounds": { "x": 456, "y": 31, "width": 12, "height": 19 },
+          "template": "templates/numbers/btd6-hud-white/digit-7.png",
+          "templateSha256": "b10c9e3e2006122bd2936899a78414af4b34e5d997a6346223143cfc0c4a02d8",
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        },
+        {
+          "digit": 8,
+          "sourceBounds": { "x": 473, "y": 31, "width": 13, "height": 19 },
+          "template": "templates/numbers/btd6-hud-white/digit-8.png",
+          "templateSha256": "f81d4de71aa967098fba44eff8d84c809a91146cec4902657ee8a3a47543c83f",
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        },
+        {
+          "digit": 9,
+          "sourceBounds": { "x": 491, "y": 31, "width": 12, "height": 20 },
+          "template": "templates/numbers/btd6-hud-white/digit-9.png",
+          "templateSha256": "cb5155267a1f7f1cc5183658a1da2a652a0549b4d3885a4b8bf4ce85ac95bf35",
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        }
+      ]
+    }
+  ],
   "pages": [
     {
       "id": "welcome",
@@ -10215,7 +10326,7 @@
       "id": "inLevel",
       "kind": "page",
       "minimumScore": 0.94,
-      "minimumMatchedAnchors": 3,
+      "minimumMatchedAnchors": 4,
       "positiveHoldout": {
         "evidence": "samples/in-level.zh-CN.holdout.json",
         "evidenceId": "b6fe048cc00b45efb2d57add520d5bf4",
@@ -10312,6 +10423,38 @@
           "sourceImageSha256": "4e2b40d8ee1ff6598a84e7e8cbf7acbe3fb9380bfb2bf8abf17c04a9d8715076"
         },
         {
+          "id": "inLevel.powersAvailable",
+          "bounds": {
+            "x": 1720,
+            "y": 1000,
+            "width": 20,
+            "height": 20
+          },
+          "template": "templates/in-level/powers-available.png",
+          "templateSha256": "5073c86f88ae06235a8a756904c050116de6188ff4c4722fbd9d8226ca66976e",
+          "minimumScore": 0.95,
+          "matchGroup": "inLevel.powersMode",
+          "sourceEvidence": "samples/in-level.zh-CN.json",
+          "sourceEvidenceId": "6b55112e34a1441ba073fd298c9735c1",
+          "sourceImageSha256": "4e2b40d8ee1ff6598a84e7e8cbf7acbe3fb9380bfb2bf8abf17c04a9d8715076"
+        },
+        {
+          "id": "inLevel.powersDisabled",
+          "bounds": {
+            "x": 1720,
+            "y": 1000,
+            "width": 20,
+            "height": 20
+          },
+          "template": "templates/in-level/powers-disabled.png",
+          "templateSha256": "49b170dc0b652e24965966bb61c3cb435ae273d73631b5fa411010531d071689",
+          "minimumScore": 0.95,
+          "matchGroup": "inLevel.powersMode",
+          "sourceEvidence": "samples/in-level-active-round.zh-CN.json",
+          "sourceEvidenceId": "816e6c0243824a859af34b6a049c7d09",
+          "sourceImageSha256": "f574e35b20625bac798530cf4b4db2a9b7d7dc3c6fb5414ad2baf47d059e57df"
+        },
+        {
           "id": "inLevel.startButtonFrame",
           "bounds": {
             "x": 1780,
@@ -10361,12 +10504,19 @@
           "bounds": {
             "x": 35,
             "y": 0,
-            "width": 210,
+            "width": 225,
             "height": 105
           },
           "anchorIds": [
             "inLevel.healthIcon"
-          ]
+          ],
+          "number": {
+            "modelId": "btd6HudWhiteDigits",
+            "format": "integer",
+            "bounds": { "x": 140, "y": 20, "width": 120, "height": 40 },
+            "minimumDigits": 1,
+            "maximumDigits": 7
+          }
         },
         {
           "id": "inLevel.cash",
@@ -10376,16 +10526,30 @@
             "y": 0,
             "width": 300,
             "height": 105
+          },
+          "number": {
+            "modelId": "btd6HudWhiteDigits",
+            "format": "currency",
+            "bounds": { "x": 340, "y": 20, "width": 195, "height": 40 },
+            "minimumDigits": 1,
+            "maximumDigits": 9
           }
         },
         {
           "id": "inLevel.round",
           "role": "value",
           "bounds": {
-            "x": 1435,
+            "x": 1400,
             "y": 0,
-            "width": 125,
+            "width": 160,
             "height": 105
+          },
+          "number": {
+            "modelId": "btd6HudWhiteDigits",
+            "format": "progressCurrent",
+            "bounds": { "x": 1400, "y": 20, "width": 160, "height": 55 },
+            "minimumDigits": 1,
+            "maximumDigits": 3
           }
         },
         {
@@ -14642,6 +14806,2055 @@
                 }
               ]
             }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sandboxIntro",
+      "kind": "modal",
+      "minimumScore": 0.97,
+      "minimumMatchedAnchors": 3,
+      "positiveHoldout": {
+        "evidence": "samples/sandbox-intro.zh-CN.holdout.json",
+        "evidenceId": "99647b5d1b164c32bba7e3cff6774b6b",
+        "imageSha256": "50bd3b376e93b8d8756cc37f2228290325de504a266800818691ff88cef957f9"
+      },
+      "anchors": [
+        {
+          "id": "sandboxIntro.badge",
+          "bounds": {
+            "x": 855,
+            "y": 145,
+            "width": 210,
+            "height": 205
+          },
+          "template": "templates/sandbox-intro/badge.png",
+          "templateSha256": "935c222d8ae34fc2ffaa40af24210612722a9ae5927edaef16b965644a1c0267",
+          "minimumScore": 0.95,
+          "sourceEvidence": "samples/sandbox-intro.zh-CN.json",
+          "sourceEvidenceId": "8b09353cdba54f84a68b149f069cc9e1",
+          "sourceImageSha256": "026f743136547e9646f4124996969caaadf0b14346d5dc952e574a0fa3c094ae"
+        },
+        {
+          "id": "sandboxIntro.bannerLeft",
+          "bounds": {
+            "x": 625,
+            "y": 305,
+            "width": 225,
+            "height": 135
+          },
+          "template": "templates/sandbox-intro/banner-left.png",
+          "templateSha256": "13bff4179a1a3c18c9b038c1650287047c2c006d95e6af8d7908f34e0af9a220",
+          "minimumScore": 0.95,
+          "sourceEvidence": "samples/sandbox-intro.zh-CN.json",
+          "sourceEvidenceId": "8b09353cdba54f84a68b149f069cc9e1",
+          "sourceImageSha256": "026f743136547e9646f4124996969caaadf0b14346d5dc952e574a0fa3c094ae"
+        },
+        {
+          "id": "sandboxIntro.bannerRight",
+          "bounds": {
+            "x": 1070,
+            "y": 305,
+            "width": 225,
+            "height": 135
+          },
+          "template": "templates/sandbox-intro/banner-right.png",
+          "templateSha256": "61be545ad8e032c7f5d68ec398fb5fe1e5d62445c29ed7c566edde0608607974",
+          "minimumScore": 0.95,
+          "sourceEvidence": "samples/sandbox-intro.zh-CN.json",
+          "sourceEvidenceId": "8b09353cdba54f84a68b149f069cc9e1",
+          "sourceImageSha256": "026f743136547e9646f4124996969caaadf0b14346d5dc952e574a0fa3c094ae"
+        },
+        {
+          "id": "sandboxIntro.okButton",
+          "bounds": {
+            "x": 830,
+            "y": 705,
+            "width": 255,
+            "height": 105
+          },
+          "template": "templates/sandbox-intro/ok-button.png",
+          "templateSha256": "86f9deddc70b625c2bd1114f7df54a24bc325682095c505a6f3fd0a144fa66dc",
+          "minimumScore": 0.95,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox-intro.zh-CN.json",
+          "sourceEvidenceId": "8b09353cdba54f84a68b149f069cc9e1",
+          "sourceImageSha256": "026f743136547e9646f4124996969caaadf0b14346d5dc952e574a0fa3c094ae"
+        }
+      ],
+      "elements": [
+        {
+          "id": "sandboxIntro.dialog",
+          "role": "status",
+          "bounds": {
+            "x": 475,
+            "y": 145,
+            "width": 970,
+            "height": 680
+          },
+          "anchorIds": [
+            "sandboxIntro.badge",
+            "sandboxIntro.bannerLeft",
+            "sandboxIntro.bannerRight"
+          ]
+        },
+        {
+          "id": "sandboxIntro.description",
+          "role": "region",
+          "bounds": {
+            "x": 510,
+            "y": 505,
+            "width": 880,
+            "height": 125
+          }
+        },
+        {
+          "id": "sandboxIntro.ok",
+          "role": "button",
+          "bounds": {
+            "x": 820,
+            "y": 700,
+            "width": 280,
+            "height": 115
+          },
+          "actionPoint": {
+            "x": 960,
+            "y": 760
+          },
+          "anchorIds": [
+            "sandboxIntro.okButton"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sandbox",
+      "kind": "page",
+      "minimumScore": 0.96,
+      "minimumMatchedAnchors": 3,
+      "positiveHoldout": {
+        "evidence": "samples/sandbox.zh-CN.holdout.json",
+        "evidenceId": "b68f35e92f7b4ef08ebdafccd9563bb2",
+        "imageSha256": "d219d5e8a74d561784d90afc75da1e46bba916d8ad1a61cebde9fa11832a3e6c"
+      },
+      "anchors": [
+        {
+          "id": "sandbox.sidebarTopEdge",
+          "bounds": {
+            "x": 1642,
+            "y": 0,
+            "width": 30,
+            "height": 205
+          },
+          "template": "templates/sandbox/sidebar-top-edge.png",
+          "templateSha256": "8e19cd5fc11d776511a794bc57773df8318543e5188691e37424d487d622ff61",
+          "minimumScore": 0.95,
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        },
+        {
+          "id": "sandbox.sendRoundButton",
+          "bounds": {
+            "x": 1798,
+            "y": 18,
+            "width": 67,
+            "height": 70
+          },
+          "template": "templates/sandbox/send-round-button.png",
+          "templateSha256": "a37c7bb85eb4bc7139bf50f1402c33843eb6d17c2f860500a8bdbde23ff1f3a0",
+          "minimumScore": 0.95,
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        },
+        {
+          "id": "sandbox.sidebarLowerBody",
+          "bounds": {
+            "x": 1645,
+            "y": 815,
+            "width": 245,
+            "height": 135
+          },
+          "template": "templates/sandbox/sidebar-lower-body.png",
+          "templateSha256": "37301efc4fff679cec354907c8f335fc5ec4955d94086c2a93821f971848354b",
+          "minimumScore": 0.95,
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        },
+        {
+          "id": "sandbox.towerModeButton",
+          "bounds": {
+            "x": 1657,
+            "y": 963,
+            "width": 106,
+            "height": 112
+          },
+          "template": "templates/sandbox/tower-mode-button.png",
+          "templateSha256": "066129145921b443feb42198ce1d3214804e3304cb779ef2097cfc53fd8d6cf8",
+          "minimumScore": 0.95,
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        },
+        {
+          "id": "sandbox.modifierStrip",
+          "bounds": {
+            "x": 1660,
+            "y": 210,
+            "width": 220,
+            "height": 67
+          },
+          "template": "templates/sandbox/modifier-strip.png",
+          "templateSha256": "f441119949204eafb0a56787d54bfff86a52373545390b3151abb6644380d025",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        },
+        {
+          "id": "sandbox.settingsIcon",
+          "bounds": {
+            "x": 1565,
+            "y": 10,
+            "width": 70,
+            "height": 70
+          },
+          "template": "templates/sandbox/settings-icon.png",
+          "templateSha256": "4359dd898290fe2afb52d19e324e0ac5b341dfd0459dec4a33d1b30a2180716e",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        },
+        {
+          "id": "sandbox.roundInputFrame",
+          "bounds": {
+            "x": 1670,
+            "y": 45,
+            "width": 112,
+            "height": 42
+          },
+          "template": "templates/sandbox/round-input-frame.png",
+          "templateSha256": "75686f0eba6c68208da7283df12e38a319ed277ee96bb80ac574e2f8a38da524",
+          "minimumScore": 0.85,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        },
+        {
+          "id": "sandbox.intervalInputFrame",
+          "bounds": {
+            "x": 1785,
+            "y": 104,
+            "width": 86,
+            "height": 38
+          },
+          "template": "templates/sandbox/interval-input-frame.png",
+          "templateSha256": "218ff57cc59d123f4d3a5739556d1f1dcc5bd27985a4360ddf2ebe21d77ee44b",
+          "minimumScore": 0.9,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        },
+        {
+          "id": "sandbox.countInputFrame",
+          "bounds": {
+            "x": 1785,
+            "y": 159,
+            "width": 86,
+            "height": 38
+          },
+          "template": "templates/sandbox/count-input-frame.png",
+          "templateSha256": "b5d0bda4e6aa8b9eabddb8163181f77dac61933044604fc76cbdedf7d4f038c1",
+          "minimumScore": 0.9,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        },
+        {
+          "id": "sandbox.clearBloons",
+          "bounds": {
+            "x": 1565,
+            "y": 785,
+            "width": 75,
+            "height": 75
+          },
+          "template": "templates/sandbox/clear-bloons.png",
+          "templateSha256": "fed5fde6441afbc24019d307d5e717540503a8a1cade3fca401527887ff72751",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        },
+        {
+          "id": "sandbox.clearTowers",
+          "bounds": {
+            "x": 1565,
+            "y": 875,
+            "width": 75,
+            "height": 75
+          },
+          "template": "templates/sandbox/clear-towers.png",
+          "templateSha256": "81a4c7a93c69964326bda01e5f4b0455c262e17f97973643957a39017134e5ed",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        },
+        {
+          "id": "sandbox.powers",
+          "bounds": {
+            "x": 1545,
+            "y": 965,
+            "width": 90,
+            "height": 105
+          },
+          "template": "templates/sandbox/powers.png",
+          "templateSha256": "43b85c9a6cb33b7e702f8fcfe603c949f6b657dcddf532c78d5ce42c46604249",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        },
+        {
+          "id": "sandbox.startFastForward",
+          "bounds": {
+            "x": 1780,
+            "y": 965,
+            "width": 105,
+            "height": 105
+          },
+          "template": "templates/sandbox/start-fast-forward.png",
+          "templateSha256": "f63dfd1c6f2514a332369d3c6bd430feddbbf8b21a80b108ef9561de6721baf7",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        },
+        {
+          "id": "sandbox.modifierCamo",
+          "bounds": {
+            "x": 1660,
+            "y": 210,
+            "width": 65,
+            "height": 67
+          },
+          "template": "templates/sandbox/modifier-camo.png",
+          "templateSha256": "177e83a4ee9d4382503dd4bc90932d5a931ef833fae2a92d982cd2f5aaeeb606",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        },
+        {
+          "id": "sandbox.modifierRegrow",
+          "bounds": {
+            "x": 1735,
+            "y": 210,
+            "width": 65,
+            "height": 67
+          },
+          "template": "templates/sandbox/modifier-regrow.png",
+          "templateSha256": "4af4bf0c21dbbfc70624382a3a973aebb1f63a65166c317af78e8fe4e4bfb674",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        },
+        {
+          "id": "sandbox.modifierFortified",
+          "bounds": {
+            "x": 1810,
+            "y": 210,
+            "width": 65,
+            "height": 67
+          },
+          "template": "templates/sandbox/modifier-fortified.png",
+          "templateSha256": "1604acad3ff91dfb0db9c0beceb11999f6cd2236d4bce9a154766c50b3ebcee0",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        },
+        {
+          "id": "sandbox.bloon.red",
+          "bounds": {
+            "x": 1810,
+            "y": 292,
+            "width": 65,
+            "height": 67
+          },
+          "template": "templates/sandbox/bloon-red.png",
+          "templateSha256": "aa221acfb6aeba22fa35553e9960010823198113a5162b90afeb1ad68186365a",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        },
+        {
+          "id": "sandbox.bloon.blue",
+          "bounds": {
+            "x": 1660,
+            "y": 367,
+            "width": 65,
+            "height": 67
+          },
+          "template": "templates/sandbox/bloon-blue.png",
+          "templateSha256": "826b63221bb3e6f1350a8e65a990dcc82b50de3bdb2dc6ee36a0e56a3a814254",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        },
+        {
+          "id": "sandbox.bloon.green",
+          "bounds": {
+            "x": 1735,
+            "y": 367,
+            "width": 65,
+            "height": 67
+          },
+          "template": "templates/sandbox/bloon-green.png",
+          "templateSha256": "3574b53058bc9b97015bb7f5a6fc8658ad2a0c9410e1506f533241fc6aa23105",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        },
+        {
+          "id": "sandbox.bloon.yellow",
+          "bounds": {
+            "x": 1810,
+            "y": 367,
+            "width": 65,
+            "height": 67
+          },
+          "template": "templates/sandbox/bloon-yellow.png",
+          "templateSha256": "decee43f2421d3879659a9896d3ec7ea21357f8b0528b3f68edd499ce2f4dde3",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        },
+        {
+          "id": "sandbox.bloon.pink",
+          "bounds": {
+            "x": 1660,
+            "y": 442,
+            "width": 65,
+            "height": 67
+          },
+          "template": "templates/sandbox/bloon-pink.png",
+          "templateSha256": "d725ed7efd20deb23038eec3e50a51b8a888bd135e984611fd18ae8cf2ebe06a",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        },
+        {
+          "id": "sandbox.bloon.white",
+          "bounds": {
+            "x": 1735,
+            "y": 442,
+            "width": 65,
+            "height": 67
+          },
+          "template": "templates/sandbox/bloon-white.png",
+          "templateSha256": "49ce2a065d50365dc1d8d138f1370ab4e664ddedb100438faa2118dc678f6bb2",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        },
+        {
+          "id": "sandbox.bloon.black",
+          "bounds": {
+            "x": 1810,
+            "y": 442,
+            "width": 65,
+            "height": 67
+          },
+          "template": "templates/sandbox/bloon-black.png",
+          "templateSha256": "da192cf53150ae812e23681a57acf14ca9fa530907c93570e9977cff5e95f2fd",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        },
+        {
+          "id": "sandbox.bloon.purple",
+          "bounds": {
+            "x": 1660,
+            "y": 517,
+            "width": 65,
+            "height": 67
+          },
+          "template": "templates/sandbox/bloon-purple.png",
+          "templateSha256": "c0f5203c0e8150b479388bc29f0e4ccb3d19a274f37a12c23c828311c05a047c",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        },
+        {
+          "id": "sandbox.bloon.lead",
+          "bounds": {
+            "x": 1735,
+            "y": 517,
+            "width": 65,
+            "height": 67
+          },
+          "template": "templates/sandbox/bloon-lead.png",
+          "templateSha256": "00a400c242766d8984f693cf86f7ec401047ef4ed00d310126f1f375306de032",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        },
+        {
+          "id": "sandbox.bloon.zebra",
+          "bounds": {
+            "x": 1810,
+            "y": 517,
+            "width": 65,
+            "height": 67
+          },
+          "template": "templates/sandbox/bloon-zebra.png",
+          "templateSha256": "b4a552ac7cc906aab31734ea5139f4995afff833530e42e154d5fb54f93250c7",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        },
+        {
+          "id": "sandbox.bloon.rainbow",
+          "bounds": {
+            "x": 1660,
+            "y": 592,
+            "width": 65,
+            "height": 67
+          },
+          "template": "templates/sandbox/bloon-rainbow.png",
+          "templateSha256": "e787a4821d321c73abd78b9c6a223a09d079c50593e78bf653ad3a57a23436ce",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        },
+        {
+          "id": "sandbox.bloon.ceramic",
+          "bounds": {
+            "x": 1735,
+            "y": 592,
+            "width": 65,
+            "height": 67
+          },
+          "template": "templates/sandbox/bloon-ceramic.png",
+          "templateSha256": "3d79fd850e22d60b794c626f783ade5b4f5f74e8efb91436e3a4d9cf60b5d998",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        },
+        {
+          "id": "sandbox.bloon.moab",
+          "bounds": {
+            "x": 1810,
+            "y": 592,
+            "width": 65,
+            "height": 67
+          },
+          "template": "templates/sandbox/bloon-moab.png",
+          "templateSha256": "fb9420bff11695a0503e640642b1493fc191a2ca256cb994ba9c11a58df4a3e0",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        },
+        {
+          "id": "sandbox.bloon.bfb",
+          "bounds": {
+            "x": 1660,
+            "y": 667,
+            "width": 65,
+            "height": 67
+          },
+          "template": "templates/sandbox/bloon-bfb.png",
+          "templateSha256": "91dfa931ce32dbeb533bef25b72d5d5060db7e9b978bff7b58f699f6077a69e8",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        },
+        {
+          "id": "sandbox.bloon.zomg",
+          "bounds": {
+            "x": 1735,
+            "y": 667,
+            "width": 65,
+            "height": 67
+          },
+          "template": "templates/sandbox/bloon-zomg.png",
+          "templateSha256": "529b16e5218fa3034354b267234c0014ec0e714480971751caedf41ec6b289ff",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        },
+        {
+          "id": "sandbox.bloon.ddt",
+          "bounds": {
+            "x": 1810,
+            "y": 667,
+            "width": 65,
+            "height": 67
+          },
+          "template": "templates/sandbox/bloon-ddt.png",
+          "templateSha256": "de2cdf5b9c18829bfb1582cd78ac7963f39b0ac85e37a703cfbdb9f1db344fcf",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        },
+        {
+          "id": "sandbox.bloon.bad",
+          "bounds": {
+            "x": 1660,
+            "y": 742,
+            "width": 65,
+            "height": 67
+          },
+          "template": "templates/sandbox/bloon-bad.png",
+          "templateSha256": "56cfb3f6e4d116a628509f30a5345bc52d77963e467ec8679f19a275e38d096a",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox.zh-CN.json",
+          "sourceEvidenceId": "b73b3418bf1f4d6897b58720d4f7ae59",
+          "sourceImageSha256": "c7c1ad4399dac9748cd0ac8e86baaf1e443486ccf478383801a61df0d588818a"
+        }
+      ],
+      "elements": [
+        {
+          "id": "sandbox.map",
+          "role": "region",
+          "bounds": {
+            "x": 0,
+            "y": 0,
+            "width": 1640,
+            "height": 1080
+          }
+        },
+        {
+          "id": "sandbox.health",
+          "role": "value",
+          "bounds": {
+            "x": 135,
+            "y": 15,
+            "width": 130,
+            "height": 55
+          },
+          "actionPoint": {
+            "x": 200,
+            "y": 45
+          },
+          "number": {
+            "modelId": "btd6HudWhiteDigits",
+            "format": "integer",
+            "bounds": {
+              "x": 140,
+              "y": 25,
+              "width": 120,
+              "height": 35
+            },
+            "minimumDigits": 1,
+            "maximumDigits": 7
+          }
+        },
+        {
+          "id": "sandbox.cash",
+          "role": "value",
+          "bounds": {
+            "x": 335,
+            "y": 15,
+            "width": 205,
+            "height": 55
+          },
+          "actionPoint": {
+            "x": 440,
+            "y": 45
+          },
+          "number": {
+            "modelId": "btd6HudWhiteDigits",
+            "format": "currency",
+            "bounds": {
+              "x": 340,
+              "y": 24,
+              "width": 195,
+              "height": 44
+            },
+            "minimumDigits": 1,
+            "maximumDigits": 9
+          }
+        },
+        {
+          "id": "sandbox.round",
+          "role": "value",
+          "bounds": {
+            "x": 1435,
+            "y": 25,
+            "width": 125,
+            "height": 50
+          },
+          "number": {
+            "modelId": "btd6HudWhiteDigits",
+            "format": "integer",
+            "bounds": {
+              "x": 1495,
+              "y": 30,
+              "width": 65,
+              "height": 45
+            },
+            "minimumDigits": 1,
+            "maximumDigits": 3
+          }
+        },
+        {
+          "id": "sandbox.settings",
+          "role": "button",
+          "bounds": {
+            "x": 1555,
+            "y": 0,
+            "width": 95,
+            "height": 100
+          },
+          "actionPoint": {
+            "x": 1600,
+            "y": 50
+          },
+          "anchorIds": [
+            "sandbox.settingsIcon"
+          ]
+        },
+        {
+          "id": "sandbox.roundControls",
+          "role": "region",
+          "bounds": {
+            "x": 1660,
+            "y": 0,
+            "width": 230,
+            "height": 205
+          },
+          "anchorIds": [
+            "sandbox.sidebarTopEdge"
+          ]
+        },
+        {
+          "id": "sandbox.roundInput",
+          "role": "button",
+          "bounds": {
+            "x": 1670,
+            "y": 45,
+            "width": 112,
+            "height": 42
+          },
+          "actionPoint": {
+            "x": 1728,
+            "y": 67
+          },
+          "anchorIds": [
+            "sandbox.roundInputFrame"
+          ]
+        },
+        {
+          "id": "sandbox.intervalInput",
+          "role": "button",
+          "bounds": {
+            "x": 1785,
+            "y": 104,
+            "width": 86,
+            "height": 38
+          },
+          "actionPoint": {
+            "x": 1828,
+            "y": 123
+          },
+          "anchorIds": [
+            "sandbox.intervalInputFrame"
+          ]
+        },
+        {
+          "id": "sandbox.countInput",
+          "role": "button",
+          "bounds": {
+            "x": 1785,
+            "y": 159,
+            "width": 86,
+            "height": 38
+          },
+          "actionPoint": {
+            "x": 1828,
+            "y": 178
+          },
+          "anchorIds": [
+            "sandbox.countInputFrame"
+          ]
+        },
+        {
+          "id": "sandbox.sendRound",
+          "role": "button",
+          "bounds": {
+            "x": 1790,
+            "y": 10,
+            "width": 85,
+            "height": 85
+          },
+          "actionPoint": {
+            "x": 1830,
+            "y": 52
+          },
+          "anchorIds": [
+            "sandbox.sendRoundButton"
+          ]
+        },
+        {
+          "id": "sandbox.modifiers",
+          "role": "region",
+          "bounds": {
+            "x": 1655,
+            "y": 205,
+            "width": 230,
+            "height": 80
+          },
+          "anchorIds": [
+            "sandbox.modifierStrip"
+          ]
+        },
+        {
+          "id": "sandbox.modifier.camo",
+          "role": "button",
+          "bounds": {
+            "x": 1660,
+            "y": 210,
+            "width": 65,
+            "height": 67
+          },
+          "actionPoint": {
+            "x": 1692,
+            "y": 243
+          },
+          "anchorIds": [
+            "sandbox.modifierCamo"
+          ]
+        },
+        {
+          "id": "sandbox.modifier.regrow",
+          "role": "button",
+          "bounds": {
+            "x": 1735,
+            "y": 210,
+            "width": 65,
+            "height": 67
+          },
+          "actionPoint": {
+            "x": 1767,
+            "y": 243
+          },
+          "anchorIds": [
+            "sandbox.modifierRegrow"
+          ]
+        },
+        {
+          "id": "sandbox.modifier.fortified",
+          "role": "button",
+          "bounds": {
+            "x": 1810,
+            "y": 210,
+            "width": 65,
+            "height": 67
+          },
+          "actionPoint": {
+            "x": 1842,
+            "y": 243
+          },
+          "anchorIds": [
+            "sandbox.modifierFortified"
+          ]
+        },
+        {
+          "id": "sandbox.bloonPalette",
+          "role": "region",
+          "bounds": {
+            "x": 1655,
+            "y": 285,
+            "width": 230,
+            "height": 525
+          }
+        },
+        {
+          "id": "sandbox.clearBloons",
+          "role": "button",
+          "bounds": {
+            "x": 1565,
+            "y": 785,
+            "width": 75,
+            "height": 75
+          },
+          "actionPoint": {
+            "x": 1602,
+            "y": 822
+          },
+          "anchorIds": [
+            "sandbox.clearBloons"
+          ]
+        },
+        {
+          "id": "sandbox.clearTowers",
+          "role": "button",
+          "bounds": {
+            "x": 1565,
+            "y": 875,
+            "width": 75,
+            "height": 75
+          },
+          "actionPoint": {
+            "x": 1602,
+            "y": 912
+          },
+          "anchorIds": [
+            "sandbox.clearTowers"
+          ]
+        },
+        {
+          "id": "sandbox.powers",
+          "role": "button",
+          "bounds": {
+            "x": 1545,
+            "y": 965,
+            "width": 90,
+            "height": 105
+          },
+          "actionPoint": {
+            "x": 1590,
+            "y": 1018
+          },
+          "anchorIds": [
+            "sandbox.powers"
+          ]
+        },
+        {
+          "id": "sandbox.towerMode",
+          "role": "button",
+          "bounds": {
+            "x": 1650,
+            "y": 955,
+            "width": 120,
+            "height": 125
+          },
+          "actionPoint": {
+            "x": 1710,
+            "y": 1020
+          },
+          "anchorIds": [
+            "sandbox.towerModeButton"
+          ]
+        },
+        {
+          "id": "sandbox.startOrFastForward",
+          "role": "button",
+          "bounds": {
+            "x": 1770,
+            "y": 955,
+            "width": 125,
+            "height": 125
+          },
+          "actionPoint": {
+            "x": 1835,
+            "y": 1020
+          },
+          "anchorIds": [
+            "sandbox.startFastForward"
+          ]
+        },
+        {
+          "id": "sandbox.bloon.red",
+          "role": "button",
+          "bounds": {
+            "x": 1810,
+            "y": 292,
+            "width": 65,
+            "height": 67
+          },
+          "actionPoint": {
+            "x": 1842,
+            "y": 325
+          },
+          "anchorIds": [
+            "sandbox.bloon.red"
+          ]
+        },
+        {
+          "id": "sandbox.bloon.blue",
+          "role": "button",
+          "bounds": {
+            "x": 1660,
+            "y": 367,
+            "width": 65,
+            "height": 67
+          },
+          "actionPoint": {
+            "x": 1692,
+            "y": 400
+          },
+          "anchorIds": [
+            "sandbox.bloon.blue"
+          ]
+        },
+        {
+          "id": "sandbox.bloon.green",
+          "role": "button",
+          "bounds": {
+            "x": 1735,
+            "y": 367,
+            "width": 65,
+            "height": 67
+          },
+          "actionPoint": {
+            "x": 1767,
+            "y": 400
+          },
+          "anchorIds": [
+            "sandbox.bloon.green"
+          ]
+        },
+        {
+          "id": "sandbox.bloon.yellow",
+          "role": "button",
+          "bounds": {
+            "x": 1810,
+            "y": 367,
+            "width": 65,
+            "height": 67
+          },
+          "actionPoint": {
+            "x": 1842,
+            "y": 400
+          },
+          "anchorIds": [
+            "sandbox.bloon.yellow"
+          ]
+        },
+        {
+          "id": "sandbox.bloon.pink",
+          "role": "button",
+          "bounds": {
+            "x": 1660,
+            "y": 442,
+            "width": 65,
+            "height": 67
+          },
+          "actionPoint": {
+            "x": 1692,
+            "y": 475
+          },
+          "anchorIds": [
+            "sandbox.bloon.pink"
+          ]
+        },
+        {
+          "id": "sandbox.bloon.white",
+          "role": "button",
+          "bounds": {
+            "x": 1735,
+            "y": 442,
+            "width": 65,
+            "height": 67
+          },
+          "actionPoint": {
+            "x": 1767,
+            "y": 475
+          },
+          "anchorIds": [
+            "sandbox.bloon.white"
+          ]
+        },
+        {
+          "id": "sandbox.bloon.black",
+          "role": "button",
+          "bounds": {
+            "x": 1810,
+            "y": 442,
+            "width": 65,
+            "height": 67
+          },
+          "actionPoint": {
+            "x": 1842,
+            "y": 475
+          },
+          "anchorIds": [
+            "sandbox.bloon.black"
+          ]
+        },
+        {
+          "id": "sandbox.bloon.purple",
+          "role": "button",
+          "bounds": {
+            "x": 1660,
+            "y": 517,
+            "width": 65,
+            "height": 67
+          },
+          "actionPoint": {
+            "x": 1692,
+            "y": 550
+          },
+          "anchorIds": [
+            "sandbox.bloon.purple"
+          ]
+        },
+        {
+          "id": "sandbox.bloon.lead",
+          "role": "button",
+          "bounds": {
+            "x": 1735,
+            "y": 517,
+            "width": 65,
+            "height": 67
+          },
+          "actionPoint": {
+            "x": 1767,
+            "y": 550
+          },
+          "anchorIds": [
+            "sandbox.bloon.lead"
+          ]
+        },
+        {
+          "id": "sandbox.bloon.zebra",
+          "role": "button",
+          "bounds": {
+            "x": 1810,
+            "y": 517,
+            "width": 65,
+            "height": 67
+          },
+          "actionPoint": {
+            "x": 1842,
+            "y": 550
+          },
+          "anchorIds": [
+            "sandbox.bloon.zebra"
+          ]
+        },
+        {
+          "id": "sandbox.bloon.rainbow",
+          "role": "button",
+          "bounds": {
+            "x": 1660,
+            "y": 592,
+            "width": 65,
+            "height": 67
+          },
+          "actionPoint": {
+            "x": 1692,
+            "y": 625
+          },
+          "anchorIds": [
+            "sandbox.bloon.rainbow"
+          ]
+        },
+        {
+          "id": "sandbox.bloon.ceramic",
+          "role": "button",
+          "bounds": {
+            "x": 1735,
+            "y": 592,
+            "width": 65,
+            "height": 67
+          },
+          "actionPoint": {
+            "x": 1767,
+            "y": 625
+          },
+          "anchorIds": [
+            "sandbox.bloon.ceramic"
+          ]
+        },
+        {
+          "id": "sandbox.bloon.moab",
+          "role": "button",
+          "bounds": {
+            "x": 1810,
+            "y": 592,
+            "width": 65,
+            "height": 67
+          },
+          "actionPoint": {
+            "x": 1842,
+            "y": 625
+          },
+          "anchorIds": [
+            "sandbox.bloon.moab"
+          ]
+        },
+        {
+          "id": "sandbox.bloon.bfb",
+          "role": "button",
+          "bounds": {
+            "x": 1660,
+            "y": 667,
+            "width": 65,
+            "height": 67
+          },
+          "actionPoint": {
+            "x": 1692,
+            "y": 700
+          },
+          "anchorIds": [
+            "sandbox.bloon.bfb"
+          ]
+        },
+        {
+          "id": "sandbox.bloon.zomg",
+          "role": "button",
+          "bounds": {
+            "x": 1735,
+            "y": 667,
+            "width": 65,
+            "height": 67
+          },
+          "actionPoint": {
+            "x": 1767,
+            "y": 700
+          },
+          "anchorIds": [
+            "sandbox.bloon.zomg"
+          ]
+        },
+        {
+          "id": "sandbox.bloon.ddt",
+          "role": "button",
+          "bounds": {
+            "x": 1810,
+            "y": 667,
+            "width": 65,
+            "height": 67
+          },
+          "actionPoint": {
+            "x": 1842,
+            "y": 700
+          },
+          "anchorIds": [
+            "sandbox.bloon.ddt"
+          ]
+        },
+        {
+          "id": "sandbox.bloon.bad",
+          "role": "button",
+          "bounds": {
+            "x": 1660,
+            "y": 742,
+            "width": 65,
+            "height": 67
+          },
+          "actionPoint": {
+            "x": 1692,
+            "y": 775
+          },
+          "anchorIds": [
+            "sandbox.bloon.bad"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sandboxTower",
+      "kind": "page",
+      "minimumScore": 0.96,
+      "minimumMatchedAnchors": 6,
+      "positiveHoldout": {
+        "evidence": "samples/sandbox-tower.zh-CN.holdout.json",
+        "evidenceId": "80c5deedd6e64b60a33774c125ec1560",
+        "imageSha256": "bf04ffdf889eddf78cae7aa5c19b71b1273855e9311594fadc9f5000587754f5"
+      },
+      "anchors": [
+        {
+          "id": "sandboxTower.settingsIcon",
+          "bounds": { "x": 1565, "y": 10, "width": 70, "height": 70 },
+          "template": "templates/sandbox-tower/settings-icon.png",
+          "templateSha256": "ccae793439996a1fe949ef144b05e8b7269ff7362d7bec83b5c18080b424d0f1",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/sandbox-tower.zh-CN.json",
+          "sourceEvidenceId": "1e152ae6e62643e591348a6d5c80c255",
+          "sourceImageSha256": "b6b749cb7f7bf0a5cee03eace8688851048ef17ebbe77ccaff21b1f9a490dde5"
+        },
+        {
+          "id": "sandboxTower.sidebarFrame",
+          "bounds": { "x": 1638, "y": 145, "width": 20, "height": 760 },
+          "template": "templates/sandbox-tower/sidebar-frame.png",
+          "templateSha256": "b3311ea83f007c41bb2b04b350b8537d1378762dc9bf374703ed9008101aa974",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/sandbox-tower.zh-CN.json",
+          "sourceEvidenceId": "1e152ae6e62643e591348a6d5c80c255",
+          "sourceImageSha256": "b6b749cb7f7bf0a5cee03eace8688851048ef17ebbe77ccaff21b1f9a490dde5"
+        },
+        {
+          "id": "sandboxTower.sidebarRightFrame",
+          "bounds": { "x": 1890, "y": 145, "width": 30, "height": 760 },
+          "template": "templates/sandbox-tower/sidebar-right-frame.png",
+          "templateSha256": "932d0574fa3d1d776c2edd2a915aa33ed159770e75f4e39215be4f7b5fde02eb",
+          "minimumScore": 0.93,
+          "sourceEvidence": "samples/sandbox-tower.zh-CN.json",
+          "sourceEvidenceId": "1e152ae6e62643e591348a6d5c80c255",
+          "sourceImageSha256": "b6b749cb7f7bf0a5cee03eace8688851048ef17ebbe77ccaff21b1f9a490dde5"
+        },
+        {
+          "id": "sandboxTower.bloonModeButton",
+          "bounds": { "x": 1657, "y": 963, "width": 106, "height": 112 },
+          "template": "templates/sandbox-tower/bloon-mode-button.png",
+          "templateSha256": "c5dbfbb5716993caa81dce0b6d598344caf5141267d1a1927fe2c72d91d73c45",
+          "minimumScore": 0.95,
+          "sourceEvidence": "samples/sandbox-tower.zh-CN.json",
+          "sourceEvidenceId": "1e152ae6e62643e591348a6d5c80c255",
+          "sourceImageSha256": "b6b749cb7f7bf0a5cee03eace8688851048ef17ebbe77ccaff21b1f9a490dde5"
+        },
+        {
+          "id": "sandboxTower.bloonModeIconUpper",
+          "bounds": { "x": 1680, "y": 980, "width": 60, "height": 30 },
+          "template": "templates/sandbox-tower/bloon-mode-icon-upper.png",
+          "templateSha256": "29f0d630da4cedeb71edc32f9ffb85221fdd8932741cb5dc2031d0d40fbdfd70",
+          "minimumScore": 0.95,
+          "sourceEvidence": "samples/sandbox-tower.zh-CN.json",
+          "sourceEvidenceId": "1e152ae6e62643e591348a6d5c80c255",
+          "sourceImageSha256": "b6b749cb7f7bf0a5cee03eace8688851048ef17ebbe77ccaff21b1f9a490dde5"
+        },
+        {
+          "id": "sandboxTower.bloonModeIconLower",
+          "bounds": { "x": 1680, "y": 1015, "width": 60, "height": 40 },
+          "template": "templates/sandbox-tower/bloon-mode-icon-lower.png",
+          "templateSha256": "0425c32204e0771209c3c0005bf5fb38ad8c15b43a0e10a23a92999161af5bc1",
+          "minimumScore": 0.95,
+          "sourceEvidence": "samples/sandbox-tower.zh-CN.json",
+          "sourceEvidenceId": "1e152ae6e62643e591348a6d5c80c255",
+          "sourceImageSha256": "b6b749cb7f7bf0a5cee03eace8688851048ef17ebbe77ccaff21b1f9a490dde5"
+        },
+        {
+          "id": "sandboxTower.fastForwardButton",
+          "bounds": { "x": 1780, "y": 965, "width": 105, "height": 105 },
+          "template": "templates/sandbox-tower/fast-forward-button.png",
+          "templateSha256": "f63dfd1c6f2514a332369d3c6bd430feddbbf8b21a80b108ef9561de6721baf7",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox-tower.zh-CN.json",
+          "sourceEvidenceId": "1e152ae6e62643e591348a6d5c80c255",
+          "sourceImageSha256": "b6b749cb7f7bf0a5cee03eace8688851048ef17ebbe77ccaff21b1f9a490dde5"
+        },
+        {
+          "id": "sandboxTower.heroSlotFrame",
+          "bounds": { "x": 1657, "y": 156, "width": 10, "height": 130 },
+          "template": "templates/sandbox-tower/hero-slot-frame.png",
+          "templateSha256": "962a3bb13f224c583eed7ebf5fc7a5105dcc9d838c4ebde265703fc7971769af",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox-tower.zh-CN.json",
+          "sourceEvidenceId": "1e152ae6e62643e591348a6d5c80c255",
+          "sourceImageSha256": "b6b749cb7f7bf0a5cee03eace8688851048ef17ebbe77ccaff21b1f9a490dde5"
+        },
+        {
+          "id": "sandboxTower.dartMonkeyIcon",
+          "bounds": { "x": 1775, "y": 160, "width": 102, "height": 85 },
+          "template": "templates/sandbox-tower/dart-monkey.png",
+          "templateSha256": "bfe5ed2e8650094b626548f36f1ef3f42ef131ef4018724a335db014dd9a6e06",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox-tower.zh-CN.json",
+          "sourceEvidenceId": "1e152ae6e62643e591348a6d5c80c255",
+          "sourceImageSha256": "b6b749cb7f7bf0a5cee03eace8688851048ef17ebbe77ccaff21b1f9a490dde5"
+        },
+        {
+          "id": "sandboxTower.boomerangMonkeyIcon",
+          "bounds": { "x": 1660, "y": 296, "width": 102, "height": 85 },
+          "template": "templates/sandbox-tower/boomerang-monkey.png",
+          "templateSha256": "235ca436212dd6b3e92c90bdd896c4cdfea0e72817274b20dedfd308f24db50a",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox-tower.zh-CN.json",
+          "sourceEvidenceId": "1e152ae6e62643e591348a6d5c80c255",
+          "sourceImageSha256": "b6b749cb7f7bf0a5cee03eace8688851048ef17ebbe77ccaff21b1f9a490dde5"
+        },
+        {
+          "id": "sandboxTower.bombShooterIcon",
+          "bounds": { "x": 1775, "y": 296, "width": 102, "height": 85 },
+          "template": "templates/sandbox-tower/bomb-shooter.png",
+          "templateSha256": "53d2d1a319f760f16d166c2831a6d90508396b75fa523c80f46721951f6f7542",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox-tower.zh-CN.json",
+          "sourceEvidenceId": "1e152ae6e62643e591348a6d5c80c255",
+          "sourceImageSha256": "b6b749cb7f7bf0a5cee03eace8688851048ef17ebbe77ccaff21b1f9a490dde5"
+        },
+        {
+          "id": "sandboxTower.tackShooterIcon",
+          "bounds": { "x": 1660, "y": 430, "width": 102, "height": 85 },
+          "template": "templates/sandbox-tower/tack-shooter.png",
+          "templateSha256": "0dc1e84e4bcfbbe8b4d9d8adb147e00b576834aae26add3eedea0a7e60362795",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox-tower.zh-CN.json",
+          "sourceEvidenceId": "1e152ae6e62643e591348a6d5c80c255",
+          "sourceImageSha256": "b6b749cb7f7bf0a5cee03eace8688851048ef17ebbe77ccaff21b1f9a490dde5"
+        },
+        {
+          "id": "sandboxTower.iceMonkeyIcon",
+          "bounds": { "x": 1775, "y": 430, "width": 102, "height": 85 },
+          "template": "templates/sandbox-tower/ice-monkey.png",
+          "templateSha256": "0ba4d6c60ad8d73a600e226b1adff3bd90bda2fe48919569183706920b24dbfb",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox-tower.zh-CN.json",
+          "sourceEvidenceId": "1e152ae6e62643e591348a6d5c80c255",
+          "sourceImageSha256": "b6b749cb7f7bf0a5cee03eace8688851048ef17ebbe77ccaff21b1f9a490dde5"
+        },
+        {
+          "id": "sandboxTower.glueGunnerIcon",
+          "bounds": { "x": 1660, "y": 565, "width": 102, "height": 85 },
+          "template": "templates/sandbox-tower/glue-gunner.png",
+          "templateSha256": "bf0c0733bcc63295c79e45d9241805286d5e1d419a9f2e2b88fba8d5de737398",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox-tower.zh-CN.json",
+          "sourceEvidenceId": "1e152ae6e62643e591348a6d5c80c255",
+          "sourceImageSha256": "b6b749cb7f7bf0a5cee03eace8688851048ef17ebbe77ccaff21b1f9a490dde5"
+        },
+        {
+          "id": "sandboxTower.sniperMonkeyIcon",
+          "bounds": { "x": 1775, "y": 565, "width": 102, "height": 85 },
+          "template": "templates/sandbox-tower/sniper-monkey.png",
+          "templateSha256": "8c93f75c705fc200cda38d698b4cd8b503967ae7a3721257a4a70cc68303546b",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox-tower.zh-CN.json",
+          "sourceEvidenceId": "1e152ae6e62643e591348a6d5c80c255",
+          "sourceImageSha256": "b6b749cb7f7bf0a5cee03eace8688851048ef17ebbe77ccaff21b1f9a490dde5"
+        },
+        {
+          "id": "sandboxTower.monkeySubIcon",
+          "bounds": { "x": 1660, "y": 700, "width": 102, "height": 85 },
+          "template": "templates/sandbox-tower/monkey-sub.png",
+          "templateSha256": "8b92a75338bcffd7c69b0298b5901ac8c87a00127687864191bc00947a7baf51",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox-tower.zh-CN.json",
+          "sourceEvidenceId": "1e152ae6e62643e591348a6d5c80c255",
+          "sourceImageSha256": "b6b749cb7f7bf0a5cee03eace8688851048ef17ebbe77ccaff21b1f9a490dde5"
+        },
+        {
+          "id": "sandboxTower.monkeyBuccaneerIcon",
+          "bounds": { "x": 1775, "y": 700, "width": 102, "height": 85 },
+          "template": "templates/sandbox-tower/monkey-buccaneer.png",
+          "templateSha256": "3e302402cd36067ef6c9202da4686827f04476e2bee95ede1e0868ce476cdaa0",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox-tower.zh-CN.json",
+          "sourceEvidenceId": "1e152ae6e62643e591348a6d5c80c255",
+          "sourceImageSha256": "b6b749cb7f7bf0a5cee03eace8688851048ef17ebbe77ccaff21b1f9a490dde5"
+        },
+        {
+          "id": "sandboxTower.monkeyAceIcon",
+          "bounds": { "x": 1660, "y": 834, "width": 102, "height": 85 },
+          "template": "templates/sandbox-tower/monkey-ace.png",
+          "templateSha256": "ae8cdc5a6d5d3419882f16e927fc3e82c9c2511e80faea79c168aee612252a3f",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox-tower.zh-CN.json",
+          "sourceEvidenceId": "1e152ae6e62643e591348a6d5c80c255",
+          "sourceImageSha256": "b6b749cb7f7bf0a5cee03eace8688851048ef17ebbe77ccaff21b1f9a490dde5"
+        },
+        {
+          "id": "sandboxTower.heliPilotIcon",
+          "bounds": { "x": 1775, "y": 834, "width": 102, "height": 85 },
+          "template": "templates/sandbox-tower/heli-pilot.png",
+          "templateSha256": "1ec007e1985afe682d080c611b95b4d056f6ff3d9889788b2ccbffdf859a3d85",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox-tower.zh-CN.json",
+          "sourceEvidenceId": "1e152ae6e62643e591348a6d5c80c255",
+          "sourceImageSha256": "b6b749cb7f7bf0a5cee03eace8688851048ef17ebbe77ccaff21b1f9a490dde5"
+        }
+      ],
+      "elements": [
+        {
+          "id": "sandboxTower.map",
+          "role": "region",
+          "bounds": { "x": 0, "y": 0, "width": 1640, "height": 1080 }
+        },
+        {
+          "id": "sandboxTower.health",
+          "role": "value",
+          "bounds": { "x": 135, "y": 15, "width": 130, "height": 55 },
+          "actionPoint": { "x": 200, "y": 45 },
+          "number": {
+            "modelId": "btd6HudWhiteDigits",
+            "format": "integer",
+            "bounds": { "x": 140, "y": 25, "width": 120, "height": 35 },
+            "minimumDigits": 1,
+            "maximumDigits": 7
+          }
+        },
+        {
+          "id": "sandboxTower.cash",
+          "role": "value",
+          "bounds": { "x": 335, "y": 15, "width": 205, "height": 55 },
+          "actionPoint": { "x": 440, "y": 45 },
+          "number": {
+            "modelId": "btd6HudWhiteDigits",
+            "format": "currency",
+            "bounds": { "x": 340, "y": 24, "width": 195, "height": 44 },
+            "minimumDigits": 1,
+            "maximumDigits": 9
+          }
+        },
+        {
+          "id": "sandboxTower.round",
+          "role": "value",
+          "bounds": { "x": 1435, "y": 25, "width": 125, "height": 50 },
+          "number": {
+            "modelId": "btd6HudWhiteDigits",
+            "format": "integer",
+            "bounds": { "x": 1495, "y": 30, "width": 65, "height": 45 },
+            "minimumDigits": 1,
+            "maximumDigits": 3
+          }
+        },
+        {
+          "id": "sandboxTower.settings",
+          "role": "button",
+          "bounds": { "x": 1555, "y": 0, "width": 95, "height": 100 },
+          "actionPoint": { "x": 1600, "y": 50 },
+          "anchorIds": ["sandboxTower.settingsIcon"]
+        },
+        {
+          "id": "sandboxTower.upgradeHeader",
+          "role": "status",
+          "bounds": { "x": 1660, "y": 10, "width": 215, "height": 65 }
+        },
+        {
+          "id": "sandboxTower.selectedHeroName",
+          "role": "status",
+          "bounds": { "x": 1660, "y": 85, "width": 215, "height": 55 }
+        },
+        {
+          "id": "sandboxTower.towerInventory",
+          "role": "region",
+          "bounds": { "x": 1650, "y": 145, "width": 240, "height": 810 },
+          "anchorIds": ["sandboxTower.sidebarFrame"]
+        },
+        {
+          "id": "sandboxTower.heroSlot",
+          "role": "button",
+          "bounds": { "x": 1655, "y": 155, "width": 115, "height": 132 },
+          "actionPoint": { "x": 1710, "y": 220 },
+          "anchorIds": ["sandboxTower.heroSlotFrame"]
+        },
+        {
+          "id": "sandboxTower.dartMonkey",
+          "role": "button",
+          "bounds": { "x": 1770, "y": 155, "width": 115, "height": 132 },
+          "actionPoint": { "x": 1825, "y": 220 },
+          "anchorIds": ["sandboxTower.dartMonkeyIcon"]
+        },
+        {
+          "id": "sandboxTower.boomerangMonkey",
+          "role": "button",
+          "bounds": { "x": 1655, "y": 295, "width": 115, "height": 128 },
+          "actionPoint": { "x": 1710, "y": 355 },
+          "anchorIds": ["sandboxTower.boomerangMonkeyIcon"]
+        },
+        {
+          "id": "sandboxTower.bombShooter",
+          "role": "button",
+          "bounds": { "x": 1770, "y": 295, "width": 115, "height": 128 },
+          "actionPoint": { "x": 1825, "y": 355 },
+          "anchorIds": ["sandboxTower.bombShooterIcon"]
+        },
+        {
+          "id": "sandboxTower.tackShooter",
+          "role": "button",
+          "bounds": { "x": 1655, "y": 430, "width": 115, "height": 128 },
+          "actionPoint": { "x": 1710, "y": 490 },
+          "anchorIds": ["sandboxTower.tackShooterIcon"]
+        },
+        {
+          "id": "sandboxTower.iceMonkey",
+          "role": "button",
+          "bounds": { "x": 1770, "y": 430, "width": 115, "height": 128 },
+          "actionPoint": { "x": 1825, "y": 490 },
+          "anchorIds": ["sandboxTower.iceMonkeyIcon"]
+        },
+        {
+          "id": "sandboxTower.glueGunner",
+          "role": "button",
+          "bounds": { "x": 1655, "y": 565, "width": 115, "height": 128 },
+          "actionPoint": { "x": 1710, "y": 625 },
+          "anchorIds": ["sandboxTower.glueGunnerIcon"]
+        },
+        {
+          "id": "sandboxTower.sniperMonkey",
+          "role": "button",
+          "bounds": { "x": 1770, "y": 565, "width": 115, "height": 128 },
+          "actionPoint": { "x": 1825, "y": 625 },
+          "anchorIds": ["sandboxTower.sniperMonkeyIcon"]
+        },
+        {
+          "id": "sandboxTower.monkeySub",
+          "role": "button",
+          "bounds": { "x": 1655, "y": 700, "width": 115, "height": 128 },
+          "actionPoint": { "x": 1710, "y": 760 },
+          "anchorIds": ["sandboxTower.monkeySubIcon"]
+        },
+        {
+          "id": "sandboxTower.monkeyBuccaneer",
+          "role": "button",
+          "bounds": { "x": 1770, "y": 700, "width": 115, "height": 128 },
+          "actionPoint": { "x": 1825, "y": 760 },
+          "anchorIds": ["sandboxTower.monkeyBuccaneerIcon"]
+        },
+        {
+          "id": "sandboxTower.monkeyAce",
+          "role": "button",
+          "bounds": { "x": 1655, "y": 830, "width": 115, "height": 125 },
+          "actionPoint": { "x": 1710, "y": 890 },
+          "anchorIds": ["sandboxTower.monkeyAceIcon"]
+        },
+        {
+          "id": "sandboxTower.heliPilot",
+          "role": "button",
+          "bounds": { "x": 1770, "y": 830, "width": 115, "height": 125 },
+          "actionPoint": { "x": 1825, "y": 890 },
+          "anchorIds": ["sandboxTower.heliPilotIcon"]
+        },
+        {
+          "id": "sandboxTower.bloonMode",
+          "role": "button",
+          "bounds": { "x": 1650, "y": 955, "width": 125, "height": 125 },
+          "actionPoint": { "x": 1710, "y": 1020 },
+          "anchorIds": ["sandboxTower.bloonModeButton"]
+        },
+        {
+          "id": "sandboxTower.startOrFastForward",
+          "role": "button",
+          "bounds": { "x": 1775, "y": 955, "width": 135, "height": 125 },
+          "actionPoint": { "x": 1840, "y": 1020 },
+          "anchorIds": ["sandboxTower.fastForwardButton"]
+        }
+      ]
+    },
+    {
+      "id": "sandboxHealthEditor",
+      "kind": "modal",
+      "minimumScore": 0.94,
+      "minimumMatchedAnchors": 3,
+      "positiveHoldout": {
+        "evidence": "samples/sandbox-health-editor.zh-CN.holdout.json",
+        "evidenceId": "106972f1de1b4c81a972a038032bd4e9",
+        "imageSha256": "4f5c1498c1e35f66905c6ea8a1ff9c08a0df80a77d4f31696d688d779b813f5f"
+      },
+      "anchors": [
+        {
+          "id": "sandboxHealthEditor.title",
+          "bounds": {
+            "x": 870,
+            "y": 360,
+            "width": 180,
+            "height": 55
+          },
+          "template": "templates/sandbox-health-editor/title.png",
+          "templateSha256": "40f08d0b56d881d0d42ce9680e72972c5f326eccedf8a366a549a94930e62a2c",
+          "minimumScore": 0.95,
+          "sourceEvidence": "samples/sandbox-health-editor.zh-CN.json",
+          "sourceEvidenceId": "b5914b5f0f64478c91bfb1dd9b960c0b",
+          "sourceImageSha256": "aa1f1818543cd578abdbe21d7f361e0543326360e2c77dfc1839c4434e781133"
+        },
+        {
+          "id": "sandboxHealthEditor.description",
+          "bounds": {
+            "x": 710,
+            "y": 435,
+            "width": 500,
+            "height": 55
+          },
+          "template": "templates/sandbox-health-editor/description.png",
+          "templateSha256": "ebc76581720e7bd7dce41097b66bd9b12028d673923a810c56365d6fd81b2d83",
+          "minimumScore": 0.95,
+          "sourceEvidence": "samples/sandbox-health-editor.zh-CN.json",
+          "sourceEvidenceId": "b5914b5f0f64478c91bfb1dd9b960c0b",
+          "sourceImageSha256": "aa1f1818543cd578abdbe21d7f361e0543326360e2c77dfc1839c4434e781133"
+        },
+        {
+          "id": "sandboxHealthEditor.panelLeft",
+          "bounds": {
+            "x": 550,
+            "y": 345,
+            "width": 65,
+            "height": 340
+          },
+          "template": "templates/sandbox-health-editor/panel-left.png",
+          "templateSha256": "d658e5d8ec73b0f5b57eea9694f1d2b22ef54adb8766b6aff2dbebca52bee279",
+          "minimumScore": 0.9,
+          "sourceEvidence": "samples/sandbox-health-editor.zh-CN.json",
+          "sourceEvidenceId": "b5914b5f0f64478c91bfb1dd9b960c0b",
+          "sourceImageSha256": "aa1f1818543cd578abdbe21d7f361e0543326360e2c77dfc1839c4434e781133"
+        },
+        {
+          "id": "sandboxHealthEditor.panelRight",
+          "bounds": {
+            "x": 1305,
+            "y": 345,
+            "width": 65,
+            "height": 340
+          },
+          "template": "templates/sandbox-health-editor/panel-right.png",
+          "templateSha256": "db7d99ce4ce944742410706b7a52b65fc03b5b48a78c8e09184b2f6f5bc63355",
+          "minimumScore": 0.9,
+          "sourceEvidence": "samples/sandbox-health-editor.zh-CN.json",
+          "sourceEvidenceId": "b5914b5f0f64478c91bfb1dd9b960c0b",
+          "sourceImageSha256": "aa1f1818543cd578abdbe21d7f361e0543326360e2c77dfc1839c4434e781133"
+        },
+        {
+          "id": "sandboxHealthEditor.inputFrame",
+          "bounds": {
+            "x": 645,
+            "y": 515,
+            "width": 630,
+            "height": 90
+          },
+          "template": "templates/sandbox-health-editor/input-frame.png",
+          "templateSha256": "152d28fe4433befa54890d82a0e9e495e1dfeb5ac7e71738a2e6621e6fb83307",
+          "minimumScore": 0.9,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox-health-editor.zh-CN.json",
+          "sourceEvidenceId": "b5914b5f0f64478c91bfb1dd9b960c0b",
+          "sourceImageSha256": "aa1f1818543cd578abdbe21d7f361e0543326360e2c77dfc1839c4434e781133"
+        },
+        {
+          "id": "sandboxHealthEditor.cancelButton",
+          "bounds": {
+            "x": 645,
+            "y": 620,
+            "width": 270,
+            "height": 95
+          },
+          "template": "templates/sandbox-health-editor/cancel.png",
+          "templateSha256": "c7a305b60232dc1c10eb164c3de3813d9dec7e8537e03bce9f976cae842bb649",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox-health-editor.zh-CN.json",
+          "sourceEvidenceId": "b5914b5f0f64478c91bfb1dd9b960c0b",
+          "sourceImageSha256": "aa1f1818543cd578abdbe21d7f361e0543326360e2c77dfc1839c4434e781133"
+        },
+        {
+          "id": "sandboxHealthEditor.confirmButton",
+          "bounds": {
+            "x": 1000,
+            "y": 620,
+            "width": 270,
+            "height": 95
+          },
+          "template": "templates/sandbox-health-editor/confirm.png",
+          "templateSha256": "09caa682f0c310bc02f68272d0e473cf67a07372e793a109b891ec81346ad8e4",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox-health-editor.zh-CN.json",
+          "sourceEvidenceId": "b5914b5f0f64478c91bfb1dd9b960c0b",
+          "sourceImageSha256": "aa1f1818543cd578abdbe21d7f361e0543326360e2c77dfc1839c4434e781133"
+        }
+      ],
+      "elements": [
+        {
+          "id": "sandboxHealthEditor.dialog",
+          "role": "status",
+          "bounds": {
+            "x": 550,
+            "y": 345,
+            "width": 820,
+            "height": 370
+          },
+          "anchorIds": [
+            "sandboxHealthEditor.title",
+            "sandboxHealthEditor.description",
+            "sandboxHealthEditor.panelLeft",
+            "sandboxHealthEditor.panelRight"
+          ]
+        },
+        {
+          "id": "sandboxHealthEditor.input",
+          "role": "button",
+          "bounds": {
+            "x": 645,
+            "y": 515,
+            "width": 630,
+            "height": 90
+          },
+          "actionPoint": {
+            "x": 960,
+            "y": 560
+          },
+          "anchorIds": [
+            "sandboxHealthEditor.inputFrame"
+          ]
+        },
+        {
+          "id": "sandboxHealthEditor.cancel",
+          "role": "button",
+          "bounds": {
+            "x": 645,
+            "y": 620,
+            "width": 270,
+            "height": 95
+          },
+          "actionPoint": {
+            "x": 780,
+            "y": 670
+          },
+          "anchorIds": [
+            "sandboxHealthEditor.cancelButton"
+          ]
+        },
+        {
+          "id": "sandboxHealthEditor.confirm",
+          "role": "button",
+          "bounds": {
+            "x": 1000,
+            "y": 620,
+            "width": 270,
+            "height": 95
+          },
+          "actionPoint": {
+            "x": 1135,
+            "y": 670
+          },
+          "anchorIds": [
+            "sandboxHealthEditor.confirmButton"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sandboxCashEditor",
+      "kind": "modal",
+      "minimumScore": 0.94,
+      "minimumMatchedAnchors": 3,
+      "positiveHoldout": {
+        "evidence": "samples/sandbox-cash-editor.zh-CN.holdout.json",
+        "evidenceId": "760c012be671494d9882184aa924b428",
+        "imageSha256": "9559bec188bbb542160c1eb90c71c39834b1969dedde0ecd3bbcc85cd9d46db3"
+      },
+      "anchors": [
+        {
+          "id": "sandboxCashEditor.title",
+          "bounds": {
+            "x": 870,
+            "y": 360,
+            "width": 180,
+            "height": 55
+          },
+          "template": "templates/sandbox-cash-editor/title.png",
+          "templateSha256": "5152005682bb07f7fd6fa3f31340515360f6ea17e8b7d8acaa38b6794ad9d89f",
+          "minimumScore": 0.95,
+          "sourceEvidence": "samples/sandbox-cash-editor.zh-CN.json",
+          "sourceEvidenceId": "3eae298d325b4e43af8786991ee07bbd",
+          "sourceImageSha256": "b3821adc5ab994dc2878ed98a409bb4d55aff462ee37cc1b9bebe1fd8de37c00"
+        },
+        {
+          "id": "sandboxCashEditor.description",
+          "bounds": {
+            "x": 710,
+            "y": 435,
+            "width": 500,
+            "height": 55
+          },
+          "template": "templates/sandbox-cash-editor/description.png",
+          "templateSha256": "db65cb9385b73a07879a62dddcd1b415312d535bdce3b3bd132ddc0b72f2d66e",
+          "minimumScore": 0.95,
+          "sourceEvidence": "samples/sandbox-cash-editor.zh-CN.json",
+          "sourceEvidenceId": "3eae298d325b4e43af8786991ee07bbd",
+          "sourceImageSha256": "b3821adc5ab994dc2878ed98a409bb4d55aff462ee37cc1b9bebe1fd8de37c00"
+        },
+        {
+          "id": "sandboxCashEditor.panelLeft",
+          "bounds": {
+            "x": 550,
+            "y": 345,
+            "width": 65,
+            "height": 340
+          },
+          "template": "templates/sandbox-cash-editor/panel-left.png",
+          "templateSha256": "5768d8da04c5a735feafaa0027483f623147074057669c6ed9c740afa056f12d",
+          "minimumScore": 0.9,
+          "sourceEvidence": "samples/sandbox-cash-editor.zh-CN.json",
+          "sourceEvidenceId": "3eae298d325b4e43af8786991ee07bbd",
+          "sourceImageSha256": "b3821adc5ab994dc2878ed98a409bb4d55aff462ee37cc1b9bebe1fd8de37c00"
+        },
+        {
+          "id": "sandboxCashEditor.panelRight",
+          "bounds": {
+            "x": 1305,
+            "y": 345,
+            "width": 65,
+            "height": 340
+          },
+          "template": "templates/sandbox-cash-editor/panel-right.png",
+          "templateSha256": "db7d99ce4ce944742410706b7a52b65fc03b5b48a78c8e09184b2f6f5bc63355",
+          "minimumScore": 0.9,
+          "sourceEvidence": "samples/sandbox-cash-editor.zh-CN.json",
+          "sourceEvidenceId": "3eae298d325b4e43af8786991ee07bbd",
+          "sourceImageSha256": "b3821adc5ab994dc2878ed98a409bb4d55aff462ee37cc1b9bebe1fd8de37c00"
+        },
+        {
+          "id": "sandboxCashEditor.inputFrame",
+          "bounds": {
+            "x": 645,
+            "y": 515,
+            "width": 630,
+            "height": 90
+          },
+          "template": "templates/sandbox-cash-editor/input-frame.png",
+          "templateSha256": "08604371a5e210ee5115c84a0ed88b6adddd4e37385c1847aeee3d7108b793e1",
+          "minimumScore": 0.9,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox-cash-editor.zh-CN.json",
+          "sourceEvidenceId": "3eae298d325b4e43af8786991ee07bbd",
+          "sourceImageSha256": "b3821adc5ab994dc2878ed98a409bb4d55aff462ee37cc1b9bebe1fd8de37c00"
+        },
+        {
+          "id": "sandboxCashEditor.cancelButton",
+          "bounds": {
+            "x": 645,
+            "y": 620,
+            "width": 270,
+            "height": 95
+          },
+          "template": "templates/sandbox-cash-editor/cancel.png",
+          "templateSha256": "30f62e7165784f8ce6acb6929d3fdfea630aeeba96a9c25ca213acab53f47d38",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox-cash-editor.zh-CN.json",
+          "sourceEvidenceId": "3eae298d325b4e43af8786991ee07bbd",
+          "sourceImageSha256": "b3821adc5ab994dc2878ed98a409bb4d55aff462ee37cc1b9bebe1fd8de37c00"
+        },
+        {
+          "id": "sandboxCashEditor.confirmButton",
+          "bounds": {
+            "x": 1000,
+            "y": 620,
+            "width": 270,
+            "height": 95
+          },
+          "template": "templates/sandbox-cash-editor/confirm.png",
+          "templateSha256": "2ba9323855033ffa1b2ca7acfddbe46117326182be5f00436ab6bcedf7225a6d",
+          "minimumScore": 0.93,
+          "pageAnchor": false,
+          "sourceEvidence": "samples/sandbox-cash-editor.zh-CN.json",
+          "sourceEvidenceId": "3eae298d325b4e43af8786991ee07bbd",
+          "sourceImageSha256": "b3821adc5ab994dc2878ed98a409bb4d55aff462ee37cc1b9bebe1fd8de37c00"
+        }
+      ],
+      "elements": [
+        {
+          "id": "sandboxCashEditor.dialog",
+          "role": "status",
+          "bounds": {
+            "x": 550,
+            "y": 345,
+            "width": 820,
+            "height": 370
+          },
+          "anchorIds": [
+            "sandboxCashEditor.title",
+            "sandboxCashEditor.description",
+            "sandboxCashEditor.panelLeft",
+            "sandboxCashEditor.panelRight"
+          ]
+        },
+        {
+          "id": "sandboxCashEditor.input",
+          "role": "button",
+          "bounds": {
+            "x": 645,
+            "y": 515,
+            "width": 630,
+            "height": 90
+          },
+          "actionPoint": {
+            "x": 960,
+            "y": 560
+          },
+          "anchorIds": [
+            "sandboxCashEditor.inputFrame"
+          ]
+        },
+        {
+          "id": "sandboxCashEditor.cancel",
+          "role": "button",
+          "bounds": {
+            "x": 645,
+            "y": 620,
+            "width": 270,
+            "height": 95
+          },
+          "actionPoint": {
+            "x": 780,
+            "y": 670
+          },
+          "anchorIds": [
+            "sandboxCashEditor.cancelButton"
+          ]
+        },
+        {
+          "id": "sandboxCashEditor.confirm",
+          "role": "button",
+          "bounds": {
+            "x": 1000,
+            "y": 620,
+            "width": 270,
+            "height": 95
+          },
+          "actionPoint": {
+            "x": 1135,
+            "y": 670
+          },
+          "anchorIds": [
+            "sandboxCashEditor.confirmButton"
           ]
         }
       ]

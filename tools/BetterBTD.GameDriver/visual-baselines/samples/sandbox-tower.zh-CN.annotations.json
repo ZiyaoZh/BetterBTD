@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "sandbox-tower.zh-CN.20260809",
+  "sourceEvidenceId": "1e152ae6e62643e591348a6d5c80c255",
+  "sourceImageSha256": "b6b749cb7f7bf0a5cee03eace8688851048ef17ebbe77ccaff21b1f9a490dde5",
+  "pageId": "sandboxTower",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-09T09:05:00.000Z",
+    "result": "accepted"
+  },
+  "expectedValues": [
+    { "elementId": "sandboxTower.health", "format": "integer", "value": 345689 },
+    { "elementId": "sandboxTower.cash", "format": "currency", "value": 9081726 },
+    { "elementId": "sandboxTower.round", "format": "integer", "value": 57 }
+  ],
+  "dynamicRegionsExcludedFromPageAnchors": [
+    "sandboxTower.map",
+    "sandboxTower.health",
+    "sandboxTower.cash",
+    "sandboxTower.round",
+    "sandboxTower.towerInventory"
+  ],
+  "notes": [
+    "This real Sandbox tower-inventory view was reached by clicking sandbox.towerMode from an independently recognized Sandbox bloon-control page.",
+    "The bottom-left white bloon switch and the single current-round value distinguish this view from a standard in-level tower inventory.",
+    "The visible inventory contains the selected hero slot and the first eleven standard tower slots; lower entries were not visible and are not inferred."
+  ]
+}

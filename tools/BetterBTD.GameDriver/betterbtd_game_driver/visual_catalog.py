@@ -29,6 +29,7 @@ class VisualAnchor:
     source_metadata_path: Path
     template_bytes: bytes | None
     page_anchor: bool = True
+    match_group: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -47,6 +48,41 @@ class VisualElementState:
 
 
 @dataclass(frozen=True, slots=True)
+class VisualNumberGlyph:
+    digit: int
+    source_bounds: Rect
+    template_path: Path
+    template_sha256: str
+    source_evidence_id: str
+    source_image_sha256: str
+    source_metadata_path: Path
+    template_bytes: bytes | None
+
+
+@dataclass(frozen=True, slots=True)
+class VisualNumberModel:
+    id: str
+    minimum_score: float
+    minimum_margin: float
+    foreground_minimum: int
+    maximum_channel_delta: int
+    normalized_width: int
+    normalized_height: int
+    minimum_component_width: int
+    minimum_component_height: int
+    glyphs: tuple[VisualNumberGlyph, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class VisualNumber:
+    model_id: str
+    format: str
+    bounds: Rect
+    minimum_digits: int
+    maximum_digits: int
+
+
+@dataclass(frozen=True, slots=True)
 class VisualElement:
     id: str
     role: str
@@ -54,6 +90,7 @@ class VisualElement:
     action_point: tuple[int, int] | None
     anchor_ids: tuple[str, ...]
     placements: tuple[VisualElementPlacement, ...] = ()
+    number: VisualNumber | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -92,6 +129,7 @@ class VisualCatalog:
     reference_width: int
     reference_height: int
     pages: tuple[VisualPage, ...]
+    number_models: tuple[VisualNumberModel, ...]
     sha256: str
     schema_version: int = 1
 
@@ -134,7 +172,10 @@ def load_visual_catalog(
 
 
 def visual_catalog_summary(catalog: VisualCatalog) -> dict[str, object]:
-    template_count = sum(len(page.anchors) for page in catalog.pages)
+    anchor_template_count = sum(len(page.anchors) for page in catalog.pages)
+    number_template_count = sum(
+        len(model.glyphs) for model in catalog.number_models
+    )
     element_count = sum(len(page.elements) for page in catalog.pages)
     view_state_count = sum(len(page.view_states) for page in catalog.pages)
     placement_count = sum(
@@ -159,7 +200,10 @@ def visual_catalog_summary(catalog: VisualCatalog) -> dict[str, object]:
         "validation": {
             "valid": True,
             "pageCount": len(catalog.pages),
-            "templateCount": template_count,
+            "templateCount": anchor_template_count + number_template_count,
+            "anchorTemplateCount": anchor_template_count,
+            "numberModelCount": len(catalog.number_models),
+            "numberTemplateCount": number_template_count,
             "elementCount": element_count,
             "viewStateCount": view_state_count,
             "placementCount": placement_count,
@@ -175,8 +219,8 @@ def _parse_catalog(
 ) -> VisualCatalog:
     root = _object(document, "catalog root")
     schema_version = _integer(root, "schemaVersion")
-    if schema_version not in (1, 2):
-        raise ValueError("schemaVersion must be 1 or 2")
+    if schema_version not in (1, 2, 3):
+        raise ValueError("schemaVersion must be 1, 2 or 3")
 
     catalog_id = _nonempty_string(root, "catalogId")
     catalog_version = _positive_integer(root, "catalogVersion")
@@ -188,13 +232,28 @@ def _parse_catalog(
     if (reference_width, reference_height) != (1920, 1080):
         raise ValueError("referenceSpace must be 1920 x 1080")
 
+    source_evidence_cache: dict[Path, EvidenceBundle] = {}
+    number_models = _parse_number_models(
+        root,
+        path,
+        reference_width,
+        reference_height,
+        schema_version,
+        verify_templates,
+        source_evidence_cache,
+    )
+    number_source_image_hashes = {
+        glyph.source_image_sha256
+        for model in number_models
+        for glyph in model.glyphs
+    }
+
     raw_pages = _array(root, "pages")
     if not raw_pages:
         raise ValueError("pages must not be empty")
 
     seen_page_ids: set[str] = set()
     seen_element_ids: set[str] = set()
-    source_evidence_cache: dict[Path, EvidenceBundle] = {}
     pages: list[VisualPage] = []
     for index, raw_page in enumerate(raw_pages):
         page = _object(raw_page, f"pages[{index}]")
@@ -216,7 +275,13 @@ def _parse_catalog(
             verify_templates,
             source_evidence_cache,
         )
-        page_anchor_count = sum(anchor.page_anchor for anchor in anchors)
+        page_anchor_count = len(
+            {
+                anchor.match_group or anchor.id
+                for anchor in anchors
+                if anchor.page_anchor
+            }
+        )
         if minimum_matched_anchors > page_anchor_count:
             raise ValueError(
                 f"page {page_id} minimumMatchedAnchors exceeds its page anchor count"
@@ -226,7 +291,10 @@ def _parse_catalog(
             page,
             path,
             page_id,
-            {anchor.source_image_sha256 for anchor in anchors},
+            {
+                *(anchor.source_image_sha256 for anchor in anchors),
+                *number_source_image_hashes,
+            },
             source_evidence_cache,
         )
 
@@ -236,7 +304,10 @@ def _parse_catalog(
             page_id,
             schema_version,
             {anchor.id: anchor for anchor in anchors},
-            {anchor.source_image_sha256 for anchor in anchors},
+            {
+                *(anchor.source_image_sha256 for anchor in anchors),
+                *number_source_image_hashes,
+            },
             source_evidence_cache,
         )
 
@@ -249,6 +320,7 @@ def _parse_catalog(
             {anchor.id for anchor in anchors},
             {view_state.id for view_state in view_states},
             schema_version,
+            {model.id for model in number_models},
         )
         pages.append(
             VisualPage(
@@ -264,12 +336,27 @@ def _parse_catalog(
         )
 
     all_anchors = [anchor for page in pages for anchor in page.anchors]
-    template_paths = [anchor.template_path for anchor in all_anchors]
+    all_number_glyphs = [
+        glyph for model in number_models for glyph in model.glyphs
+    ]
+    template_paths = [
+        *(anchor.template_path for anchor in all_anchors),
+        *(glyph.template_path for glyph in all_number_glyphs),
+    ]
     if len(set(template_paths)) != len(template_paths):
         raise ValueError("template paths must be unique across the catalog")
     protected_source_paths: set[Path] = set()
     for anchor in all_anchors:
         metadata_path = anchor.source_metadata_path
+        protected_source_paths.update(
+            (
+                metadata_path,
+                metadata_path.with_suffix(".png"),
+                metadata_path.with_name(f"{metadata_path.stem}.complete.json"),
+            )
+        )
+    for glyph in all_number_glyphs:
+        metadata_path = glyph.source_metadata_path
         protected_source_paths.update(
             (
                 metadata_path,
@@ -302,9 +389,169 @@ def _parse_catalog(
         reference_width=reference_width,
         reference_height=reference_height,
         pages=tuple(pages),
+        number_models=tuple(number_models),
         sha256=catalog_sha256,
         schema_version=schema_version,
     )
+
+
+def _parse_number_models(
+    root: dict[str, Any],
+    catalog_path: Path,
+    reference_width: int,
+    reference_height: int,
+    schema_version: int,
+    verify_templates: bool,
+    source_evidence_cache: dict[Path, EvidenceBundle],
+) -> list[VisualNumberModel]:
+    raw_models = root.get("numberModels", [])
+    if not isinstance(raw_models, list):
+        raise TypeError("numberModels must be an array")
+    if raw_models and schema_version < 3:
+        raise ValueError("numberModels require catalog schemaVersion 3")
+
+    catalog_root = catalog_path.parent.resolve()
+    seen_model_ids: set[str] = set()
+    models: list[VisualNumberModel] = []
+    for model_index, raw_model in enumerate(raw_models):
+        model = _object(raw_model, f"numberModels[{model_index}]")
+        model_id = _stable_id(model, "id")
+        _require_unique(model_id, seen_model_ids, "number model id")
+        normalized_size = _object(
+            model.get("normalizedSize"),
+            f"number model {model_id} normalizedSize",
+        )
+        foreground = _object(
+            model.get("foreground"),
+            f"number model {model_id} foreground",
+        )
+        component = _object(
+            model.get("minimumComponentSize"),
+            f"number model {model_id} minimumComponentSize",
+        )
+        foreground_minimum = _byte_integer(foreground, "minimumChannel")
+        maximum_channel_delta = _byte_integer(foreground, "maximumChannelDelta")
+        normalized_width = _positive_integer(normalized_size, "width")
+        normalized_height = _positive_integer(normalized_size, "height")
+        minimum_component_width = _positive_integer(component, "width")
+        minimum_component_height = _positive_integer(component, "height")
+
+        raw_glyphs = _array(model, "glyphs")
+        seen_digits: set[int] = set()
+        glyphs: list[VisualNumberGlyph] = []
+        for glyph_index, raw_glyph in enumerate(raw_glyphs):
+            glyph = _object(
+                raw_glyph,
+                f"number model {model_id} glyphs[{glyph_index}]",
+            )
+            digit = _integer(glyph, "digit")
+            if digit < 0 or digit > 9:
+                raise ValueError(f"number model {model_id} digit must be 0 through 9")
+            if digit in seen_digits:
+                raise ValueError(
+                    f"number model {model_id} contains duplicate digit {digit}"
+                )
+            seen_digits.add(digit)
+            source_bounds = _rect(
+                glyph.get("sourceBounds"),
+                f"number model {model_id} digit {digit} sourceBounds",
+            )
+            _validate_rect(
+                source_bounds,
+                reference_width,
+                reference_height,
+                f"number model {model_id} digit {digit} sourceBounds",
+            )
+            template_path = (
+                catalog_root / Path(_nonempty_string(glyph, "template"))
+            ).resolve()
+            if not template_path.is_relative_to(catalog_root):
+                raise ValueError(
+                    f"number model {model_id} digit {digit} template escapes "
+                    "the catalog directory"
+                )
+            if template_path.suffix.casefold() != ".png":
+                raise ValueError(
+                    f"number model {model_id} digit {digit} template must be a PNG file"
+                )
+            template_sha256 = _sha256(glyph, "templateSha256")
+            template_bytes: bytes | None = None
+            if verify_templates:
+                if not template_path.is_file():
+                    raise ValueError(
+                        f"number model {model_id} digit {digit} template does not "
+                        f"exist: {template_path}"
+                    )
+                template_bytes = template_path.read_bytes()
+                actual_sha256 = hashlib.sha256(template_bytes).hexdigest()
+                if actual_sha256 != template_sha256:
+                    raise ValueError(
+                        f"number model {model_id} digit {digit} template hash "
+                        f"mismatch: expected {template_sha256}, found {actual_sha256}"
+                    )
+
+            source_metadata_path = (
+                catalog_root / Path(_nonempty_string(glyph, "sourceEvidence"))
+            ).resolve()
+            if not source_metadata_path.is_relative_to(catalog_root):
+                raise ValueError(
+                    f"number model {model_id} digit {digit} source evidence escapes "
+                    "the catalog directory"
+                )
+            source_evidence = source_evidence_cache.get(source_metadata_path)
+            if source_evidence is None:
+                source_evidence = read_evidence(source_metadata_path)
+                source_evidence_cache[source_metadata_path] = source_evidence
+            source_evidence_id = _nonempty_string(glyph, "sourceEvidenceId")
+            source_image_sha256 = _sha256(glyph, "sourceImageSha256")
+            if source_evidence.evidence_id != source_evidence_id:
+                raise ValueError(
+                    f"number model {model_id} digit {digit} source evidenceId "
+                    "does not match"
+                )
+            if source_evidence.image_sha256 != source_image_sha256:
+                raise ValueError(
+                    f"number model {model_id} digit {digit} source image hash "
+                    "does not match"
+                )
+            if not source_evidence.oracle_eligible:
+                raise ValueError(
+                    f"number model {model_id} digit {digit} source evidence is "
+                    "not Oracle eligible"
+                )
+            glyphs.append(
+                VisualNumberGlyph(
+                    digit=digit,
+                    source_bounds=source_bounds,
+                    template_path=template_path,
+                    template_sha256=template_sha256,
+                    source_evidence_id=source_evidence_id,
+                    source_image_sha256=source_image_sha256,
+                    source_metadata_path=source_metadata_path,
+                    template_bytes=template_bytes,
+                )
+            )
+        if seen_digits != set(range(10)):
+            missing = ", ".join(str(digit) for digit in sorted(set(range(10)) - seen_digits))
+            raise ValueError(
+                f"number model {model_id} must contain digits 0 through 9; "
+                f"missing: {missing}"
+            )
+        models.append(
+            VisualNumberModel(
+                id=model_id,
+                minimum_score=_score(model, "minimumScore"),
+                minimum_margin=_score(model, "minimumMargin"),
+                foreground_minimum=foreground_minimum,
+                maximum_channel_delta=maximum_channel_delta,
+                normalized_width=normalized_width,
+                normalized_height=normalized_height,
+                minimum_component_width=minimum_component_width,
+                minimum_component_height=minimum_component_height,
+                glyphs=tuple(sorted(glyphs, key=lambda item: item.digit)),
+            )
+        )
+    return models
 
 
 def _parse_anchors(
@@ -378,6 +625,18 @@ def _parse_anchors(
             raise ValueError(f"anchor {anchor_id} source image hash does not match")
         if not source_evidence.oracle_eligible:
             raise ValueError(f"anchor {anchor_id} source evidence is not Oracle eligible")
+        page_anchor = _optional_boolean(anchor, "pageAnchor", True)
+        match_group = None
+        if anchor.get("matchGroup") is not None:
+            match_group = _stable_id(anchor, "matchGroup")
+            if not page_anchor:
+                raise ValueError(
+                    f"anchor {anchor_id} matchGroup requires a page anchor"
+                )
+            if not match_group.startswith(f"{page_id}."):
+                raise ValueError(
+                    f"anchor {anchor_id} matchGroup must start with {page_id}."
+                )
         anchors.append(
             VisualAnchor(
                 id=anchor_id,
@@ -390,7 +649,8 @@ def _parse_anchors(
                 source_image_sha256=source_image_sha256,
                 source_metadata_path=source_metadata_path,
                 template_bytes=template_bytes,
-                page_anchor=_optional_boolean(anchor, "pageAnchor", True),
+                page_anchor=page_anchor,
+                match_group=match_group,
             )
         )
     return anchors
@@ -537,6 +797,7 @@ def _parse_elements(
     page_anchor_ids: set[str],
     page_view_state_ids: set[str],
     schema_version: int,
+    number_model_ids: set[str],
 ) -> list[VisualElement]:
     raw_elements = _array(page, "elements")
     elements: list[VisualElement] = []
@@ -627,6 +888,17 @@ def _parse_elements(
                 page_anchor_ids,
                 required=False,
             )
+        number = _parse_number(
+            element,
+            element_id,
+            role,
+            bounds,
+            reference_width,
+            reference_height,
+            schema_version,
+            number_model_ids,
+            bool(placements),
+        )
         elements.append(
             VisualElement(
                 id=element_id,
@@ -635,9 +907,70 @@ def _parse_elements(
                 action_point=action_point,
                 anchor_ids=anchor_ids,
                 placements=tuple(placements),
+                number=number,
             )
         )
     return elements
+
+
+def _parse_number(
+    element: dict[str, Any],
+    element_id: str,
+    role: str,
+    element_bounds: Rect,
+    reference_width: int,
+    reference_height: int,
+    schema_version: int,
+    number_model_ids: set[str],
+    has_placements: bool,
+) -> VisualNumber | None:
+    raw_number = element.get("number")
+    if raw_number is None:
+        return None
+    if schema_version < 3:
+        raise ValueError("element number recognition requires catalog schemaVersion 3")
+    if role != "value":
+        raise ValueError(f"element {element_id} number recognition requires role value")
+    if has_placements:
+        raise ValueError(
+            f"element {element_id} number recognition does not support placements"
+        )
+    number = _object(raw_number, f"element {element_id} number")
+    model_id = _stable_id(number, "modelId")
+    if model_id not in number_model_ids:
+        raise ValueError(
+            f"element {element_id} references unknown number model: {model_id}"
+        )
+    number_format = _stable_id(number, "format")
+    if number_format not in ("integer", "currency", "progressCurrent"):
+        raise ValueError(
+            f"element {element_id} number format must be integer, currency or "
+            "progressCurrent"
+        )
+    bounds = _rect(number.get("bounds"), f"element {element_id} number bounds")
+    _validate_rect(
+        bounds,
+        reference_width,
+        reference_height,
+        f"element {element_id} number",
+    )
+    if not _rect_contains(element_bounds, bounds):
+        raise ValueError(
+            f"element {element_id} number bounds must be inside element bounds"
+        )
+    minimum_digits = _positive_integer(number, "minimumDigits")
+    maximum_digits = _positive_integer(number, "maximumDigits")
+    if minimum_digits > maximum_digits:
+        raise ValueError(
+            f"element {element_id} number minimumDigits exceeds maximumDigits"
+        )
+    return VisualNumber(
+        model_id=model_id,
+        format=number_format,
+        bounds=bounds,
+        minimum_digits=minimum_digits,
+        maximum_digits=maximum_digits,
+    )
 
 
 def _parse_element_states(
@@ -756,6 +1089,13 @@ def _positive_integer(value: dict[str, Any], name: str) -> int:
     return result
 
 
+def _byte_integer(value: dict[str, Any], name: str) -> int:
+    result = _integer(value, name)
+    if result < 0 or result > 255:
+        raise ValueError(f"{name} must be between 0 and 255")
+    return result
+
+
 def _score(value: dict[str, Any], name: str) -> float:
     result = value.get(name)
     if not isinstance(result, (int, float)) or isinstance(result, bool):
@@ -786,6 +1126,15 @@ def _rect(value: Any, name: str) -> Rect:
 def _validate_rect(rect: Rect, width: int, height: int, name: str) -> None:
     if rect.x < 0 or rect.y < 0 or rect.right > width or rect.bottom > height:
         raise ValueError(f"{name} bounds must be inside the reference space")
+
+
+def _rect_contains(outer: Rect, inner: Rect) -> bool:
+    return (
+        inner.x >= outer.x
+        and inner.y >= outer.y
+        and inner.right <= outer.right
+        and inner.bottom <= outer.bottom
+    )
 
 
 def _require_unique(value: str, seen: set[str], name: str) -> None:

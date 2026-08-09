@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "sandboxCashEditor.zh-CN.holdout.20260809",
+  "sourceEvidenceId": "760c012be671494d9882184aa924b428",
+  "sourceImageSha256": "9559bec188bbb542160c1eb90c71c39834b1969dedde0ecd3bbcc85cd9d46db3",
+  "pageId": "sandboxCashEditor",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-09T08:00:00.000Z",
+    "result": "accepted"
+  },
+  "notes": [
+    "This independently captured editor frame was not used to build templates.",
+    "The editable value and background HUD differ from the source evidence."
+  ]
+}

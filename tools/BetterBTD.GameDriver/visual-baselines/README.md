@@ -14,7 +14,7 @@
 4. 保留一张未参与模板生成且图片哈希不同的真实截图，作为页面 `positiveHoldout` 验证正向识别；目录加载会拒绝与制模源图相同的留出证据。另用不同页面验证 `unknown`。
 5. 重新生成模板、校验目录，并记录真实游戏版本、语言和未覆盖条件。
 
-当前 catalog v16 使用 schema v2，覆盖 24 个中文页面、339 个模板、302 个元素、25 个视口状态和 260 个元素 placement。其中 241 个元素具有独立可见性探测器，204 个按钮声明动作点，181 个按钮同时具备探测器和动作点：
+当前 catalog v18 使用 schema v3，覆盖 29 个中文页面、411 个锚点模板、10 个数值字形模板、372 个元素、25 个视口状态和 260 个元素 placement。其中 307 个元素具有独立可见性或数值探测器，260 个元素声明动作点，237 个元素同时可独立观察并具有动作点：
 
 - `welcome` 与 `modifiedClientWarning`：用于真实冷启动；玩家名、用户 ID、版本号和本地化正文不参与识别。修改客户端警告仅允许继续，注销和关闭游戏保持不可操作。
 - `mainMenu` 与 `mapSelect`：地图页固定控件使用 4 个页面锚点；17 个独立视口覆盖初级 5 页、中级 5 页、高级 4 页和专家 3 页，共 87 张可见地图。每个视口拥有独立 source/holdout 证据、轮播页检测和地图卡 placement；地图名、勋章、星光和活动状态不参与页面识别。四个分类按钮独立区分 `selected`/`unselected`，`doubleCash` 与 `autoStart` 独立区分 `enabled`/`disabled`。官方英文名 `Ascent` 使用 `mapSelect.ascent` 表示解锁按钮、`mapSelect.ascentLocked` 表示无动作点的锁定状态；两者都不参与高级第一页的视口身份。
@@ -29,10 +29,13 @@
 - `hotkeys`：独立识别返回、恢复默认、三组键位区域和当前普通光标选中状态；键位、恢复默认和光标尺寸不开放动作。
 - `accessibility`：完整声明效果比例、两个开关、四种范围圈模式、返回和 `OK`；只开放两个退出动作。
 - `extras`：`extras.top` 和 `extras.bottom` 都独立覆盖 `doubleCash`、`fastTrack`、`bigBloons`、`smallBloons`、`bigMonkeyTowers`、`smallMonkeyTowers`、`smallBosses` 七个开关，并分别检测 `enabled`/`disabled`；这些配置开关没有动作点。
+- `sandboxIntro`、`sandbox`、`sandboxTower`、`sandboxHealthEditor` 与 `sandboxCashEditor`：覆盖 Sandbox 说明、气球/塔控制视图、生命/金币编辑器，以及回合输入、间隔、数量、三种属性、17 种气球、清除、力量、当前可见的 11 个标准塔、模式切换和开始/快进等可见控件。生命和金币 value 只有在数值 Oracle 匹配时才可点击打开编辑器；输入框不会自动聚焦，实际编辑流程必须先点击输入框再发送 `Ctrl+A` 和数字。
 
-`pageAnchor` 缺省为 `true`；设为 `false` 的模板只检测元素可见性，不计入页面分数或最少页面锚点数。该规则用于可滚动英雄头像和动态选择状态，目录校验会拒绝用 detector-only 模板凑足 `minimumMatchedAnchors`。普通页面使用 `kind=page`；遮挡并阻止底层交互的顶层页面使用 `kind=modal`。命中的 modal 优先于底层 page，modal 之间仍执行分差歧义检查，不能借页面类型绕过唯一性要求。
+`pageAnchor` 缺省为 `true`；设为 `false` 的模板只检测元素可见性，不计入页面分数或最少页面锚点数。该规则用于可滚动英雄头像和动态选择状态，目录校验会拒绝用 detector-only 模板凑足 `minimumMatchedAnchors`。同一 `matchGroup` 中的页面锚点表示互斥视觉候选，组内任一锚点命中即按一个页面锚点计数和计分；当前 `inLevel.powersAvailable` 与 `inLevel.powersDisabled` 组成 `inLevel.powersMode`。普通页面使用 `kind=page`；遮挡并阻止底层交互的顶层页面使用 `kind=modal`。命中的 modal 优先于底层 page，modal 之间仍执行分差歧义检查，不能借页面类型绕过唯一性要求。
 
 schema v2 保留稳定 `page` 身份，并用 `viewStates` 描述同一页面的不同滚动视口。可滚动元素通过 `placements` 为每个可见视口声明独立 `bounds`、`actionPoint`、`anchorIds` 和可选 `states`；识别器只输出已识别视口中的 placement。锚点 `sourceBounds` 是制模来源截图中的裁剪区域，`bounds` 是运行时匹配区域，二者可不同。元素 `states` 使用独立锚点输出 `matched`、`ambiguous` 或 `unknown`，当前用于 `extras` 七个开关的 `enabled`/`disabled`。schema v1 仍可加载：它没有 `viewStates`/`placements`，且未声明 `sourceBounds` 时按 `bounds` 处理。
+
+schema v3 的根级 `numberModels` 为每个 `0..9` 字形记录来源证据、裁剪范围和模板哈希，并声明前景分割、归一化、最低匹配分数和最低候选分差。value 元素的 `number` 绑定模型、精确数值区域、`integer`/`currency`/`progressCurrent` 格式和允许位数。识别器在客户区原生像素中用 8 邻接连通域、单像素形状容差和封闭区域拓扑分割字形；`progressCurrent` 还会独立验证 `/` 及其右侧目标数字结构。任一字形低于匹配阈值时数值为 `unknown`，候选分差不足时为 `ambiguous`；两者都不返回 `value`，也不影响页面本身的匹配结果。当前 `inLevel`、`sandbox` 和 `sandboxTower` 各自的 `health`、`cash`、`round` 具备该能力。schema v1/v2 仍可加载，未声明 `number` 的 value 不能作为 `ElementNumber` Oracle。
 
 `heroSelect` 的 `1920 x 1080` 参考动作点如下。上下视口各可见 15 个英雄，重叠 12 个，合集为 18 个；`Silas` 在上下视口都可见，只有 `Psi`、`Geraldo`、`Corvus` 仅位于底部视口，因此不再使用“Silas/Corvus 均未覆盖”的旧语义。
 
@@ -57,4 +60,4 @@ schema v2 保留稳定 `page` 身份，并用 `viewStates` 描述同一页面的
 | `Geraldo` | - | `(255, 900)` |
 | `Corvus` | - | `(405, 900)` |
 
-地图选择的 17 组 source/holdout（34 张真实截图）均独立匹配正确视口，最低 holdout 视口分数为 `0.996790`，没有跨视口误判。另有独立 source/holdout 覆盖解锁 `Ascent` 和不带未读徽章的高级分类状态；真实输入验证范围保持不变。简单标准胜利链的三个页面 holdout 分数分别为 `0.998563`、`0.999793` 和 `1.0`，通关总结的主页与浏览地图动作尚未分别实点。困难 CHIMPS 已增加后续回合失败样本：旧三按钮和新四按钮 holdout 页面分数分别为 `0.9976735` 和 `0.9889`，对应视口分数均为 `1.0`；主页、重开、浏览地图和重试上一回合四个分支，以及重开/重试确认框的取消/确认均已实点。`retryLastRoundConfirmation` holdout 分数为 `0.99938875`，确认后恢复 `inLevel`。简单 Deflation 的存档覆盖确认也已真实执行取消/确认，holdout 分数为 `0.999958`，加载后直接进入 `inLevel`。待开/活动回合的 `inLevel` holdout 页面分数分别为 `0.9977633` 和 `0.995248`；生命、金币和回合数值尚未独立解析。最终恢复主菜单分数为 `0.9990385`。尚未验证英文界面、地图活动入口、其他难度/模式的存档确认和暂停设置重开确认；完整热键长列表仍需补充视口覆盖。`extras` 与英雄上下视口的既有离线及真实验证保持不变。
+地图选择的 17 组 source/holdout（34 张真实截图）均独立匹配正确视口，最低 holdout 视口分数为 `0.996790`，没有跨视口误判。另有独立 source/holdout 覆盖解锁 `Ascent` 和不带未读徽章的高级分类状态；真实输入验证范围保持不变。简单标准胜利链的三个页面 holdout 分数分别为 `0.998563`、`0.999793` 和 `1.0`，通关总结的主页与浏览地图动作尚未分别实点。困难 CHIMPS 已增加后续回合失败样本：旧三按钮和新四按钮 holdout 页面分数分别为 `0.9976735` 和 `0.9889`，对应视口分数均为 `1.0`；主页、重开、浏览地图和重试上一回合四个分支，以及重开/重试确认框的取消/确认均已实点。`retryLastRoundConfirmation` holdout 分数为 `0.99938875`，确认后恢复 `inLevel`。简单 Deflation 的存档覆盖确认也已真实执行取消/确认，holdout 分数为 `0.999958`，加载后直接进入 `inLevel`。待开/活动回合的 `inLevel` 留出证据分别精确读取 `200 / $1700 / 1` 和 `1 / $1516 / 13`。Sandbox 气球视图 source/holdout 在同一地图、中文、`1920x1080`、DPI 192 会话中分别精确读取 `908172 / $3456789 / 84` 和 `345689 / $9081726 / 57`；塔视图 source/holdout 均读取 `345689 / $9081726 / 57`，且不会误匹配普通 `inLevel`。八种 `960x540` 至 `3840x2160` 自动化缩放样本均精确通过；生命元素点击、编辑器识别和取消恢复已真实执行。气球/塔模式往返也已真实执行，局部侧栏转换需使用 `--change-threshold 0.02`。塔列表滚轮和拖动探索返回 `unchangedStable`，隐藏塔尚未建模；其他地图、英文界面、其他显示器布局、地图活动入口、其他难度/模式的存档确认和暂停设置重开确认尚未验证；完整热键长列表仍需补充视口覆盖。

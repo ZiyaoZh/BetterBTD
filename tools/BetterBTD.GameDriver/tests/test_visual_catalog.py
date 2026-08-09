@@ -17,8 +17,8 @@ class VisualCatalogTests(unittest.TestCase):
         catalog = load_visual_catalog()
 
         self.assertEqual("btd6-ui-independent", catalog.id)
-        self.assertEqual(2, catalog.schema_version)
-        self.assertEqual(16, catalog.version)
+        self.assertEqual(3, catalog.schema_version)
+        self.assertEqual(18, catalog.version)
         self.assertEqual((1920, 1080), (catalog.reference_width, catalog.reference_height))
         self.assertEqual(
             [
@@ -46,6 +46,11 @@ class VisualCatalogTests(unittest.TestCase):
                 "hotkeys",
                 "accessibility",
                 "extras",
+                "sandboxIntro",
+                "sandbox",
+                "sandboxTower",
+                "sandboxHealthEditor",
+                "sandboxCashEditor",
             ],
             [page.id for page in catalog.pages],
         )
@@ -60,7 +65,7 @@ class VisualCatalogTests(unittest.TestCase):
                 6,
                 9,
                 37,
-                6,
+                8,
                 7,
                 4,
                 9,
@@ -75,6 +80,11 @@ class VisualCatalogTests(unittest.TestCase):
                 7,
                 11,
                 45,
+                4,
+                33,
+                19,
+                7,
+                7,
             ],
             [len(page.anchors) for page in catalog.pages],
         )
@@ -118,11 +128,18 @@ class VisualCatalogTests(unittest.TestCase):
             3,
             sum(anchor.page_anchor for anchor in catalog.pages[8].anchors),
         )
-        self.assertEqual(
-            3,
-            sum(anchor.page_anchor for anchor in catalog.pages[9].anchors),
-        )
+        self.assertEqual(5, sum(anchor.page_anchor for anchor in catalog.pages[9].anchors))
         in_level = catalog.pages[9]
+        self.assertEqual(
+            4,
+            len(
+                {
+                    anchor.match_group or anchor.id
+                    for anchor in in_level.anchors
+                    if anchor.page_anchor
+                }
+            ),
+        )
         self.assertEqual(
             ["inLevel.roundReady", "inLevel.roundActive"],
             [view_state.id for view_state in in_level.view_states],
@@ -135,6 +152,30 @@ class VisualCatalogTests(unittest.TestCase):
         self.assertEqual(
             ["inLevel.roundReady", "inLevel.roundActive"],
             [placement.view_state_id for placement in start_control.placements],
+        )
+        self.assertEqual(["btd6HudWhiteDigits"], [model.id for model in catalog.number_models])
+        self.assertEqual(
+            list(range(10)),
+            [glyph.digit for glyph in catalog.number_models[0].glyphs],
+        )
+        self.assertEqual(
+            {
+                "inLevel.health": "integer",
+                "inLevel.cash": "currency",
+                "inLevel.round": "progressCurrent",
+                "sandbox.health": "integer",
+                "sandbox.cash": "currency",
+                "sandbox.round": "integer",
+                "sandboxTower.health": "integer",
+                "sandboxTower.cash": "currency",
+                "sandboxTower.round": "integer",
+            },
+            {
+                element.id: element.number.format
+                for page in catalog.pages
+                for element in page.elements
+                if element.number is not None
+            },
         )
         map_select = catalog.pages[3]
         self.assertEqual(4, sum(anchor.page_anchor for anchor in map_select.anchors))
@@ -221,7 +262,7 @@ class VisualCatalogTests(unittest.TestCase):
                 if element.placements
             ],
         )
-        extras = catalog.pages[-1]
+        extras = next(page for page in catalog.pages if page.id == "extras")
         self.assertEqual(
             ["extras.top", "extras.bottom"],
             [view_state.id for view_state in extras.view_states],
@@ -240,9 +281,12 @@ class VisualCatalogTests(unittest.TestCase):
         self.assertEqual(
             {
                 "valid": True,
-                "pageCount": 24,
-                "templateCount": 339,
-                "elementCount": 302,
+                "pageCount": 29,
+                "templateCount": 421,
+                "anchorTemplateCount": 411,
+                "numberModelCount": 1,
+                "numberTemplateCount": 10,
+                "elementCount": 372,
                 "viewStateCount": 25,
                 "placementCount": 260,
             },
@@ -251,7 +295,7 @@ class VisualCatalogTests(unittest.TestCase):
         elements = [element for page in catalog.pages for element in page.elements]
 
         def has_detector(element: VisualElement) -> bool:
-            return bool(element.anchor_ids) or any(
+            return element.number is not None or bool(element.anchor_ids) or any(
                 placement.anchor_ids for placement in element.placements
             )
 
@@ -260,10 +304,10 @@ class VisualCatalogTests(unittest.TestCase):
                 placement.action_point is not None for placement in element.placements
             )
 
-        self.assertEqual(241, sum(has_detector(element) for element in elements))
-        self.assertEqual(204, sum(has_action_point(element) for element in elements))
+        self.assertEqual(307, sum(has_detector(element) for element in elements))
+        self.assertEqual(260, sum(has_action_point(element) for element in elements))
         self.assertEqual(
-            181,
+            237,
             sum(
                 has_detector(element) and has_action_point(element)
                 for element in elements
@@ -312,6 +356,101 @@ class VisualCatalogTests(unittest.TestCase):
             ["testPage.top"],
             [placement.view_state_id for placement in page.elements[0].placements],
         )
+
+    def test_schema_v3_number_model_and_element_number_are_loaded(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            catalog_path = _write_minimal_catalog(
+                Path(temporary_directory),
+                schema_version=3,
+            )
+
+            catalog = load_visual_catalog(catalog_path)
+
+        self.assertEqual(3, catalog.schema_version)
+        self.assertEqual(["testDigits"], [model.id for model in catalog.number_models])
+        self.assertEqual(list(range(10)), [glyph.digit for glyph in catalog.number_models[0].glyphs])
+        self.assertEqual("testDigits", catalog.pages[0].elements[0].number.model_id)
+
+    def test_number_models_require_schema_v3(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            catalog_path = _write_minimal_catalog(
+                Path(temporary_directory),
+                schema_version=3,
+            )
+            document = _read_catalog(catalog_path)
+            document["schemaVersion"] = 2
+            _write_catalog(catalog_path, document)
+
+            with self.assertRaises(GameDriverError) as context:
+                load_visual_catalog(catalog_path)
+
+        self.assertIn("numberModels require catalog schemaVersion 3", context.exception.message)
+
+    def test_number_model_must_define_every_digit(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            catalog_path = _write_minimal_catalog(
+                Path(temporary_directory),
+                schema_version=3,
+            )
+            document = _read_catalog(catalog_path)
+            document["numberModels"][0]["glyphs"].pop()
+            _write_catalog(catalog_path, document)
+
+            with self.assertRaises(GameDriverError) as context:
+                load_visual_catalog(catalog_path)
+
+        self.assertIn("must contain digits 0 through 9", context.exception.message)
+
+    def test_number_model_rejects_malformed_matching_parameters(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            catalog_path = _write_minimal_catalog(
+                Path(temporary_directory),
+                schema_version=3,
+            )
+            document = _read_catalog(catalog_path)
+            document["numberModels"][0]["normalizedSize"]["width"] = 0
+            _write_catalog(catalog_path, document)
+
+            with self.assertRaises(GameDriverError) as context:
+                load_visual_catalog(catalog_path)
+
+        self.assertIn("width must be positive", context.exception.message)
+
+    def test_element_number_rejects_unknown_model_and_format(self) -> None:
+        cases = (
+            ("modelId", "missing", "references unknown number model"),
+            ("format", "decimal", "number format must be integer"),
+        )
+        for field, value, expected_error in cases:
+            with self.subTest(field=field):
+                with tempfile.TemporaryDirectory() as temporary_directory:
+                    catalog_path = _write_minimal_catalog(
+                        Path(temporary_directory),
+                        schema_version=3,
+                    )
+                    document = _read_catalog(catalog_path)
+                    document["pages"][0]["elements"][0]["number"][field] = value
+                    _write_catalog(catalog_path, document)
+
+                    with self.assertRaises(GameDriverError) as context:
+                        load_visual_catalog(catalog_path)
+
+                self.assertIn(expected_error, context.exception.message)
+
+    def test_element_number_requires_value_role(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            catalog_path = _write_minimal_catalog(
+                Path(temporary_directory),
+                schema_version=3,
+            )
+            document = _read_catalog(catalog_path)
+            document["pages"][0]["elements"][0]["role"] = "button"
+            _write_catalog(catalog_path, document)
+
+            with self.assertRaises(GameDriverError) as context:
+                load_visual_catalog(catalog_path)
+
+        self.assertIn("number recognition requires role value", context.exception.message)
 
     def test_view_state_must_only_reference_detector_only_anchors(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -475,6 +614,25 @@ class VisualCatalogTests(unittest.TestCase):
             self.assertEqual("visualCatalogInvalid", context.exception.code)
             self.assertIn("must differ", context.exception.message)
 
+    def test_positive_holdout_must_differ_from_number_glyph_source(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            catalog_path = _write_minimal_catalog(root, schema_version=3)
+            document = _read_catalog(catalog_path)
+            glyph = document["numberModels"][0]["glyphs"][0]
+            document["pages"][0]["positiveHoldout"] = {
+                "evidence": glyph["sourceEvidence"],
+                "evidenceId": glyph["sourceEvidenceId"],
+                "imageSha256": glyph["sourceImageSha256"],
+            }
+            _write_catalog(catalog_path, document)
+
+            with self.assertRaises(GameDriverError) as context:
+                load_visual_catalog(catalog_path)
+
+        self.assertEqual("visualCatalogInvalid", context.exception.code)
+        self.assertIn("must differ", context.exception.message)
+
     def test_template_hash_mismatch_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             root = Path(temporary_directory)
@@ -543,6 +701,24 @@ class VisualCatalogTests(unittest.TestCase):
 
             self.assertEqual("visualCatalogInvalid", context.exception.code)
             self.assertIn("pageAnchor must be a boolean", context.exception.message)
+
+    def test_match_group_requires_a_page_anchor_and_page_scoped_id(self) -> None:
+        cases = (
+            ({"pageAnchor": False, "matchGroup": "testPage.alternative"}, "requires a page anchor"),
+            ({"matchGroup": "otherPage.alternative"}, "must start with testPage."),
+        )
+        for update, expected_error in cases:
+            with self.subTest(update=update):
+                with tempfile.TemporaryDirectory() as temporary_directory:
+                    catalog_path = _write_minimal_catalog(Path(temporary_directory))
+                    document = _read_catalog(catalog_path)
+                    document["pages"][0]["anchors"][0].update(update)
+                    _write_catalog(catalog_path, document)
+
+                    with self.assertRaises(GameDriverError) as context:
+                        load_visual_catalog(catalog_path)
+
+                self.assertIn(expected_error, context.exception.message)
 
     def test_template_cannot_overlap_source_evidence(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -625,7 +801,7 @@ def _write_minimal_catalog(root: Path, *, schema_version: int = 1) -> Path:
             }
         ],
     }
-    if schema_version == 2:
+    if schema_version >= 2:
         detector_template_path = root / "detector-template.png"
         detector_template_path.write_bytes(b"detector-template")
         detector_source_path = write_test_evidence(
@@ -688,6 +864,55 @@ def _write_minimal_catalog(root: Path, *, schema_version: int = 1) -> Path:
                         "anchorIds": ["testPage.detector"],
                     }
                 ],
+            }
+        ]
+    if schema_version == 3:
+        glyphs = []
+        for digit in range(10):
+            digit_template_path = root / f"digit-{digit}.png"
+            digit_template_path.write_bytes(f"digit-{digit}".encode("ascii"))
+            glyphs.append(
+                {
+                    "digit": digit,
+                    "sourceBounds": {"x": 0, "y": 0, "width": 10, "height": 10},
+                    "template": digit_template_path.name,
+                    "templateSha256": hashlib.sha256(
+                        digit_template_path.read_bytes()
+                    ).hexdigest(),
+                    "sourceEvidence": "source.json",
+                    "sourceEvidenceId": source_document["evidenceId"],
+                    "sourceImageSha256": source_hash,
+                }
+            )
+        document["numberModels"] = [
+            {
+                "id": "testDigits",
+                "minimumScore": 0.8,
+                "minimumMargin": 0.05,
+                "foreground": {
+                    "minimumChannel": 175,
+                    "maximumChannelDelta": 45,
+                },
+                "normalizedSize": {"width": 24, "height": 32},
+                "minimumComponentSize": {"width": 2, "height": 3},
+                "glyphs": glyphs,
+            }
+        ]
+        page = document["pages"][0]
+        page["viewStates"] = []
+        page["elements"] = [
+            {
+                "id": "testPage.value",
+                "role": "value",
+                "bounds": {"x": 0, "y": 0, "width": 10, "height": 10},
+                "actionPoint": {"x": 5, "y": 5},
+                "number": {
+                    "modelId": "testDigits",
+                    "format": "integer",
+                    "bounds": {"x": 0, "y": 0, "width": 10, "height": 10},
+                    "minimumDigits": 1,
+                    "maximumDigits": 2,
+                },
             }
         ]
     catalog_path = root / "catalog.json"

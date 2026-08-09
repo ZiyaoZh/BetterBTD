@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "sandbox-tower.zh-CN.holdout.20260809",
+  "sourceEvidenceId": "80c5deedd6e64b60a33774c125ec1560",
+  "sourceImageSha256": "bf04ffdf889eddf78cae7aa5c19b71b1273855e9311594fadc9f5000587754f5",
+  "pageId": "sandboxTower",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "purpose": "positiveHoldout",
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-09T09:08:30.000Z",
+    "result": "accepted"
+  },
+  "expectedValues": [
+    { "elementId": "sandboxTower.health", "format": "integer", "value": 345689 },
+    { "elementId": "sandboxTower.cash", "format": "currency", "value": 9081726 },
+    { "elementId": "sandboxTower.round", "format": "integer", "value": 57 }
+  ],
+  "notes": [
+    "This independent recapture differs from the template source image and has no capture warnings.",
+    "It validates the Sandbox tower-page identity and all three HUD values without using BetterBTD diagnostics."
+  ]
+}

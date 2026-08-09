@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "sandboxIntro.zh-CN.20260809",
+  "sourceEvidenceId": "8b09353cdba54f84a68b149f069cc9e1",
+  "sourceImageSha256": "026f743136547e9646f4124996969caaadf0b14346d5dc952e574a0fa3c094ae",
+  "pageId": "sandboxIntro",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-09T08:00:00.000Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromAnchors": [
+    "sandbox.health",
+    "sandbox.cash",
+    "sandbox.round",
+    "sandbox.map"
+  ],
+  "notes": [
+    "The source is the first-use Sandbox introduction observed after entering Medium Sandbox.",
+    "The dialog artwork, banner and OK frame are independent of the changing Sandbox HUD values behind the modal."
+  ]
+}

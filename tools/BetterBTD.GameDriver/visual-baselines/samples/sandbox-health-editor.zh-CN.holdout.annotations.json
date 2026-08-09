@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "sandboxHealthEditor.zh-CN.holdout.20260809",
+  "sourceEvidenceId": "106972f1de1b4c81a972a038032bd4e9",
+  "sourceImageSha256": "4f5c1498c1e35f66905c6ea8a1ff9c08a0df80a77d4f31696d688d779b813f5f",
+  "pageId": "sandboxHealthEditor",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-09T08:00:00.000Z",
+    "result": "accepted"
+  },
+  "notes": [
+    "This independently captured editor frame was not used to build templates.",
+    "The editable value and background HUD differ from the source evidence."
+  ]
+}

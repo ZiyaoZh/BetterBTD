@@ -17,6 +17,7 @@ CURRENT_CAPABILITIES = frozenset(
         "ViewStateRecognition",
         "ElementVisibility",
         "ElementState",
+        "ElementNumber",
     }
 )
 
@@ -87,6 +88,7 @@ class _CatalogIndex:
     element_roles: Mapping[str, str]
     visible_elements: frozenset[str]
     element_states: Mapping[str, frozenset[str]]
+    numeric_elements: frozenset[str]
 
 
 @dataclass(frozen=True)
@@ -397,10 +399,12 @@ def _build_catalog_index(catalog: Mapping[str, Any]) -> _CatalogIndex:
     element_roles: dict[str, str] = {}
     visible_elements: set[str] = set()
     element_states: dict[str, frozenset[str]] = {}
+    numeric_elements: set[str] = set()
     errors: list[str] = []
 
-    if catalog.get("schemaVersion") not in (1, 2):
-        errors.append("Game Driver catalog schemaVersion must be 1 or 2")
+    schema_version = catalog.get("schemaVersion")
+    if schema_version not in (1, 2, 3):
+        errors.append("Game Driver catalog schemaVersion must be 1, 2 or 3")
     if catalog.get("catalogId") != "btd6-ui-independent":
         errors.append(
             "Game Driver catalog catalogId must be 'btd6-ui-independent'"
@@ -433,6 +437,14 @@ def _build_catalog_index(catalog: Mapping[str, Any]) -> _CatalogIndex:
     if not raw_pages:
         errors.append("Game Driver catalog pages must not be empty")
 
+    number_model_ids = _number_model_ids(
+        catalog,
+        schema_version,
+        1920,
+        1080,
+        errors,
+    )
+
     for page_index, page in enumerate(raw_pages):
         if not isinstance(page, dict) or not isinstance(page.get("id"), str):
             errors.append(f"Game Driver catalog pages[{page_index}] has no string id")
@@ -448,6 +460,37 @@ def _build_catalog_index(catalog: Mapping[str, Any]) -> _CatalogIndex:
         if not isinstance(anchors, list) or not anchors:
             errors.append(f"Game Driver page {page_id!r} has no anchors")
             anchors = []
+        page_anchor_groups: set[str] = set()
+        for anchor_index, anchor in enumerate(anchors):
+            anchor_prefix = (
+                f"Game Driver page {page_id!r} anchors[{anchor_index}]"
+            )
+            if not isinstance(anchor, dict):
+                errors.append(f"{anchor_prefix} must be an object")
+                continue
+            anchor_id = anchor.get("id")
+            if not _valid_stable_id(anchor_id):
+                errors.append(f"{anchor_prefix} has an invalid id")
+                continue
+            page_anchor = anchor.get("pageAnchor", True)
+            if not isinstance(page_anchor, bool):
+                errors.append(f"{anchor_prefix} has an invalid pageAnchor")
+                continue
+            group_id = anchor_id
+            match_group = anchor.get("matchGroup")
+            if match_group is not None:
+                if not _valid_stable_id(match_group):
+                    errors.append(f"{anchor_prefix} has an invalid matchGroup")
+                elif not page_anchor:
+                    errors.append(f"{anchor_prefix} matchGroup requires a page anchor")
+                elif not match_group.startswith(f"{page_id}."):
+                    errors.append(
+                        f"{anchor_prefix} matchGroup must start with {page_id}."
+                    )
+                else:
+                    group_id = match_group
+            if page_anchor:
+                page_anchor_groups.add(group_id)
         minimum_matched_anchors = page.get("minimumMatchedAnchors")
         if (
             not isinstance(minimum_matched_anchors, int)
@@ -457,13 +500,10 @@ def _build_catalog_index(catalog: Mapping[str, Any]) -> _CatalogIndex:
             errors.append(
                 f"Game Driver page {page_id!r} has invalid minimumMatchedAnchors"
             )
-        elif minimum_matched_anchors > sum(
-            isinstance(anchor, dict) and anchor.get("pageAnchor", True)
-            for anchor in anchors
-        ):
+        elif minimum_matched_anchors > len(page_anchor_groups):
             errors.append(
                 f"Game Driver page {page_id!r} minimumMatchedAnchors exceeds "
-                "its page anchor count"
+                "its page anchor group count"
             )
         minimum_score = page.get("minimumScore")
         if (
@@ -527,6 +567,16 @@ def _build_catalog_index(catalog: Mapping[str, Any]) -> _CatalogIndex:
                     _collect_state_ids(placement.get("states"), states)
             if states:
                 element_states[element_id] = frozenset(states)
+            number = element.get("number")
+            if number is not None and _valid_number_declaration(
+                number,
+                element,
+                element_id,
+                number_model_ids,
+                schema_version,
+                errors,
+            ):
+                numeric_elements.add(element_id)
 
     if errors:
         raise ScenarioValidationError(errors)
@@ -537,7 +587,287 @@ def _build_catalog_index(catalog: Mapping[str, Any]) -> _CatalogIndex:
         element_roles=element_roles,
         visible_elements=frozenset(visible_elements),
         element_states=element_states,
+        numeric_elements=frozenset(numeric_elements),
     )
+
+
+def _number_model_ids(
+    catalog: Mapping[str, Any],
+    schema_version: Any,
+    reference_width: int,
+    reference_height: int,
+    errors: list[str],
+) -> frozenset[str]:
+    raw_models = catalog.get("numberModels", [])
+    if not isinstance(raw_models, list):
+        errors.append("Game Driver catalog numberModels must be an array")
+        return frozenset()
+    if raw_models and schema_version != 3:
+        errors.append("Game Driver catalog numberModels require schemaVersion 3")
+
+    seen_model_ids: set[str] = set()
+    valid_model_ids: set[str] = set()
+    for index, model in enumerate(raw_models):
+        if not isinstance(model, dict):
+            errors.append(
+                f"Game Driver catalog numberModels[{index}] must be an object"
+            )
+            continue
+        model_id = model.get("id")
+        if not _valid_stable_id(model_id):
+            errors.append(
+                f"Game Driver catalog numberModels[{index}] has an invalid id"
+            )
+            continue
+        if model_id in seen_model_ids:
+            errors.append(
+                f"Game Driver catalog contains duplicate number model id {model_id!r}"
+            )
+            continue
+        seen_model_ids.add(model_id)
+
+        prefix = f"Game Driver number model {model_id!r}"
+        valid = True
+        for field in ("minimumScore", "minimumMargin"):
+            if not _valid_catalog_score(model.get(field)):
+                errors.append(f"{prefix} has an invalid {field}")
+                valid = False
+        for field, child_fields, validator in (
+            (
+                "foreground",
+                ("minimumChannel", "maximumChannelDelta"),
+                _valid_byte_integer,
+            ),
+            (
+                "normalizedSize",
+                ("width", "height"),
+                _valid_positive_integer,
+            ),
+            (
+                "minimumComponentSize",
+                ("width", "height"),
+                _valid_positive_integer,
+            ),
+        ):
+            value = model.get(field)
+            if not isinstance(value, dict):
+                errors.append(f"{prefix} {field} must be an object")
+                valid = False
+                continue
+            for child_field in child_fields:
+                if not validator(value.get(child_field)):
+                    errors.append(
+                        f"{prefix} has an invalid {field}.{child_field}"
+                    )
+                    valid = False
+
+        glyphs = model.get("glyphs")
+        if not isinstance(glyphs, list):
+            errors.append(f"{prefix} glyphs must be an array")
+            continue
+        seen_digits: set[int] = set()
+        for glyph_index, glyph in enumerate(glyphs):
+            glyph_prefix = f"{prefix} glyphs[{glyph_index}]"
+            if not isinstance(glyph, dict):
+                errors.append(f"{glyph_prefix} must be an object")
+                valid = False
+                continue
+            digit = glyph.get("digit")
+            if (
+                not isinstance(digit, int)
+                or isinstance(digit, bool)
+                or digit < 0
+                or digit > 9
+            ):
+                errors.append(f"{glyph_prefix} has an invalid digit")
+                valid = False
+            elif digit in seen_digits:
+                errors.append(f"{prefix} contains duplicate digit {digit}")
+                valid = False
+            else:
+                seen_digits.add(digit)
+
+            if not _valid_catalog_rect_in_reference(
+                glyph.get("sourceBounds"),
+                reference_width,
+                reference_height,
+            ):
+                errors.append(f"{glyph_prefix} has invalid sourceBounds")
+                valid = False
+            template = glyph.get("template")
+            if not _valid_catalog_relative_path(template, suffix=".png"):
+                errors.append(f"{glyph_prefix} has an invalid PNG template path")
+                valid = False
+            if not _valid_sha256(glyph.get("templateSha256")):
+                errors.append(f"{glyph_prefix} has an invalid templateSha256")
+                valid = False
+            if not _valid_catalog_relative_path(glyph.get("sourceEvidence")):
+                errors.append(f"{glyph_prefix} has an invalid sourceEvidence path")
+                valid = False
+            source_evidence_id = glyph.get("sourceEvidenceId")
+            if not isinstance(source_evidence_id, str) or not source_evidence_id.strip():
+                errors.append(f"{glyph_prefix} has an invalid sourceEvidenceId")
+                valid = False
+            if not _valid_sha256(glyph.get("sourceImageSha256")):
+                errors.append(f"{glyph_prefix} has an invalid sourceImageSha256")
+                valid = False
+
+        if seen_digits != set(range(10)):
+            missing = ", ".join(
+                str(digit) for digit in sorted(set(range(10)) - seen_digits)
+            )
+            errors.append(
+                f"{prefix} must contain digits 0 through 9; missing: {missing}"
+            )
+            valid = False
+        if valid:
+            valid_model_ids.add(model_id)
+    return frozenset(valid_model_ids)
+
+
+def _valid_number_declaration(
+    number: Any,
+    element: Mapping[str, Any],
+    element_id: str,
+    number_model_ids: frozenset[str],
+    schema_version: Any,
+    errors: list[str],
+) -> bool:
+    prefix = f"Game Driver element {element_id!r} number"
+    if schema_version != 3:
+        errors.append(f"{prefix} requires catalog schemaVersion 3")
+        return False
+    if element.get("role") != "value":
+        errors.append(f"{prefix} requires role 'value'")
+        return False
+    if element.get("placements") is not None:
+        errors.append(f"{prefix} does not support placements")
+        return False
+    if not isinstance(number, dict):
+        errors.append(f"{prefix} must be an object")
+        return False
+
+    valid = True
+    model_id = number.get("modelId")
+    if not isinstance(model_id, str) or model_id not in number_model_ids:
+        errors.append(f"{prefix} references an unknown number model")
+        valid = False
+    if number.get("format") not in ("integer", "currency", "progressCurrent"):
+        errors.append(f"{prefix} has an invalid format")
+        valid = False
+    number_bounds = number.get("bounds")
+    valid_number_bounds = _valid_catalog_rect_in_reference(
+        number_bounds,
+        1920,
+        1080,
+    )
+    if not valid_number_bounds:
+        errors.append(f"{prefix} bounds must be inside the reference space")
+        valid = False
+    element_bounds = element.get("bounds")
+    valid_element_bounds = _valid_catalog_rect_in_reference(
+        element_bounds,
+        1920,
+        1080,
+    )
+    if not valid_element_bounds:
+        errors.append(f"Game Driver element {element_id!r} has invalid bounds")
+        valid = False
+    elif valid_number_bounds and not _catalog_rect_contains(
+        element_bounds,
+        number_bounds,
+    ):
+        errors.append(f"{prefix} bounds must be inside element bounds")
+        valid = False
+
+    minimum_digits = number.get("minimumDigits")
+    maximum_digits = number.get("maximumDigits")
+    if (
+        not isinstance(minimum_digits, int)
+        or isinstance(minimum_digits, bool)
+        or minimum_digits <= 0
+        or not isinstance(maximum_digits, int)
+        or isinstance(maximum_digits, bool)
+        or maximum_digits < minimum_digits
+    ):
+        errors.append(f"{prefix} has an invalid digit range")
+        valid = False
+    return valid
+
+
+def _valid_catalog_rect(value: Any) -> bool:
+    return isinstance(value, dict) and all(
+        isinstance(value.get(field), int)
+        and not isinstance(value.get(field), bool)
+        and (value[field] >= 0 if field in ("x", "y") else value[field] > 0)
+        for field in ("x", "y", "width", "height")
+    )
+
+
+def _valid_catalog_rect_in_reference(value: Any, width: int, height: int) -> bool:
+    return (
+        _valid_catalog_rect(value)
+        and value["x"] + value["width"] <= width
+        and value["y"] + value["height"] <= height
+    )
+
+
+def _catalog_rect_contains(outer: Mapping[str, int], inner: Mapping[str, int]) -> bool:
+    return (
+        inner["x"] >= outer["x"]
+        and inner["y"] >= outer["y"]
+        and inner["x"] + inner["width"] <= outer["x"] + outer["width"]
+        and inner["y"] + inner["height"] <= outer["y"] + outer["height"]
+    )
+
+
+def _valid_stable_id(value: Any) -> bool:
+    return (
+        isinstance(value, str)
+        and bool(value.strip())
+        and all(character.isalnum() or character in ".-_" for character in value)
+    )
+
+
+def _valid_positive_integer(value: Any) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool) and value > 0
+
+
+def _valid_byte_integer(value: Any) -> bool:
+    return (
+        isinstance(value, int)
+        and not isinstance(value, bool)
+        and 0 <= value <= 255
+    )
+
+
+def _valid_catalog_score(value: Any) -> bool:
+    return (
+        isinstance(value, (int, float))
+        and not isinstance(value, bool)
+        and 0 <= value <= 1
+    )
+
+
+def _valid_sha256(value: Any) -> bool:
+    return (
+        isinstance(value, str)
+        and len(value) == 64
+        and all(character in "0123456789abcdef" for character in value.lower())
+    )
+
+
+def _valid_catalog_relative_path(value: Any, *, suffix: str | None = None) -> bool:
+    if not isinstance(value, str) or not value.strip():
+        return False
+    path = Path(value)
+    if path.is_absolute():
+        return False
+    catalog_root = Path("catalog-root").resolve()
+    resolved = (catalog_root / path).resolve()
+    if not resolved.is_relative_to(catalog_root):
+        return False
+    return suffix is None or path.suffix.casefold() == suffix.casefold()
 
 
 def _has_anchor_ids(value: Mapping[str, Any]) -> bool:
@@ -710,6 +1040,10 @@ def _validate_predicate(
         if catalog.element_roles.get(element_id) != "value":
             errors.append(
                 f"{path} element {element_id!r} is not declared with role 'value'"
+            )
+        elif element_id not in catalog.numeric_elements:
+            errors.append(
+                f"{path} element {element_id!r} has no independent numeric recognition"
             )
 
 

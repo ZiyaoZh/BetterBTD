@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "sandboxIntro.zh-CN.holdout.20260809",
+  "sourceEvidenceId": "99647b5d1b164c32bba7e3cff6774b6b",
+  "sourceImageSha256": "50bd3b376e93b8d8756cc37f2228290325de504a266800818691ff88cef957f9",
+  "pageId": "sandboxIntro",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-09T08:00:00.000Z",
+    "result": "accepted"
+  },
+  "notes": [
+    "This independently captured frame was not used to build any template.",
+    "Its changing background HUD values differ from the source while the modal remains visually stable."
+  ]
+}

@@ -986,10 +986,12 @@ def _resolve_click_target(
             "no input was sent.",
             6,
         )
-    if target.role != "button":
+    numeric_action = target.role == "value" and target.number is not None
+    if target.role != "button" and not numeric_action:
         raise GameDriverError(
             "elementNotActionable",
-            f"Element {element_id} is not an actionable button; no input was sent.",
+            f"Element {element_id} is not an actionable button or recognized numeric "
+            "value; no input was sent.",
             6,
         )
     if target.placements:
@@ -1026,14 +1028,41 @@ def _resolve_click_target(
             f"Element {element_id} is not an actionable button; no input was sent.",
             6,
         )
-    if not anchor_ids:
+    if numeric_action:
+        recognized_elements = recognition_document.get("elements")
+        recognized_element = next(
+            (
+                item
+                for item in recognized_elements
+                if isinstance(item, dict) and item.get("id") == element_id
+            ),
+            None,
+        ) if isinstance(recognized_elements, list) else None
+        number_result = (
+            recognized_element.get("number")
+            if isinstance(recognized_element, dict)
+            else None
+        )
+        if not isinstance(number_result, dict) or (
+            number_result.get("status") != "matched"
+            or number_result.get("oracleEligible") is not True
+        ):
+            raise GameDriverError(
+                "elementNumberNotRecognized",
+                f"Element {element_id} does not have an independently matched, "
+                "Oracle-eligible numeric value; no input was sent.",
+                6,
+            )
+    if not anchor_ids and not numeric_action:
         raise GameDriverError(
             "elementVisibilityNotEvaluated",
             f"Element {element_id} has no independent visibility detector; no input was sent.",
             6,
         )
     anchor_matches = {anchor.id: anchor for anchor in page_match.anchors}
-    if not all(anchor_matches[anchor_id].matched for anchor_id in anchor_ids):
+    if anchor_ids and not all(
+        anchor_matches[anchor_id].matched for anchor_id in anchor_ids
+    ):
         raise GameDriverError(
             "elementNotVisible",
             f"Element {element_id} is not independently visible; no input was sent.",

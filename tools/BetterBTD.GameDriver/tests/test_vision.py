@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from dataclasses import replace
 
-from PIL import Image
+from PIL import Image, ImageDraw
 
 from betterbtd_game_driver.evidence import read_evidence
 from betterbtd_game_driver.errors import GameDriverError
@@ -379,6 +379,275 @@ class VisualRecognitionTests(unittest.TestCase):
         self.assertEqual("visible", settings["visibility"])
         self.assertTrue(settings["visible"])
         self.assertEqual("notEvaluated", cash["visibility"])
+
+    def test_real_in_level_frames_report_exact_independent_numbers(self) -> None:
+        cases = {
+            "in-level.zh-CN.holdout.json": {
+                "inLevel.health": 200,
+                "inLevel.cash": 1700,
+                "inLevel.round": 1,
+            },
+            "in-level-active-round.zh-CN.holdout.json": {
+                "inLevel.health": 1,
+                "inLevel.cash": 1516,
+                "inLevel.round": 13,
+            },
+        }
+        for evidence_name, expected_values in cases.items():
+            with self.subTest(evidence=evidence_name):
+                evidence = read_evidence(SAMPLE_ROOT / evidence_name)
+
+                result, match = recognize_image(evidence, self.catalog)
+
+                self.assertIsNotNone(match)
+                self.assertEqual("inLevel", result["recognition"]["page"]["id"])
+                self.assertEqual(
+                    expected_values,
+                    _matched_number_values(result["recognition"]["elements"]),
+                )
+
+    def test_real_sandbox_frames_report_exact_independent_numbers(self) -> None:
+        cases = {
+            "sandbox.zh-CN.json": {
+                "sandbox.health": 908172,
+                "sandbox.cash": 3456789,
+                "sandbox.round": 84,
+            },
+            "sandbox.zh-CN.holdout.json": {
+                "sandbox.health": 345689,
+                "sandbox.cash": 9081726,
+                "sandbox.round": 57,
+            },
+        }
+        for evidence_name, expected_values in cases.items():
+            with self.subTest(evidence=evidence_name):
+                evidence = read_evidence(SAMPLE_ROOT / evidence_name)
+
+                result, match = recognize_image(evidence, self.catalog)
+
+                self.assertIsNotNone(match)
+                recognition = result["recognition"]
+                self.assertEqual("matched", recognition["status"])
+                self.assertTrue(recognition["oracleEligible"])
+                self.assertEqual("sandbox", recognition["page"]["id"])
+                self.assertEqual(
+                    expected_values,
+                    _matched_number_values(recognition["elements"]),
+                )
+
+    def test_real_sandbox_tower_frames_are_distinct_and_report_numbers(self) -> None:
+        expected_values = {
+            "sandboxTower.health": 345689,
+            "sandboxTower.cash": 9081726,
+            "sandboxTower.round": 57,
+        }
+        for evidence_name in (
+            "sandbox-tower.zh-CN.json",
+            "sandbox-tower.zh-CN.holdout.json",
+        ):
+            with self.subTest(evidence=evidence_name):
+                evidence = read_evidence(SAMPLE_ROOT / evidence_name)
+
+                result, match = recognize_image(evidence, self.catalog)
+
+                self.assertIsNotNone(match)
+                recognition = result["recognition"]
+                self.assertEqual("matched", recognition["status"])
+                self.assertTrue(recognition["oracleEligible"])
+                self.assertEqual("sandboxTower", recognition["page"]["id"])
+                self.assertEqual(
+                    expected_values,
+                    _matched_number_values(recognition["elements"]),
+                )
+                for element_id in (
+                    "sandboxTower.dartMonkey",
+                    "sandboxTower.heliPilot",
+                    "sandboxTower.bloonMode",
+                    "sandboxTower.startOrFastForward",
+                ):
+                    element = _element_by_id(recognition["elements"], element_id)
+                    self.assertEqual("visible", element["visibility"])
+                    self.assertTrue(element["visible"])
+
+    def test_sandbox_tower_frame_cannot_match_in_level(self) -> None:
+        evidence = read_evidence(SAMPLE_ROOT / "sandbox-tower.zh-CN.holdout.json")
+
+        result, match = recognize_image(evidence, self.catalog)
+
+        self.assertIsNotNone(match)
+        self.assertEqual("sandboxTower", result["recognition"]["page"]["id"])
+        in_level = next(
+            candidate
+            for candidate in result["recognition"]["candidates"]
+            if candidate["id"] == "inLevel"
+        )
+        self.assertFalse(in_level["matched"])
+
+    def test_sandbox_intro_and_editors_match_source_and_holdout(self) -> None:
+        cases = {
+            "sandbox-intro.zh-CN.json": "sandboxIntro",
+            "sandbox-intro.zh-CN.holdout.json": "sandboxIntro",
+            "sandbox-health-editor.zh-CN.json": "sandboxHealthEditor",
+            "sandbox-health-editor.zh-CN.holdout.json": "sandboxHealthEditor",
+            "sandbox-cash-editor.zh-CN.json": "sandboxCashEditor",
+            "sandbox-cash-editor.zh-CN.holdout.json": "sandboxCashEditor",
+        }
+        for evidence_name, expected_page in cases.items():
+            with self.subTest(evidence=evidence_name):
+                evidence = read_evidence(SAMPLE_ROOT / evidence_name)
+
+                result, match = recognize_image(evidence, self.catalog)
+
+                self.assertIsNotNone(match)
+                recognition = result["recognition"]
+                self.assertEqual("matched", recognition["status"])
+                self.assertTrue(recognition["oracleEligible"])
+                self.assertEqual(expected_page, recognition["page"]["id"])
+                if expected_page != "sandboxIntro":
+                    self.assertEqual("modal", recognition["page"]["kind"])
+
+    def test_corrupted_number_is_unknown_without_invalidating_sandbox_page(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            with Image.open(SAMPLE_ROOT / "sandbox.zh-CN.holdout.png") as source:
+                modified = source.convert("RGB")
+                modified.paste((0, 0, 0), (140, 25, 260, 60))
+            metadata_path = write_test_evidence(
+                Path(temporary_directory),
+                "sandbox-health-corrupted",
+                modified,
+            )
+            evidence = read_evidence(metadata_path)
+
+            result, match = recognize_image(evidence, self.catalog)
+
+        self.assertIsNotNone(match)
+        recognition = result["recognition"]
+        self.assertEqual("matched", recognition["status"])
+        self.assertEqual("sandbox", recognition["page"]["id"])
+        health = _element_by_id(recognition["elements"], "sandbox.health")
+        self.assertEqual("unknown", health["number"]["status"])
+        self.assertIsNone(health["number"]["value"])
+        self.assertFalse(health["number"]["oracleEligible"])
+
+    def test_corrupted_round_digit_cannot_be_used_as_progress_separator(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            with Image.open(
+                SAMPLE_ROOT / "in-level-active-round.zh-CN.holdout.png"
+            ) as source:
+                modified = source.convert("RGB")
+            draw = ImageDraw.Draw(modified)
+            draw.rectangle((1438, 34, 1463, 70), fill=(0, 0, 0))
+            draw.rectangle((1447, 38, 1454, 66), fill=(255, 255, 255))
+            metadata_path = write_test_evidence(
+                Path(temporary_directory),
+                "in-level-round-digit-corrupted",
+                modified,
+            )
+            evidence = read_evidence(metadata_path)
+
+            result, match = recognize_image(evidence, self.catalog)
+
+        self.assertIsNotNone(match)
+        recognition = result["recognition"]
+        self.assertEqual("matched", recognition["status"])
+        self.assertEqual("inLevel", recognition["page"]["id"])
+        round_value = _element_by_id(recognition["elements"], "inLevel.round")
+        self.assertIn(round_value["number"]["status"], ("unknown", "ambiguous"))
+        self.assertIsNone(round_value["number"]["value"])
+        self.assertFalse(round_value["number"]["oracleEligible"])
+        self.assertEqual(3, len(round_value["number"]["validationGlyphs"]))
+
+    def test_number_margin_can_fail_closed_as_ambiguous(self) -> None:
+        strict_model = replace(self.catalog.number_models[0], minimum_margin=1.0)
+        strict_catalog = replace(self.catalog, number_models=(strict_model,))
+        evidence = read_evidence(SAMPLE_ROOT / "sandbox.zh-CN.holdout.json")
+
+        result, match = recognize_image(evidence, strict_catalog)
+
+        self.assertIsNotNone(match)
+        recognition = result["recognition"]
+        self.assertEqual("matched", recognition["status"])
+        self.assertEqual("sandbox", recognition["page"]["id"])
+        for element_id in ("sandbox.health", "sandbox.cash", "sandbox.round"):
+            number = _element_by_id(recognition["elements"], element_id)["number"]
+            self.assertEqual("ambiguous", number["status"])
+            self.assertIsNone(number["value"])
+            self.assertFalse(number["oracleEligible"])
+
+    def test_scaled_sandbox_frame_preserves_exact_numbers(self) -> None:
+        sizes = (
+            (960, 540),
+            (1024, 576),
+            (1152, 648),
+            (1280, 720),
+            (1366, 768),
+            (1600, 900),
+            (2560, 1440),
+            (3840, 2160),
+        )
+        for width, height in sizes:
+            with self.subTest(size=(width, height)):
+                with tempfile.TemporaryDirectory() as temporary_directory:
+                    with Image.open(
+                        SAMPLE_ROOT / "sandbox.zh-CN.holdout.png"
+                    ) as source:
+                        scaled = source.convert("RGB").resize(
+                            (width, height),
+                            Image.Resampling.LANCZOS,
+                        )
+                    metadata_path = write_test_evidence(
+                        Path(temporary_directory),
+                        "sandbox-scaled",
+                        scaled,
+                    )
+                    evidence = read_evidence(metadata_path)
+
+                    result, match = recognize_image(evidence, self.catalog)
+
+                self.assertIsNotNone(match)
+                recognition = result["recognition"]
+                self.assertEqual("sandbox", recognition["page"]["id"])
+                self.assertEqual(
+                    {
+                        "sandbox.health": 345689,
+                        "sandbox.cash": 9081726,
+                        "sandbox.round": 57,
+                    },
+                    _matched_number_values(recognition["elements"]),
+                )
+                if (width, height) == (1280, 720):
+                    health = _element_by_id(
+                        recognition["elements"],
+                        "sandbox.health",
+                    )
+                    self.assertEqual(
+                        {
+                            "x": 93,
+                            "y": 17,
+                            "width": 80,
+                            "height": 23,
+                            "right": 173,
+                            "bottom": 40,
+                        },
+                        health["number"]["boundsClient"],
+                    )
+
+    def test_number_from_non_oracle_evidence_is_diagnostic_only(self) -> None:
+        evidence = replace(
+            read_evidence(SAMPLE_ROOT / "sandbox.zh-CN.holdout.json"),
+            oracle_eligible=False,
+        )
+
+        result, match = recognize_image(evidence, self.catalog)
+
+        self.assertIsNotNone(match)
+        health = _element_by_id(
+            result["recognition"]["elements"],
+            "sandbox.health",
+        )
+        self.assertEqual("matched", health["number"]["status"])
+        self.assertEqual(345689, health["number"]["value"])
+        self.assertFalse(health["number"]["oracleEligible"])
 
     def test_in_level_page_identity_ignores_health_badge_variants(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -1261,6 +1530,7 @@ class VisualRecognitionTests(unittest.TestCase):
             reference_width=self.catalog.reference_width,
             reference_height=self.catalog.reference_height,
             pages=(source_page, second_page),
+            number_models=self.catalog.number_models,
             sha256=self.catalog.sha256,
         )
         evidence = read_evidence(SAMPLE_ROOT / "main-menu.zh-CN.holdout.json")
@@ -1373,6 +1643,27 @@ class VisualRecognitionTests(unittest.TestCase):
                 recognize_image(evidence, self.catalog)
 
             self.assertEqual("evidenceGeometryMismatch", context.exception.code)
+
+
+def _element_by_id(
+    elements: list[dict[str, object]],
+    element_id: str,
+) -> dict[str, object]:
+    return next(element for element in elements if element["id"] == element_id)
+
+
+def _matched_number_values(
+    elements: list[dict[str, object]],
+) -> dict[str, int]:
+    values: dict[str, int] = {}
+    for element in elements:
+        number = element.get("number")
+        if not isinstance(number, dict):
+            continue
+        if number["status"] != "matched" or not number["oracleEligible"]:
+            raise AssertionError(f"{element['id']} did not produce an Oracle number: {number}")
+        values[str(element["id"])] = int(number["value"])
+    return values
 
 
 if __name__ == "__main__":

@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "annotationId": "sandboxHealthEditor.zh-CN.20260809",
+  "sourceEvidenceId": "b5914b5f0f64478c91bfb1dd9b960c0b",
+  "sourceImageSha256": "aa1f1818543cd578abdbe21d7f361e0543326360e2c77dfc1839c4434e781133",
+  "pageId": "sandboxHealthEditor",
+  "language": "zh-CN",
+  "clientSize": { "width": 1920, "height": 1080 },
+  "review": {
+    "method": "agentImageView",
+    "reviewedAtUtc": "2026-08-09T08:00:00.000Z",
+    "result": "accepted"
+  },
+  "dynamicRegionsExcludedFromPageAnchors": [
+    "sandboxHealthEditor.value",
+    "sandbox.map",
+    "sandbox.health",
+    "sandbox.cash",
+    "sandbox.round"
+  ],
+  "notes": [
+    "The modal was opened by clicking the real Sandbox health value.",
+    "The localized title distinguishes this editor from the otherwise similar cash editor."
+  ]
+}

@@ -10,7 +10,7 @@ from PIL import Image
 
 from .errors import GameDriverError
 from .evidence import EvidenceBundle, read_evidence
-from .visual_catalog import VisualAnchor, VisualCatalog
+from .visual_catalog import VisualAnchor, VisualCatalog, VisualNumberGlyph
 
 
 def build_templates(
@@ -18,76 +18,95 @@ def build_templates(
     *,
     overwrite: bool,
 ) -> dict[str, object]:
-    generated: list[tuple[VisualAnchor, bytes, dict[str, object]]] = []
+    template_sources: list[
+        tuple[VisualAnchor | VisualNumberGlyph, str, dict[str, object]]
+    ] = []
+    for page in catalog.pages:
+        for anchor in page.anchors:
+            template_sources.append(
+                (anchor, f"Anchor {anchor.id}", {"anchorId": anchor.id})
+            )
+    for model in catalog.number_models:
+        for glyph in model.glyphs:
+            template_sources.append(
+                (
+                    glyph,
+                    f"Number model {model.id} digit {glyph.digit}",
+                    {"numberModelId": model.id, "digit": glyph.digit},
+                )
+            )
+
+    generated: list[
+        tuple[VisualAnchor | VisualNumberGlyph, bytes, dict[str, object]]
+    ] = []
     evidence_cache: dict[Path, tuple[EvidenceBundle, Image.Image]] = {}
     try:
-        for page in catalog.pages:
-            for anchor in page.anchors:
-                cached = evidence_cache.get(anchor.source_metadata_path)
-                if cached is None:
-                    evidence = read_evidence(anchor.source_metadata_path)
-                    try:
-                        with Image.open(BytesIO(evidence.image_bytes)) as source:
-                            source.load()
-                            image = source.convert("RGB")
-                    except (OSError, ValueError) as error:
-                        raise GameDriverError(
-                            "baselineSourceInvalid",
-                            f"Baseline source image could not be read: {evidence.image_path}: {error}",
-                            3,
-                        ) from error
-                    if image.size != (catalog.reference_width, catalog.reference_height):
-                        raise GameDriverError(
-                            "baselineSourceSizeInvalid",
-                            "Baseline source must use the exact catalog reference size; "
-                            f"found {image.width} x {image.height}.",
-                            3,
-                        )
-                    cached = (evidence, image)
-                    evidence_cache[anchor.source_metadata_path] = cached
-                evidence, image = cached
-                if evidence.evidence_id != anchor.source_evidence_id:
+        for template_source, source_label, descriptor in template_sources:
+            cached = evidence_cache.get(template_source.source_metadata_path)
+            if cached is None:
+                evidence = read_evidence(template_source.source_metadata_path)
+                try:
+                    with Image.open(BytesIO(evidence.image_bytes)) as source:
+                        source.load()
+                        image = source.convert("RGB")
+                except (OSError, ValueError) as error:
                     raise GameDriverError(
-                        "baselineProvenanceMismatch",
-                        f"Anchor {anchor.id} source evidenceId does not match its catalog entry.",
+                        "baselineSourceInvalid",
+                        f"Baseline source image could not be read: {evidence.image_path}: {error}",
+                        3,
+                    ) from error
+                if image.size != (catalog.reference_width, catalog.reference_height):
+                    raise GameDriverError(
+                        "baselineSourceSizeInvalid",
+                        "Baseline source must use the exact catalog reference size; "
+                        f"found {image.width} x {image.height}.",
                         3,
                     )
-                if evidence.image_sha256 != anchor.source_image_sha256:
-                    raise GameDriverError(
-                        "baselineProvenanceMismatch",
-                        f"Anchor {anchor.id} source image hash does not match its catalog entry.",
-                        3,
-                    )
+                cached = (evidence, image)
+                evidence_cache[template_source.source_metadata_path] = cached
+            evidence, image = cached
+            if evidence.evidence_id != template_source.source_evidence_id:
+                raise GameDriverError(
+                    "baselineProvenanceMismatch",
+                    f"{source_label} source evidenceId does not match its catalog entry.",
+                    3,
+                )
+            if evidence.image_sha256 != template_source.source_image_sha256:
+                raise GameDriverError(
+                    "baselineProvenanceMismatch",
+                    f"{source_label} source image hash does not match its catalog entry.",
+                    3,
+                )
 
-                template = image.crop(
-                    (
-                        anchor.source_bounds.x,
-                        anchor.source_bounds.y,
-                        anchor.source_bounds.right,
-                        anchor.source_bounds.bottom,
-                    )
+            template = image.crop(
+                (
+                    template_source.source_bounds.x,
+                    template_source.source_bounds.y,
+                    template_source.source_bounds.right,
+                    template_source.source_bounds.bottom,
                 )
-                content = _encode_png(template)
-                actual_sha256 = hashlib.sha256(content).hexdigest()
-                if actual_sha256 != anchor.template_sha256:
-                    raise GameDriverError(
-                        "baselineTemplateMismatch",
-                        f"Anchor {anchor.id} generated template hash is {actual_sha256}, "
-                        f"but the catalog requires {anchor.template_sha256}.",
-                        3,
-                    )
-                generated.append(
-                    (
-                        anchor,
-                        content,
+            )
+            content = _encode_png(template)
+            actual_sha256 = hashlib.sha256(content).hexdigest()
+            if actual_sha256 != template_source.template_sha256:
+                raise GameDriverError(
+                    "baselineTemplateMismatch",
+                    f"{source_label} generated template hash is {actual_sha256}, "
+                    f"but the catalog requires {template_source.template_sha256}.",
+                    3,
+                )
+            generated.append(
+                (
+                    template_source,
+                    content,
                     {
-                        "anchorId": anchor.id,
-                        "path": str(anchor.template_path),
+                        **descriptor,
+                        "path": str(template_source.template_path),
                         "sha256": actual_sha256,
-                        "sourceEvidenceId": anchor.source_evidence_id,
-                        },
-                    )
+                        "sourceEvidenceId": template_source.source_evidence_id,
+                    },
                 )
+            )
     finally:
         for _, image in evidence_cache.values():
             image.close()

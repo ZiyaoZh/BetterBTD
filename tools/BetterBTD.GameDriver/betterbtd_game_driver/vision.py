@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from io import BytesIO
 from pathlib import Path
@@ -12,7 +12,15 @@ from PIL import Image, ImageChops, ImageDraw, ImageFont, ImageOps, ImageStat
 from .coordinates import reference_rect_to_client, reference_to_client
 from .evidence import EvidenceBundle, evidence_reference
 from .errors import GameDriverError
-from .visual_catalog import VisualCatalog, VisualElement, VisualPage, VisualViewState
+from .models import Rect
+from .visual_catalog import (
+    VisualCatalog,
+    VisualElement,
+    VisualNumber,
+    VisualNumberModel,
+    VisualPage,
+    VisualViewState,
+)
 
 
 COMPARISON_SIZE = (48, 48)
@@ -26,6 +34,7 @@ class AnchorMatch:
     minimum_score: float
     matched: bool
     page_anchor: bool
+    match_group: str | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -54,6 +63,19 @@ class FrameRecognition:
     status: str
     match: PageMatch | None
     candidates: tuple[PageMatch, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class BinaryComponent:
+    bounds: Rect
+    pixels: frozenset[tuple[int, int]]
+
+
+@dataclass(frozen=True, slots=True)
+class NumberGlyphSignature:
+    pixels: frozenset[int]
+    expanded_pixels: frozenset[int]
+    has_enclosed_region: bool
 
 
 def recognize_image(
@@ -123,7 +145,18 @@ def recognize_image(
                 _page_candidate(match)
                 for match in frame_recognition.candidates
             ],
-            "elements": _element_results(best_match, width, height) if best_match else [],
+            "elements": (
+                _element_results(
+                    best_match,
+                    width,
+                    height,
+                    image,
+                    catalog,
+                    evidence.oracle_eligible,
+                )
+                if best_match
+                else []
+            ),
         },
     }
     return result, best_match
@@ -304,14 +337,25 @@ def _match_page(reference_image: Image.Image, page: VisualPage) -> PageMatch:
                 minimum_score=anchor.minimum_score,
                 matched=score >= anchor.minimum_score,
                 page_anchor=anchor.page_anchor,
+                match_group=anchor.match_group,
             )
         )
 
     page_anchor_matches = [match for match in anchor_matches if match.page_anchor]
-    matched_anchor_count = sum(match.matched for match in page_anchor_matches)
-    page_score = sum(match.score for match in page_anchor_matches) / len(
-        page_anchor_matches
+    page_anchor_groups: dict[str, list[AnchorMatch]] = {}
+    for anchor_match in page_anchor_matches:
+        page_anchor_groups.setdefault(
+            anchor_match.match_group or anchor_match.id,
+            [],
+        ).append(anchor_match)
+    matched_anchor_count = sum(
+        any(match.matched for match in group)
+        for group in page_anchor_groups.values()
     )
+    page_score = sum(
+        max(match.score for match in group)
+        for group in page_anchor_groups.values()
+    ) / len(page_anchor_groups)
     view_state, view_state_ambiguous, view_state_candidates = _match_view_states(
         page,
         anchor_matches,
@@ -505,6 +549,7 @@ def _anchor_result(anchor: AnchorMatch) -> dict[str, object]:
         "minimumScore": anchor.minimum_score,
         "matched": anchor.matched,
         "pageAnchor": anchor.page_anchor,
+        "matchGroup": anchor.match_group,
     }
 
 
@@ -512,9 +557,14 @@ def _element_results(
     match: PageMatch,
     width: int,
     height: int,
+    image: Image.Image,
+    catalog: VisualCatalog,
+    evidence_oracle_eligible: bool,
 ) -> list[dict[str, object]]:
     result: list[dict[str, object]] = []
     anchor_matches = {anchor.id: anchor for anchor in match.anchors}
+    number_models = {model.id: model for model in catalog.number_models}
+    signature_cache: dict[str, dict[int, NumberGlyphSignature]] = {}
     for element in match.page.elements:
         placement = _element_placement_for_match(match, element)
         if placement is None:
@@ -530,6 +580,7 @@ def _element_results(
                     "boundsReference": None,
                     "boundsClient": None,
                     "actionPointClient": None,
+                    "number": None,
                 }
             )
             continue
@@ -557,6 +608,28 @@ def _element_results(
             getattr(placement, "states", ()),
             anchor_matches,
         )
+        number_result = None
+        if element.number is not None:
+            model = number_models.get(element.number.model_id)
+            if model is None:
+                raise GameDriverError(
+                    "visualCatalogInvalid",
+                    f"Number model was not loaded: {element.number.model_id}",
+                    3,
+                )
+            signatures = signature_cache.get(model.id)
+            if signatures is None:
+                signatures = _number_model_signatures(model)
+                signature_cache[model.id] = signatures
+            number_result = _recognize_number(
+                image,
+                element.number,
+                model,
+                signatures,
+                width,
+                height,
+                evidence_oracle_eligible,
+            )
         result.append(
             {
                 "id": element.id,
@@ -572,9 +645,461 @@ def _element_results(
                 "boundsClient": client_bounds.to_dict(),
                 "actionPointClient": action_point,
                 "state": state_result,
+                "number": number_result,
             }
         )
     return result
+
+
+def _number_model_signatures(
+    model: VisualNumberModel,
+) -> dict[int, NumberGlyphSignature]:
+    signatures: dict[int, NumberGlyphSignature] = {}
+    for glyph in model.glyphs:
+        if glyph.template_bytes is None:
+            raise GameDriverError(
+                "visualCatalogInvalid",
+                f"Number glyph template was not loaded: {model.id} digit {glyph.digit}",
+                3,
+            )
+        try:
+            with Image.open(BytesIO(glyph.template_bytes)) as source:
+                source.load()
+                glyph_image = source.convert("RGB")
+        except (OSError, ValueError) as error:
+            raise GameDriverError(
+                "visualCatalogInvalid",
+                f"Number glyph template is invalid: {model.id} digit {glyph.digit}: "
+                f"{error}",
+                3,
+            ) from error
+        components = _significant_components(glyph_image, model)
+        if len(components) != 1:
+            raise GameDriverError(
+                "visualCatalogInvalid",
+                f"Number glyph template must contain one component: {model.id} "
+                f"digit {glyph.digit}; found {len(components)}.",
+                3,
+            )
+        component = components[0]
+        pixels = _normalized_signature(component, model)
+        signatures[glyph.digit] = NumberGlyphSignature(
+            pixels=pixels,
+            expanded_pixels=_expand_signature(pixels, model),
+            has_enclosed_region=_component_has_enclosed_region(component),
+        )
+    if set(signatures) != set(range(10)):
+        raise GameDriverError(
+            "visualCatalogInvalid",
+            f"Number model {model.id} must load digits 0 through 9.",
+            3,
+        )
+    return signatures
+
+
+def _recognize_number(
+    image: Image.Image,
+    number: VisualNumber,
+    model: VisualNumberModel,
+    signatures: dict[int, NumberGlyphSignature],
+    client_width: int,
+    client_height: int,
+    evidence_oracle_eligible: bool,
+) -> dict[str, object]:
+    bounds_client = reference_rect_to_client(
+        number.bounds,
+        client_width,
+        client_height,
+    )
+    crop = image.crop(
+        (
+            bounds_client.x,
+            bounds_client.y,
+            bounds_client.right,
+            bounds_client.bottom,
+        )
+    )
+    scaled_model = replace(
+        model,
+        minimum_component_width=max(
+            2,
+            round(model.minimum_component_width * client_width / 1920),
+        ),
+        minimum_component_height=max(
+            3,
+            round(model.minimum_component_height * client_height / 1080),
+        ),
+    )
+    components = _significant_components(crop, scaled_model)
+    digit_components, validation_components, structure_error = _number_digit_components(
+        components,
+        number.format,
+    )
+    base_result: dict[str, object] = {
+        "status": "unknown",
+        "value": None,
+        "text": None,
+        "format": number.format,
+        "modelId": model.id,
+        "confidence": None,
+        "ambiguityMargin": None,
+        "oracleEligible": False,
+        "boundsReference": number.bounds.to_dict(),
+        "boundsClient": bounds_client.to_dict(),
+        "glyphs": [],
+        "validationGlyphs": [],
+        "reason": structure_error,
+    }
+    if structure_error is not None:
+        return base_result
+    if not (
+        number.minimum_digits <= len(digit_components) <= number.maximum_digits
+    ):
+        base_result["reason"] = "digitCountOutOfRange"
+        return base_result
+    if validation_components and not (
+        1 <= len(validation_components) <= number.maximum_digits
+    ):
+        base_result["reason"] = "progressTargetDigitCountOutOfRange"
+        return base_result
+
+    diagnostics: list[dict[str, object]] = []
+    validation_diagnostics: list[dict[str, object]] = []
+    candidate_digits: list[int] = []
+    scores: list[float] = []
+    margins: list[float] = []
+    low_confidence = False
+    ambiguous = False
+    for group_name, group, output in (
+        ("value", digit_components, diagnostics),
+        ("progressTarget", validation_components, validation_diagnostics),
+    ):
+        for index, component in enumerate(group):
+            signature = _normalized_signature(component, scaled_model)
+            expanded_signature = _expand_signature(signature, scaled_model)
+            has_enclosed_region = _component_has_enclosed_region(component)
+            ranked = sorted(
+                (
+                    (
+                        _number_glyph_similarity(
+                            signature,
+                            expanded_signature,
+                            has_enclosed_region,
+                            template,
+                        ),
+                        digit,
+                    )
+                    for digit, template in signatures.items()
+                ),
+                reverse=True,
+            )
+            best_score, best_digit = ranked[0]
+            runner_up_score, runner_up_digit = ranked[1]
+            margin = round(best_score - runner_up_score, 6)
+            glyph_status = (
+                "unknown"
+                if best_score < model.minimum_score
+                else ("ambiguous" if margin < model.minimum_margin else "matched")
+            )
+            low_confidence = low_confidence or glyph_status == "unknown"
+            ambiguous = ambiguous or glyph_status == "ambiguous"
+            if group_name == "value":
+                candidate_digits.append(best_digit)
+            scores.append(best_score)
+            margins.append(margin)
+            component_client_bounds = Rect(
+                bounds_client.x + component.bounds.x,
+                bounds_client.y + component.bounds.y,
+                component.bounds.width,
+                component.bounds.height,
+            )
+            component_bounds = _client_component_to_reference(
+                component,
+                crop.width,
+                crop.height,
+                number.bounds,
+            )
+            output.append(
+                {
+                    "index": index,
+                    "status": glyph_status,
+                    "value": best_digit if glyph_status == "matched" else None,
+                    "score": best_score,
+                    "runnerUpValue": runner_up_digit,
+                    "runnerUpScore": runner_up_score,
+                    "margin": margin,
+                    "hasEnclosedRegion": has_enclosed_region,
+                    "boundsReference": component_bounds.to_dict(),
+                    "boundsClient": component_client_bounds.to_dict(),
+                }
+            )
+
+    confidence = min(scores)
+    minimum_margin = min(margins)
+    base_result.update(
+        {
+            "confidence": confidence,
+            "ambiguityMargin": minimum_margin,
+            "glyphs": diagnostics,
+            "validationGlyphs": validation_diagnostics,
+        }
+    )
+    if low_confidence:
+        base_result["reason"] = (
+            "progressTargetLowConfidence"
+            if any(item["status"] == "unknown" for item in validation_diagnostics)
+            else "lowConfidence"
+        )
+        return base_result
+    if ambiguous:
+        base_result["status"] = "ambiguous"
+        base_result["reason"] = (
+            "progressTargetInsufficientSeparation"
+            if any(item["status"] == "ambiguous" for item in validation_diagnostics)
+            else "insufficientSeparation"
+        )
+        return base_result
+
+    text = "".join(str(digit) for digit in candidate_digits)
+    base_result.update(
+        {
+            "status": "matched",
+            "value": int(text),
+            "text": text,
+            "oracleEligible": evidence_oracle_eligible,
+            "reason": None,
+        }
+    )
+    return base_result
+
+
+def _number_digit_components(
+    components: list[BinaryComponent],
+    number_format: str,
+) -> tuple[list[BinaryComponent], list[BinaryComponent], str | None]:
+    if not components:
+        return [], [], "noGlyphs"
+    if number_format == "integer":
+        return components, [], None
+    if number_format == "currency":
+        if len(components) < 2:
+            return [], [], "currencyMarkerMissing"
+        marker, *digits = components
+        tallest_digit = max(component.bounds.height for component in digits)
+        if marker.bounds.height < tallest_digit + 3:
+            return [], [], "currencyMarkerMissing"
+        return digits, [], None
+    if number_format == "progressCurrent":
+        separator_indexes = [
+            index
+            for index, component in enumerate(components)
+            if 0 < index < len(components) - 1
+            and _is_progress_separator(component)
+        ]
+        if not separator_indexes:
+            return [], [], "progressSeparatorMissing"
+        if len(separator_indexes) > 1:
+            return [], [], "progressSeparatorAmbiguous"
+        separator_index = separator_indexes[0]
+        return components[:separator_index], components[separator_index + 1 :], None
+    raise GameDriverError(
+        "visualCatalogInvalid",
+        f"Unsupported number format: {number_format}",
+        3,
+    )
+
+
+def _is_progress_separator(component: BinaryComponent) -> bool:
+    bounds = component.bounds
+    if bounds.height / bounds.width < 2.5:
+        return False
+    if len(component.pixels) / (bounds.width * bounds.height) > 0.55:
+        return False
+    midpoint = bounds.y + bounds.height / 2
+    upper = [x for x, y in component.pixels if y < midpoint]
+    lower = [x for x, y in component.pixels if y >= midpoint]
+    if not upper or not lower:
+        return False
+    return sum(upper) / len(upper) - sum(lower) / len(lower) >= max(
+        1.0,
+        bounds.width * 0.2,
+    )
+
+
+def _significant_components(
+    image: Image.Image,
+    model: VisualNumberModel,
+) -> list[BinaryComponent]:
+    return [
+        component
+        for component in _white_components(image, model)
+        if component.bounds.width >= model.minimum_component_width
+        and component.bounds.height >= model.minimum_component_height
+    ]
+
+
+def _white_components(
+    image: Image.Image,
+    model: VisualNumberModel,
+) -> list[BinaryComponent]:
+    rgb = image.convert("RGB")
+    pixels = rgb.load()
+    foreground = {
+        (x, y)
+        for y in range(rgb.height)
+        for x in range(rgb.width)
+        if min(pixels[x, y]) >= model.foreground_minimum
+        and max(pixels[x, y]) - min(pixels[x, y]) <= model.maximum_channel_delta
+    }
+    components: list[BinaryComponent] = []
+    while foreground:
+        seed = foreground.pop()
+        pending = [seed]
+        component_pixels = [seed]
+        while pending:
+            x, y = pending.pop()
+            for neighbor in (
+                (x - 1, y - 1),
+                (x, y - 1),
+                (x + 1, y - 1),
+                (x - 1, y),
+                (x + 1, y),
+                (x - 1, y + 1),
+                (x, y + 1),
+                (x + 1, y + 1),
+            ):
+                if neighbor in foreground:
+                    foreground.remove(neighbor)
+                    pending.append(neighbor)
+                    component_pixels.append(neighbor)
+        minimum_x = min(x for x, _ in component_pixels)
+        maximum_x = max(x for x, _ in component_pixels)
+        minimum_y = min(y for _, y in component_pixels)
+        maximum_y = max(y for _, y in component_pixels)
+        components.append(
+            BinaryComponent(
+                bounds=Rect(
+                    minimum_x,
+                    minimum_y,
+                    maximum_x - minimum_x + 1,
+                    maximum_y - minimum_y + 1,
+                ),
+                pixels=frozenset(component_pixels),
+            )
+        )
+    return sorted(components, key=lambda component: component.bounds.x)
+
+
+def _normalized_signature(
+    component: BinaryComponent,
+    model: VisualNumberModel,
+) -> frozenset[int]:
+    mask = Image.new("1", (component.bounds.width, component.bounds.height))
+    mask_pixels = mask.load()
+    for x, y in component.pixels:
+        mask_pixels[x - component.bounds.x, y - component.bounds.y] = 1
+    normalized = mask.resize(
+        (model.normalized_width, model.normalized_height),
+        Image.Resampling.NEAREST,
+    )
+    return frozenset(
+        y * model.normalized_width + x
+        for y in range(model.normalized_height)
+        for x in range(model.normalized_width)
+        if normalized.getpixel((x, y))
+    )
+
+
+def _number_glyph_similarity(
+    observed: frozenset[int],
+    observed_expanded: frozenset[int],
+    observed_has_enclosed_region: bool,
+    template: NumberGlyphSignature,
+) -> float:
+    score = (
+        len(observed & template.expanded_pixels)
+        + len(template.pixels & observed_expanded)
+    ) / (len(observed) + len(template.pixels))
+    if observed_has_enclosed_region and not template.has_enclosed_region:
+        score -= 0.05
+    return round(max(0.0, score), 6)
+
+
+def _expand_signature(
+    signature: frozenset[int],
+    model: VisualNumberModel,
+) -> frozenset[int]:
+    expanded: set[int] = set()
+    for value in signature:
+        x = value % model.normalized_width
+        y = value // model.normalized_width
+        for offset_y in (-1, 0, 1):
+            for offset_x in (-1, 0, 1):
+                candidate_x = x + offset_x
+                candidate_y = y + offset_y
+                if (
+                    0 <= candidate_x < model.normalized_width
+                    and 0 <= candidate_y < model.normalized_height
+                ):
+                    expanded.add(
+                        candidate_y * model.normalized_width + candidate_x
+                    )
+    return frozenset(expanded)
+
+
+def _component_has_enclosed_region(component: BinaryComponent) -> bool:
+    bounds = component.bounds
+    foreground = {
+        (x - bounds.x, y - bounds.y)
+        for x, y in component.pixels
+    }
+    background = {
+        (x, y)
+        for y in range(bounds.height)
+        for x in range(bounds.width)
+        if (x, y) not in foreground
+    }
+    while background:
+        seed = background.pop()
+        pending = [seed]
+        touches_edge = seed[0] in (0, bounds.width - 1) or seed[1] in (
+            0,
+            bounds.height - 1,
+        )
+        while pending:
+            x, y = pending.pop()
+            for neighbor in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)):
+                if neighbor in background:
+                    background.remove(neighbor)
+                    pending.append(neighbor)
+                    touches_edge = touches_edge or neighbor[0] in (
+                        0,
+                        bounds.width - 1,
+                    ) or neighbor[1] in (0, bounds.height - 1)
+        if not touches_edge:
+            return True
+    return False
+
+
+def _client_component_to_reference(
+    component: BinaryComponent,
+    crop_width: int,
+    crop_height: int,
+    reference_bounds: Rect,
+) -> Rect:
+    left = reference_bounds.x + round(
+        component.bounds.x / crop_width * reference_bounds.width
+    )
+    top = reference_bounds.y + round(
+        component.bounds.y / crop_height * reference_bounds.height
+    )
+    right = reference_bounds.x + round(
+        component.bounds.right / crop_width * reference_bounds.width
+    )
+    bottom = reference_bounds.y + round(
+        component.bounds.bottom / crop_height * reference_bounds.height
+    )
+    return Rect(left, top, max(1, right - left), max(1, bottom - top))
 
 
 def _element_placement_for_match(match: PageMatch, element: VisualElement):

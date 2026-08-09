@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import replace
 from datetime import datetime
 import json
@@ -511,6 +512,54 @@ class ClickTargetTests(unittest.TestCase):
         )
 
         self.assertEqual((960, 950), target.action_point)
+
+    def test_matched_oracle_sandbox_numbers_are_actionable_in_both_modes(self) -> None:
+        for evidence_name, page_id in (
+            ("sandbox.zh-CN.holdout.json", "sandbox"),
+            ("sandbox-tower.zh-CN.holdout.json", "sandboxTower"),
+        ):
+            with self.subTest(page=page_id):
+                evidence = read_evidence(SAMPLE_ROOT / evidence_name)
+                recognition, page_match = recognize_image(evidence, self.catalog)
+
+                health = _resolve_click_target(
+                    recognition,
+                    page_match,
+                    f"{page_id}.health",
+                    evidence,
+                )
+                cash = _resolve_click_target(
+                    recognition,
+                    page_match,
+                    f"{page_id}.cash",
+                    evidence,
+                )
+
+                self.assertEqual((200, 45), health.action_point)
+                self.assertEqual((440, 45), cash.action_point)
+
+    def test_sandbox_number_click_rejects_unknown_or_non_oracle_result(self) -> None:
+        evidence = read_evidence(SAMPLE_ROOT / "sandbox.zh-CN.holdout.json")
+        recognition, page_match = recognize_image(evidence, self.catalog)
+        for field, value in (("status", "unknown"), ("oracleEligible", False)):
+            with self.subTest(field=field):
+                modified = deepcopy(recognition)
+                health = next(
+                    element
+                    for element in modified["recognition"]["elements"]
+                    if element["id"] == "sandbox.health"
+                )
+                health["number"][field] = value
+
+                with self.assertRaises(GameDriverError) as context:
+                    _resolve_click_target(
+                        modified,
+                        page_match,
+                        "sandbox.health",
+                        evidence,
+                    )
+
+                self.assertEqual("elementNumberNotRecognized", context.exception.code)
 
     def test_new_independently_visible_buttons_resolve_expected_action_points(self) -> None:
         cases = {

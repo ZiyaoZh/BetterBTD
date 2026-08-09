@@ -53,7 +53,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\BetterBTD.GameDriver\g
   --output-dir artifacts\game-driver\manual\main-to-map-select
 ```
 
-`click` 只接受目录内具备动作点和独立可见性检测器的 `button`。输入前必须唯一识别当前页且证据为 Oracle 可用。指定 `--expect-page` 或 `--expect-view-state` 后，输入等待会把每个连续稳定画面作为候选：若候选是加载页、未知页或其他已建模页面则继续轮询，直到目标页面和视口同时命中或总超时到期；没有指定期望时仍在第一个满足变化/稳定条件的画面停止。候选帧识别只控制等待，不具备 Oracle 资格；命令最终仍会捕获独立 `after` 证据并重新校验目标页、视口和 Oracle 资格。`--phase` 必须显式为 `arrange` 或 `recover`，CLI 不接受 `act` 或 `assert`。Recover 阶段仍须由测试编排层先通过 BetterBTD Test API 确认脚本已经停止。
+`click` 接受目录内具备动作点和独立可见性检测器的 `button`，以及具备动作点且数值已独立匹配的 `value`。数值元素必须返回 `number.status=matched` 且 `number.oracleEligible=true`；`unknown`、`ambiguous` 或诊断性数值都不会发送输入。输入前必须唯一识别当前页且证据为 Oracle 可用。指定 `--expect-page` 或 `--expect-view-state` 后，输入等待会把每个连续稳定画面作为候选：若候选是加载页、未知页或其他已建模页面则继续轮询，直到目标页面和视口同时命中或总超时到期；没有指定期望时仍在第一个满足变化/稳定条件的画面停止。候选帧识别只控制等待，不具备 Oracle 资格；命令最终仍会捕获独立 `after` 证据并重新校验目标页、视口和 Oracle 资格。`--phase` 必须显式为 `arrange` 或 `recover`，CLI 不接受 `act` 或 `assert`。Recover 阶段仍须由测试编排层先通过 BetterBTD Test API 确认脚本已经停止。
 
 早期探索尚未入库的页面时，可按 `1920 x 1080` 参考客户区坐标点击：
 
@@ -137,7 +137,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\BetterBTD.GameDriver\g
   --annotated-output artifacts\game-driver\manual\frame.annotated.png
 ```
 
-识别结果包含 `matched`、`unknown` 或 `ambiguous` 状态、页面与锚点分数、稳定元素 ID、基准/客户区边界、动作点和 `oracleEligible`。标注图只用于早期人工复核，不会写回或替代原始截图证据。
+识别结果包含 `matched`、`unknown` 或 `ambiguous` 状态、页面与锚点分数、稳定元素 ID、基准/客户区边界、动作点和 `oracleEligible`。声明数值识别的元素还输出 `number`：只有全部数字超过匹配与分离阈值时才返回整数 `value`；低置信度为 `unknown`，候选分离不足为 `ambiguous`，两者均令数值 `oracleEligible=false`，但不会使已经独立命中的页面失效。标注图只用于早期人工复核，不会写回或替代原始截图证据。
 
 从目录声明的来源证据确定性重建模板，并验证生成哈希：
 
@@ -172,13 +172,15 @@ screenY = clientOriginOnScreenY + clientY
 
 ## 视觉目录协议
 
-版本化目录位于 `visual-baselines/`。当前 catalog v16 使用 schema v2，覆盖 24 个中文页面、339 个独立模板、302 个目录元素、25 个视口状态和 260 个元素 placement。页面包括 `welcome`、`modifiedClientWarning`、`mainMenu`、`mapSelect`、`difficultySelect`、三种难度的模式选择、`heroSelect`、`inLevel`、`overwriteSaveConfirmation`、`chimpsModeInfo`、`defeatSummary`、`retryLastRoundConfirmation`、`restartGameConfirmation`、`postGameMapReview`、`victoryPlayerStats`、`victorySummary`、`freeplayPrompt`、`stageSettings`、`settings`、`hotkeys`、`accessibility` 和 `extras`。`mapSelect` 的 17 个视口覆盖初级 5 页、中级 5 页、高级 4 页和专家 3 页，共 87 张可见地图；官方英文名为 `Ascent` 的“攀升”同时建模为解锁时可操作的 `mapSelect.ascent` 和锁定时不可操作的 `mapSelect.ascentLocked`，账号状态不参与高级第一页的视口判定。四个分类按钮可区分 `selected`/`unselected`，`doubleCash` 与 `autoStart` 可区分 `enabled`/`disabled`。`heroSelect.top`/`heroSelect.bottom` 合并覆盖 18 个稳定 `HeroType`，`extras.top`/`extras.bottom` 覆盖全部 7 个开关及其状态。玩家名、用户 ID、版本号、货币、活动入口、本地化标签、奖励数值、地图勋章、星光和动态徽章不会成为页面 ID 或页面识别锚点；带本地化文字的按钮模板只用于元素可见性检测。
+版本化目录位于 `visual-baselines/`。当前 catalog v18 使用 schema v3，覆盖 29 个中文页面、411 个锚点模板、10 个数值字形模板、372 个目录元素、25 个视口状态和 260 个元素 placement。Sandbox 页面包括 `sandboxIntro`、气球控制视图 `sandbox`、塔控制视图 `sandboxTower`、`sandboxHealthEditor` 和 `sandboxCashEditor`；气球视图包含回合输入、间隔、数量、属性开关、17 种气球、清除、力量、塔模式入口和开始/快进，塔视图包含 HUD、设置、英雄槽、当前可见的 11 个标准塔、气球模式入口和开始/快进。`mapSelect` 的 17 个视口覆盖初级 5 页、中级 5 页、高级 4 页和专家 3 页，共 87 张可见地图；官方英文名为 `Ascent` 的“攀升”同时建模为解锁时可操作的 `mapSelect.ascent` 和锁定时不可操作的 `mapSelect.ascentLocked`，账号状态不参与高级第一页的视口判定。四个分类按钮可区分 `selected`/`unselected`，`doubleCash` 与 `autoStart` 可区分 `enabled`/`disabled`。`heroSelect.top`/`heroSelect.bottom` 合并覆盖 18 个稳定 `HeroType`，`extras.top`/`extras.bottom` 覆盖全部 7 个开关及其状态。玩家名、用户 ID、版本号、活动入口、本地化标签、奖励数值、地图勋章、星光和动态徽章不会成为页面 ID 或页面识别锚点；带本地化文字的按钮模板只用于元素可见性检测。
 
 每个模板记录来源 `evidenceId`、来源图片 SHA-256、裁剪矩形和模板 SHA-256。每页还必须绑定一组 Oracle 可用的正向留出证据，且其图片哈希不能与任何制模源图相同。`catalog` 和 `baseline build` 会重新校验完整证据链。识别代码只依赖 Game Driver 自己的目录和 Pillow，不加载 BetterBTD 截图、OCR 模板、OpenCvSharp 资源或运行时状态。
 
-当前页面识别要求 `16:9` 画面，并把画面规范化到 `1920 x 1080` 后进行固定区域多锚点比较。锚点的 `pageAnchor` 缺省为 `true`；`false` 只用于元素可见性，不影响页面分数和最少锚点数。至少命中页面声明数量的页面锚点并超过总分阈值才返回 `matched`；同类候选分差小于 `0.02` 时返回 `ambiguous`，其余情况返回 `unknown`。`kind=modal` 表示画面顶层可见且阻止底层交互的模态页；当模态页与底层普通页同时命中时，模态页优先，模态页之间仍按相同歧义规则处理。只有完整证据链无警告且识别状态为 `matched` 时，识别结果才标记为 Oracle 可用。
+当前页面识别要求 `16:9` 画面，并把画面规范化到 `1920 x 1080` 后进行固定区域多锚点比较。锚点的 `pageAnchor` 缺省为 `true`；`false` 只用于元素可见性，不影响页面分数和最少锚点数。同一 `matchGroup` 中的页面锚点是状态互斥的候选，只要求其中一个命中并按组计分；当前 `inLevel.powersAvailable` 与 `inLevel.powersDisabled` 共同构成 `inLevel.powersMode`。至少命中页面声明数量的页面锚点组并超过总分阈值才返回 `matched`；同类候选分差小于 `0.02` 时返回 `ambiguous`，其余情况返回 `unknown`。`kind=modal` 表示画面顶层可见且阻止底层交互的模态页；当模态页与底层普通页同时命中时，模态页优先，模态页之间仍按相同歧义规则处理。只有完整证据链无警告且识别状态为 `matched` 时，识别结果才标记为 Oracle 可用。
 
 schema v2 在页面身份之下增加 `viewStates`，并允许元素按视口声明 `placements`；每个 placement 自带当前视口中的 `bounds`、`actionPoint`、检测锚点和可选 `states`。锚点的 `sourceBounds` 指定从来源证据裁剪模板的位置，`bounds` 仍是运行时画面中的匹配位置，因此同一来源图可以为另一个视口提供模板而不混淆坐标。识别结果分别报告页面、视口状态、当前 placement 和元素状态。页面 `score` 始终只由 `pageAnchor=true` 的锚点计算；`rankingScore` 可合入视口置信度，只用于跨页面候选竞争。加载器继续接受 schema v1：缺省为无视口状态、无 placement，并令 `sourceBounds == bounds`，已有 v1 目录语义不变。
+
+schema v3 增加带完整来源证据链的根级 `numberModels`，以及 value 元素的 `number.modelId`、精确 `bounds`、`format` 和数字位数范围。当前 `btd6HudWhiteDigits` 直接在客户区原生像素中裁剪和分割数值区域，通过 8 邻接连通域、单像素形状容差、封闭区域拓扑和归一化二值字形匹配支持 `integer`、`currency` 与 `progressCurrent`；不会先把数字二次缩放到参考空间。`progressCurrent` 还会独立验证 `/` 的形状及其右侧目标数字结构，损坏的当前回合数字不能冒充分隔符。当前开放 `inLevel`、`sandbox` 和 `sandboxTower` 各自的 `health`、`cash`、`round`。目录加载器继续接受 schema v1/v2；已有页面、视口和 placement 语义不变。
 
 ## 当前限制
 
@@ -187,11 +189,12 @@ schema v2 在页面身份之下增加 `viewStates`，并允许元素按视口声
 - 连续帧等待用于 `click`、`click-point`、`scroll-point`、`drag-point` 和 `press-key`，采用规范化全画面差异阈值；不同分辨率、动画强度和显示布局仍需要真实校准。滚动和拖动只在显式 `--allow-no-change` 时接受连续稳定的无变化画面。
 - 控制命令只有在显式指定 `--expect-page` 或 `--expect-view-state` 时才跨过稳定中间态；未指定期望时仍在第一个满足条件的稳定画面停止。中间候选识别不替代最终落盘证据，目标出现后到 `after` 捕获之间若再次变化，命令仍会按最终证据失败。
 - 现有真实游戏验证覆盖中文冷启动、修改客户端警告、主菜单、设置/热键/辅助功能往返、地图选择全部 17 个轮播视口、地图分类切换、地图卡进入/返回、三种难度模式页、简单/困难标准关卡、暂停继续和暂停返回主页。简单标准关卡已从第 38 回合真实推进到胜利，依次采集并识别 `victoryPlayerStats`（holdout 分数 `0.998563`）、`victorySummary`（`0.999793`）和 `freeplayPrompt`（`1.0`）；自由游戏与 `OK` 转换已真实执行。通关总结的主页和浏览地图按钮仍未分别实点验证。CHIMPS 失败链在原有第 6 回合一滴血失败之外，已覆盖带“重试上一回合”的后续回合失败页；四按钮失败页 holdout 页面/视口分数为 `0.9889`/`1.0`。主页、重新开始、浏览地图、重试上一回合四个分支，以及重开/重试两个确认框的取消和确认安全分支均已真实执行；重试确认后可恢复 `inLevel`，浏览地图仍进入独立 `postGameMapReview`。简单 Deflation 已真实验证通用存档覆盖确认的取消/确认，确认后经过加载直接进入关卡，没有额外模式说明页。34 张地图 source/holdout 证据均独立识别为正确视口，最低 holdout 视口分数为 `0.996790`，没有跨视口误判；其余地图、设置、Extras 和英雄真实验证范围保持不变。本轮最终恢复 `mainMenu` 的独立识别分数为 `0.9990385`。
-- `inLevel.healthIcon` 和动态的 `startButtonFrame` 使用 detector-only 锚点，不参与页面身份；稳定右侧栏参与页面识别。`inLevel.roundReady` 与 `inLevel.roundActive` 分别描述待开回合和活动回合，holdout 页面分数为 `0.9977633` 和 `0.995248`，两个状态都能安全解析 `inLevel.startOrFastForward`。生命、金币和回合数值仍未解析；跨地图和其他受限模式仍需扩大真实样本。
+- `inLevel.healthIcon` 和动态的 `startButtonFrame` 使用 detector-only 锚点，不参与页面身份；稳定右侧栏参与页面识别。`inLevel.roundReady` 与 `inLevel.roundActive` 分别描述待开回合和活动回合，两个状态都能安全解析 `inLevel.startOrFastForward`。当前留出证据已精确识别 `200 / $1700 / 1` 与 `1 / $1516 / 13`；跨地图和其他受限模式仍需扩大真实样本。
 - `overwriteSaveConfirmation` 使用中文语义标题锚点，不再绑定困难模式背景；困难 CHIMPS 与简单 Deflation 留出证据的页面分数分别为 `0.99999975` 和 `0.999958`。`restartGameConfirmation` 与 `retryLastRoundConfirmation` 使用各自的中文标题锚点区分相同确认框外壳；当前真实覆盖仍限失败总结入口，暂停设置中的重开确认尚未适配。
 - `defeatSummary.noRetryLastRound` 与 `defeatSummary.retryLastRoundAvailable` 分别约束三按钮和四按钮布局。旧失败画面不会把 `defeatSummary.retryLastRound` 误报为可见；只有后续回合失败状态允许按该 ID 点击。
-- 302 个目录元素中有 241 个具备独立可见性探测器，204 个按钮声明动作点，其中 181 个同时具备探测器。只有当前页面和视口均独立识别、对应 placement 可见且动作点有效的按钮才能由 `click` 控制；其余动作点仍只表示已声明几何，不满足元素级点击前置条件。`mapSelect.ascentLocked` 和 `extras` 开关只有独立状态检测，不提供动作点。
+- 372 个目录元素中有 307 个具备独立可见性或数值探测器，260 个元素声明动作点，其中 237 个同时可独立观察并具备动作点。只有当前页面和视口均独立识别、对应 placement 可见且动作点有效的按钮，或数值匹配且 Oracle 可用的 value，才能由 `click` 控制；其余动作点仍只表示已声明几何，不满足元素级点击前置条件。
 - 当前实现支持元素/坐标点击、坐标滚轮、坐标拖动和受限按键；按键输入尚未在真实 BTD6 中验证，文本输入以及元素出现/消失等通用等待尚未实现。
+- Sandbox 气球视图 source/holdout 在同一中文会话、同一地图、`1920x1080`、DPI 192 下分别精确识别 `908172 / $3456789 / 84` 与 `345689 / $9081726 / 57`；塔视图 source/holdout 均精确识别 `345689 / $9081726 / 57`，且不会误匹配普通 `inLevel`。自动化缩放样本在 `960x540`、`1024x576`、`1152x648`、`1280x720`、`1366x768`、`1600x900`、`2560x1440` 和 `3840x2160` 均保持精确。生命元素点击、编辑器识别和取消恢复已经真实验证；气球/塔模式往返也已真实执行，局部侧栏转换需使用 `--change-threshold 0.02`。塔列表滚轮和拖动探索均返回 `unchangedStable`，因此当前只建模画面中稳定可见的 11 个标准塔；隐藏塔、其他地图、英文界面和其他显示器布局尚未验证。
 
 ## 测试
 
