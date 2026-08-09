@@ -18,7 +18,7 @@ from .evidence import EvidenceBundle, evidence_reference, read_evidence
 from .errors import GameDriverError, UsageError
 from .models import Rect, WindowSelector, WindowSnapshot
 from .png import visible_pixel_sha256
-from .vision import PageMatch, recognize_image
+from .vision import FrameRecognition, PageMatch, recognize_frame, recognize_image
 from .visual_catalog import VisualCatalog, VisualElement
 from .win32 import (
     MAX_DRAG_DURATION_MS,
@@ -398,6 +398,7 @@ class InteractionDriver:
             expected_window,
             tracker,
             request,
+            catalog,
         )
 
         after_metadata_path = output_directory / "after.json"
@@ -551,6 +552,26 @@ class InteractionDriver:
                 if _allows_no_change(request)
                 else "changed and stable"
             )
+            expected_states = [
+                value
+                for value in (
+                    (
+                        f"page {request.expected_page_id}"
+                        if request.expected_page_id is not None
+                        else None
+                    ),
+                    (
+                        f"view state {request.expected_view_state_id}"
+                        if request.expected_view_state_id is not None
+                        else None
+                    ),
+                )
+                if value is not None
+            ]
+            if expected_states:
+                accepted_state += " with independently recognized " + " and ".join(
+                    expected_states
+                )
             raise GameDriverError(
                 "visualTransitionTimeout",
                 f"The frame did not become {accepted_state} within "
@@ -603,15 +624,26 @@ class InteractionDriver:
         expected_window: WindowSnapshot,
         tracker: VisualTransitionTracker,
         request: InteractionRequest,
+        catalog: VisualCatalog,
     ) -> tuple[list[dict[str, object]], str]:
         started = self._monotonic()
         deadline = started + request.transition_timeout_ms / 1000
         observations: list[dict[str, object]] = []
-        while self._monotonic() < deadline:
-            self._sleep(request.poll_interval_ms / 1000)
+        last_probed_fingerprint: str | None = None
+        while True:
+            remaining_seconds = deadline - self._monotonic()
+            if remaining_seconds <= 0:
+                break
+            self._sleep(
+                min(request.poll_interval_ms / 1000, remaining_seconds)
+            )
+            if self._monotonic() >= deadline:
+                break
             snapshot = self._game_driver.window_api.snapshot(window_handle)
             _validate_interaction_window(expected_window, snapshot)
             pixels = capture_desktop_rect(snapshot.client_rect)
+            if self._monotonic() >= deadline:
+                break
             frame = Image.frombytes(
                 "RGB",
                 (snapshot.client_rect.width, snapshot.client_rect.height),
@@ -620,28 +652,80 @@ class InteractionDriver:
                 "BGRX",
             )
             elapsed_ms = round((self._monotonic() - started) * 1000)
+            fingerprint = visible_pixel_sha256(
+                snapshot.client_rect.width,
+                snapshot.client_rect.height,
+                pixels,
+            )
             observation, completed = tracker.observe(
                 frame,
                 elapsed_ms=elapsed_ms,
-                fingerprint=visible_pixel_sha256(
-                    snapshot.client_rect.width,
-                    snapshot.client_rect.height,
-                    pixels,
-                ),
+                fingerprint=fingerprint,
             )
             observations.append(observation)
-            if completed:
-                return observations, "changedStable"
+            transition_status = "changedStable" if completed else None
             if (
                 _allows_no_change(request)
                 and tracker.unchanged_stable_samples >= request.stable_sample_count
             ):
-                return observations, "unchangedStable"
+                transition_status = "unchangedStable"
+            if transition_status is None:
+                continue
+            if not _has_final_expectation(request):
+                return observations, transition_status
+            if fingerprint == last_probed_fingerprint:
+                continue
+
+            frame_recognition = recognize_frame(frame, catalog)
+            if self._monotonic() >= deadline:
+                break
+            last_probed_fingerprint = fingerprint
+            expectation_probe = _expectation_probe(frame_recognition, request)
+            observation["expectationProbe"] = expectation_probe
+            if expectation_probe["matched"] is True:
+                return observations, transition_status
         return observations, "timeout"
 
 
 def _allows_no_change(request: InteractionRequest) -> bool:
     return isinstance(request, (ScrollPointRequest, DragPointRequest)) and request.allow_no_change
+
+
+def _has_final_expectation(request: InteractionRequest) -> bool:
+    return (
+        request.expected_page_id is not None
+        or request.expected_view_state_id is not None
+    )
+
+
+def _expectation_probe(
+    recognition: FrameRecognition,
+    request: InteractionRequest,
+) -> dict[str, object]:
+    match = recognition.match
+    page_id = match.page.id if match is not None else None
+    view_state_id = (
+        match.view_state.view_state.id
+        if match is not None and match.view_state is not None
+        else None
+    )
+    page_matched = (
+        request.expected_page_id is None or page_id == request.expected_page_id
+    )
+    view_state_matched = (
+        request.expected_view_state_id is None
+        or view_state_id == request.expected_view_state_id
+    )
+    return {
+        "status": recognition.status,
+        "pageId": page_id,
+        "viewStateId": view_state_id,
+        "pageMatched": page_matched,
+        "viewStateMatched": view_state_matched,
+        "matched": page_matched and view_state_matched,
+        "oracleEligible": False,
+        "oracleEligibilityReason": "pollingFrameIsNotCommittedEvidence",
+    }
 
 
 def resolve_interaction_output_directory(

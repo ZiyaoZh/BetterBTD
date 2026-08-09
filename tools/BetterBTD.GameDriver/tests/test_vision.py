@@ -7,7 +7,7 @@ from PIL import Image
 
 from betterbtd_game_driver.evidence import read_evidence
 from betterbtd_game_driver.errors import GameDriverError
-from betterbtd_game_driver.vision import recognize_image, write_annotation
+from betterbtd_game_driver.vision import recognize_frame, recognize_image, write_annotation
 from betterbtd_game_driver.visual_catalog import (
     DEFAULT_CATALOG_PATH,
     VisualCatalog,
@@ -126,6 +126,16 @@ class VisualRecognitionTests(unittest.TestCase):
         self.assertIsNone(match)
         self.assertEqual("unknown", result["recognition"]["status"])
         self.assertFalse(result["recognition"]["oracleEligible"])
+
+    def test_in_memory_frame_recognition_uses_the_same_catalog_decision(self) -> None:
+        evidence = read_evidence(SAMPLE_ROOT / "main-menu.zh-CN.holdout.json")
+        with Image.open(evidence.image_path) as source:
+            frame_recognition = recognize_frame(source, self.catalog)
+
+        self.assertEqual("matched", frame_recognition.status)
+        self.assertIsNotNone(frame_recognition.match)
+        self.assertEqual("mainMenu", frame_recognition.match.page.id)
+        self.assertEqual("mainMenu", frame_recognition.candidates[0].page.id)
 
     def test_real_holdout_frame_matches_map_select(self) -> None:
         evidence = read_evidence(SAMPLE_ROOT / "map-select.zh-CN.holdout.json")

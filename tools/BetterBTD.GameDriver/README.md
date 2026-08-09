@@ -53,7 +53,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\BetterBTD.GameDriver\g
   --output-dir artifacts\game-driver\manual\main-to-map-select
 ```
 
-`click` 只接受目录内具备动作点和独立可见性检测器的 `button`。输入前必须唯一识别当前页且证据为 Oracle 可用；输入后会等待画面相对操作前明显变化并连续稳定，再捕获最终证据和识别目标页及视口。`--phase` 必须显式为 `arrange` 或 `recover`，CLI 不接受 `act` 或 `assert`。Recover 阶段仍须由测试编排层先通过 BetterBTD Test API 确认脚本已经停止。
+`click` 只接受目录内具备动作点和独立可见性检测器的 `button`。输入前必须唯一识别当前页且证据为 Oracle 可用。指定 `--expect-page` 或 `--expect-view-state` 后，输入等待会把每个连续稳定画面作为候选：若候选是加载页、未知页或其他已建模页面则继续轮询，直到目标页面和视口同时命中或总超时到期；没有指定期望时仍在第一个满足变化/稳定条件的画面停止。候选帧识别只控制等待，不具备 Oracle 资格；命令最终仍会捕获独立 `after` 证据并重新校验目标页、视口和 Oracle 资格。`--phase` 必须显式为 `arrange` 或 `recover`，CLI 不接受 `act` 或 `assert`。Recover 阶段仍须由测试编排层先通过 BetterBTD Test API 确认脚本已经停止。
 
 早期探索尚未入库的页面时，可按 `1920 x 1080` 参考客户区坐标点击：
 
@@ -107,7 +107,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\BetterBTD.GameDriver\g
 
 `scroll-point` 和 `drag-point` 针对局部视口变化默认使用较低的 `--change-threshold 0.005`；不同分辨率、动画和页面仍需要真实轨迹校准。
 
-真实冷启动可能依次出现 `welcome`、加载画面和 `modifiedClientWarning`，也可能直接进入 `mainMenu`。启动页可点击 `welcome.start`；修改客户端警告只开放 `modifiedClientWarning.continue`，会改变账号状态的 `unregister` 和关闭进程的 `closeGame` 没有动作点。加载画面可能先于目标页稳定，因此冷启动编排目前需要在操作后重复 `capture`/`recognize`，直到独立识别到下一个可处理页。
+真实冷启动可能依次出现 `welcome`、加载画面和 `modifiedClientWarning`，也可能直接进入 `mainMenu`。启动页可点击 `welcome.start`；修改客户端警告只开放 `modifiedClientWarning.continue`，会改变账号状态的 `unregister` 和关闭进程的 `closeGame` 没有动作点。已知目标唯一时，控制命令可用 `--expect-page`/`--expect-view-state` 跨过稳定加载中间态；冷启动存在多个合法分支或只使用观察命令时，编排层仍需重复 `capture`/`recognize`，直到独立识别到下一个可处理页。
 
 校验随工具提交的独立视觉目录、模板哈希和来源证据链：
 
@@ -143,7 +143,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\BetterBTD.GameDriver\g
 - 黑帧/纯色帧诊断和其他警告。
 - 最后原子写入的 `.complete.json` 完成标记，其中包含 PNG 与元数据哈希。读取方只有在标记存在且哈希一致时才能接受该组证据。
 
-每次点击、滚动或拖动都在独立输出目录保存 `before`、`after` 两组三件套和原子写入的 `operation.json`。操作轨迹记录输入所有权阶段、参考/客户区/屏幕物理坐标、滚轮方向与档位或拖动时长与步数、每个轮询帧的全像素指纹、相对操作前与上一帧的归一化差异、连续稳定帧数、前后独立识别摘要，以及页面和视口状态期望。单个 `before`/`after` 捕获仍是单帧，所以其 `capture.stabilityCheckPerformed=false`；稳定性结论属于同时保存的操作级轨迹，不能通过改写单帧元数据伪造。
+每次点击、滚动或拖动都在独立输出目录保存 `before`、`after` 两组三件套和原子写入的 `operation.json`。操作轨迹记录输入所有权阶段、参考/客户区/屏幕物理坐标、滚轮方向与档位或拖动时长与步数、每个轮询帧的全像素指纹、相对操作前与上一帧的归一化差异、连续稳定帧数、前后独立识别摘要，以及页面和视口状态期望。启用最终状态等待时，稳定候选帧还会记录 `expectationProbe`，其中明确标记 `oracleEligible=false`；相同指纹的持续稳定画面不会重复运行目录识别。单个 `before`/`after` 捕获仍是单帧，所以其 `capture.stabilityCheckPerformed=false`；稳定性结论属于同时保存的操作级轨迹，不能通过改写单帧元数据伪造。
 
 Game Driver 在当前线程启用 Per-Monitor V2 坐标语义，以读取真实物理像素。这不会修改 Windows 的分辨率、缩放或其他系统显示设置。基准坐标仍按 BetterBTD 现有算法在代码中换算：
 
@@ -171,7 +171,7 @@ schema v2 在页面身份之下增加 `viewStates`，并允许元素按视口声
 - `desktop-gdi-bitblt` 捕获的是用户真实可见桌面，因此要求窗口未被遮挡、未最小化、完整位于虚拟桌面内且会话未锁屏。
 - 通知、顶置窗口和覆盖层会进入截图。这是可见证据的一部分，但测试编排需要据此判定现场是否有效。
 - 连续帧等待用于 `click`、`click-point`、`scroll-point` 和 `drag-point`，采用规范化全画面差异阈值；不同分辨率、动画强度和显示布局仍需要真实校准。滚动和拖动只在显式 `--allow-no-change` 时接受连续稳定的无变化画面。
-- 控制命令在第一个明显变化且连续稳定的画面停止；若操作经过可稳定停留的加载页，它不会自动跨越中间态等待更后的目标页。
+- 控制命令只有在显式指定 `--expect-page` 或 `--expect-view-state` 时才跨过稳定中间态；未指定期望时仍在第一个满足条件的稳定画面停止。中间候选识别不替代最终落盘证据，目标出现后到 `after` 捕获之间若再次变化，命令仍会按最终证据失败。
 - 现有真实游戏验证覆盖中文冷启动、修改客户端警告、主菜单、设置/热键/辅助功能往返、地图选择全部 17 个轮播视口、地图分类切换、地图卡进入/返回、三种难度模式页、简单/困难标准关卡、暂停继续和暂停返回主页。简单标准关卡已从第 38 回合真实推进到胜利，依次采集并识别 `victoryPlayerStats`（holdout 分数 `0.998563`）、`victorySummary`（`0.999793`）和 `freeplayPrompt`（`1.0`）；自由游戏与 `OK` 转换已真实执行。通关总结的主页和浏览地图按钮仍未分别实点验证。CHIMPS 失败链在原有第 6 回合一滴血失败之外，已覆盖带“重试上一回合”的后续回合失败页；四按钮失败页 holdout 页面/视口分数为 `0.9889`/`1.0`。主页、重新开始、浏览地图、重试上一回合四个分支，以及重开/重试两个确认框的取消和确认安全分支均已真实执行；重试确认后可恢复 `inLevel`，浏览地图仍进入独立 `postGameMapReview`。简单 Deflation 已真实验证通用存档覆盖确认的取消/确认，确认后经过加载直接进入关卡，没有额外模式说明页。34 张地图 source/holdout 证据均独立识别为正确视口，最低 holdout 视口分数为 `0.996790`，没有跨视口误判；其余地图、设置、Extras 和英雄真实验证范围保持不变。本轮最终恢复 `mainMenu` 的独立识别分数为 `0.9990385`。
 - `inLevel.healthIcon` 和动态的 `startButtonFrame` 使用 detector-only 锚点，不参与页面身份；稳定右侧栏参与页面识别。`inLevel.roundReady` 与 `inLevel.roundActive` 分别描述待开回合和活动回合，holdout 页面分数为 `0.9977633` 和 `0.995248`，两个状态都能安全解析 `inLevel.startOrFastForward`。生命、金币和回合数值仍未解析；跨地图和其他受限模式仍需扩大真实样本。
 - `overwriteSaveConfirmation` 使用中文语义标题锚点，不再绑定困难模式背景；困难 CHIMPS 与简单 Deflation 留出证据的页面分数分别为 `0.99999975` 和 `0.999958`。`restartGameConfirmation` 与 `retryLastRoundConfirmation` 使用各自的中文标题锚点区分相同确认框外壳；当前真实覆盖仍限失败总结入口，暂停设置中的重开确认尚未适配。

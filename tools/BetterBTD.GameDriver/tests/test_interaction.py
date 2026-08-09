@@ -19,12 +19,13 @@ from betterbtd_game_driver.interaction import (
     PointClickRequest,
     ScrollPointRequest,
     VisualTransitionTracker,
+    _expectation_probe,
     _validate_interaction_outputs,
     _resolve_click_target,
     resolve_interaction_output_directory,
 )
 from betterbtd_game_driver.models import Rect, WindowSelector, WindowSnapshot
-from betterbtd_game_driver.vision import recognize_image
+from betterbtd_game_driver.vision import recognize_frame, recognize_image
 from betterbtd_game_driver.visual_catalog import load_visual_catalog
 from visual_test_support import write_test_evidence
 
@@ -127,6 +128,370 @@ class VisualTransitionTrackerTests(unittest.TestCase):
         self.assertFalse(stable_complete)
         self.assertFalse(returned["currentlyChanged"])
         self.assertEqual(1, stable["consecutiveUnchangedStableSamples"])
+
+
+class TransitionExpectationWaitTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.catalog = load_visual_catalog()
+        cls.snapshot = WindowSnapshot(
+            handle=123,
+            process_id=456,
+            process_name="BloonsTD6",
+            title="BloonsTD6",
+            visible=True,
+            minimized=False,
+            foreground=True,
+            dpi=96,
+            window_rect=Rect(0, 0, 1920, 1080),
+            client_rect=Rect(0, 0, 1920, 1080),
+        )
+
+    def test_expected_page_wait_crosses_stable_unknown_loading_frame(self) -> None:
+        with (
+            Image.open(SAMPLE_ROOT / "welcome.zh-CN.holdout.png") as before_source,
+            Image.open(SAMPLE_ROOT / "loading.unknown.png") as loading_source,
+            Image.open(SAMPLE_ROOT / "main-menu.zh-CN.holdout.png") as final_source,
+        ):
+            before = before_source.convert("RGB")
+            loading_pixels = loading_source.convert("RGB").tobytes("raw", "BGRX")
+            final_pixels = final_source.convert("RGB").tobytes("raw", "BGRX")
+
+        game_driver = MagicMock()
+        game_driver.window_api.snapshot.return_value = self.snapshot
+        clock = _FakeClock()
+        interaction = InteractionDriver(
+            game_driver,
+            monotonic=clock.monotonic,
+            sleep=clock.sleep,
+        )
+        tracker = VisualTransitionTracker(
+            before,
+            change_threshold=0.05,
+            stability_threshold=0.02,
+            stable_sample_count=2,
+        )
+        request = _point_request(expected_page_id="mainMenu")
+
+        with patch(
+            "betterbtd_game_driver.interaction.capture_desktop_rect",
+            side_effect=(
+                loading_pixels,
+                loading_pixels,
+                loading_pixels,
+                final_pixels,
+                final_pixels,
+                final_pixels,
+            ),
+        ):
+            observations, status = interaction._wait_for_transition(
+                123,
+                self.snapshot,
+                tracker,
+                request,
+                self.catalog,
+            )
+
+        probes = [
+            observation["expectationProbe"]
+            for observation in observations
+            if "expectationProbe" in observation
+        ]
+        self.assertEqual("changedStable", status)
+        self.assertEqual(2, len(probes))
+        self.assertEqual("unknown", probes[0]["status"])
+        self.assertFalse(probes[0]["matched"])
+        self.assertEqual("mainMenu", probes[1]["pageId"])
+        self.assertTrue(probes[1]["matched"])
+        self.assertFalse(probes[1]["oracleEligible"])
+
+    def test_page_and_view_expectations_use_and_semantics(self) -> None:
+        with Image.open(
+            SAMPLE_ROOT / "hero-select-bottom.zh-CN.holdout.png"
+        ) as source:
+            recognition = recognize_frame(source, self.catalog)
+
+        view_only = _expectation_probe(
+            recognition,
+            _point_request(
+                expected_page_id=None,
+                expected_view_state_id="heroSelect.bottom",
+            ),
+        )
+        wrong_view = _expectation_probe(
+            recognition,
+            _point_request(
+                expected_page_id="heroSelect",
+                expected_view_state_id="heroSelect.top",
+            ),
+        )
+
+        self.assertTrue(view_only["matched"])
+        self.assertTrue(wrong_view["pageMatched"])
+        self.assertFalse(wrong_view["viewStateMatched"])
+        self.assertFalse(wrong_view["matched"])
+
+    def test_allow_no_change_can_satisfy_a_final_page_expectation(self) -> None:
+        with Image.open(SAMPLE_ROOT / "main-menu.zh-CN.holdout.png") as source:
+            before = source.convert("RGB")
+            unchanged_pixels = before.tobytes("raw", "BGRX")
+        game_driver = MagicMock()
+        game_driver.window_api.snapshot.return_value = self.snapshot
+        clock = _FakeClock()
+        interaction = InteractionDriver(
+            game_driver,
+            monotonic=clock.monotonic,
+            sleep=clock.sleep,
+        )
+        tracker = VisualTransitionTracker(
+            before,
+            change_threshold=0.005,
+            stability_threshold=0.002,
+            stable_sample_count=2,
+        )
+
+        with patch(
+            "betterbtd_game_driver.interaction.capture_desktop_rect",
+            return_value=unchanged_pixels,
+        ):
+            observations, status = interaction._wait_for_transition(
+                123,
+                self.snapshot,
+                tracker,
+                _scroll_request(expected_page_id="mainMenu"),
+                self.catalog,
+            )
+
+        self.assertEqual("unchangedStable", status)
+        self.assertEqual(2, len(observations))
+        self.assertTrue(observations[-1]["expectationProbe"]["matched"])
+
+    def test_wait_without_expectation_keeps_first_stable_frame_behavior(self) -> None:
+        before = Image.new("RGB", (16, 9), "black")
+        changed_pixels = Image.new("RGB", (16, 9), "white").tobytes("raw", "BGRX")
+        snapshot = WindowSnapshot(
+            handle=123,
+            process_id=456,
+            process_name="BloonsTD6",
+            title="BloonsTD6",
+            visible=True,
+            minimized=False,
+            foreground=True,
+            dpi=96,
+            window_rect=Rect(0, 0, 16, 9),
+            client_rect=Rect(0, 0, 16, 9),
+        )
+        game_driver = MagicMock()
+        game_driver.window_api.snapshot.return_value = snapshot
+        clock = _FakeClock()
+        interaction = InteractionDriver(
+            game_driver,
+            monotonic=clock.monotonic,
+            sleep=clock.sleep,
+        )
+        tracker = VisualTransitionTracker(
+            before,
+            change_threshold=0.05,
+            stability_threshold=0.02,
+            stable_sample_count=2,
+        )
+
+        with (
+            patch(
+                "betterbtd_game_driver.interaction.capture_desktop_rect",
+                return_value=changed_pixels,
+            ),
+            patch("betterbtd_game_driver.interaction.recognize_frame") as recognize,
+        ):
+            observations, status = interaction._wait_for_transition(
+                123,
+                snapshot,
+                tracker,
+                _point_request(expected_page_id=None),
+                self.catalog,
+            )
+
+        self.assertEqual("changedStable", status)
+        self.assertEqual(3, len(observations))
+        recognize.assert_not_called()
+
+    def test_stable_mismatched_frame_is_probed_once_without_resetting_deadline(self) -> None:
+        before = Image.new("RGB", (16, 9), "black")
+        changed_pixels = Image.new("RGB", (16, 9), "white").tobytes("raw", "BGRX")
+        snapshot = WindowSnapshot(
+            handle=123,
+            process_id=456,
+            process_name="BloonsTD6",
+            title="BloonsTD6",
+            visible=True,
+            minimized=False,
+            foreground=True,
+            dpi=96,
+            window_rect=Rect(0, 0, 16, 9),
+            client_rect=Rect(0, 0, 16, 9),
+        )
+        game_driver = MagicMock()
+        game_driver.window_api.snapshot.return_value = snapshot
+        clock = _FakeClock()
+        interaction = InteractionDriver(
+            game_driver,
+            monotonic=clock.monotonic,
+            sleep=clock.sleep,
+        )
+        tracker = VisualTransitionTracker(
+            before,
+            change_threshold=0.05,
+            stability_threshold=0.02,
+            stable_sample_count=2,
+        )
+        request = replace(
+            _point_request(expected_page_id="mainMenu"),
+            transition_timeout_ms=500,
+        )
+        frame_recognition = MagicMock(status="unknown", match=None)
+
+        with (
+            patch(
+                "betterbtd_game_driver.interaction.capture_desktop_rect",
+                return_value=changed_pixels,
+            ),
+            patch(
+                "betterbtd_game_driver.interaction.recognize_frame",
+                return_value=frame_recognition,
+            ) as recognize,
+        ):
+            observations, status = interaction._wait_for_transition(
+                123,
+                snapshot,
+                tracker,
+                request,
+                self.catalog,
+            )
+
+        self.assertEqual("timeout", status)
+        self.assertEqual(4, len(observations))
+        recognize.assert_called_once()
+        self.assertEqual(1, sum("expectationProbe" in item for item in observations))
+
+    def test_frame_at_deadline_is_not_accepted(self) -> None:
+        before = Image.new("RGB", (16, 9), "black")
+        changed_pixels = Image.new("RGB", (16, 9), "white").tobytes("raw", "BGRX")
+        snapshot = WindowSnapshot(
+            handle=123,
+            process_id=456,
+            process_name="BloonsTD6",
+            title="BloonsTD6",
+            visible=True,
+            minimized=False,
+            foreground=True,
+            dpi=96,
+            window_rect=Rect(0, 0, 16, 9),
+            client_rect=Rect(0, 0, 16, 9),
+        )
+        game_driver = MagicMock()
+        game_driver.window_api.snapshot.return_value = snapshot
+        clock = _FakeClock()
+        interaction = InteractionDriver(
+            game_driver,
+            monotonic=clock.monotonic,
+            sleep=clock.sleep,
+        )
+        tracker = VisualTransitionTracker(
+            before,
+            change_threshold=0.05,
+            stability_threshold=0.02,
+            stable_sample_count=1,
+        )
+        request = replace(
+            _point_request(expected_page_id="mainMenu"),
+            transition_timeout_ms=500,
+            poll_interval_ms=1_000,
+            stable_sample_count=1,
+        )
+
+        with (
+            patch(
+                "betterbtd_game_driver.interaction.capture_desktop_rect",
+                return_value=changed_pixels,
+            ) as capture,
+            patch("betterbtd_game_driver.interaction.recognize_frame") as recognize,
+        ):
+            observations, status = interaction._wait_for_transition(
+                123,
+                snapshot,
+                tracker,
+                request,
+                self.catalog,
+            )
+
+        self.assertEqual("timeout", status)
+        self.assertEqual([], observations)
+        capture.assert_not_called()
+        recognize.assert_not_called()
+
+
+class _FakeClock:
+    def __init__(self) -> None:
+        self.current = 0.0
+
+    def monotonic(self) -> float:
+        return self.current
+
+    def sleep(self, seconds: float) -> None:
+        self.current += seconds
+
+
+def _point_request(
+    *,
+    expected_page_id: str | None,
+    expected_view_state_id: str | None = None,
+) -> PointClickRequest:
+    return PointClickRequest(
+        selector=WindowSelector(handle=123),
+        phase="arrange",
+        output_directory=None,
+        launch_path=None,
+        overwrite=False,
+        expected_page_id=expected_page_id,
+        settle_ms=0,
+        activation_timeout_ms=1_000,
+        window_timeout_ms=0,
+        launch_timeout_ms=1_000,
+        transition_timeout_ms=5_000,
+        poll_interval_ms=100,
+        stable_sample_count=2,
+        change_threshold=0.05,
+        stability_threshold=0.02,
+        reference_x=8,
+        reference_y=4,
+        expected_view_state_id=expected_view_state_id,
+    )
+
+
+def _scroll_request(*, expected_page_id: str | None) -> ScrollPointRequest:
+    return ScrollPointRequest(
+        selector=WindowSelector(handle=123),
+        phase="arrange",
+        output_directory=None,
+        launch_path=None,
+        overwrite=False,
+        expected_page_id=expected_page_id,
+        settle_ms=0,
+        activation_timeout_ms=1_000,
+        window_timeout_ms=0,
+        launch_timeout_ms=1_000,
+        transition_timeout_ms=5_000,
+        poll_interval_ms=100,
+        stable_sample_count=2,
+        change_threshold=0.005,
+        stability_threshold=0.002,
+        reference_x=8,
+        reference_y=4,
+        direction="down",
+        notches=1,
+        allow_no_change=True,
+        expected_view_state_id=None,
+    )
 
 
 class ClickTargetTests(unittest.TestCase):
@@ -544,6 +909,40 @@ class ClickViewStateExpectationTests(unittest.TestCase):
         self.assertEqual("heroSelect.bottom", trace["expectation"]["viewStateId"])
         self.assertFalse(trace["expectation"]["viewStateMatched"])
 
+    def test_expectation_timeout_writes_trace_before_returning_stable_error(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            output_directory = Path(temporary_directory) / "timeout"
+            game_driver = self._game_driver_with_frames(
+                SAMPLE_ROOT / "hero-select.zh-CN.holdout.png",
+                SAMPLE_ROOT / "hero-select.zh-CN.holdout.png",
+            )
+            request = PointClickRequest(
+                reference_x=100,
+                reference_y=800,
+                **self._request_arguments(output_directory),
+            )
+            interaction = InteractionDriver(game_driver)
+
+            with (
+                patch.object(
+                    interaction,
+                    "_wait_for_transition",
+                    return_value=([{"elapsedMs": 5_000}], "timeout"),
+                ),
+                self.assertRaises(GameDriverError) as context,
+            ):
+                interaction.click_point(request, self.catalog)
+
+            trace = json.loads(
+                (output_directory / "operation.json").read_text(encoding="utf-8")
+            )
+
+        self.assertEqual("visualTransitionTimeout", context.exception.code)
+        self.assertIn("page heroSelect", context.exception.message)
+        self.assertIn("view state heroSelect.bottom", context.exception.message)
+        self.assertEqual("timeout", trace["transition"]["status"])
+        self.assertFalse(trace["expectation"]["viewStateMatched"])
+
     def test_final_expectations_reject_non_oracle_evidence(self) -> None:
         cases = (
             ("page", "heroSelect", "expectedPageNotOracleEligible"),
@@ -592,6 +991,68 @@ class ClickViewStateExpectationTests(unittest.TestCase):
             if expected_page_id is not None:
                 self.assertFalse(trace["expectation"]["matched"])
             self.assertFalse(trace["expectation"]["viewStateMatched"])
+
+    def test_polling_probe_is_traced_but_final_evidence_controls_oracle(self) -> None:
+        with (
+            tempfile.TemporaryDirectory() as temporary_directory,
+            Image.open(SAMPLE_ROOT / "loading.unknown.png") as loading_source,
+            Image.open(
+                SAMPLE_ROOT / "hero-select-bottom.zh-CN.holdout.png"
+            ) as final_source,
+        ):
+            output_directory = Path(temporary_directory) / "non-oracle-after"
+            loading_pixels = loading_source.convert("RGB").tobytes("raw", "BGRX")
+            final_pixels = final_source.convert("RGB").tobytes("raw", "BGRX")
+            game_driver = self._game_driver_with_frames(
+                SAMPLE_ROOT / "hero-select.zh-CN.holdout.png",
+                SAMPLE_ROOT / "hero-select-bottom.zh-CN.holdout.png",
+                after_warnings=[
+                    {"code": "testWarning", "message": "Synthetic warning."}
+                ],
+            )
+            clock = _FakeClock()
+            interaction = InteractionDriver(
+                game_driver,
+                monotonic=clock.monotonic,
+                sleep=clock.sleep,
+            )
+            request = PointClickRequest(
+                reference_x=100,
+                reference_y=800,
+                **self._request_arguments(output_directory),
+            )
+
+            with (
+                patch(
+                    "betterbtd_game_driver.interaction.capture_desktop_rect",
+                    side_effect=(
+                        loading_pixels,
+                        loading_pixels,
+                        loading_pixels,
+                        final_pixels,
+                        final_pixels,
+                        final_pixels,
+                    ),
+                ),
+                self.assertRaises(GameDriverError) as context,
+            ):
+                interaction.click_point(request, self.catalog)
+
+            trace = json.loads(
+                (output_directory / "operation.json").read_text(encoding="utf-8")
+            )
+
+        probes = [
+            observation["expectationProbe"]
+            for observation in trace["transition"]["observations"]
+            if "expectationProbe" in observation
+        ]
+        self.assertEqual("expectedPageNotOracleEligible", context.exception.code)
+        self.assertEqual(2, len(probes))
+        self.assertEqual("unknown", probes[0]["status"])
+        self.assertTrue(probes[1]["matched"])
+        self.assertFalse(trace["after"]["recognition"]["oracleEligible"])
+        self.assertFalse(trace["expectation"]["matched"])
 
     def _request_arguments(self, output_directory: Path) -> dict[str, object]:
         return {

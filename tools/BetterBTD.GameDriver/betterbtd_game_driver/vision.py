@@ -49,6 +49,13 @@ class ViewStateMatch:
     matched: bool
 
 
+@dataclass(frozen=True, slots=True)
+class FrameRecognition:
+    status: str
+    match: PageMatch | None
+    candidates: tuple[PageMatch, ...]
+
+
 def recognize_image(
     evidence: EvidenceBundle,
     catalog: VisualCatalog,
@@ -80,46 +87,8 @@ def recognize_image(
             3,
         )
     _validate_evidence_geometry(evidence, width, height)
-    expected_ratio = catalog.reference_width / catalog.reference_height
-    actual_ratio = width / height
-    if abs(expected_ratio - actual_ratio) > 0.01:
-        raise GameDriverError(
-            "unsupportedObservationAspectRatio",
-            f"Observation image must be 16:9; found {width} x {height}.",
-            3,
-        )
-
-    reference_image = image.resize(
-        (catalog.reference_width, catalog.reference_height),
-        Image.Resampling.LANCZOS,
-    )
-    page_matches = tuple(_match_page(reference_image, page) for page in catalog.pages)
-    ranked_pages = sorted(
-        page_matches,
-        key=lambda match: match.ranking_score,
-        reverse=True,
-    )
-    matched_pages = [match for match in ranked_pages if match.matched]
-    best_match = max(
-        matched_pages,
-        key=lambda match: (
-            PAGE_KIND_RANK[match.page.kind],
-            match.ranking_score,
-        ),
-        default=None,
-    )
-    ambiguous = (
-        best_match is not None
-        and any(
-            candidate is not best_match
-            and candidate.page.kind == best_match.page.kind
-            and abs(best_match.ranking_score - candidate.ranking_score) < 0.02
-            and abs(best_match.score - candidate.score) < 0.02
-            for candidate in ranked_pages
-        )
-    )
-    if ambiguous:
-        best_match = None
+    frame_recognition = recognize_frame(image, catalog)
+    best_match = frame_recognition.match
 
     observed_at = datetime.now(timezone.utc)
     result: dict[str, object] = {
@@ -143,7 +112,7 @@ def recognize_image(
             "rectangleConvention": "halfOpen",
         },
         "recognition": {
-            "status": "ambiguous" if ambiguous else ("matched" if best_match else "unknown"),
+            "status": frame_recognition.status,
             "oracleEligible": best_match is not None and evidence.oracle_eligible,
             "page": (
                 _page_result(best_match, width, height, evidence.oracle_eligible)
@@ -152,12 +121,64 @@ def recognize_image(
             ),
             "candidates": [
                 _page_candidate(match)
-                for match in ranked_pages
+                for match in frame_recognition.candidates
             ],
             "elements": _element_results(best_match, width, height) if best_match else [],
         },
     }
     return result, best_match
+
+
+def recognize_frame(image: Image.Image, catalog: VisualCatalog) -> FrameRecognition:
+    width, height = image.size
+    expected_ratio = catalog.reference_width / catalog.reference_height
+    actual_ratio = width / height
+    if abs(expected_ratio - actual_ratio) > 0.01:
+        raise GameDriverError(
+            "unsupportedObservationAspectRatio",
+            f"Observation image must be 16:9; found {width} x {height}.",
+            3,
+        )
+
+    reference_image = image.convert("RGB").resize(
+        (catalog.reference_width, catalog.reference_height),
+        Image.Resampling.LANCZOS,
+    )
+    page_matches = tuple(_match_page(reference_image, page) for page in catalog.pages)
+    ranked_pages = tuple(
+        sorted(
+            page_matches,
+            key=lambda match: match.ranking_score,
+            reverse=True,
+        )
+    )
+    matched_pages = [match for match in ranked_pages if match.matched]
+    best_match = max(
+        matched_pages,
+        key=lambda match: (
+            PAGE_KIND_RANK[match.page.kind],
+            match.ranking_score,
+        ),
+        default=None,
+    )
+    ambiguous = (
+        best_match is not None
+        and any(
+            candidate is not best_match
+            and candidate.page.kind == best_match.page.kind
+            and abs(best_match.ranking_score - candidate.ranking_score) < 0.02
+            and abs(best_match.score - candidate.score) < 0.02
+            for candidate in ranked_pages
+        )
+    )
+    if ambiguous:
+        best_match = None
+
+    return FrameRecognition(
+        status="ambiguous" if ambiguous else ("matched" if best_match else "unknown"),
+        match=best_match,
+        candidates=ranked_pages,
+    )
 
 
 def write_annotation(

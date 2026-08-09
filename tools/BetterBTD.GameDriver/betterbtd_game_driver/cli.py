@@ -318,11 +318,17 @@ def _add_interaction_arguments(
     )
     parser.add_argument(
         "--expect-page",
-        help="Require this independently recognized page after the transition.",
+        help=(
+            "Wait across stable intermediate frames and require this independently "
+            "recognized final page."
+        ),
     )
     parser.add_argument(
         "--expect-view-state",
-        help="Require this independently recognized catalog view state after the transition.",
+        help=(
+            "Wait across stable intermediate frames and require this independently "
+            "recognized final catalog view state."
+        ),
     )
     parser.add_argument(
         "--overwrite",
@@ -361,7 +367,10 @@ def _add_interaction_arguments(
             value, 500, 120_000, "--transition-timeout-ms"
         ),
         default=10_000,
-        help="Wait for a changed and stable frame (default: 10000).",
+        help=(
+            "Wait for a stable frame satisfying any final page/view expectations "
+            "(default: 10000)."
+        ),
     )
     parser.add_argument(
         "--poll-interval-ms",
