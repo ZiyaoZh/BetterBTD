@@ -227,6 +227,99 @@ public sealed class AutoTaskSkeletonTests
     }
 
     [Fact]
+    public async Task Runner_CancellationWaitsForUnderlyingStageScriptToExit()
+    {
+        var uiStateService = new QueueGameUiStateService(
+        [
+            new GameUiSnapshot { State = GameUiStateId.InLevel }
+        ]);
+        var strategy = new InterruptAwareCollectionStrategy();
+        var scriptExecutor = new DelayedCancellationAutoTaskScriptExecutor();
+        var runtimeServices = new AutoTaskRuntimeServices
+        {
+            GameUiState = uiStateService,
+            Navigator = GameUiNavigator.Instance,
+            UiActionExecutor = new RecordingGameUiActionExecutor(),
+            ScriptResolver = new RecordingAutoTaskScriptResolver("collection-stage.json"),
+            ScriptExecutor = scriptExecutor
+        };
+        var runner = new AutoTaskRunner(
+            new SingleStrategyRegistry(strategy),
+            runtimeServices,
+            AutoTaskRuntimeScriptPreviewService.Instance);
+        using var cancellationSource = new CancellationTokenSource();
+
+        var executionTask = runner.ExecuteAsync(
+            new AutoTaskRequest
+            {
+                Kind = AutoTaskKind.Collection,
+                StageTarget = CreateTarget(),
+                PreferredScriptPath = "collection-stage.json"
+            },
+            new AutoTaskExecutionOptions
+            {
+                RuntimeServices = runtimeServices,
+                MaxLoopIterations = 10
+            },
+            cancellationSource.Token);
+
+        await scriptExecutor.Started.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        cancellationSource.Cancel();
+        await scriptExecutor.CancellationObserved.Task.WaitAsync(TimeSpan.FromSeconds(2));
+
+        Assert.False(executionTask.IsCompleted);
+        scriptExecutor.AllowExit();
+
+        var result = await executionTask.WaitAsync(TimeSpan.FromSeconds(2));
+        Assert.Equal(AutoTaskExecutionStatus.Cancelled, result.Status);
+        Assert.False(scriptExecutor.IsRunning);
+    }
+
+    [Fact]
+    public async Task Runner_MonitorFailurePreservesOriginalExceptionAfterScriptExits()
+    {
+        var uiStateService = new ThrowAfterFirstCaptureGameUiStateService();
+        var scriptExecutor = new DelayedCancellationAutoTaskScriptExecutor
+        {
+            ThrowOnCancellation = true
+        };
+        var runtimeServices = new AutoTaskRuntimeServices
+        {
+            GameUiState = uiStateService,
+            Navigator = GameUiNavigator.Instance,
+            UiActionExecutor = new RecordingGameUiActionExecutor(),
+            ScriptResolver = new RecordingAutoTaskScriptResolver("collection-stage.json"),
+            ScriptExecutor = scriptExecutor
+        };
+        var runner = new AutoTaskRunner(
+            new SingleStrategyRegistry(new InterruptAwareCollectionStrategy()),
+            runtimeServices,
+            AutoTaskRuntimeScriptPreviewService.Instance);
+
+        var executionTask = runner.ExecuteAsync(
+            new AutoTaskRequest
+            {
+                Kind = AutoTaskKind.Collection,
+                StageTarget = CreateTarget(),
+                PreferredScriptPath = "collection-stage.json"
+            },
+            new AutoTaskExecutionOptions
+            {
+                RuntimeServices = runtimeServices,
+                MaxLoopIterations = 10
+            });
+
+        await scriptExecutor.CancellationObserved.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        Assert.False(executionTask.IsCompleted);
+        scriptExecutor.AllowExit();
+
+        var result = await executionTask.WaitAsync(TimeSpan.FromSeconds(2));
+        Assert.Equal(AutoTaskExecutionStatus.Failed, result.Status);
+        Assert.Equal("monitor capture failed", result.Exception?.Message);
+        Assert.False(scriptExecutor.IsRunning);
+    }
+
+    [Fact]
     public async Task Runner_InterruptsCollectionScript_WhenDefeatUiDetected()
     {
         var uiStateService = new QueueGameUiStateService(
@@ -573,6 +666,96 @@ public sealed class AutoTaskSkeletonTests
         public void Complete(ScriptExecutionResult result)
         {
             _completion.TrySetResult(result);
+        }
+    }
+
+    private sealed class DelayedCancellationAutoTaskScriptExecutor : IAutoTaskScriptExecutor
+    {
+        private readonly TaskCompletionSource _allowExit = new(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public TaskCompletionSource Started { get; } = new(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public TaskCompletionSource CancellationObserved { get; } = new(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public event EventHandler<ScriptExecutionProgressSnapshot>? ProgressChanged;
+
+        public bool IsRunning { get; private set; }
+
+        public bool ThrowOnCancellation { get; init; }
+
+        public bool RequestPause() => false;
+
+        public bool Resume() => false;
+
+        public async Task<ScriptExecutionResult> ExecuteAsync(
+            string filePath,
+            ScriptExecutionOptions options,
+            CancellationToken cancellationToken = default)
+        {
+            IsRunning = true;
+            Started.TrySetResult();
+            ProgressChanged?.Invoke(this, new ScriptExecutionProgressSnapshot
+            {
+                RunState = ScriptExecutionRunState.Running
+            });
+
+            try
+            {
+                await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+                throw new InvalidOperationException("The cancellation test script unexpectedly completed.");
+            }
+            catch (OperationCanceledException)
+            {
+                CancellationObserved.TrySetResult();
+                await _allowExit.Task;
+                if (ThrowOnCancellation)
+                {
+                    throw;
+                }
+
+                return new ScriptExecutionResult
+                {
+                    Status = ScriptExecutionStatus.Cancelled,
+                    ExecutedStepCount = 0,
+                    LastCompletedStepIndex = -1,
+                    FinalProgress = new ScriptExecutionProgressSnapshot
+                    {
+                        RunState = ScriptExecutionRunState.Cancelled
+                    }
+                };
+            }
+            finally
+            {
+                IsRunning = false;
+            }
+        }
+
+        public void AllowExit()
+        {
+            _allowExit.TrySetResult();
+        }
+    }
+
+    private sealed class ThrowAfterFirstCaptureGameUiStateService : IGameUiStateService
+    {
+        private int _captureCount;
+
+        public Task<GameUiSnapshot> CaptureSnapshotAsync(CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (Interlocked.Increment(ref _captureCount) == 1)
+            {
+                return Task.FromResult(new GameUiSnapshot { State = GameUiStateId.InLevel });
+            }
+
+            throw new InvalidOperationException("monitor capture failed");
+        }
+
+        public void ResetStabilizationState()
+        {
         }
     }
 

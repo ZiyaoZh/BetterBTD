@@ -37,6 +37,8 @@ public interface IScriptInputService
     void KeyDown(KeyId key);
 
     void KeyUp(KeyId key);
+
+    void ReleaseAllKeys();
 }
 
 public interface IGameStageStateService

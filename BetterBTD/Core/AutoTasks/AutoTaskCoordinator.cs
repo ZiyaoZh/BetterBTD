@@ -1,4 +1,6 @@
 using BetterBTD.Models.AutoTasks;
+using BetterBTD.Core.GameControl;
+using BetterBTD.Services.Tasks.Input;
 
 namespace BetterBTD.Core.AutoTasks;
 
@@ -8,19 +10,29 @@ public sealed class AutoTaskCoordinator
 
     private readonly object _syncRoot = new();
     private readonly AutoTaskRunner _runner;
+    private readonly GameControlLeaseCoordinator _gameControlLeaseCoordinator;
+    private readonly Action _releaseAllKeys;
 
     private bool _isRunning;
     private AutoTaskExecutionSession? _currentSession;
     private CancellationTokenSource? _currentCancellationSource;
 
     private AutoTaskCoordinator()
-        : this(new AutoTaskRunner())
+        : this(
+            new AutoTaskRunner(),
+            GameControlLeaseCoordinator.Instance,
+            ScriptInputSimulationService.Instance.ReleaseAllKeys)
     {
     }
 
-    internal AutoTaskCoordinator(AutoTaskRunner runner)
+    internal AutoTaskCoordinator(
+        AutoTaskRunner runner,
+        GameControlLeaseCoordinator? gameControlLeaseCoordinator = null,
+        Action? releaseAllKeys = null)
     {
         _runner = runner ?? throw new ArgumentNullException(nameof(runner));
+        _gameControlLeaseCoordinator = gameControlLeaseCoordinator ?? GameControlLeaseCoordinator.Instance;
+        _releaseAllKeys = releaseAllKeys ?? ScriptInputSimulationService.Instance.ReleaseAllKeys;
     }
 
     public static AutoTaskCoordinator Instance => InstanceHolder.Value;
@@ -61,19 +73,16 @@ public sealed class AutoTaskCoordinator
 
     public bool RequestStop()
     {
-        CancellationTokenSource? cancellationSource;
         lock (_syncRoot)
         {
-            cancellationSource = _currentCancellationSource;
-        }
+            if (_currentCancellationSource is null)
+            {
+                return false;
+            }
 
-        if (cancellationSource is null)
-        {
-            return false;
+            _currentCancellationSource.Cancel();
+            return true;
         }
-
-        cancellationSource.Cancel();
-        return true;
     }
 
     public async Task<AutoTaskExecutionResult> ExecuteAsync(
@@ -82,6 +91,19 @@ public sealed class AutoTaskCoordinator
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
+
+        var leaseOwnerId = $"auto-task-{Guid.NewGuid():N}";
+        if (!_gameControlLeaseCoordinator.TryAcquire(
+                GameControlOwnerKind.AutoTask,
+                leaseOwnerId,
+                out var gameControlLease))
+        {
+            throw new InvalidOperationException(
+                "Another BetterBTD game-control operation is already running or input control is unavailable.");
+        }
+
+        using var ownedGameControlLease = gameControlLease;
+        using var gameControlContext = GameControlLeaseContext.Push(leaseOwnerId);
 
         CancellationTokenSource linkedCancellationSource;
         lock (_syncRoot)
@@ -115,6 +137,17 @@ public sealed class AutoTaskCoordinator
                 _currentCancellationSource = null;
                 _currentSession = null;
                 _isRunning = false;
+            }
+
+            try
+            {
+                _releaseAllKeys();
+                gameControlLease.ConfirmInputReleased();
+            }
+            catch
+            {
+                gameControlLease.MarkPoisoned();
+                throw;
             }
         }
     }

@@ -61,12 +61,15 @@ Windows 与游戏窗口
 
 测试编排必须维护游戏输入所有权：前置和恢复阶段可由 Game Driver 控制游戏，脚本执行阶段只能由 BetterBTD 输入，Game Driver 只读观察。详细协议见 [独立 BTD6 Game Driver](game-driver.md)。
 
+`/api/test/v1` 是默认关闭的回环控制面，用临时 Bearer Token 启动捕获、校验/执行脚本并查询 operation。所有 BetterBTD 内部识别、进度、结果和日志都标记为 `nonOracleDiagnostics`；只有 operation 终态且输入控制已释放时，编排层才能让 Game Driver 进入 Recover。详细协议见 [BetterBTD Test API](test-api.md)。
+
 ## 扩展入口
 
 - 新脚本指令：更新脚本模型、编辑器选项、处理器、序列展示和格式文档。
 - 新自动任务：增加 `AutoTaskKind`、请求构建、策略、脚本解析和页面配置。
 - 新地图：遵循 [新增地图维护流程](map-update-workflow.md)。
 - 新机器人动作：注册动作元数据和处理器，并同步 [HTTP 协议](robot-control-http-api.md)。
+- 新测试控制接口：保持 `/api/test/v1` 向后兼容，并同步 [Test API 协议](test-api.md) 与契约测试。
 - 新识别规则：优先加入结构化配置或模板仓库，并补充可复现截图测试。
 
 返回 [开发者文档](README.md) · [开发指南](development.md)

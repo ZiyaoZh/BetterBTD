@@ -2,6 +2,7 @@ using BetterBTD.Models.ScriptExecution;
 using BetterBTD.Core.ScriptExecution.Runtime;
 using BetterBTD.Services.Tasks.ScriptExecution;
 using BetterBTD.Core.ScriptExecution.Handlers;
+using BetterBTD.Core.GameControl;
 using System.Linq;
 
 namespace BetterBTD.Core.ScriptExecution;
@@ -13,14 +14,23 @@ public sealed class ScriptTaskFlowExecutor
     private readonly object _syncRoot = new();
     private readonly ScriptTaskFlowService _scriptTaskFlowService;
     private readonly ScriptInstructionHandlerRegistry _handlerRegistry;
+    private readonly GameControlLeaseCoordinator _gameControlLeaseCoordinator;
 
     private bool _isRunning;
     private ScriptExecutionSession? _currentSession;
+    private CancellationTokenSource? _currentCancellationSource;
 
     private ScriptTaskFlowExecutor()
+        : this(GameControlLeaseCoordinator.Instance)
+    {
+    }
+
+    internal ScriptTaskFlowExecutor(GameControlLeaseCoordinator gameControlLeaseCoordinator)
     {
         _scriptTaskFlowService = ScriptTaskFlowService.Instance;
         _handlerRegistry = ScriptInstructionHandlerRegistry.Instance;
+        _gameControlLeaseCoordinator = gameControlLeaseCoordinator ??
+            throw new ArgumentNullException(nameof(gameControlLeaseCoordinator));
     }
 
     public static ScriptTaskFlowExecutor Instance => InstanceHolder.Value;
@@ -73,6 +83,20 @@ public sealed class ScriptTaskFlowExecutor
         return session?.Resume() == true;
     }
 
+    public bool RequestStop()
+    {
+        lock (_syncRoot)
+        {
+            if (_currentCancellationSource is null)
+            {
+                return false;
+            }
+
+            _currentCancellationSource.Cancel();
+            return true;
+        }
+    }
+
     public Task<ScriptExecutionResult> ExecuteAsync(
         string filePath,
         ScriptExecutionOptions? options = null,
@@ -90,6 +114,9 @@ public sealed class ScriptTaskFlowExecutor
     {
         ArgumentNullException.ThrowIfNull(taskFlow);
 
+        using var gameControlScope = _gameControlLeaseCoordinator.AcquireOrJoinForScriptExecution();
+        using var linkedCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        cancellationToken = linkedCancellationSource.Token;
         options ??= new ScriptExecutionOptions();
         var runtimeServices = options.RuntimeServices ?? ScriptExecutionRuntimeServiceFactory.CreateDefault();
         var executedStepCount = 0;
@@ -99,7 +126,7 @@ public sealed class ScriptTaskFlowExecutor
             : Math.Clamp(options.StartStepIndex, 0, taskFlow.Steps.Count - 1);
         var executionSession = new ScriptExecutionSession(taskFlow.SourceFilePath);
 
-        EnterRunningState(executionSession);
+        EnterRunningState(executionSession, linkedCancellationSource);
         try
         {
             using var runtimeLogScope = ScriptExecutionRuntimeDiagnostics.PushLogger(executionSession.RuntimeLogger);
@@ -165,6 +192,7 @@ public sealed class ScriptTaskFlowExecutor
                 }
             }
 
+            cancellationToken.ThrowIfCancellationRequested();
             executionSession.MarkCompleted(executedStepCount, lastCompletedStepIndex);
             var finalProgress = executionSession.GetSnapshot();
 
@@ -230,8 +258,21 @@ public sealed class ScriptTaskFlowExecutor
         }
         finally
         {
-            executionSession.DisposeRuntimeLogging();
-            ExitRunningState();
+            try
+            {
+                runtimeServices.Input.ReleaseAllKeys();
+                gameControlScope.ConfirmInputReleased();
+            }
+            catch
+            {
+                gameControlScope.MarkPoisoned();
+                throw;
+            }
+            finally
+            {
+                executionSession.DisposeRuntimeLogging();
+                ExitRunningState();
+            }
         }
     }
 
@@ -258,9 +299,12 @@ public sealed class ScriptTaskFlowExecutor
         }
     }
 
-    private void EnterRunningState(ScriptExecutionSession executionSession)
+    private void EnterRunningState(
+        ScriptExecutionSession executionSession,
+        CancellationTokenSource cancellationSource)
     {
         ArgumentNullException.ThrowIfNull(executionSession);
+        ArgumentNullException.ThrowIfNull(cancellationSource);
 
         lock (_syncRoot)
         {
@@ -271,6 +315,7 @@ public sealed class ScriptTaskFlowExecutor
 
             _isRunning = true;
             _currentSession = executionSession;
+            _currentCancellationSource = cancellationSource;
             _currentSession.ProgressChanged += OnCurrentSessionProgressChanged;
             _currentSession.RuntimeLogAdded += OnCurrentSessionRuntimeLogAdded;
         }
@@ -289,6 +334,7 @@ public sealed class ScriptTaskFlowExecutor
             }
 
             _currentSession = null;
+            _currentCancellationSource = null;
             _isRunning = false;
         }
     }

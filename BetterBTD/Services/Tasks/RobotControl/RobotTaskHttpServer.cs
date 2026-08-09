@@ -21,6 +21,7 @@ public sealed class RobotTaskHttpServer
 
     private readonly RobotTaskCoordinator _coordinator;
     private readonly object _syncRoot = new();
+    private readonly HashSet<Task> _requestTasks = [];
 
     private HttpListener? _listener;
     private CancellationTokenSource? _cancellationSource;
@@ -61,6 +62,7 @@ public sealed class RobotTaskHttpServer
 
     public Task StartAsync(string listenUrl, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         var normalizedListenUrl = NormalizeListenUrl(listenUrl);
 
         lock (_syncRoot)
@@ -72,11 +74,22 @@ public sealed class RobotTaskHttpServer
 
             var listener = new HttpListener();
             listener.Prefixes.Add(normalizedListenUrl);
-            listener.Start();
+            var cancellationSource = new CancellationTokenSource();
+            try
+            {
+                listener.Start();
+                cancellationToken.ThrowIfCancellationRequested();
+            }
+            catch
+            {
+                listener.Close();
+                cancellationSource.Dispose();
+                throw;
+            }
 
             _listener = listener;
             _listenUrl = normalizedListenUrl;
-            _cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            _cancellationSource = cancellationSource;
             _listenTask = Task.Run(() => ListenLoopAsync(listener, _cancellationSource.Token), CancellationToken.None);
         }
 
@@ -126,6 +139,17 @@ public sealed class RobotTaskHttpServer
             }
         }
 
+        Task[] requestTasks;
+        lock (_syncRoot)
+        {
+            requestTasks = _requestTasks.ToArray();
+        }
+
+        if (requestTasks.Length > 0)
+        {
+            await Task.WhenAll(requestTasks.Select(IgnoreRequestShutdownExceptionsAsync)).ConfigureAwait(false);
+        }
+
         cancellationSource?.Dispose();
     }
 
@@ -145,7 +169,39 @@ public sealed class RobotTaskHttpServer
                 break;
             }
 
-            _ = Task.Run(() => HandleContextAsync(context, cancellationToken), CancellationToken.None);
+            var requestTask = HandleContextAsync(context, cancellationToken);
+            lock (_syncRoot)
+            {
+                _requestTasks.Add(requestTask);
+            }
+
+            _ = requestTask.ContinueWith(
+                completedTask =>
+                {
+                    lock (_syncRoot)
+                    {
+                        _requestTasks.Remove(completedTask);
+                    }
+                },
+                CancellationToken.None,
+                TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.Default);
+        }
+    }
+
+    private static async Task IgnoreRequestShutdownExceptionsAsync(Task task)
+    {
+        try
+        {
+            await task.ConfigureAwait(false);
+        }
+        catch (Exception ex) when (
+            ex is IOException or
+                ObjectDisposedException or
+                HttpListenerException or
+                InvalidOperationException or
+                OperationCanceledException)
+        {
         }
     }
 
@@ -170,7 +226,16 @@ public sealed class RobotTaskHttpServer
         }
         finally
         {
-            context.Response.Close();
+            try
+            {
+                context.Response.Close();
+            }
+            catch (Exception ex) when (
+                ex is ObjectDisposedException or
+                    HttpListenerException or
+                    InvalidOperationException)
+            {
+            }
         }
     }
 

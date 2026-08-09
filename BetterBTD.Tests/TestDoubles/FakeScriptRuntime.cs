@@ -40,6 +40,10 @@ internal sealed class RecordingScriptInputService : IScriptInputService
 
     public List<KeyId> KeyUpEvents { get; } = [];
 
+    public int ReleaseAllKeysCallCount { get; private set; }
+
+    public Exception? ReleaseAllKeysException { get; set; }
+
     public bool TryGetTargetWindowInfo(out GameWindowInfo windowInfo)
     {
         windowInfo = default!;
@@ -83,6 +87,15 @@ internal sealed class RecordingScriptInputService : IScriptInputService
     public void KeyUp(KeyId key)
     {
         KeyUpEvents.Add(key);
+    }
+
+    public void ReleaseAllKeys()
+    {
+        ReleaseAllKeysCallCount++;
+        if (ReleaseAllKeysException is not null)
+        {
+            throw ReleaseAllKeysException;
+        }
     }
 
     private static HotkeyBinding Clone(HotkeyBinding hotkey)

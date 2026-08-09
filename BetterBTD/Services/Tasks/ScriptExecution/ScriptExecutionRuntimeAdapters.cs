@@ -128,5 +128,10 @@ public sealed class ScriptInputServiceAdapter : IScriptInputService
             replaceExisting: true);
         _scriptInputSimulationService.KeyUp(key);
     }
+
+    public void ReleaseAllKeys()
+    {
+        _scriptInputSimulationService.ReleaseAllKeys();
+    }
 }
 

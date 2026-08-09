@@ -332,42 +332,52 @@ public sealed class AutoTaskRunner
             scriptExecutionOptions,
             linkedScriptCancellationSource.Token);
 
-        if (!ShouldMonitorStageScriptUi(request.Kind))
+        try
         {
-            return (await scriptTask.ConfigureAwait(false), null);
-        }
-
-        GameUiSnapshot? interruptedSnapshot = null;
-        while (!scriptTask.IsCompleted)
-        {
-            var completedTask = await Task
-                .WhenAny(scriptTask, Task.Delay(StageScriptUiMonitorIntervalMs, cancellationToken))
-                .ConfigureAwait(false);
-
-            if (completedTask == scriptTask)
+            if (!ShouldMonitorStageScriptUi(request.Kind))
             {
+                return (await scriptTask.ConfigureAwait(false), null);
+            }
+
+            GameUiSnapshot? interruptedSnapshot = null;
+            while (!scriptTask.IsCompleted)
+            {
+                var completedTask = await Task
+                    .WhenAny(scriptTask, Task.Delay(StageScriptUiMonitorIntervalMs, cancellationToken))
+                    .ConfigureAwait(false);
+
+                if (completedTask == scriptTask)
+                {
+                    break;
+                }
+
+                var snapshot = await runtimeServices.GameUiState
+                    .CaptureSnapshotAsync(cancellationToken)
+                    .ConfigureAwait(false);
+
+                if (!ShouldInterruptStageScript(request.Kind, snapshot.State))
+                {
+                    continue;
+                }
+
+                interruptedSnapshot = snapshot;
+                state.RecordUiSnapshot(snapshot);
+                session.UpdateUiSnapshot(
+                    snapshot,
+                    $"Detected stage result UI '{snapshot.State}' while the script was running.");
+                linkedScriptCancellationSource.Cancel();
                 break;
             }
 
-            var snapshot = await runtimeServices.GameUiState
-                .CaptureSnapshotAsync(cancellationToken)
-                .ConfigureAwait(false);
-
-            if (!ShouldInterruptStageScript(request.Kind, snapshot.State))
-            {
-                continue;
-            }
-
-            interruptedSnapshot = snapshot;
-            state.RecordUiSnapshot(snapshot);
-            session.UpdateUiSnapshot(
-                snapshot,
-                $"Detected stage result UI '{snapshot.State}' while the script was running.");
-            linkedScriptCancellationSource.Cancel();
-            break;
+            return (await scriptTask.ConfigureAwait(false), interruptedSnapshot);
         }
-
-        return (await scriptTask.ConfigureAwait(false), interruptedSnapshot);
+        catch
+        {
+            linkedScriptCancellationSource.Cancel();
+            await ((Task)scriptTask)
+                .ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+            throw;
+        }
     }
 
     private static bool ShouldMonitorStageScriptUi(AutoTaskKind kind)
