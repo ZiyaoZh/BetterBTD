@@ -32,6 +32,7 @@ public enum MonkeyTowerType
     Alchemist,
     Druid,
     MerMonkey,
+    Skywarden,
 
     BananaFarm,
     SpikeFactory,

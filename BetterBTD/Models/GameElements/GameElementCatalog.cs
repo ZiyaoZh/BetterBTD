@@ -40,6 +40,7 @@ public static class GameElementCatalog
         new(MonkeyTowerType.Alchemist, MonkeyTowerCategory.Magic, "GameElements.MonkeyTower.Alchemist"),
         new(MonkeyTowerType.Druid, MonkeyTowerCategory.Magic, "GameElements.MonkeyTower.Druid"),
         new(MonkeyTowerType.MerMonkey, MonkeyTowerCategory.Magic, "GameElements.MonkeyTower.MerMonkey"),
+        new(MonkeyTowerType.Skywarden, MonkeyTowerCategory.Magic, "GameElements.MonkeyTower.Skywarden"),
 
         new(MonkeyTowerType.BananaFarm, MonkeyTowerCategory.Support, "GameElements.MonkeyTower.BananaFarm"),
         new(MonkeyTowerType.SpikeFactory, MonkeyTowerCategory.Support, "GameElements.MonkeyTower.SpikeFactory"),

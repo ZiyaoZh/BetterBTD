@@ -42,6 +42,7 @@ public static class ScriptExecutionKeyBindingResolver
                     MonkeyTowerType.Alchemist => keyBindings.TowerPlacement.Alchemist,
                     MonkeyTowerType.Druid => keyBindings.TowerPlacement.Druid,
                     MonkeyTowerType.MerMonkey => keyBindings.TowerPlacement.MerMonkey,
+                    MonkeyTowerType.Skywarden => keyBindings.TowerPlacement.Skywarden,
                     MonkeyTowerType.BananaFarm => keyBindings.TowerPlacement.BananaFarm,
                     MonkeyTowerType.SpikeFactory => keyBindings.TowerPlacement.SpikeFactory,
                     MonkeyTowerType.MonkeyVillage => keyBindings.TowerPlacement.MonkeyVillage,

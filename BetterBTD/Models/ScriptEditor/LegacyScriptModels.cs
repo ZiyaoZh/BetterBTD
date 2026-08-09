@@ -193,6 +193,7 @@ public enum LegacyMonkeyType
     Alchemist = 23,
     Druid = 24,
     MerMonkey = 25,
+    Skywarden = 26,
     BananaFarm = 30,
     SpikeFactory = 31,
     MonkeyVillage = 32,

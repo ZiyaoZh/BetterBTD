@@ -97,6 +97,7 @@ public sealed partial class TowerPlacementBindings : ObservableObject
     [ObservableProperty] private HotkeyBinding _alchemist = new() { Key = KeyId.F };
     [ObservableProperty] private HotkeyBinding _druid = new() { Key = KeyId.G };
     [ObservableProperty] private HotkeyBinding _merMonkey = new() { Key = KeyId.O };
+    [ObservableProperty] private HotkeyBinding _skywarden = new() { Key = KeyId.None };
     [ObservableProperty] private HotkeyBinding _bananaFarm = new() { Key = KeyId.H };
     [ObservableProperty] private HotkeyBinding _spikeFactory = new() { Key = KeyId.J };
     [ObservableProperty] private HotkeyBinding _monkeyVillage = new() { Key = KeyId.K };
