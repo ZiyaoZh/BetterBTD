@@ -32,6 +32,73 @@ MAX_SCROLL_NOTCHES = 20
 MIN_DRAG_DURATION_MS = 50
 MAX_DRAG_DURATION_MS = 5_000
 MAX_DRAG_STEPS = 100
+MIN_KEY_HOLD_MS = 10
+MAX_KEY_HOLD_MS = 1_000
+
+_KEYBOARD_KEYS = {
+    **{chr(code).casefold(): code for code in range(ord("A"), ord("Z") + 1)},
+    **{str(number): ord(str(number)) for number in range(10)},
+    **{f"f{number}": 0x6F + number for number in range(1, 13)},
+    "backspace": 0x08,
+    "tab": 0x09,
+    "enter": 0x0D,
+    "escape": 0x1B,
+    "space": 0x20,
+    "page-up": 0x21,
+    "page-down": 0x22,
+    "end": 0x23,
+    "home": 0x24,
+    "left": 0x25,
+    "up": 0x26,
+    "right": 0x27,
+    "down": 0x28,
+    "insert": 0x2D,
+    "delete": 0x2E,
+    "semicolon": 0xBA,
+    "equals": 0xBB,
+    "comma": 0xBC,
+    "minus": 0xBD,
+    "period": 0xBE,
+    "slash": 0xBF,
+    "grave": 0xC0,
+    "left-bracket": 0xDB,
+    "backslash": 0xDC,
+    "right-bracket": 0xDD,
+    "apostrophe": 0xDE,
+}
+_KEYBOARD_MODIFIERS = {
+    "ctrl": 0x11,
+    "alt": 0x12,
+    "shift": 0x10,
+}
+_EXTENDED_KEY_NAMES = frozenset(
+    (
+        "page-up",
+        "page-down",
+        "end",
+        "home",
+        "left",
+        "up",
+        "right",
+        "down",
+        "insert",
+        "delete",
+    )
+)
+KEYBOARD_KEY_NAMES = tuple(_KEYBOARD_KEYS)
+KEYBOARD_MODIFIER_NAMES = tuple(_KEYBOARD_MODIFIERS)
+
+
+def keyboard_chord_is_unsafe(key_name: str, modifiers: tuple[str, ...]) -> bool:
+    key = key_name.casefold()
+    modifier_set = {modifier.casefold() for modifier in modifiers}
+    if key == "f10":
+        return True
+    if "alt" in modifier_set and key in ("escape", "f4", "space", "tab"):
+        return True
+    if "ctrl" in modifier_set and key == "escape":
+        return True
+    return {"ctrl", "alt"}.issubset(modifier_set) and key == "delete"
 
 
 def enable_per_monitor_v2() -> None:
@@ -281,6 +348,113 @@ class WindowApi:
             win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
         return start_screen_x, start_screen_y, end_screen_x, end_screen_y
 
+    def press_key(
+        self,
+        handle: int,
+        key_name: str,
+        modifiers: tuple[str, ...],
+        hold_ms: int,
+    ) -> tuple[int, tuple[int, ...]]:
+        normalized_key = key_name.casefold()
+        normalized_modifiers = tuple(modifier.casefold() for modifier in modifiers)
+        if normalized_key not in _KEYBOARD_KEYS:
+            raise GameDriverError(
+                "inputKeyInvalid",
+                f"Unsupported keyboard key: {key_name}",
+                5,
+            )
+        if len(set(normalized_modifiers)) != len(normalized_modifiers):
+            raise GameDriverError(
+                "inputModifierInvalid",
+                "Keyboard modifiers must not contain duplicates.",
+                5,
+            )
+        if any(modifier not in _KEYBOARD_MODIFIERS for modifier in normalized_modifiers):
+            raise GameDriverError(
+                "inputModifierInvalid",
+                "Keyboard modifiers must be ctrl, alt, or shift.",
+                5,
+            )
+        if keyboard_chord_is_unsafe(normalized_key, normalized_modifiers):
+            raise GameDriverError(
+                "inputChordUnsafe",
+                "Reserved or system-level keyboard chords are not allowed.",
+                5,
+            )
+        if not MIN_KEY_HOLD_MS <= hold_ms <= MAX_KEY_HOLD_MS:
+            raise GameDriverError(
+                "inputDurationInvalid",
+                f"Key hold duration must be between {MIN_KEY_HOLD_MS} and "
+                f"{MAX_KEY_HOLD_MS} milliseconds.",
+                5,
+            )
+
+        ordered_modifiers = tuple(
+            modifier
+            for modifier in KEYBOARD_MODIFIER_NAMES
+            if modifier in normalized_modifiers
+        )
+        modifier_virtual_keys = tuple(
+            _KEYBOARD_MODIFIERS[modifier] for modifier in ordered_modifiers
+        )
+        pressed: list[tuple[int, bool]] = []
+        input_error: Exception | None = None
+        release_errors: list[Exception] = []
+        try:
+            for virtual_key in modifier_virtual_keys:
+                self._require_keyboard_target_foreground(handle)
+                _send_keyboard_event(virtual_key, extended=False, key_up=False)
+                pressed.append((virtual_key, False))
+
+            key_virtual_key = _KEYBOARD_KEYS[normalized_key]
+            key_extended = normalized_key in _EXTENDED_KEY_NAMES
+            self._require_keyboard_target_foreground(handle)
+            _send_keyboard_event(key_virtual_key, extended=key_extended, key_up=False)
+            pressed.append((key_virtual_key, key_extended))
+            time.sleep(hold_ms / 1000)
+        except Exception as error:
+            input_error = error
+        finally:
+            # Attempt every release so one Win32 failure does not strand other keys.
+            for virtual_key, extended in reversed(pressed):
+                try:
+                    _send_keyboard_event(virtual_key, extended=extended, key_up=True)
+                except Exception as error:
+                    release_errors.append(error)
+
+        if input_error is not None and release_errors:
+            raise GameDriverError(
+                "keyboardInputAndCleanupFailed",
+                f"Keyboard input failed ({_error_description(input_error)}); key release "
+                f"also failed ({_error_descriptions(release_errors)}).",
+                5,
+            ) from input_error
+        if input_error is not None:
+            if isinstance(input_error, GameDriverError):
+                raise input_error
+            raise GameDriverError(
+                "keyboardInputFailed",
+                f"Keyboard input failed: {_error_description(input_error)}.",
+                5,
+            ) from input_error
+        if release_errors:
+            raise GameDriverError(
+                "keyboardCleanupFailed",
+                f"Keyboard key release failed: {_error_descriptions(release_errors)}.",
+                5,
+            ) from release_errors[0]
+
+        return _KEYBOARD_KEYS[normalized_key], modifier_virtual_keys
+
+    def _require_keyboard_target_foreground(self, handle: int) -> None:
+        if not self.is_foreground(handle):
+            raise GameDriverError(
+                "inputTargetNotForeground",
+                "The BTD6 window lost foreground ownership; remaining keyboard input "
+                "was not sent.",
+                5,
+            )
+
     @staticmethod
     def virtual_screen_rect() -> Rect:
         return Rect(
@@ -370,6 +544,23 @@ def capture_desktop_rect(rect: Rect) -> bytes:
             return bytes(screenshot.bgra)
     except ScreenShotError as error:
         raise GameDriverError("captureFailed", f"Desktop capture failed: {error}", 5) from error
+
+
+def _send_keyboard_event(virtual_key: int, *, extended: bool, key_up: bool) -> None:
+    flags = win32con.KEYEVENTF_EXTENDEDKEY if extended else 0
+    if key_up:
+        flags |= win32con.KEYEVENTF_KEYUP
+    win32api.keybd_event(virtual_key, 0, flags, 0)
+
+
+def _error_description(error: Exception) -> str:
+    if isinstance(error, GameDriverError):
+        return f"{error.code}: {error.message}"
+    return f"{type(error).__name__}: {error}"
+
+
+def _error_descriptions(errors: list[Exception]) -> str:
+    return "; ".join(_error_description(error) for error in errors)
 
 
 def _get_process_name(process_id: int) -> str | None:

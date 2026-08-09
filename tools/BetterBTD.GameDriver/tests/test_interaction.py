@@ -16,6 +16,7 @@ from betterbtd_game_driver.interaction import (
     ClickRequest,
     DragPointRequest,
     InteractionDriver,
+    KeyPressRequest,
     PointClickRequest,
     ScrollPointRequest,
     VisualTransitionTracker,
@@ -1324,6 +1325,217 @@ class DragInteractionTests(unittest.TestCase):
                     InteractionDriver(game_driver).scroll_point(request, self.catalog)
 
         game_driver.capture.assert_not_called()
+
+
+class KeyPressInteractionTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.catalog = load_visual_catalog()
+        cls.snapshot = WindowSnapshot(
+            handle=123,
+            process_id=456,
+            process_name="BloonsTD6",
+            title="BloonsTD6",
+            visible=True,
+            minimized=False,
+            foreground=True,
+            dpi=192,
+            window_rect=Rect(607, 138, 1946, 1151),
+            client_rect=Rect(620, 196, 1920, 1080),
+        )
+
+    def test_press_key_writes_keyboard_trace_and_checks_final_view_state(self) -> None:
+        window_api = MagicMock()
+        window_api.activate.return_value = True
+        window_api.snapshot.return_value = self.snapshot
+        window_api.press_key.return_value = (ord("Q"), (0x11, 0x10))
+        game_driver = MagicMock()
+        game_driver.window_api = window_api
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            output_directory = Path(temporary_directory) / "press-key-trace"
+            frames = iter(
+                (
+                    SAMPLE_ROOT / "hero-select.zh-CN.holdout.png",
+                    SAMPLE_ROOT / "hero-select-bottom.zh-CN.holdout.png",
+                )
+            )
+
+            def capture(request):
+                request.output_path.parent.mkdir(parents=True, exist_ok=True)
+                with Image.open(next(frames)) as source:
+                    write_test_evidence(
+                        request.output_path.parent,
+                        request.output_path.stem,
+                        source.convert("RGB"),
+                    )
+                return {"window": self.snapshot.to_dict()}
+
+            game_driver.capture.side_effect = capture
+            request = self._request(
+                output_directory,
+                key_name="Q",
+                modifiers=("shift", "ctrl"),
+                expected_page_id="heroSelect",
+                expected_view_state_id="heroSelect.bottom",
+            )
+            interaction = InteractionDriver(game_driver)
+            observations = [{"elapsedMs": 200, "currentlyChanged": True}]
+
+            with patch.object(
+                interaction,
+                "_wait_for_transition",
+                return_value=(observations, "changedStable"),
+            ):
+                result = interaction.press_key(request, self.catalog)
+
+            trace = json.loads(
+                (output_directory / "operation.json").read_text(encoding="utf-8")
+            )
+
+        window_api.press_key.assert_called_once_with(
+            123,
+            "q",
+            ("ctrl", "shift"),
+            50,
+        )
+        window_api.click_client_point.assert_not_called()
+        self.assertEqual("pressKey", result["operation"])
+        self.assertEqual("keyboard", trace["input"]["device"])
+        self.assertEqual(
+            {"name": "q", "virtualKey": ord("Q")},
+            trace["input"]["key"],
+        )
+        self.assertEqual(
+            [
+                {"name": "ctrl", "virtualKey": 0x11},
+                {"name": "shift", "virtualKey": 0x10},
+            ],
+            trace["input"]["modifiers"],
+        )
+        self.assertEqual(["q", "shift", "ctrl"], trace["input"]["releaseOrder"])
+        self.assertEqual(
+            ["q", "shift", "ctrl"],
+            trace["input"]["plannedReleaseOrder"],
+        )
+        self.assertEqual(50, trace["input"]["holdDurationMs"])
+        self.assertEqual("sent", trace["inputResult"]["status"])
+        self.assertTrue(trace["expectation"]["matched"])
+        self.assertTrue(trace["expectation"]["viewStateMatched"])
+        self.assertIn("pressedAtUtc", trace)
+
+    def test_press_key_rejects_invalid_requests_before_capture_or_input(self) -> None:
+        game_driver = MagicMock()
+        cases = (
+            (self._request(None, phase="assert"), "phase must be arrange or recover"),
+            (self._request(None, key_name="unsupported"), "Unsupported keyboard key"),
+            (
+                self._request(None, modifiers=("ctrl", "ctrl")),
+                "modifiers must not contain duplicates",
+            ),
+            (
+                self._request(None, key_name="tab", modifiers=("alt",)),
+                "Reserved or system-level keyboard chords",
+            ),
+            (
+                self._request(None, key_name="f10"),
+                "Reserved or system-level keyboard chords",
+            ),
+            (self._request(None, hold_ms=9), "hold duration must be between"),
+        )
+
+        for request, expected_message in cases:
+            with (
+                self.subTest(message=expected_message),
+                self.assertRaisesRegex(GameDriverError, expected_message),
+            ):
+                InteractionDriver(game_driver).press_key(request, self.catalog)
+
+        game_driver.capture.assert_not_called()
+        game_driver.window_api.press_key.assert_not_called()
+
+    def test_press_key_failure_writes_auditable_trace(self) -> None:
+        window_api = MagicMock()
+        window_api.activate.return_value = True
+        window_api.snapshot.return_value = self.snapshot
+        window_api.press_key.side_effect = GameDriverError(
+            "keyboardCleanupFailed",
+            "Keyboard key release failed: synthetic failure.",
+            5,
+        )
+        game_driver = MagicMock()
+        game_driver.window_api = window_api
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            output_directory = Path(temporary_directory) / "failed-press-key"
+
+            def capture(request):
+                request.output_path.parent.mkdir(parents=True, exist_ok=True)
+                with Image.open(
+                    SAMPLE_ROOT / "hero-select.zh-CN.holdout.png"
+                ) as source:
+                    write_test_evidence(
+                        request.output_path.parent,
+                        request.output_path.stem,
+                        source.convert("RGB"),
+                    )
+                return {"window": self.snapshot.to_dict()}
+
+            game_driver.capture.side_effect = capture
+            request = self._request(
+                output_directory,
+                key_name="q",
+                modifiers=("ctrl",),
+            )
+
+            with self.assertRaises(GameDriverError) as context:
+                InteractionDriver(game_driver).press_key(request, self.catalog)
+
+            trace_path = output_directory / "operation.json"
+            trace = json.loads(trace_path.read_text(encoding="utf-8"))
+
+        self.assertEqual("keyboardCleanupFailed", context.exception.code)
+        self.assertIn(f"Evidence: {trace_path}", context.exception.message)
+        self.assertEqual("failed", trace["inputResult"]["status"])
+        self.assertEqual(
+            "keyboardCleanupFailed",
+            trace["inputResult"]["error"]["code"],
+        )
+        self.assertEqual("notStarted", trace["transition"]["status"])
+        self.assertIsNone(trace["after"])
+        self.assertEqual(["q", "ctrl"], trace["input"]["plannedReleaseOrder"])
+        self.assertNotIn("releaseOrder", trace["input"])
+        self.assertIn("failedAtUtc", trace)
+        window_api.press_key.assert_called_once_with(123, "q", ("ctrl",), 50)
+
+    @staticmethod
+    def _request(
+        output_directory: Path | None,
+        **overrides: object,
+    ) -> KeyPressRequest:
+        arguments: dict[str, object] = {
+            "selector": WindowSelector(handle=123),
+            "phase": "arrange",
+            "output_directory": output_directory,
+            "launch_path": None,
+            "overwrite": False,
+            "expected_page_id": None,
+            "settle_ms": 0,
+            "activation_timeout_ms": 1_000,
+            "window_timeout_ms": 0,
+            "launch_timeout_ms": 0,
+            "transition_timeout_ms": 5_000,
+            "poll_interval_ms": 100,
+            "stable_sample_count": 2,
+            "change_threshold": 0.005,
+            "stability_threshold": 0.002,
+            "key_name": "space",
+            "modifiers": (),
+            "hold_ms": 50,
+            "expected_view_state_id": None,
+        }
+        arguments.update(overrides)
+        return KeyPressRequest(**arguments)
 
 
 if __name__ == "__main__":

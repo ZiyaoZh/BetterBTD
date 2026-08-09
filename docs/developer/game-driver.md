@@ -47,7 +47,8 @@ Game Driver 不导入 BetterBTD Python 模块，也不引用 BetterBTD 或 Fisch
 - `click-point` 控制命令：按 `1920 x 1080` 参考客户区坐标执行引导采集，并保留相同的输入所有权、窗口校验、前后证据和独立轨迹；它不要求操作前页面已识别，因此不能充当元素 Oracle，但仍可独立断言最终页面与视口。
 - `scroll-point` 控制命令：在参考客户区点发送指定方向和档位的垂直滚轮输入；默认要求画面变化后稳定，只有显式 `--allow-no-change` 才接受滚动边界的 `unchangedStable`，并可用 `--expect-view-state` 独立确认最终视口。
 - `drag-point` 控制命令：将两个参考点分别换算到客户区，按指定 `duration-ms` 和 `steps` 执行线性左键拖动；底层用 `finally` 保证 mouse-up 清理，也支持变化/稳定、`--allow-no-change` 和视口期望。
-- 所有控制操作都保存前后证据和 `operation.json`，按连续帧差异等待画面稳定，并可用 `--expect-page` 和 `--expect-view-state` 声明独立最终状态断言。存在期望时，稳定但不匹配的加载页、未知页或其他页面只作为非 Oracle 候选记录，等待会在同一绝对超时预算内继续；最终 `after` 三件套仍是断言和 Oracle 资格的唯一依据。
+- `press-key` 控制命令：按规范键名发送一个受限键盘组合，固定修饰键顺序并在异常路径逆序释放已按下按键；BetterBTD 全局脚本启停键 `F10` 和系统级危险组合会在输入前拒绝，也支持变化/稳定和页面/视口期望。
+- 控制操作保存前后证据和 `operation.json`，按连续帧差异等待画面稳定，并可用 `--expect-page` 和 `--expect-view-state` 声明独立最终状态断言。存在期望时，稳定但不匹配的加载页、未知页或其他页面只作为非 Oracle 候选记录，等待会在同一绝对超时预算内继续；最终 `after` 三件套仍是断言和 Oracle 资格的唯一依据。`press-key` 在首个 key-down 前先写入待处理轨迹；底层输入或释放失败时更新稳定错误信息，此时可能没有 `after`，但输入尝试仍可审计。
 
 Python 依赖全部锁定在工具自己的虚拟环境。实现和使用说明见 [Game Driver README](../../tools/BetterBTD.GameDriver/README.md)。
 
@@ -80,15 +81,15 @@ schema v2 锚点的 `sourceBounds` 表示从来源证据确定性裁剪模板的
 | Assert | 无或 BetterBTD | 独立判断可见结果 |
 | Recover | Game Driver | API 确认脚本停止后才恢复现场 |
 
-`capture`、`recognize` 和 `catalog` 是观察命令；`click`、`click-point`、`scroll-point` 与 `drag-point` 是控制命令。四种控制命令都支持 `--expect-page` 和 `--expect-view-state`，并要求视口存在；若同时声明目标页，视口还必须归属该页。控制命令强制要求 `--phase arrange` 或 `--phase recover`，不接受 Act/Assert，但 CLI 无法独立证明 BetterBTD 脚本是否正在执行。测试编排层必须保证 Arrange 尚未启动脚本，Recover 则已通过 API 停止脚本并确认停止后再调用 Game Driver。
+`capture`、`recognize` 和 `catalog` 是观察命令；`click`、`click-point`、`scroll-point`、`drag-point` 与 `press-key` 是控制命令。五种控制命令都支持 `--expect-page` 和 `--expect-view-state`，并要求视口存在；若同时声明目标页，视口还必须归属该页。控制命令强制要求 `--phase arrange` 或 `--phase recover`，不接受 Act/Assert，但 CLI 无法独立证明 BetterBTD 脚本是否正在执行。测试编排层必须保证 Arrange 尚未启动脚本，Recover 则已通过 API 停止脚本并确认停止后再调用 Game Driver。
 
-元素点击前必须同时满足：当前原始证据完整且无警告、页面唯一匹配、目标元素属于当前页、需要视口 placement 时视口也唯一匹配、角色为按钮、当前动作点有效、绑定锚点全部可见。坐标点击、滚动和拖动不具备这些元素前置条件，只适用于显式探索与引导采集。滚轮、拖动或点击的 Win32 调用成功不构成通过条件；只有独立截图轨迹达到所要求的变化/稳定状态，最终证据和视口仍为 Oracle eligible，并在指定时匹配 `--expect-page` 和 `--expect-view-state`，命令才成功。ID 匹配但最终证据失去 Oracle 资格时分别返回 `expectedPageNotOracleEligible` 或 `expectedViewStateNotOracleEligible`。拖动输入无论正常完成还是中途异常都会在清理路径发送 mouse-up，但该安全语义同样不证明游戏接受了手势。
+元素点击前必须同时满足：当前原始证据完整且无警告、页面唯一匹配、目标元素属于当前页、需要视口 placement 时视口也唯一匹配、角色为按钮、当前动作点有效、绑定锚点全部可见。坐标点击、滚动、拖动和按键不具备这些元素前置条件，只适用于显式探索与引导采集。鼠标或键盘 Win32 调用成功不构成通过条件；只有独立截图轨迹达到所要求的变化/稳定状态，最终证据和视口仍为 Oracle eligible，并在指定时匹配 `--expect-page` 和 `--expect-view-state`，命令才成功。ID 匹配但最终证据失去 Oracle 资格时分别返回 `expectedPageNotOracleEligible` 或 `expectedViewStateNotOracleEligible`。拖动输入无论正常完成还是中途异常都会在清理路径发送 mouse-up；按键输入会按 `ctrl`、`alt`、`shift` 的固定顺序按下，并在主键之后逆序释放已成功按下的修饰键。两种清理语义都不证明游戏接受了输入。
 
 ## 后续迭代
 
 1. 扩展完整热键表及更多滚动中间视口，并为适合拖动的页面补充真实手势验证；`extras` 与 `heroSelect` 上下视口已完成真实滚轮、状态观察和现场恢复验证。
-2. 增加按键、文本输入和元素出现/消失等待，并继续保存操作轨迹；控制命令按最终页面/视口期望跨加载中间态的等待已完成。
+2. 增加文本输入和元素出现/消失等待，并继续保存操作轨迹；受限按键和控制命令按最终页面/视口期望跨加载中间态的等待已完成。
 3. 增加生命、金币、回合及其他元素的独立文本、数值和选中状态识别。
 4. 扩展英文界面、更多账号状态、其他地图/难度/模式确认、奖励和通用弹窗的真实视觉基准，并与 BetterBTD Test API 组合，同时保持截图与识别 Oracle 独立；中文简单标准胜利/自由游戏、CHIMPS 首回合与后续回合失败、简单 Deflation 存档覆盖分支已完成纵切片。
 
-桌面 GDI 首版后端要求游戏可见且无遮挡。锁屏、断开的 RDP、独占全屏和部分 DirectFlip 路径可能无法提供有效画面；单帧证据会明确标记 `occlusionSensitive=true` 和 `stabilityCheckPerformed=false`。控制命令的稳定性记录在同目录 `operation.json` 中，测试编排不得把两者混为同一字段。指定最终页面或视口期望后，操作会跨过稳定但不匹配的中间态，并在轮询记录中保存非 Oracle 的候选识别摘要；没有期望时仍停在第一个满足条件的稳定画面。冷启动存在多个合法目标分支时仍需编排层重复观察。真实胜利恢复曾先停在加载图标，现可在目标唯一时直接等待 `mainMenu`，但该能力尚未在真实 BTD6 胜利链重新验证。地图选择的 34 张独立 source/holdout 截图全部匹配正确视口，最低 holdout 视口分数 `0.996790`；既有地图、Extras 与英雄真实输入验证范围保持不变。真实简单标准胜利链的三个页面 holdout 分数为 `0.998563`、`0.999793`、`1.0`，通关总结的主页和浏览地图两个动作仍未分别实点。CHIMPS 三按钮/四按钮失败 holdout 页面分数为 `0.9976735`/`0.9889`，视口分数均为 `1.0`；后续失败页四个分支与重开/重试确认框的安全分支已真实执行，重试确认 holdout 分数为 `0.99938875`。待开/活动回合 `inLevel` holdout 页面分数为 `0.9977633`/`0.995248`。简单 Deflation 存档覆盖确认 holdout 分数为 `0.999958`，确认后无额外说明页。生命、金币和回合数值仍未解析。最终恢复 `mainMenu` 的独立识别分数为 `0.9990385`，页面断言和 Oracle 资格均通过。
+桌面 GDI 首版后端要求游戏可见且无遮挡。锁屏、断开的 RDP、独占全屏和部分 DirectFlip 路径可能无法提供有效画面；单帧证据会明确标记 `occlusionSensitive=true` 和 `stabilityCheckPerformed=false`。控制命令的稳定性记录在同目录 `operation.json` 中，测试编排不得把两者混为同一字段。指定最终页面或视口期望后，操作会跨过稳定但不匹配的中间态，并在轮询记录中保存非 Oracle 的候选识别摘要；没有期望时仍停在第一个满足条件的稳定画面。冷启动存在多个合法目标分支时仍需编排层重复观察。真实胜利恢复曾先停在加载图标，现可在目标唯一时直接等待 `mainMenu`，但该能力尚未在真实 BTD6 胜利链重新验证。地图选择的 34 张独立 source/holdout 截图全部匹配正确视口，最低 holdout 视口分数 `0.996790`；既有地图、Extras 与英雄真实输入验证范围保持不变。真实简单标准胜利链的三个页面 holdout 分数为 `0.998563`、`0.999793`、`1.0`，通关总结的主页和浏览地图两个动作仍未分别实点。CHIMPS 三按钮/四按钮失败 holdout 页面分数为 `0.9976735`/`0.9889`，视口分数均为 `1.0`；后续失败页四个分支与重开/重试确认框的安全分支已真实执行，重试确认 holdout 分数为 `0.99938875`。待开/活动回合 `inLevel` holdout 页面分数为 `0.9977633`/`0.995248`。简单 Deflation 存档覆盖确认 holdout 分数为 `0.999958`，确认后无额外说明页。生命、金币和回合数值仍未解析。最终恢复 `mainMenu` 的独立识别分数为 `0.9990385`，页面断言和 Oracle 资格均通过。`press-key` 的事件顺序、清理、轨迹和最终视觉断言已由自动化测试覆盖，但尚未在真实 BTD6 中发送按键验证。

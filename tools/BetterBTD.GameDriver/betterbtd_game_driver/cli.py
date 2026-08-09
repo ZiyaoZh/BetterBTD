@@ -17,6 +17,7 @@ from .interaction import (
     ClickRequest,
     DragPointRequest,
     InteractionDriver,
+    KeyPressRequest,
     PointClickRequest,
     ScrollPointRequest,
 )
@@ -24,11 +25,16 @@ from .models import WindowSelector
 from .vision import recognize_image, write_annotation
 from .visual_catalog import load_visual_catalog, visual_catalog_summary
 from .win32 import (
+    KEYBOARD_KEY_NAMES,
+    KEYBOARD_MODIFIER_NAMES,
     MAX_DRAG_DURATION_MS,
     MAX_DRAG_STEPS,
+    MAX_KEY_HOLD_MS,
     MAX_SCROLL_NOTCHES,
     MIN_DRAG_DURATION_MS,
+    MIN_KEY_HOLD_MS,
     enable_per_monitor_v2,
+    keyboard_chord_is_unsafe,
 )
 
 
@@ -232,6 +238,40 @@ def create_parser() -> DriverArgumentParser:
     )
     _add_interaction_arguments(drag_parser, default_change_threshold=0.005)
 
+    key_parser = subparsers.add_parser(
+        "press-key",
+        help="Press a bounded keyboard chord and observe the visual transition.",
+    )
+    _add_selector_arguments(key_parser)
+    key_parser.add_argument(
+        "--key",
+        type=str.casefold,
+        choices=KEYBOARD_KEY_NAMES,
+        required=True,
+        help="Canonical key name, such as space, escape, q, comma, or f1.",
+    )
+    key_parser.add_argument(
+        "--modifier",
+        dest="modifiers",
+        action="append",
+        type=str.casefold,
+        choices=KEYBOARD_MODIFIER_NAMES,
+        default=[],
+        help="Optional ctrl, alt, or shift modifier; repeat for a chord.",
+    )
+    key_parser.add_argument(
+        "--hold-ms",
+        type=lambda value: _bounded_integer(
+            value,
+            MIN_KEY_HOLD_MS,
+            MAX_KEY_HOLD_MS,
+            "--hold-ms",
+        ),
+        default=50,
+        help="Time between key-down and key-up in milliseconds (default: 50).",
+    )
+    _add_interaction_arguments(key_parser, default_change_threshold=0.005)
+
     catalog_parser = subparsers.add_parser(
         "catalog",
         help="Validate the independent visual baseline catalog and templates.",
@@ -414,6 +454,7 @@ def parse_args(arguments: Sequence[str]) -> argparse.Namespace:
         "click-point",
         "scroll-point",
         "drag-point",
+        "press-key",
     ):
         if parsed.launch is not None and (
             parsed.window_handle is not None or parsed.process_id is not None
@@ -431,6 +472,16 @@ def parse_args(arguments: Sequence[str]) -> argparse.Namespace:
             and parsed.start_y == parsed.end_y
         ):
             raise UsageError("Drag start and end points must differ.")
+        if (
+            parsed.command == "press-key"
+            and len(set(parsed.modifiers)) != len(parsed.modifiers)
+        ):
+            raise UsageError("--modifier must not contain duplicates.")
+        if (
+            parsed.command == "press-key"
+            and keyboard_chord_is_unsafe(parsed.key, tuple(parsed.modifiers))
+        ):
+            raise UsageError("Reserved or system-level keyboard chords are not allowed.")
     return parsed
 
 
@@ -573,6 +624,31 @@ def main(arguments: Sequence[str] | None = None) -> int:
                     launch_path=parsed.launch,
                     overwrite=parsed.overwrite,
                     expected_page_id=parsed.expect_page,
+                    settle_ms=parsed.settle_ms,
+                    activation_timeout_ms=parsed.activation_timeout_ms,
+                    window_timeout_ms=parsed.window_timeout_ms,
+                    launch_timeout_ms=parsed.launch_timeout_ms,
+                    transition_timeout_ms=parsed.transition_timeout_ms,
+                    poll_interval_ms=parsed.poll_interval_ms,
+                    stable_sample_count=parsed.stable_samples,
+                    change_threshold=parsed.change_threshold,
+                    stability_threshold=parsed.stability_threshold,
+                ),
+                load_visual_catalog(parsed.catalog),
+            )
+        elif parsed.command == "press-key":
+            result = InteractionDriver(driver).press_key(
+                KeyPressRequest(
+                    selector=selector,
+                    key_name=parsed.key,
+                    modifiers=tuple(parsed.modifiers),
+                    hold_ms=parsed.hold_ms,
+                    phase=parsed.phase,
+                    output_directory=parsed.output_dir,
+                    launch_path=parsed.launch,
+                    overwrite=parsed.overwrite,
+                    expected_page_id=parsed.expect_page,
+                    expected_view_state_id=parsed.expect_view_state,
                     settle_ms=parsed.settle_ms,
                     activation_timeout_ms=parsed.activation_timeout_ms,
                     window_timeout_ms=parsed.window_timeout_ms,

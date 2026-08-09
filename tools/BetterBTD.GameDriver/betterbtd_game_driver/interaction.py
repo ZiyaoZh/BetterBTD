@@ -21,11 +21,16 @@ from .png import visible_pixel_sha256
 from .vision import FrameRecognition, PageMatch, recognize_frame, recognize_image
 from .visual_catalog import VisualCatalog, VisualElement
 from .win32 import (
+    KEYBOARD_KEY_NAMES,
+    KEYBOARD_MODIFIER_NAMES,
     MAX_DRAG_DURATION_MS,
     MAX_DRAG_STEPS,
+    MAX_KEY_HOLD_MS,
     MAX_SCROLL_NOTCHES,
     MIN_DRAG_DURATION_MS,
+    MIN_KEY_HOLD_MS,
     capture_desktop_rect,
+    keyboard_chord_is_unsafe,
 )
 
 
@@ -83,6 +88,14 @@ class DragPointRequest(InteractionRequest):
     duration_ms: int
     steps: int
     allow_no_change: bool
+    expected_view_state_id: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class KeyPressRequest(InteractionRequest):
+    key_name: str
+    modifiers: tuple[str, ...]
+    hold_ms: int
     expected_view_state_id: str | None = None
 
 
@@ -187,14 +200,56 @@ class InteractionDriver:
     ) -> dict[str, object]:
         return self._interact(request, catalog)
 
+    def press_key(
+        self,
+        request: KeyPressRequest,
+        catalog: VisualCatalog,
+    ) -> dict[str, object]:
+        return self._interact(request, catalog)
+
     def _interact(
         self,
-        request: ClickRequest | PointClickRequest | ScrollPointRequest | DragPointRequest,
+        request: (
+            ClickRequest
+            | PointClickRequest
+            | ScrollPointRequest
+            | DragPointRequest
+            | KeyPressRequest
+        ),
         catalog: VisualCatalog,
     ) -> dict[str, object]:
         if request.phase not in ("arrange", "recover"):
             raise UsageError("Input phase must be arrange or recover.")
-        if isinstance(request, ClickRequest):
+        if isinstance(request, KeyPressRequest):
+            normalized_key = request.key_name.casefold()
+            normalized_modifiers = tuple(
+                modifier.casefold() for modifier in request.modifiers
+            )
+            if normalized_key not in KEYBOARD_KEY_NAMES:
+                raise UsageError(f"Unsupported keyboard key: {request.key_name}")
+            if len(set(normalized_modifiers)) != len(normalized_modifiers):
+                raise UsageError("Keyboard modifiers must not contain duplicates.")
+            if any(
+                modifier not in KEYBOARD_MODIFIER_NAMES
+                for modifier in normalized_modifiers
+            ):
+                raise UsageError("Keyboard modifiers must be ctrl, alt, or shift.")
+            if not MIN_KEY_HOLD_MS <= request.hold_ms <= MAX_KEY_HOLD_MS:
+                raise UsageError(
+                    f"Key hold duration must be between {MIN_KEY_HOLD_MS} and "
+                    f"{MAX_KEY_HOLD_MS} milliseconds."
+                )
+            key_modifiers = tuple(
+                modifier
+                for modifier in KEYBOARD_MODIFIER_NAMES
+                if modifier in normalized_modifiers
+            )
+            if keyboard_chord_is_unsafe(normalized_key, key_modifiers):
+                raise UsageError(
+                    "Reserved or system-level keyboard chords are not allowed."
+                )
+            operation_target = "-".join((*key_modifiers, normalized_key))
+        elif isinstance(request, ClickRequest):
             catalog_element_ids = {
                 element.id for page in catalog.pages for element in page.elements
             }
@@ -287,9 +342,17 @@ class InteractionDriver:
             operation_target,
             _utc_now(),
             operation_prefix=(
-                "scroll-point"
-                if isinstance(request, ScrollPointRequest)
-                else ("drag-point" if isinstance(request, DragPointRequest) else "click")
+                "press-key"
+                if isinstance(request, KeyPressRequest)
+                else (
+                    "scroll-point"
+                    if isinstance(request, ScrollPointRequest)
+                    else (
+                        "drag-point"
+                        if isinstance(request, DragPointRequest)
+                        else "click"
+                    )
+                )
             ),
         )
         _validate_interaction_outputs(output_directory, request.overwrite)
@@ -310,7 +373,11 @@ class InteractionDriver:
         )
         before_evidence = read_evidence(before_metadata_path)
         before_recognition, before_match = recognize_image(before_evidence, catalog)
-        if isinstance(request, ClickRequest):
+        if isinstance(request, KeyPressRequest):
+            target = None
+            reference_x = None
+            reference_y = None
+        elif isinstance(request, ClickRequest):
             target = _resolve_click_target(
                 before_recognition,
                 before_match,
@@ -349,50 +416,110 @@ class InteractionDriver:
             stable_sample_count=request.stable_sample_count,
         )
 
-        action_x, action_y = reference_to_client(
-            reference_x,
-            reference_y,
-            current_window.client_rect.width,
-            current_window.client_rect.height,
-        )
+        trace_path = output_directory / "operation.json"
         input_at = _utc_now()
-        if isinstance(request, DragPointRequest):
-            end_action_x, end_action_y = reference_to_client(
-                request.end_reference_x,
-                request.end_reference_y,
+        if isinstance(request, KeyPressRequest):
+            input_trace = _keyboard_input_trace(
+                normalized_key,
+                key_modifiers,
+                request.hold_ms,
+            )
+            keyboard_audit_trace = _pending_keyboard_trace(
+                request,
+                input_trace,
+                before_evidence,
+                before_recognition,
+                input_at,
+            )
+            _write_json_atomic(
+                trace_path,
+                keyboard_audit_trace,
+                overwrite=request.overwrite,
+            )
+            try:
+                key_virtual_key, modifier_virtual_keys = (
+                    self._game_driver.window_api.press_key(
+                        window_handle,
+                        normalized_key,
+                        key_modifiers,
+                        request.hold_ms,
+                    )
+                )
+            except GameDriverError as error:
+                keyboard_audit_trace["inputResult"] = {
+                    "status": "failed",
+                    "error": {"code": error.code, "message": error.message},
+                }
+                keyboard_audit_trace["failedAtUtc"] = _format_timestamp(_utc_now())
+                _write_json_atomic(trace_path, keyboard_audit_trace, overwrite=True)
+                raise GameDriverError(
+                    error.code,
+                    f"{error.message} Evidence: {trace_path}",
+                    error.exit_code,
+                ) from error
+            input_trace = _keyboard_input_trace(
+                normalized_key,
+                key_modifiers,
+                request.hold_ms,
+                key_virtual_key=key_virtual_key,
+                modifier_virtual_keys=modifier_virtual_keys,
+            )
+            keyboard_audit_trace["input"] = input_trace
+            keyboard_audit_trace["inputResult"] = {"status": "sent"}
+            transition_audit = keyboard_audit_trace["transition"]
+            if isinstance(transition_audit, dict):
+                transition_audit["status"] = "pending"
+            _write_json_atomic(trace_path, keyboard_audit_trace, overwrite=True)
+        else:
+            if reference_x is None or reference_y is None:
+                raise GameDriverError(
+                    "inputCoordinatesMissing",
+                    "Pointer input coordinates were not resolved.",
+                    5,
+                )
+            action_x, action_y = reference_to_client(
+                reference_x,
+                reference_y,
                 current_window.client_rect.width,
                 current_window.client_rect.height,
             )
-            (
-                screen_x,
-                screen_y,
-                end_screen_x,
-                end_screen_y,
-            ) = self._game_driver.window_api.drag_client_points(
-                window_handle,
-                action_x,
-                action_y,
-                end_action_x,
-                end_action_y,
-                request.duration_ms,
-                request.steps,
-            )
-        elif isinstance(request, ScrollPointRequest):
-            screen_x, screen_y, wheel_delta = (
-                self._game_driver.window_api.scroll_client_point(
+            if isinstance(request, DragPointRequest):
+                end_action_x, end_action_y = reference_to_client(
+                    request.end_reference_x,
+                    request.end_reference_y,
+                    current_window.client_rect.width,
+                    current_window.client_rect.height,
+                )
+                (
+                    screen_x,
+                    screen_y,
+                    end_screen_x,
+                    end_screen_y,
+                ) = self._game_driver.window_api.drag_client_points(
                     window_handle,
                     action_x,
                     action_y,
-                    request.direction,
-                    request.notches,
+                    end_action_x,
+                    end_action_y,
+                    request.duration_ms,
+                    request.steps,
                 )
-            )
-        else:
-            screen_x, screen_y = self._game_driver.window_api.click_client_point(
-                window_handle,
-                action_x,
-                action_y,
-            )
+            elif isinstance(request, ScrollPointRequest):
+                screen_x, screen_y, wheel_delta = (
+                    self._game_driver.window_api.scroll_client_point(
+                        window_handle,
+                        action_x,
+                        action_y,
+                        request.direction,
+                        request.notches,
+                    )
+                )
+            else:
+                screen_x, screen_y = self._game_driver.window_api.click_client_point(
+                    window_handle,
+                    action_x,
+                    action_y,
+                )
         observations, transition_status = self._wait_for_transition(
             window_handle,
             expected_window,
@@ -453,7 +580,9 @@ class InteractionDriver:
             )
         )
 
-        if isinstance(request, DragPointRequest):
+        if isinstance(request, KeyPressRequest):
+            operation = "pressKey"
+        elif isinstance(request, DragPointRequest):
             input_trace: dict[str, object] = {
                 "coordinateSystem": "clientPhysicalPixels",
                 "referenceStartPoint": {"x": reference_x, "y": reference_y},
@@ -491,7 +620,7 @@ class InteractionDriver:
                 }
             )
             operation = "scrollClientPoint"
-        elif not isinstance(request, DragPointRequest):
+        elif not isinstance(request, (DragPointRequest, KeyPressRequest)):
             input_trace["button"] = "left"
             operation = "clickElement" if target is not None else "clickClientPoint"
 
@@ -530,20 +659,29 @@ class InteractionDriver:
                 "viewStateOracleEligible": after_view_state_oracle_eligible,
             },
         }
+        if isinstance(request, KeyPressRequest):
+            result["inputResult"] = {"status": "sent"}
         timestamp_field = (
-            "draggedAtUtc"
-            if isinstance(request, DragPointRequest)
+            "pressedAtUtc"
+            if isinstance(request, KeyPressRequest)
             else (
-                "scrolledAtUtc"
-                if isinstance(request, ScrollPointRequest)
-                else "clickedAtUtc"
+                "draggedAtUtc"
+                if isinstance(request, DragPointRequest)
+                else (
+                    "scrolledAtUtc"
+                    if isinstance(request, ScrollPointRequest)
+                    else "clickedAtUtc"
+                )
             )
         )
         result[timestamp_field] = _format_timestamp(input_at)
         if target is not None:
             result["elementId"] = target.id
-        trace_path = output_directory / "operation.json"
-        _write_json_atomic(trace_path, result, overwrite=request.overwrite)
+        _write_json_atomic(
+            trace_path,
+            result,
+            overwrite=request.overwrite or isinstance(request, KeyPressRequest),
+        )
         result["trace"] = {"path": str(trace_path)}
 
         if transition_status == "timeout":
@@ -685,6 +823,78 @@ class InteractionDriver:
             if expectation_probe["matched"] is True:
                 return observations, transition_status
         return observations, "timeout"
+
+
+def _keyboard_input_trace(
+    key_name: str,
+    modifiers: tuple[str, ...],
+    hold_ms: int,
+    *,
+    key_virtual_key: int | None = None,
+    modifier_virtual_keys: tuple[int, ...] | None = None,
+) -> dict[str, object]:
+    key: dict[str, object] = {"name": key_name}
+    if key_virtual_key is not None:
+        key["virtualKey"] = key_virtual_key
+    modifier_entries: list[dict[str, object]] = []
+    for index, modifier in enumerate(modifiers):
+        entry: dict[str, object] = {"name": modifier}
+        if modifier_virtual_keys is not None:
+            entry["virtualKey"] = modifier_virtual_keys[index]
+        modifier_entries.append(entry)
+    result: dict[str, object] = {
+        "device": "keyboard",
+        "key": key,
+        "modifiers": modifier_entries,
+        "holdDurationMs": hold_ms,
+        "plannedReleaseOrder": [key_name, *reversed(modifiers)],
+    }
+    if key_virtual_key is not None and modifier_virtual_keys is not None:
+        result["releaseOrder"] = [key_name, *reversed(modifiers)]
+    return result
+
+
+def _pending_keyboard_trace(
+    request: KeyPressRequest,
+    input_trace: dict[str, object],
+    before_evidence: EvidenceBundle,
+    before_recognition: dict[str, object],
+    input_at: datetime,
+) -> dict[str, object]:
+    return {
+        "schemaVersion": 1,
+        "operationRole": "independentInputTrace",
+        "source": "BetterBTD.GameDriver",
+        "operation": "pressKey",
+        "inputOwnershipPhase": request.phase,
+        "input": input_trace,
+        "inputResult": {"status": "pending"},
+        "pressedAtUtc": _format_timestamp(input_at),
+        "before": {
+            "evidence": evidence_reference(before_evidence),
+            "recognition": _recognition_summary(before_recognition),
+        },
+        "transition": {
+            "status": "notStarted",
+            "changeRequired": True,
+            "allowNoChange": False,
+            "timeoutMs": request.transition_timeout_ms,
+            "pollIntervalMs": request.poll_interval_ms,
+            "changeThreshold": request.change_threshold,
+            "stabilityThreshold": request.stability_threshold,
+            "requiredStableSamples": request.stable_sample_count,
+            "observations": [],
+        },
+        "after": None,
+        "expectation": {
+            "pageId": request.expected_page_id,
+            "matched": None,
+            "pageOracleEligible": False,
+            "viewStateId": request.expected_view_state_id,
+            "viewStateMatched": None,
+            "viewStateOracleEligible": False,
+        },
+    }
 
 
 def _allows_no_change(request: InteractionRequest) -> bool:

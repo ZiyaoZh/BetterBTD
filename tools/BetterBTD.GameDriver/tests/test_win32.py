@@ -256,6 +256,149 @@ class WindowApiTests(unittest.TestCase):
             [call.args[0] for call in mouse_event.call_args_list],
         )
 
+    def test_press_key_orders_chord_and_releases_in_reverse(self) -> None:
+        api = WindowApi()
+
+        with (
+            patch.object(api, "is_foreground", return_value=True),
+            patch("betterbtd_game_driver.win32.win32api.keybd_event") as keybd_event,
+            patch("betterbtd_game_driver.win32.time.sleep") as sleep,
+        ):
+            actual = api.press_key(123, "left", ("shift", "ctrl"), 75)
+
+        self.assertEqual((0x25, (0x11, 0x10)), actual)
+        self.assertEqual(
+            [
+                (0x11, 0, 0, 0),
+                (0x10, 0, 0, 0),
+                (0x25, 0, win32con.KEYEVENTF_EXTENDEDKEY, 0),
+                (
+                    0x25,
+                    0,
+                    win32con.KEYEVENTF_EXTENDEDKEY | win32con.KEYEVENTF_KEYUP,
+                    0,
+                ),
+                (0x10, 0, win32con.KEYEVENTF_KEYUP, 0),
+                (0x11, 0, win32con.KEYEVENTF_KEYUP, 0),
+            ],
+            [call.args for call in keybd_event.call_args_list],
+        )
+        sleep.assert_called_once_with(0.075)
+
+    def test_press_key_releases_pressed_modifiers_when_key_down_fails(self) -> None:
+        api = WindowApi()
+
+        with (
+            patch.object(api, "is_foreground", return_value=True),
+            patch(
+                "betterbtd_game_driver.win32.win32api.keybd_event",
+                side_effect=(None, None, OSError("key down failed"), None, None),
+            ) as keybd_event,
+            self.assertRaises(GameDriverError) as context,
+        ):
+            api.press_key(123, "q", ("ctrl", "shift"), 50)
+
+        self.assertEqual("keyboardInputFailed", context.exception.code)
+        self.assertIn("key down failed", context.exception.message)
+        self.assertEqual(
+            [
+                (0x11, 0, 0, 0),
+                (0x10, 0, 0, 0),
+                (ord("Q"), 0, 0, 0),
+                (0x10, 0, win32con.KEYEVENTF_KEYUP, 0),
+                (0x11, 0, win32con.KEYEVENTF_KEYUP, 0),
+            ],
+            [call.args for call in keybd_event.call_args_list],
+        )
+
+    def test_press_key_attempts_every_release_when_key_up_fails(self) -> None:
+        api = WindowApi()
+
+        with (
+            patch.object(api, "is_foreground", return_value=True),
+            patch(
+                "betterbtd_game_driver.win32.win32api.keybd_event",
+                side_effect=(
+                    None,
+                    None,
+                    None,
+                    OSError("key up failed"),
+                    None,
+                    None,
+                ),
+            ) as keybd_event,
+            patch("betterbtd_game_driver.win32.time.sleep"),
+            self.assertRaises(GameDriverError) as context,
+        ):
+            api.press_key(123, "q", ("ctrl", "shift"), 50)
+
+        self.assertEqual("keyboardCleanupFailed", context.exception.code)
+        self.assertIn("key up failed", context.exception.message)
+        self.assertEqual(6, keybd_event.call_count)
+        self.assertEqual(
+            [
+                (ord("Q"), 0, win32con.KEYEVENTF_KEYUP, 0),
+                (0x10, 0, win32con.KEYEVENTF_KEYUP, 0),
+                (0x11, 0, win32con.KEYEVENTF_KEYUP, 0),
+            ],
+            [call.args for call in keybd_event.call_args_list[-3:]],
+        )
+
+    def test_press_key_rejects_invalid_chords_before_input(self) -> None:
+        api = WindowApi()
+        cases = (
+            ("unsupported", (), 50, "inputKeyInvalid"),
+            ("q", ("ctrl", "ctrl"), 50, "inputModifierInvalid"),
+            ("q", ("windows",), 50, "inputModifierInvalid"),
+            ("f10", (), 50, "inputChordUnsafe"),
+            ("f4", ("alt",), 50, "inputChordUnsafe"),
+            ("q", (), 9, "inputDurationInvalid"),
+        )
+
+        for key_name, modifiers, hold_ms, expected_code in cases:
+            with (
+                self.subTest(key=key_name, modifiers=modifiers, hold_ms=hold_ms),
+                patch(
+                    "betterbtd_game_driver.win32.win32api.keybd_event"
+                ) as keybd_event,
+                self.assertRaises(GameDriverError) as context,
+            ):
+                api.press_key(123, key_name, modifiers, hold_ms)
+
+            self.assertEqual(expected_code, context.exception.code)
+            keybd_event.assert_not_called()
+
+    def test_press_key_rejects_lost_foreground_before_input(self) -> None:
+        api = WindowApi()
+
+        with (
+            patch.object(api, "is_foreground", return_value=False),
+            patch("betterbtd_game_driver.win32.win32api.keybd_event") as keybd_event,
+            self.assertRaises(GameDriverError) as context,
+        ):
+            api.press_key(123, "q", (), 50)
+
+        self.assertEqual("inputTargetNotForeground", context.exception.code)
+        keybd_event.assert_not_called()
+
+    def test_press_key_reports_input_and_cleanup_failures_together(self) -> None:
+        api = WindowApi()
+
+        with (
+            patch.object(api, "is_foreground", return_value=True),
+            patch(
+                "betterbtd_game_driver.win32.win32api.keybd_event",
+                side_effect=(None, OSError("key down failed"), OSError("ctrl up failed")),
+            ) as keybd_event,
+            self.assertRaises(GameDriverError) as context,
+        ):
+            api.press_key(123, "q", ("ctrl",), 50)
+
+        self.assertEqual("keyboardInputAndCleanupFailed", context.exception.code)
+        self.assertIn("key down failed", context.exception.message)
+        self.assertIn("ctrl up failed", context.exception.message)
+        self.assertEqual(3, keybd_event.call_count)
+
 
 if __name__ == "__main__":
     unittest.main()

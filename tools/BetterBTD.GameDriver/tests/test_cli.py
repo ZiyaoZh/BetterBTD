@@ -302,6 +302,77 @@ class CommandLineTests(unittest.TestCase):
                 ]
             )
 
+    def test_press_key_accepts_canonical_key_and_modifiers(self) -> None:
+        parsed = parse_args(
+            [
+                "press-key",
+                "--key",
+                "Q",
+                "--modifier",
+                "shift",
+                "--modifier",
+                "CTRL",
+                "--phase",
+                "arrange",
+                "--expect-page",
+                "inLevel",
+            ]
+        )
+
+        self.assertEqual("q", parsed.key)
+        self.assertEqual(["shift", "ctrl"], parsed.modifiers)
+        self.assertEqual(50, parsed.hold_ms)
+        self.assertEqual(0.005, parsed.change_threshold)
+        self.assertEqual("inLevel", parsed.expect_page)
+
+    def test_press_key_rejects_duplicate_modifiers(self) -> None:
+        with self.assertRaisesRegex(UsageError, "must not contain duplicates"):
+            parse_args(
+                [
+                    "press-key",
+                    "--key",
+                    "space",
+                    "--modifier",
+                    "ctrl",
+                    "--modifier",
+                    "CTRL",
+                    "--phase",
+                    "recover",
+                ]
+            )
+
+    def test_press_key_rejects_system_level_chords(self) -> None:
+        cases = (
+            ["--key", "f10"],
+            ["--key", "f4", "--modifier", "alt"],
+        )
+
+        for arguments in cases:
+            with (
+                self.subTest(arguments=arguments),
+                self.assertRaisesRegex(
+                    UsageError,
+                    "Reserved or system-level keyboard chords",
+                ),
+            ):
+                parse_args(["press-key", *arguments, "--phase", "recover"])
+
+    def test_press_key_rejects_act_phase_and_unsafe_hold_duration(self) -> None:
+        cases = (
+            (["--key", "space", "--phase", "act"], "invalid choice"),
+            (
+                ["--key", "space", "--phase", "arrange", "--hold-ms", "9"],
+                "between 10 and 1000",
+            ),
+        )
+
+        for arguments, expected_message in cases:
+            with (
+                self.subTest(arguments=arguments),
+                self.assertRaisesRegex(UsageError, expected_message),
+            ):
+                parse_args(["press-key", *arguments])
+
     def test_baseline_requires_subcommand(self) -> None:
         with self.assertRaisesRegex(UsageError, "requires a subcommand"):
             parse_args(["baseline"])
