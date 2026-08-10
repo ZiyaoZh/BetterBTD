@@ -309,6 +309,8 @@ public sealed class AutoTaskProgressSnapshot
 
     public int LoopIteration { get; set; }
 
+    public int CompletedStageCount { get; set; }
+
     public GameUiStateId CurrentUiState { get; set; } = GameUiStateId.Unknown;
 
     public GameUiSnapshot? LastUiSnapshot { get; set; }
@@ -342,6 +344,7 @@ public sealed class AutoTaskProgressSnapshot
             StartedAt = StartedAt,
             LastUpdatedAt = LastUpdatedAt,
             LoopIteration = LoopIteration,
+            CompletedStageCount = CompletedStageCount,
             CurrentUiState = CurrentUiState,
             LastUiSnapshot = LastUiSnapshot,
             CurrentCheckpoint = CurrentCheckpoint,
@@ -384,6 +387,7 @@ public sealed class AutoTaskExecutionResult
 public sealed class AutoTaskRuntimeState
 {
     private readonly Dictionary<string, object?> _properties = new(StringComparer.OrdinalIgnoreCase);
+    private bool _isStageCompletionPending;
 
     public AutoTaskRuntimeState(AutoTaskRequest request)
     {
@@ -396,6 +400,8 @@ public sealed class AutoTaskRuntimeState
     public AutoTaskPhase Phase { get; set; }
 
     public int LoopIteration { get; private set; }
+
+    public int CompletedStageCount { get; private set; }
 
     public int ConsecutiveNavigationFailures { get; private set; }
 
@@ -432,10 +438,33 @@ public sealed class AutoTaskRuntimeState
         ActiveScript = resolution ?? throw new ArgumentNullException(nameof(resolution));
     }
 
+    public void BeginStageAttempt()
+    {
+        _isStageCompletionPending = false;
+    }
+
     public void RecordScriptExecutionResult(ScriptExecutionResult result)
     {
         LastScriptExecutionResult = result ?? throw new ArgumentNullException(nameof(result));
         HasPendingScriptOutcome = true;
+        _isStageCompletionPending = true;
+    }
+
+    public void RecordStageFailure()
+    {
+        _isStageCompletionPending = false;
+    }
+
+    public bool TryRecordStageCompletion(GameUiStateId state)
+    {
+        if (!_isStageCompletionPending || !IsSuccessfulStageOutcome(state))
+        {
+            return false;
+        }
+
+        CompletedStageCount++;
+        _isStageCompletionPending = false;
+        return true;
     }
 
     public void ClearPendingScriptOutcome()
@@ -472,6 +501,22 @@ public sealed class AutoTaskRuntimeState
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(key);
         _properties.Remove(key);
+    }
+
+    private static bool IsSuccessfulStageOutcome(GameUiStateId state)
+    {
+        return state is
+            GameUiStateId.Victory or
+            GameUiStateId.StageSettlement or
+            GameUiStateId.OdysseyStageVictory or
+            GameUiStateId.OdysseySettlement or
+            GameUiStateId.OdysseyReward or
+            GameUiStateId.Reward or
+            GameUiStateId.ChestOpened or
+            GameUiStateId.TwoChests or
+            GameUiStateId.ThreeChests or
+            GameUiStateId.RaceResult or
+            GameUiStateId.BossResult;
     }
 }
 

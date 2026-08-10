@@ -329,42 +329,37 @@
                            HorizontalAlignment="Left"
                            TextAlignment="Left" />
 
-                <Grid Grid.Row="1"
-                      Margin="0,7,0,2">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-
-                    <StackPanel Grid.Column="0"
-                                Margin="0,0,12,0">
-                        <TextBlock FontSize="11"
+                <WrapPanel Grid.Row="1"
+                           Margin="0,7,0,2">
+                    <StackPanel Margin="0,0,18,0"
+                                Orientation="Horizontal">
+                        <TextBlock VerticalAlignment="Center"
+                                   FontSize="12"
                                    Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                   Text="{Binding CurrentLoopTitle}"
-                                   TextWrapping="Wrap" />
-                        <TextBlock Margin="0,1,0,0"
+                                   Text="{Binding CompletedStageCountTitle}" />
+                        <TextBlock Margin="6,0,0,0"
+                                   VerticalAlignment="Center"
                                    FontFamily="Consolas"
-                                   FontSize="14"
+                                   FontSize="12"
                                    FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                                   Text="{Binding CurrentLoopText}"
-                                   TextWrapping="Wrap" />
+                                   Text="{Binding CompletedStageCountText}" />
                     </StackPanel>
 
-                    <StackPanel Grid.Column="1">
-                        <TextBlock FontSize="11"
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock VerticalAlignment="Center"
+                                   FontSize="12"
                                    Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                   Text="{Binding RuntimeDurationTitle}"
-                                   TextWrapping="Wrap" />
-                        <TextBlock Margin="0,1,0,0"
+                                   Text="{Binding RuntimeDurationTitle}" />
+                        <TextBlock Margin="6,0,0,0"
+                                   VerticalAlignment="Center"
                                    FontFamily="Consolas"
-                                   FontSize="14"
+                                   FontSize="12"
                                    FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                                   Text="{Binding RuntimeDurationText}"
-                                   TextWrapping="Wrap" />
+                                   Text="{Binding RuntimeDurationText}" />
                     </StackPanel>
-                </Grid>
+                </WrapPanel>
 
                 <TextBox x:Name="LogTextBox"
                          Grid.Row="2"

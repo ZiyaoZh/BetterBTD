@@ -17,6 +17,31 @@ public sealed class AutoTaskSkeletonTests
         Assert.Equal(20000, options.MaxLoopIterations);
     }
 
+    [Fact]
+    public void RuntimeState_CountsOnlyConfirmedSuccessfulStageOutcomes()
+    {
+        var state = new AutoTaskRuntimeState(new AutoTaskRequest
+        {
+            Kind = AutoTaskKind.LoopStage,
+            StageTarget = CreateTarget()
+        });
+
+        state.BeginStageAttempt();
+        state.RecordScriptExecutionResult(CreateSuccessfulScriptResult());
+
+        Assert.False(state.TryRecordStageCompletion(GameUiStateId.InLevel));
+        Assert.True(state.TryRecordStageCompletion(GameUiStateId.StageSettlement));
+        Assert.False(state.TryRecordStageCompletion(GameUiStateId.Victory));
+        Assert.Equal(1, state.CompletedStageCount);
+
+        state.BeginStageAttempt();
+        state.RecordScriptExecutionResult(CreateSuccessfulScriptResult());
+        state.RecordStageFailure();
+
+        Assert.False(state.TryRecordStageCompletion(GameUiStateId.Victory));
+        Assert.Equal(1, state.CompletedStageCount);
+    }
+
     [Theory]
     [InlineData(GameUiStateId.MainMenu, GameUiActionKind.OpenMapSelection)]
     [InlineData(GameUiStateId.MapCategorySelect, GameUiActionKind.SelectMapCategory)]
@@ -65,7 +90,7 @@ public sealed class AutoTaskSkeletonTests
         var uiStateService = new QueueGameUiStateService(
         [
             new GameUiSnapshot { State = GameUiStateId.InLevel },
-            new GameUiSnapshot { State = GameUiStateId.InLevel }
+            new GameUiSnapshot { State = GameUiStateId.Victory }
         ]);
         var actionExecutor = new RecordingGameUiActionExecutor();
         var scriptResolver = new RecordingAutoTaskScriptResolver("custom-stage.json");
@@ -100,6 +125,7 @@ public sealed class AutoTaskSkeletonTests
         Assert.Single(scriptExecutor.ExecutedFilePaths);
         Assert.Equal("custom-stage.json", scriptExecutor.ExecutedFilePaths[0]);
         Assert.Empty(actionExecutor.ExecutedSteps);
+        Assert.Equal(1, result.FinalProgress.CompletedStageCount);
     }
 
     [Fact]

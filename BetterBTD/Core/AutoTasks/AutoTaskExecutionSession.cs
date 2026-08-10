@@ -71,6 +71,20 @@ public sealed class AutoTaskExecutionSession
         RaiseProgressChanged(snapshot);
     }
 
+    public void MarkCompletedStageCount(int completedStageCount, string message)
+    {
+        AutoTaskProgressSnapshot snapshot;
+        lock (_syncRoot)
+        {
+            _progressSnapshot.CompletedStageCount = Math.Max(0, completedStageCount);
+            _progressSnapshot.Message = message;
+            _progressSnapshot.LastUpdatedAt = DateTimeOffset.UtcNow;
+            snapshot = _progressSnapshot.Clone();
+        }
+
+        RaiseProgressChanged(snapshot);
+    }
+
     public void MarkPhase(AutoTaskPhase phase, string message)
     {
         PublishUpdate(

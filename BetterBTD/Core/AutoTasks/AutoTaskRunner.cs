@@ -92,6 +92,7 @@ public sealed class AutoTaskRunner
 
                 state.RecordUiSnapshot(snapshot);
                 session.UpdateUiSnapshot(snapshot, $"Detected UI state '{snapshot.State}'.");
+                UpdateStageCompletion(state, session, snapshot);
 
                 var decision = await strategy
                     .DecideNextAsync(state, snapshot, cancellationToken)
@@ -181,6 +182,7 @@ public sealed class AutoTaskRunner
                         }
 
                         state.RecordScriptResolution(scriptResolution);
+                        state.BeginStageAttempt();
 
                         var scriptPreview = TryLoadScriptPreview(scriptResolution.FilePath);
                         session.UpdateActiveScript(
@@ -308,6 +310,25 @@ public sealed class AutoTaskRunner
     private static int ResolveDelay(int delayMs, AutoTaskExecutionOptions options)
     {
         return delayMs > 0 ? delayMs : options.DefaultDecisionDelayMs;
+    }
+
+    private static void UpdateStageCompletion(
+        AutoTaskRuntimeState state,
+        AutoTaskExecutionSession session,
+        GameUiSnapshot snapshot)
+    {
+        if (snapshot.State == GameUiStateId.Defeat)
+        {
+            state.RecordStageFailure();
+            return;
+        }
+
+        if (state.TryRecordStageCompletion(snapshot.State))
+        {
+            session.MarkCompletedStageCount(
+                state.CompletedStageCount,
+                $"Recorded completed stage from result UI '{snapshot.State}'.");
+        }
     }
 
     private static async Task<(ScriptExecutionResult Result, GameUiSnapshot? InterruptedSnapshot)> ExecuteScriptWithUiMonitoringAsync(

@@ -44,7 +44,7 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
     private string _taskSummaryText = string.Empty;
     private string _statusText = string.Empty;
     private string _logText = string.Empty;
-    private string _currentLoopText = string.Empty;
+    private string _completedStageCountText = string.Empty;
     private string _runtimeDurationText = string.Empty;
     private bool _isRunning;
     private bool _isStopRequested;
@@ -84,7 +84,7 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
         UpdateTaskMetadata(taskDisplayName, taskSummaryText);
         _statusText = _localizationService.T("Tasks.Runtime.NotStarted");
         var runtimeMetricPlaceholder = _localizationService.T("Tasks.Runtime.Metrics.NotStarted");
-        _currentLoopText = runtimeMetricPlaceholder;
+        _completedStageCountText = runtimeMetricPlaceholder;
         _runtimeDurationText = runtimeMetricPlaceholder;
 
         StartCommand = new AsyncRelayCommand(StartExecutionAsync, CanStartExecution);
@@ -173,14 +173,14 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
 
     public string OutputTitle => _localizationService.T("Tasks.Runtime.Log");
 
-    public string CurrentLoopTitle => _localizationService.T("Tasks.Runtime.Metrics.CurrentLoop");
+    public string CompletedStageCountTitle => _localizationService.T("Tasks.Runtime.Metrics.CompletedStages");
 
     public string RuntimeDurationTitle => _localizationService.T("Tasks.Runtime.Metrics.RuntimeDuration");
 
-    public string CurrentLoopText
+    public string CompletedStageCountText
     {
-        get => _currentLoopText;
-        private set => SetProperty(ref _currentLoopText, value);
+        get => _completedStageCountText;
+        private set => SetProperty(ref _completedStageCountText, value);
     }
 
     public string RuntimeDurationText
@@ -262,7 +262,7 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
 
         StopAcceptingProgressSnapshots();
         IsRunning = false;
-        CurrentLoopText = result.FinalProgress.LoopIteration.ToString(CultureInfo.InvariantCulture);
+        CompletedStageCountText = result.FinalProgress.CompletedStageCount.ToString(CultureInfo.InvariantCulture);
         StopRuntimeDuration();
         EnsureSequence(result.FinalProgress);
         UpdateSequenceProgress(result.FinalProgress);
@@ -359,7 +359,7 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
         _sequenceSignature = string.Empty;
         LogLines.Clear();
         LogText = string.Empty;
-        CurrentLoopText = _localizationService.T("Tasks.Runtime.Metrics.NotStarted");
+        CompletedStageCountText = _localizationService.T("Tasks.Runtime.Metrics.NotStarted");
         BeginRuntimeDuration();
         SetSequencePlaceholder(_localizationService.T("Tasks.Runtime.ScriptPending"));
         FocusedStep = Steps.FirstOrDefault();
@@ -390,7 +390,7 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
 
     private void UpdateRuntimeMetrics(AutoTaskProgressSnapshot snapshot, bool isActiveRunState)
     {
-        CurrentLoopText = snapshot.LoopIteration.ToString(CultureInfo.InvariantCulture);
+        CompletedStageCountText = snapshot.CompletedStageCount.ToString(CultureInfo.InvariantCulture);
 
         if (!isActiveRunState)
         {

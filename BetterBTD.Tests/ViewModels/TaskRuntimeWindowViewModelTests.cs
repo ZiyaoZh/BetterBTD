@@ -6,7 +6,7 @@ namespace BetterBTD.Tests.ViewModels;
 public sealed class TaskRuntimeWindowViewModelTests
 {
     [Fact]
-    public void ApplyProgressSnapshot_MapsCurrentLoopAndFormatsLongRuntimeDuration()
+    public void ApplyProgressSnapshot_MapsCompletedStageCountAndFormatsLongRuntimeDuration()
     {
         var timeProvider = new ManualTimeProvider(new DateTimeOffset(2026, 8, 10, 14, 32, 8, TimeSpan.Zero));
         using var viewModel = CreateViewModel(timeProvider);
@@ -14,9 +14,9 @@ public sealed class TaskRuntimeWindowViewModelTests
         Start(viewModel);
         viewModel.ApplyProgressSnapshot(CreateProgressSnapshot(
             timeProvider.GetUtcNow() - new TimeSpan(25, 2, 3),
-            loopIteration: 128));
+            completedStageCount: 128));
 
-        Assert.Equal("128", viewModel.CurrentLoopText);
+        Assert.Equal("128", viewModel.CompletedStageCountText);
         Assert.Equal("25:02:03", viewModel.RuntimeDurationText);
     }
 
@@ -32,7 +32,7 @@ public sealed class TaskRuntimeWindowViewModelTests
                 startCount++;
                 if (startCount == 1)
                 {
-                    viewModel.ApplyResult(CreateResult(CreateProgressSnapshot(timeProvider.GetUtcNow(), loopIteration: 128)));
+                    viewModel.ApplyResult(CreateResult(CreateProgressSnapshot(timeProvider.GetUtcNow(), completedStageCount: 128)));
                 }
 
                 return Task.CompletedTask;
@@ -42,10 +42,10 @@ public sealed class TaskRuntimeWindowViewModelTests
         viewModel.StartCommand.Execute(null);
 
         Assert.Equal(2, startCount);
-        Assert.Equal(LocalizationService.Instance.T("Tasks.Runtime.Metrics.NotStarted"), viewModel.CurrentLoopText);
+        Assert.Equal(LocalizationService.Instance.T("Tasks.Runtime.Metrics.NotStarted"), viewModel.CompletedStageCountText);
         Assert.Equal("00:00:00", viewModel.RuntimeDurationText);
 
-        viewModel.ApplyResult(CreateResult(CreateProgressSnapshot(timeProvider.GetUtcNow(), loopIteration: 0)));
+        viewModel.ApplyResult(CreateResult(CreateProgressSnapshot(timeProvider.GetUtcNow(), completedStageCount: 0)));
     }
 
     [Fact]
@@ -55,9 +55,9 @@ public sealed class TaskRuntimeWindowViewModelTests
         using var viewModel = CreateViewModel(timeProvider);
 
         Start(viewModel);
-        viewModel.ApplyProgressSnapshot(CreateProgressSnapshot(timeProvider.GetUtcNow(), loopIteration: 7));
+        viewModel.ApplyProgressSnapshot(CreateProgressSnapshot(timeProvider.GetUtcNow(), completedStageCount: 7));
         timeProvider.Advance(TimeSpan.FromMinutes(3));
-        viewModel.ApplyResult(CreateResult(CreateProgressSnapshot(timeProvider.GetUtcNow() - TimeSpan.FromMinutes(3), loopIteration: 8)));
+        viewModel.ApplyResult(CreateResult(CreateProgressSnapshot(timeProvider.GetUtcNow() - TimeSpan.FromMinutes(3), completedStageCount: 8)));
 
         Assert.Equal("00:03:00", viewModel.RuntimeDurationText);
 
@@ -87,13 +87,14 @@ public sealed class TaskRuntimeWindowViewModelTests
         Assert.True(viewModel.IsRunning);
     }
 
-    private static AutoTaskProgressSnapshot CreateProgressSnapshot(DateTimeOffset startedAt, int loopIteration)
+    private static AutoTaskProgressSnapshot CreateProgressSnapshot(DateTimeOffset startedAt, int completedStageCount)
     {
         return new AutoTaskProgressSnapshot
         {
             RunState = AutoTaskRunState.Running,
             StartedAt = startedAt,
-            LoopIteration = loopIteration,
+            LoopIteration = 10000,
+            CompletedStageCount = completedStageCount,
             Message = "Running"
         };
     }
