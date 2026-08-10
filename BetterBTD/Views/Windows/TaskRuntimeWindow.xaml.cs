@@ -87,6 +87,11 @@ public partial class TaskRuntimeWindow : FluentWindow
         ReleaseGlobalHotkey();
         DataContextChanged -= OnDataContextChanged;
 
+        if (DataContext is TaskRuntimeWindowViewModel taskRuntimeViewModel)
+        {
+            taskRuntimeViewModel.Dispose();
+        }
+
         if (DataContext is INotifyPropertyChanged currentViewModel)
         {
             currentViewModel.PropertyChanged -= OnViewModelPropertyChanged;

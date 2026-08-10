@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
@@ -12,7 +13,7 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace BetterBTD.ViewModels;
 
-public sealed class TaskRuntimeWindowViewModel : ObservableObject
+public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
 {
     private static readonly Brush PendingStateBrush = CreateBrush("#FF8A93A6");
     private static readonly Brush RunningStateBrush = CreateBrush("#FF57A6FF");
@@ -32,6 +33,8 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject
 
     private readonly LocalizationService _localizationService;
     private readonly Dispatcher _dispatcher;
+    private readonly DispatcherTimer _runtimeDurationTimer;
+    private readonly TimeProvider _timeProvider;
     private readonly Func<TaskRuntimeWindowViewModel, Task> _startExecutionAsync;
     private readonly Action _requestStop;
     private readonly object _progressDispatchSync = new();
@@ -41,8 +44,14 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject
     private string _taskSummaryText = string.Empty;
     private string _statusText = string.Empty;
     private string _logText = string.Empty;
+    private string _currentLoopText = string.Empty;
+    private string _runtimeDurationText = string.Empty;
     private bool _isRunning;
+    private bool _isStopRequested;
+    private bool _isRuntimeDurationActive;
+    private bool _isDisposed;
     private int _operationIntervalMs = 200;
+    private DateTimeOffset? _runtimeStartedAt;
     private ScriptExecutionStepItem? _focusedStep;
     private ScriptExecutionStepItem? _selectedStep;
     private string _lastLogSignature = string.Empty;
@@ -57,16 +66,26 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject
         string taskSummaryText,
         int operationIntervalMs,
         Func<TaskRuntimeWindowViewModel, Task> startExecutionAsync,
-        Action requestStop)
+        Action requestStop,
+        TimeProvider? timeProvider = null)
     {
         _localizationService = localizationService ?? throw new ArgumentNullException(nameof(localizationService));
         _dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
+        _timeProvider = timeProvider ?? TimeProvider.System;
         _startExecutionAsync = startExecutionAsync ?? throw new ArgumentNullException(nameof(startExecutionAsync));
         _requestStop = requestStop ?? throw new ArgumentNullException(nameof(requestStop));
         _operationIntervalMs = Math.Clamp(operationIntervalMs, 20, 5000);
+        _runtimeDurationTimer = new DispatcherTimer(DispatcherPriority.Background, _dispatcher)
+        {
+            Interval = TimeSpan.FromSeconds(1)
+        };
+        _runtimeDurationTimer.Tick += OnRuntimeDurationTimerTick;
 
         UpdateTaskMetadata(taskDisplayName, taskSummaryText);
         _statusText = _localizationService.T("Tasks.Runtime.NotStarted");
+        var runtimeMetricPlaceholder = _localizationService.T("Tasks.Runtime.Metrics.NotStarted");
+        _currentLoopText = runtimeMetricPlaceholder;
+        _runtimeDurationText = runtimeMetricPlaceholder;
 
         StartCommand = new AsyncRelayCommand(StartExecutionAsync, CanStartExecution);
         StopCommand = new RelayCommand(StopExecution, CanStopExecution);
@@ -154,6 +173,22 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject
 
     public string OutputTitle => _localizationService.T("Tasks.Runtime.Log");
 
+    public string CurrentLoopTitle => _localizationService.T("Tasks.Runtime.Metrics.CurrentLoop");
+
+    public string RuntimeDurationTitle => _localizationService.T("Tasks.Runtime.Metrics.RuntimeDuration");
+
+    public string CurrentLoopText
+    {
+        get => _currentLoopText;
+        private set => SetProperty(ref _currentLoopText, value);
+    }
+
+    public string RuntimeDurationText
+    {
+        get => _runtimeDurationText;
+        private set => SetProperty(ref _runtimeDurationText, value);
+    }
+
     public string OperationIntervalLabel => _localizationService.T("Tasks.Runtime.OperationInterval");
 
     public string StartText => _localizationService.T("Tasks.Start");
@@ -209,9 +244,11 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject
     {
         ArgumentNullException.ThrowIfNull(snapshot);
 
-        IsRunning = snapshot.RunState is AutoTaskRunState.Running
+        var isActiveRunState = snapshot.RunState is AutoTaskRunState.Running
             or AutoTaskRunState.PauseRequested
             or AutoTaskRunState.Paused;
+        IsRunning = isActiveRunState;
+        UpdateRuntimeMetrics(snapshot, isActiveRunState);
 
         EnsureSequence(snapshot);
         UpdateSequenceProgress(snapshot);
@@ -225,6 +262,8 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject
 
         StopAcceptingProgressSnapshots();
         IsRunning = false;
+        CurrentLoopText = result.FinalProgress.LoopIteration.ToString(CultureInfo.InvariantCulture);
+        StopRuntimeDuration();
         EnsureSequence(result.FinalProgress);
         UpdateSequenceProgress(result.FinalProgress);
 
@@ -248,6 +287,7 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject
 
         StopAcceptingProgressSnapshots();
         IsRunning = false;
+        StopRuntimeDuration();
         StatusText = string.Format(_localizationService.T("Tasks.Runtime.UnexpectedError"), exception.Message);
         AppendLog(StatusText);
     }
@@ -258,6 +298,18 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject
         {
             StopExecution();
         }
+    }
+
+    public void Dispose()
+    {
+        if (_isDisposed)
+        {
+            return;
+        }
+
+        _isDisposed = true;
+        StopRuntimeDuration();
+        _runtimeDurationTimer.Tick -= OnRuntimeDurationTimerTick;
     }
 
     private async Task StartExecutionAsync()
@@ -281,11 +333,19 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject
 
     private bool CanStopExecution()
     {
-        return IsRunning;
+        return IsRunning && !_isStopRequested;
     }
 
     private void StopExecution()
     {
+        if (_isStopRequested)
+        {
+            return;
+        }
+
+        _isStopRequested = true;
+        StopCommand.NotifyCanExecuteChanged();
+        StopRuntimeDuration();
         _requestStop();
         StatusText = _localizationService.T("Tasks.Runtime.StopRequested");
         AppendLog(StatusText);
@@ -294,10 +354,13 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject
     private void PrepareForExecution()
     {
         BeginAcceptingProgressSnapshots();
+        _isStopRequested = false;
         _lastLogSignature = string.Empty;
         _sequenceSignature = string.Empty;
         LogLines.Clear();
         LogText = string.Empty;
+        CurrentLoopText = _localizationService.T("Tasks.Runtime.Metrics.NotStarted");
+        BeginRuntimeDuration();
         SetSequencePlaceholder(_localizationService.T("Tasks.Runtime.ScriptPending"));
         FocusedStep = Steps.FirstOrDefault();
         IsRunning = true;
@@ -323,6 +386,75 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject
             _pendingProgressSnapshot = null;
             _isProgressFlushScheduled = false;
         }
+    }
+
+    private void UpdateRuntimeMetrics(AutoTaskProgressSnapshot snapshot, bool isActiveRunState)
+    {
+        CurrentLoopText = snapshot.LoopIteration.ToString(CultureInfo.InvariantCulture);
+
+        if (!isActiveRunState)
+        {
+            StopRuntimeDuration();
+            return;
+        }
+
+        if (!_isRuntimeDurationActive || _isStopRequested)
+        {
+            return;
+        }
+
+        if (snapshot.StartedAt != default)
+        {
+            _runtimeStartedAt = snapshot.StartedAt;
+        }
+
+        UpdateRuntimeDuration();
+    }
+
+    private void BeginRuntimeDuration()
+    {
+        _runtimeStartedAt = _timeProvider.GetUtcNow();
+        _isRuntimeDurationActive = true;
+        RuntimeDurationText = FormatRuntimeDuration(TimeSpan.Zero);
+        _runtimeDurationTimer.Start();
+    }
+
+    private void StopRuntimeDuration()
+    {
+        if (!_isRuntimeDurationActive)
+        {
+            return;
+        }
+
+        UpdateRuntimeDuration();
+        _isRuntimeDurationActive = false;
+        _runtimeDurationTimer.Stop();
+    }
+
+    private void OnRuntimeDurationTimerTick(object? sender, EventArgs e)
+    {
+        UpdateRuntimeDuration();
+    }
+
+    private void UpdateRuntimeDuration()
+    {
+        if (!_isRuntimeDurationActive || _runtimeStartedAt is not { } startedAt)
+        {
+            return;
+        }
+
+        var elapsed = _timeProvider.GetUtcNow() - startedAt;
+        RuntimeDurationText = FormatRuntimeDuration(elapsed);
+    }
+
+    private static string FormatRuntimeDuration(TimeSpan duration)
+    {
+        var totalSeconds = Math.Max(0L, (long)Math.Floor(duration.TotalSeconds));
+        var hours = totalSeconds / 3600;
+        var minutes = totalSeconds % 3600 / 60;
+        var seconds = totalSeconds % 60;
+
+        return string.Format(CultureInfo.InvariantCulture, "{0:00}:{1:00}:{2:00}", hours, minutes, seconds);
     }
 
     private void FlushPendingProgressSnapshots()
@@ -488,7 +620,6 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject
         var builder = new StringBuilder();
         AppendStatusLine(builder, _localizationService.T("Tasks.Runtime.Status.RunState"), Humanize(snapshot.RunState));
         AppendStatusLine(builder, _localizationService.T("Tasks.Runtime.Status.Phase"), Humanize(snapshot.Phase));
-        AppendStatusLine(builder, _localizationService.T("Tasks.Runtime.Status.Loop"), snapshot.LoopIteration.ToString());
         AppendStatusLine(builder, _localizationService.T("Tasks.Runtime.Status.Checkpoint"), string.IsNullOrWhiteSpace(snapshot.CurrentCheckpoint)
             ? _localizationService.T("Tasks.Runtime.Unknown")
             : snapshot.CurrentCheckpoint);

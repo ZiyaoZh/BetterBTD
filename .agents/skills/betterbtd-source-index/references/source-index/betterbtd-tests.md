@@ -24,7 +24,7 @@ xUnit behavior, compatibility, protocol, and test-double coverage.
 | `BetterBTD.Tests/Services` | 17 |
 | `BetterBTD.Tests/TestApi` | 4 |
 | `BetterBTD.Tests/TestDoubles` | 4 |
-| `BetterBTD.Tests/ViewModels` | 2 |
+| `BetterBTD.Tests/ViewModels` | 3 |
 
 ## File Inventory
 
@@ -134,3 +134,4 @@ Paths are relative to the repository root. Open the linked file and verify curre
 | --- | --- |
 | [MyScriptsPageViewModelTests.cs](../../../../../BetterBTD.Tests/ViewModels/MyScriptsPageViewModelTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: MyScriptsPageViewModelTests |
 | [ScriptEditorPageViewModelTests.cs](../../../../../BetterBTD.Tests/ViewModels/ScriptEditorPageViewModelTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: ScriptEditorPageViewModelTests |
+| [TaskRuntimeWindowViewModelTests.cs](../../../../../BetterBTD.Tests/ViewModels/TaskRuntimeWindowViewModelTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: TaskRuntimeWindowViewModelTests, ManualTimeProvider |
