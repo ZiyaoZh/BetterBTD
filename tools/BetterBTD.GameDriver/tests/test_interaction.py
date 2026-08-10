@@ -268,6 +268,41 @@ class TransitionExpectationWaitTests(unittest.TestCase):
         self.assertEqual(2, len(observations))
         self.assertTrue(observations[-1]["expectationProbe"]["matched"])
 
+    def test_click_allow_no_change_can_satisfy_a_final_page_expectation(self) -> None:
+        with Image.open(SAMPLE_ROOT / "main-menu.zh-CN.holdout.png") as source:
+            before = source.convert("RGB")
+            unchanged_pixels = before.tobytes("raw", "BGRX")
+        game_driver = MagicMock()
+        game_driver.window_api.snapshot.return_value = self.snapshot
+        clock = _FakeClock()
+        interaction = InteractionDriver(
+            game_driver,
+            monotonic=clock.monotonic,
+            sleep=clock.sleep,
+        )
+        tracker = VisualTransitionTracker(
+            before,
+            change_threshold=0.05,
+            stability_threshold=0.02,
+            stable_sample_count=2,
+        )
+
+        with patch(
+            "betterbtd_game_driver.interaction.capture_desktop_rect",
+            return_value=unchanged_pixels,
+        ):
+            observations, status = interaction._wait_for_transition(
+                123,
+                self.snapshot,
+                tracker,
+                _click_request(expected_page_id="mainMenu"),
+                self.catalog,
+            )
+
+        self.assertEqual("unchangedStable", status)
+        self.assertEqual(2, len(observations))
+        self.assertTrue(observations[-1]["expectationProbe"]["matched"])
+
     def test_wait_without_expectation_keeps_first_stable_frame_behavior(self) -> None:
         before = Image.new("RGB", (16, 9), "black")
         changed_pixels = Image.new("RGB", (16, 9), "white").tobytes("raw", "BGRX")
@@ -467,6 +502,29 @@ def _point_request(
         reference_x=8,
         reference_y=4,
         expected_view_state_id=expected_view_state_id,
+    )
+
+
+def _click_request(*, expected_page_id: str | None) -> ClickRequest:
+    return ClickRequest(
+        selector=WindowSelector(handle=123),
+        element_id="mainMenu.start",
+        phase="arrange",
+        output_directory=None,
+        launch_path=None,
+        overwrite=False,
+        expected_page_id=expected_page_id,
+        settle_ms=0,
+        activation_timeout_ms=1_000,
+        window_timeout_ms=0,
+        launch_timeout_ms=1_000,
+        transition_timeout_ms=5_000,
+        poll_interval_ms=100,
+        stable_sample_count=2,
+        change_threshold=0.05,
+        stability_threshold=0.02,
+        allow_no_change=True,
+        expected_view_state_id=None,
     )
 
 

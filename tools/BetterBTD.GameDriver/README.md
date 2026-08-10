@@ -122,6 +122,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\BetterBTD.GameDriver\g
 `scroll-point`、`drag-point` 和 `press-key` 针对局部视口变化默认使用较低的 `--change-threshold 0.005`；不同分辨率、动画和页面仍需要真实轨迹校准。
 
 真实冷启动可能依次出现 `welcome`、加载画面和 `modifiedClientWarning`，也可能直接进入 `mainMenu`。启动页可点击 `welcome.start`；修改客户端警告只开放 `modifiedClientWarning.continue`，会改变账号状态的 `unregister` 和关闭进程的 `closeGame` 没有动作点。已知目标唯一时，控制命令可用 `--expect-page`/`--expect-view-state` 跨过稳定加载中间态；冷启动存在多个合法分支或只使用观察命令时，编排层仍需重复 `capture`/`recognize`，直到独立识别到下一个可处理页。
+页面级 `navigate` 已将 `welcome -> modifiedClientWarning -> mainMenu` 纳入真实验证边；简单标准启动若出现 `overwriteSaveConfirmation`，会自动点击 `overwriteSaveConfirmation.confirm` 并等待 `inLevel`。英雄页的目标选择允许最终页面保持不变，只要最终 Oracle 证据仍匹配英雄页，因此重复选择已选英雄不会因默认 `0.05` 变化阈值报错。
 
 校验随工具提交的独立视觉目录、模板哈希和来源证据链：
 

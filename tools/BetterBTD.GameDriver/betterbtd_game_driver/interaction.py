@@ -60,6 +60,7 @@ class InteractionRequest:
 class ClickRequest(InteractionRequest):
     element_id: str
     expected_view_state_id: str | None = None
+    allow_no_change: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -898,7 +899,10 @@ def _pending_keyboard_trace(
 
 
 def _allows_no_change(request: InteractionRequest) -> bool:
-    return isinstance(request, (ScrollPointRequest, DragPointRequest)) and request.allow_no_change
+    return isinstance(
+        request,
+        (ClickRequest, ScrollPointRequest, DragPointRequest),
+    ) and request.allow_no_change
 
 
 def _has_final_expectation(request: InteractionRequest) -> bool:

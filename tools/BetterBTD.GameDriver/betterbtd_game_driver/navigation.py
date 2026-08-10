@@ -204,6 +204,7 @@ class NavigationActionRunner(Protocol):
         *,
         expected_page_id: str | None = None,
         expected_view_state_id: str | None = None,
+        allow_no_change: bool = False,
     ) -> NavigationObservation:
         ...
 
@@ -260,7 +261,11 @@ class CatalogPageObject:
     ) -> NavigationObservation:
         return runner.click(
             edge.resolve_element(target),
-            expected_page_id=None,
+            expected_page_id=(
+                edge.allowed_target_pages[0]
+                if len(edge.allowed_target_pages) == 1
+                else None
+            ),
             expected_view_state_id=None,
         )
 
@@ -364,7 +369,11 @@ class MapSelectPage(CatalogPageObject):
             raise UsageError("enterMap requires --map.")
         return runner.click(
             edge.resolve_element(target),
-            expected_page_id=None,
+            expected_page_id=(
+                edge.allowed_target_pages[0]
+                if len(edge.allowed_target_pages) == 1
+                else None
+            ),
             expected_view_state_id=None,
         )
 
@@ -400,7 +409,11 @@ class HeroSelectPage(CatalogPageObject):
                 expected_page_id=self.page_id,
                 expected_view_state_id=desired_state,
             )
-        observation = runner.click(element_id, expected_page_id=self.page_id)
+        observation = runner.click(
+            element_id,
+            expected_page_id=self.page_id,
+            allow_no_change=True,
+        )
         return PagePreparation(observation, True)
 
 
@@ -666,6 +679,7 @@ class _NavigationActionRunner:
         *,
         expected_page_id: str | None = None,
         expected_view_state_id: str | None = None,
+        allow_no_change: bool = False,
     ) -> NavigationObservation:
         step_directory = self._step_directory("click", element_id)
         result = self._interaction.click(
@@ -687,6 +701,7 @@ class _NavigationActionRunner:
                 stable_sample_count=self._request.stable_sample_count,
                 change_threshold=self._request.change_threshold,
                 stability_threshold=self._request.stability_threshold,
+                allow_no_change=allow_no_change,
             ),
             self._catalog,
         )

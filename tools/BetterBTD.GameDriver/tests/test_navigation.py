@@ -67,9 +67,30 @@ class NavigationCatalogTests(unittest.TestCase):
                 load_navigation_catalog(path, visual_catalog=self.catalog)
         self.assertEqual("navigationCatalogInvalid", context.exception.code)
 
+    def test_cold_start_and_overwrite_confirmation_routes_are_verified(self) -> None:
+        cold_start_route = self.navigation.find_route("welcome", "mainMenu")
+        self.assertEqual(
+            ("startWelcome", "continueModifiedClientWarning"),
+            tuple(item.action_method for item in cold_start_route),
+        )
+
+        start_standard = self.navigation.edge_for("easyModeSelect", "startStandard")
+        self.assertEqual(
+            ("inLevel", "overwriteSaveConfirmation"),
+            start_standard.allowed_target_pages,
+        )
+        confirmation_route = self.navigation.find_route(
+            "overwriteSaveConfirmation",
+            "inLevel",
+        )
+        self.assertEqual(("confirmOverwrite",), tuple(item.action_method for item in confirmation_route))
+
     def test_self_loop_is_rejected(self) -> None:
         document = json.loads(self.navigation_path.read_text(encoding="utf-8"))
-        document["edges"][0]["allowedTargetPages"] = ["mainMenu"]
+        main_menu_edge = next(
+            edge for edge in document["edges"] if edge["sourcePage"] == "mainMenu"
+        )
+        main_menu_edge["allowedTargetPages"] = ["mainMenu"]
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "navigation.json"
             path.write_text(json.dumps(document), encoding="utf-8")
@@ -112,6 +133,19 @@ class PageObjectPreparationTests(unittest.TestCase):
             runner.actions,
         )
         self.assertEqual("heroSelect.bottom", result.observation.view_state_id)
+
+    def test_hero_selection_allows_an_idempotent_no_change(self) -> None:
+        page = HeroSelectPage(self.catalog)
+        runner = _FakeRunner()
+
+        page.prepare(
+            NavigationTarget(page_id="heroSelect", hero_id="Quincy"),
+            _observation("heroSelect", "heroSelect.top"),
+            runner,
+        )
+
+        self.assertEqual([("click", "heroSelect.Quincy")], runner.actions)
+        self.assertEqual([True], runner.click_allow_no_change)
 
 
 class NavigationExecutionTests(unittest.TestCase):
@@ -164,10 +198,48 @@ class NavigationExecutionTests(unittest.TestCase):
         self.assertEqual("navigationOracleRequired", context.exception.code)
         self.assertEqual(1, len(interaction.requests))
 
+    def test_executor_replans_through_optional_overwrite_confirmation(self) -> None:
+        interaction = _FakeInteraction(
+            [_recognition("overwriteSaveConfirmation"), _recognition("inLevel")]
+        )
+        navigator = PageNavigator(object(), self.catalog, self.navigation)
+        navigator._interaction = interaction
+        navigator._capture_initial = lambda request, output: _observation(
+            "easyModeSelect",
+            None,
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            result = navigator.navigate(
+                NavigationRequest(
+                    selector=WindowSelector(),
+                    target=NavigationTarget(
+                        page_id="inLevel",
+                        difficulty_id="easy",
+                        mode_id="standard",
+                    ),
+                    phase="arrange",
+                    output_directory=Path(directory),
+                    launch_path=None,
+                    overwrite=False,
+                )
+            )
+
+        self.assertEqual("completed", result["status"])
+        self.assertEqual(
+            [
+                "easyModeSelect.standard",
+                "overwriteSaveConfirmation.confirm",
+            ],
+            [request.element_id for request in interaction.requests],
+        )
+        self.assertIsNone(interaction.requests[0].expected_page_id)
+        self.assertEqual("inLevel", interaction.requests[1].expected_page_id)
+
 
 class _FakeRunner:
     def __init__(self) -> None:
         self.actions: list[tuple[str, str]] = []
+        self.click_allow_no_change: list[bool] = []
         self.current_view_state: str | None = None
 
     def click(
@@ -176,8 +248,10 @@ class _FakeRunner:
         *,
         expected_page_id: str | None = None,
         expected_view_state_id: str | None = None,
+        allow_no_change: bool = False,
     ) -> NavigationObservation:
         self.actions.append(("click", element_id))
+        self.click_allow_no_change.append(allow_no_change)
         observation = _observation(
             expected_page_id or "mapSelect",
             expected_view_state_id or self.current_view_state,

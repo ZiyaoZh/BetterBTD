@@ -42,6 +42,8 @@ capture + recognize
 ```
 
 路线不是预先承诺的脚本。目标页、允许目标页和实际识别页始终由独立 Game Driver 证据决定。
+冷启动边已覆盖 `welcome -> modifiedClientWarning -> mainMenu`；如果启动后没有这些页面，导航器会从实际识别到的页面继续规划。
+简单标准启动允许先进入 `overwriteSaveConfirmation`，再由 `overwriteSaveConfirmation.confirm` 进入 `inLevel`。
 
 ## CLI 示例
 
@@ -56,6 +58,7 @@ tools\BetterBTD.GameDriver\game-driver.ps1 navigate --phase arrange --page mainM
 
 `--map`、`--difficulty`、`--mode` 和 `--hero` 是页面对象的目标参数，不是导航图节点。默认目标页面分别推导为 `difficultySelect`、对应模式页、`inLevel` 或 `heroSelect`；需要更精确的目标时使用 `--page`。
 指定 `--page mainMenu --hero ...` 时，导航器会先进入英雄页、完成页面内选择，再执行已验证的返回边。
+英雄页面内选择允许验证后的 `unchangedStable` 结果，因此目标英雄已经处于选中状态时，重复执行命令仍然幂等完成。
 
 ## 证据要求
 

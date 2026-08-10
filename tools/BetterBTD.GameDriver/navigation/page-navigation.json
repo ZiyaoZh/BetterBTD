@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "catalogId": "btd6-page-navigation",
-  "catalogVersion": 1,
+  "catalogVersion": 2,
   "visualCatalogId": "btd6-ui-independent",
   "visualCatalogVersion": 19,
   "pages": [
@@ -44,6 +44,30 @@
     "midnightMansion": "mapSelect.advanced02"
   },
   "edges": [
+    {
+      "sourcePage": "welcome",
+      "actionMethod": "startWelcome",
+      "element": "welcome.start",
+      "allowedTargetPages": ["modifiedClientWarning"],
+      "settleRule": "changedStable+oraclePage",
+      "retryPolicy": {"maxAttempts": 2},
+      "sideEffects": ["continues cold-start setup"],
+      "evidence": [
+        {"verified": true, "traceId": "welcome-to-modified-warning", "afterEvidenceId": "664a8c3c2d4b4e909ac19e794a977654"}
+      ]
+    },
+    {
+      "sourcePage": "modifiedClientWarning",
+      "actionMethod": "continueModifiedClientWarning",
+      "element": "modifiedClientWarning.continue",
+      "allowedTargetPages": ["mainMenu"],
+      "settleRule": "changedStable+oraclePage",
+      "retryPolicy": {"maxAttempts": 2},
+      "sideEffects": ["continues past the modified-client warning"],
+      "evidence": [
+        {"verified": true, "traceId": "modified-warning-to-main", "afterEvidenceId": "94f06af99f964cab943b45689b817b4f"}
+      ]
+    },
     {
       "sourcePage": "mainMenu",
       "actionMethod": "openMapSelect",
@@ -169,12 +193,25 @@
       "actionMethod": "startStandard",
       "element": "easyModeSelect.standard",
       "conditions": {"difficultyId": "easy", "modeId": "standard"},
-      "allowedTargetPages": ["inLevel"],
+      "allowedTargetPages": ["inLevel", "overwriteSaveConfirmation"],
       "settleRule": "changedStable+oraclePage",
       "retryPolicy": {"maxAttempts": 2},
       "sideEffects": ["starts the selected easy standard game"],
       "evidence": [
-        {"verified": true, "traceId": "monkey-standard", "afterEvidenceId": "8a970e9ab84b4c4a881b18e14d3b6688"}
+        {"verified": true, "traceId": "monkey-standard", "afterEvidenceId": "8a970e9ab84b4c4a881b18e14d3b6688"},
+        {"verified": true, "traceId": "monkey-standard-overwrite-confirmation", "afterEvidenceId": "8b16498443a14dd7a84fdc37ad073ca2"}
+      ]
+    },
+    {
+      "sourcePage": "overwriteSaveConfirmation",
+      "actionMethod": "confirmOverwrite",
+      "element": "overwriteSaveConfirmation.confirm",
+      "allowedTargetPages": ["inLevel"],
+      "settleRule": "changedStable+oraclePage",
+      "retryPolicy": {"maxAttempts": 2},
+      "sideEffects": ["confirms replacing the saved game and enters the selected game"],
+      "evidence": [
+        {"verified": true, "traceId": "overwrite-confirm-inlevel", "afterEvidenceId": "e4902e570a26439ba3eb2020bf30f40c"}
       ]
     },
     {
