@@ -96,7 +96,9 @@
             </ListBox>
         </Grid>
 
-        <Grid Grid.Column="2">
+        <Grid x:Name="InstructionSequencePanel"
+              Grid.Column="2"
+              Background="Transparent">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />

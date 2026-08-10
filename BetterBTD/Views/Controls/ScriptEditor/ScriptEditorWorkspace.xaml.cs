@@ -7,12 +7,13 @@ namespace BetterBTD.Views.Controls.ScriptEditor;
 
 public partial class ScriptEditorWorkspace : UserControl
 {
-    private const double DragAutoScrollBoundary = 24d;
+    private const double DragAutoScrollBoundary = 64d;
     private static readonly TimeSpan DragAutoScrollInterval = TimeSpan.FromMilliseconds(150);
 
     private readonly DispatcherTimer _instructionSequenceAutoScrollTimer;
     private ScrollViewer? _instructionSequenceScrollViewer;
     private DragAutoScrollDirection _instructionSequenceAutoScrollDirection;
+    private bool _isInstructionSequenceDragActive;
 
     public ScriptEditorWorkspace()
     {
@@ -28,13 +29,17 @@ public partial class ScriptEditorWorkspace : UserControl
             DragDrop.PreviewDragOverEvent,
             new DragEventHandler(InstructionSequenceListBox_PreviewDragOver),
             handledEventsToo: true);
-        InstructionSequenceListBox.AddHandler(
-            DragDrop.DragLeaveEvent,
-            new DragEventHandler(InstructionSequenceListBox_DragLeave),
+        InstructionSequencePanel.AddHandler(
+            DragDrop.DragOverEvent,
+            new DragEventHandler(InstructionSequencePanel_DragOver),
             handledEventsToo: true);
-        InstructionSequenceListBox.AddHandler(
+        InstructionSequencePanel.AddHandler(
+            DragDrop.DragLeaveEvent,
+            new DragEventHandler(InstructionSequencePanel_DragLeave),
+            handledEventsToo: true);
+        InstructionSequencePanel.AddHandler(
             DragDrop.DropEvent,
-            new DragEventHandler(InstructionSequenceListBox_Drop),
+            new DragEventHandler(InstructionSequencePanel_Drop),
             handledEventsToo: true);
 
         Loaded += ScriptEditorWorkspace_Loaded;
@@ -67,6 +72,7 @@ public partial class ScriptEditorWorkspace : UserControl
 
     private void ScriptEditorWorkspace_Unloaded(object sender, RoutedEventArgs e)
     {
+        _isInstructionSequenceDragActive = false;
         StopInstructionSequenceAutoScroll();
         _instructionSequenceScrollViewer = null;
     }
@@ -76,11 +82,51 @@ public partial class ScriptEditorWorkspace : UserControl
         var scrollViewer = _instructionSequenceScrollViewer ??= FindDescendant<ScrollViewer>(InstructionSequenceListBox);
         if (scrollViewer is null || e.Effects == DragDropEffects.None)
         {
+            _isInstructionSequenceDragActive = false;
             StopInstructionSequenceAutoScroll();
             return;
         }
 
-        var position = e.GetPosition(scrollViewer);
+        _isInstructionSequenceDragActive = true;
+        UpdateInstructionSequenceAutoScroll(e.GetPosition(scrollViewer));
+    }
+
+    private void InstructionSequencePanel_DragOver(object sender, DragEventArgs e)
+    {
+        if (!_isInstructionSequenceDragActive || _instructionSequenceScrollViewer is null)
+        {
+            return;
+        }
+
+        UpdateInstructionSequenceAutoScroll(e.GetPosition(_instructionSequenceScrollViewer));
+    }
+
+    private void InstructionSequencePanel_DragLeave(object sender, DragEventArgs e)
+    {
+        if (IsWithinBounds(InstructionSequencePanel, e.GetPosition(InstructionSequencePanel)))
+        {
+            return;
+        }
+
+        _isInstructionSequenceDragActive = false;
+        StopInstructionSequenceAutoScroll();
+    }
+
+    private void InstructionSequencePanel_Drop(object sender, DragEventArgs e)
+    {
+        _isInstructionSequenceDragActive = false;
+        StopInstructionSequenceAutoScroll();
+    }
+
+    private void UpdateInstructionSequenceAutoScroll(Point position)
+    {
+        if (_instructionSequenceScrollViewer is null)
+        {
+            StopInstructionSequenceAutoScroll();
+            return;
+        }
+
+        var scrollViewer = _instructionSequenceScrollViewer;
         var scrollBoundary = Math.Min(DragAutoScrollBoundary, scrollViewer.ActualHeight / 2d);
         if (position.Y < scrollBoundary && scrollViewer.VerticalOffset > 0)
         {
@@ -94,16 +140,6 @@ public partial class ScriptEditorWorkspace : UserControl
         {
             StopInstructionSequenceAutoScroll();
         }
-    }
-
-    private void InstructionSequenceListBox_DragLeave(object sender, DragEventArgs e)
-    {
-        StopInstructionSequenceAutoScroll();
-    }
-
-    private void InstructionSequenceListBox_Drop(object sender, DragEventArgs e)
-    {
-        StopInstructionSequenceAutoScroll();
     }
 
     private void InstructionSequenceAutoScrollTimer_Tick(object? sender, EventArgs e)
@@ -147,6 +183,12 @@ public partial class ScriptEditorWorkspace : UserControl
     {
         _instructionSequenceAutoScrollDirection = DragAutoScrollDirection.None;
         _instructionSequenceAutoScrollTimer.Stop();
+    }
+
+    private static bool IsWithinBounds(FrameworkElement element, Point position)
+    {
+        return position.X >= 0 && position.X < element.ActualWidth &&
+               position.Y >= 0 && position.Y < element.ActualHeight;
     }
 
     private static T? FindDescendant<T>(DependencyObject parent)
