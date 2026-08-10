@@ -5,12 +5,12 @@ description: Navigate and explain the BetterBTD source tree before making code c
 
 # BetterBTD Source Index
 
-Use this skill as the repository map for source-location questions and code changes. Read [the source index](references/source-index.md) before searching the repository broadly; it contains the current project map, architectural entry points, directory responsibilities, and a file-level inventory.
+Use this skill as the repository map for source-location questions and code changes. Read [the source index](references/source-index.md) before searching the repository broadly; it is the entry point to linked, concern-specific file inventories under `references/source-index/`.
 
 ## Navigate A Task
 
 1. Classify the request by concern: WPF presentation, ViewModel orchestration, application service, core runtime, model/configuration, platform library, test, or external tooling.
-2. Open the matching section in `references/source-index.md`, then inspect the listed entry points and their neighboring files.
+2. Follow the matching child index linked from `references/source-index.md`, then inspect the listed entry points and their neighboring files. Load only the child indexes needed for the task.
 3. Verify the current file contents and registrations before editing. The index is a navigation aid, not a substitute for reading the implementation or the developer documentation.
 4. Select tests from the matching `BetterBTD.Tests` area. For behavior that crosses a public boundary, also read the related protocol or architecture document under `docs/developer/`.
 5. After adding, removing, or moving maintainable source files, refresh the checked-in inventory from the repository root:
