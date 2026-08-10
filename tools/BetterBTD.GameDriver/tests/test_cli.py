@@ -4,7 +4,12 @@ from io import StringIO
 import unittest
 from unittest.mock import patch
 
-from betterbtd_game_driver.cli import _selector_from_args, main, parse_args
+from betterbtd_game_driver.cli import (
+    _navigation_target_from_args,
+    _selector_from_args,
+    main,
+    parse_args,
+)
 from betterbtd_game_driver.driver import DEFAULT_PROCESS_NAMES, DEFAULT_WINDOW_TITLES
 from betterbtd_game_driver.errors import UsageError
 
@@ -14,6 +19,29 @@ class CommandLineTests(unittest.TestCase):
         parsed = parse_args([])
 
         self.assertEqual("help", parsed.command)
+
+    def test_navigate_derives_target_page_from_parameters(self) -> None:
+        parsed = parse_args(
+            [
+                "navigate",
+                "--phase",
+                "arrange",
+                "--map",
+                "monkeyMeadow",
+                "--difficulty",
+                "easy",
+                "--mode",
+                "standard",
+            ]
+        )
+
+        target = _navigation_target_from_args(parsed)
+        self.assertEqual("inLevel", target.page_id)
+        self.assertEqual("monkeyMeadow", target.map_id)
+
+    def test_navigate_rejects_mode_without_difficulty(self) -> None:
+        with self.assertRaisesRegex(UsageError, "--difficulty is required"):
+            parse_args(["navigate", "--phase", "arrange", "--mode", "standard"])
 
     def test_capture_defaults_to_real_btd6_window_titles_and_processes(self) -> None:
         parsed = parse_args(["capture"])

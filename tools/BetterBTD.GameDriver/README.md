@@ -145,6 +145,20 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\BetterBTD.GameDriver\g
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\BetterBTD.GameDriver\game-driver.ps1 baseline build --overwrite
 ```
 
+## 页面级自动导航
+
+Game Driver 还提供 `navigate` 命令。它以页面级导航目录计算下一条跨页边，由页面对象处理地图页码和英雄滚动等同页状态，并在每次输入后重新采集独立 Oracle 证据：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\BetterBTD.GameDriver\game-driver.ps1 navigate `
+  --phase arrange --page hotkeys
+
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\BetterBTD.GameDriver\game-driver.ps1 navigate `
+  --phase arrange --map monkeyMeadow --difficulty easy
+```
+
+页面总览、页面对象协议和边准入规则见 [`docs/developer/game-pages.md`](../../docs/developer/game-pages.md)、[`game-page-functions.md`](../../docs/developer/game-page-functions.md) 和 [`page-navigation.md`](../../docs/developer/page-navigation.md)。默认导航目录只包含真实轨迹确认的跨页边；未确认关系不会自动执行。
+
 ## 证据协议
 
 每次截图包含：

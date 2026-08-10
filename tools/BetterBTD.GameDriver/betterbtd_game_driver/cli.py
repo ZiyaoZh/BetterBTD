@@ -22,6 +22,12 @@ from .interaction import (
     ScrollPointRequest,
 )
 from .models import WindowSelector
+from .navigation import (
+    NavigationRequest,
+    NavigationTarget,
+    PageNavigator,
+    load_navigation_catalog,
+)
 from .vision import recognize_image, write_annotation
 from .visual_catalog import load_visual_catalog, visual_catalog_summary
 from .win32 import (
@@ -272,6 +278,39 @@ def create_parser() -> DriverArgumentParser:
     )
     _add_interaction_arguments(key_parser, default_change_threshold=0.005)
 
+    navigate_parser = subparsers.add_parser(
+        "navigate",
+        help="Navigate between verified logical pages using the external visual Oracle.",
+    )
+    _add_selector_arguments(navigate_parser)
+    navigate_parser.add_argument(
+        "--page",
+        dest="target_page",
+        help="Logical target page ID, for example settings or difficultySelect.",
+    )
+    navigate_parser.add_argument(
+        "--map",
+        dest="map_id",
+        help="Verified map ID; defaults the target page to difficultySelect.",
+    )
+    navigate_parser.add_argument(
+        "--difficulty",
+        dest="difficulty_id",
+        choices=("easy", "medium", "hard"),
+        help="Difficulty parameter used with a mode target.",
+    )
+    navigate_parser.add_argument(
+        "--mode",
+        dest="mode_id",
+        help="Stable mode ID, such as standard or sandbox.",
+    )
+    navigate_parser.add_argument(
+        "--hero",
+        dest="hero_id",
+        help="Stable hero ID; defaults the target page to heroSelect.",
+    )
+    _add_navigation_arguments(navigate_parser)
+
     catalog_parser = subparsers.add_parser(
         "catalog",
         help="Validate the independent visual baseline catalog and templates.",
@@ -441,6 +480,90 @@ def _add_interaction_arguments(
     )
 
 
+def _add_navigation_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--phase",
+        required=True,
+        choices=("arrange", "recover"),
+        help="Input ownership phase; control is forbidden during act and assert.",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        help="Directory for navigation steps, evidence, and navigation.json.",
+    )
+    parser.add_argument(
+        "--launch",
+        type=Path,
+        help="Start this executable only when no matching BTD6 window exists.",
+    )
+    parser.add_argument(
+        "--catalog",
+        type=Path,
+        help="Visual catalog JSON path. Defaults to the bundled catalog.",
+    )
+    parser.add_argument(
+        "--navigation-catalog",
+        type=Path,
+        help="Page navigation JSON path. Defaults to the bundled page graph.",
+    )
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Replace an existing navigation output directory.",
+    )
+    parser.add_argument(
+        "--settle-ms",
+        type=lambda value: _bounded_integer(value, 0, 10_000, "--settle-ms"),
+        default=500,
+    )
+    parser.add_argument(
+        "--activation-timeout-ms",
+        type=lambda value: _bounded_integer(value, 100, 30_000, "--activation-timeout-ms"),
+        default=3_000,
+    )
+    parser.add_argument(
+        "--window-timeout-ms",
+        type=lambda value: _bounded_integer(value, 0, 120_000, "--window-timeout-ms"),
+        default=3_000,
+    )
+    parser.add_argument(
+        "--launch-timeout-ms",
+        type=lambda value: _bounded_integer(value, 100, 300_000, "--launch-timeout-ms"),
+        default=60_000,
+    )
+    parser.add_argument(
+        "--transition-timeout-ms",
+        type=lambda value: _bounded_integer(value, 500, 120_000, "--transition-timeout-ms"),
+        default=10_000,
+    )
+    parser.add_argument(
+        "--poll-interval-ms",
+        type=lambda value: _bounded_integer(value, 50, 2_000, "--poll-interval-ms"),
+        default=200,
+    )
+    parser.add_argument(
+        "--stable-samples",
+        type=lambda value: _bounded_integer(value, 1, 20, "--stable-samples"),
+        default=3,
+    )
+    parser.add_argument(
+        "--change-threshold",
+        type=lambda value: _bounded_float(value, 0.000001, 1.0, "--change-threshold"),
+        default=0.05,
+    )
+    parser.add_argument(
+        "--stability-threshold",
+        type=lambda value: _bounded_float(value, 0.001, 1.0, "--stability-threshold"),
+        default=0.02,
+    )
+    parser.add_argument(
+        "--max-steps",
+        type=lambda value: _bounded_integer(value, 1, 128, "--max-steps"),
+        default=32,
+    )
+
+
 def parse_args(arguments: Sequence[str]) -> argparse.Namespace:
     parser = create_parser()
     if not arguments:
@@ -455,6 +578,7 @@ def parse_args(arguments: Sequence[str]) -> argparse.Namespace:
         "scroll-point",
         "drag-point",
         "press-key",
+        "navigate",
     ):
         if parsed.launch is not None and (
             parsed.window_handle is not None or parsed.process_id is not None
@@ -482,7 +606,64 @@ def parse_args(arguments: Sequence[str]) -> argparse.Namespace:
             and keyboard_chord_is_unsafe(parsed.key, tuple(parsed.modifiers))
         ):
             raise UsageError("Reserved or system-level keyboard chords are not allowed.")
+        if parsed.command == "navigate":
+            _navigation_target_from_args(parsed)
     return parsed
+
+
+def _navigation_target_from_args(parsed: argparse.Namespace) -> NavigationTarget:
+    target_page = parsed.target_page
+    difficulty_id = parsed.difficulty_id
+    mode_id = parsed.mode_id
+    if target_page is None:
+        if parsed.hero_id is not None:
+            target_page = "heroSelect"
+        elif difficulty_id is not None:
+            target_page = {
+                "easy": "easyModeSelect",
+                "medium": "mediumModeSelect",
+                "hard": "hardModeSelect",
+            }[difficulty_id]
+            if mode_id is not None:
+                target_page = "inLevel"
+        elif parsed.map_id is not None:
+            target_page = "difficultySelect"
+        elif mode_id is not None:
+            raise UsageError("--difficulty is required when --mode is used without --page.")
+        else:
+            target_page = "mainMenu"
+
+    difficulty_pages = {
+        "easy": "easyModeSelect",
+        "medium": "mediumModeSelect",
+        "hard": "hardModeSelect",
+    }
+    if difficulty_id is not None and target_page not in (
+        difficulty_pages[difficulty_id],
+        "inLevel",
+    ):
+        raise UsageError(
+            f"--difficulty {difficulty_id} is incompatible with target page {target_page}."
+        )
+    if parsed.map_id is not None and target_page not in (
+        "difficultySelect",
+        "easyModeSelect",
+        "mediumModeSelect",
+        "hardModeSelect",
+        "inLevel",
+    ):
+        raise UsageError(f"--map is incompatible with target page {target_page}.")
+    if mode_id is not None and target_page not in ("inLevel", *difficulty_pages.values()):
+        raise UsageError(f"--mode is incompatible with target page {target_page}.")
+    if parsed.hero_id is not None and target_page not in ("heroSelect", "mainMenu"):
+        raise UsageError(f"--hero is incompatible with target page {target_page}.")
+    return NavigationTarget(
+        page_id=target_page,
+        map_id=parsed.map_id,
+        difficulty_id=difficulty_id,
+        mode_id=mode_id,
+        hero_id=parsed.hero_id,
+    )
 
 
 def main(arguments: Sequence[str] | None = None) -> int:
@@ -516,6 +697,32 @@ def main(arguments: Sequence[str] | None = None) -> int:
             enable_per_monitor_v2()
             driver = GameDriver()
             selector = _selector_from_args(parsed)
+            if parsed.command == "navigate":
+                catalog = load_visual_catalog(parsed.catalog)
+                navigation = load_navigation_catalog(
+                    parsed.navigation_catalog,
+                    visual_catalog=catalog,
+                )
+                result = PageNavigator(driver, catalog, navigation).navigate(
+                    NavigationRequest(
+                        selector=selector,
+                        target=_navigation_target_from_args(parsed),
+                        phase=parsed.phase,
+                        output_directory=parsed.output_dir,
+                        launch_path=parsed.launch,
+                        overwrite=parsed.overwrite,
+                        settle_ms=parsed.settle_ms,
+                        activation_timeout_ms=parsed.activation_timeout_ms,
+                        window_timeout_ms=parsed.window_timeout_ms,
+                        launch_timeout_ms=parsed.launch_timeout_ms,
+                        transition_timeout_ms=parsed.transition_timeout_ms,
+                        poll_interval_ms=parsed.poll_interval_ms,
+                        stable_sample_count=parsed.stable_samples,
+                        change_threshold=parsed.change_threshold,
+                        stability_threshold=parsed.stability_threshold,
+                        max_steps=parsed.max_steps,
+                    )
+                )
 
         if parsed.command == "windows":
             result = driver.list_windows(selector, include_all=parsed.all)
@@ -661,7 +868,7 @@ def main(arguments: Sequence[str] | None = None) -> int:
                 ),
                 load_visual_catalog(parsed.catalog),
             )
-        elif parsed.command not in ("catalog", "recognize", "baseline"):
+        elif parsed.command not in ("catalog", "recognize", "baseline", "navigate"):
             raise UsageError(f"Unsupported command: {parsed.command}")
 
         print(json.dumps(result, ensure_ascii=False, indent=2))

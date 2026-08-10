@@ -1,0 +1,265 @@
+{
+  "schemaVersion": 1,
+  "catalogId": "btd6-page-navigation",
+  "catalogVersion": 1,
+  "visualCatalogId": "btd6-ui-independent",
+  "visualCatalogVersion": 19,
+  "pages": [
+    "welcome",
+    "modifiedClientWarning",
+    "mainMenu",
+    "mapSelect",
+    "difficultySelect",
+    "easyModeSelect",
+    "mediumModeSelect",
+    "hardModeSelect",
+    "heroSelect",
+    "inLevel",
+    "overwriteSaveConfirmation",
+    "chimpsModeInfo",
+    "defeatSummary",
+    "retryLastRoundConfirmation",
+    "restartGameConfirmation",
+    "postGameMapReview",
+    "victoryPlayerStats",
+    "victorySummary",
+    "freeplayPrompt",
+    "stageSettings",
+    "settings",
+    "hotkeys",
+    "accessibility",
+    "extras",
+    "sandboxIntro",
+    "sandbox",
+    "sandboxTower",
+    "sandboxHealthEditor",
+    "sandboxCashEditor"
+  ],
+  "mapTargets": {
+    "monkeyMeadow": "mapSelect.beginner01",
+    "treeStump": "mapSelect.beginner02",
+    "frozenOver": "mapSelect.beginner04",
+    "spiceIslands": "mapSelect.intermediate05",
+    "ascent": "mapSelect.advanced01",
+    "midnightMansion": "mapSelect.advanced02"
+  },
+  "edges": [
+    {
+      "sourcePage": "mainMenu",
+      "actionMethod": "openMapSelect",
+      "element": "mainMenu.start",
+      "allowedTargetPages": ["mapSelect"],
+      "settleRule": "changedStable+oraclePage",
+      "retryPolicy": {"maxAttempts": 2},
+      "sideEffects": ["opens map selection"],
+      "evidence": [
+        {"verified": true, "traceId": "main-to-map-select-verified", "afterEvidenceId": "0657fa5ee9334f6d861f013024576ed6"}
+      ]
+    },
+    {
+      "sourcePage": "mainMenu",
+      "actionMethod": "openSettings",
+      "element": "mainMenu.settings",
+      "allowedTargetPages": ["settings"],
+      "settleRule": "changedStable+oraclePage",
+      "retryPolicy": {"maxAttempts": 2},
+      "sideEffects": ["opens settings"],
+      "evidence": [
+        {"verified": true, "traceId": "main-to-settings", "afterEvidenceId": "c8bd2b49fea04f1097610f0e78a47451"}
+      ]
+    },
+    {
+      "sourcePage": "mainMenu",
+      "actionMethod": "openHeroSelect",
+      "element": "mainMenu.heroes",
+      "allowedTargetPages": ["heroSelect"],
+      "settleRule": "changedStable+oraclePage",
+      "retryPolicy": {"maxAttempts": 2},
+      "sideEffects": ["opens hero selection"],
+      "evidence": [
+        {"verified": true, "traceId": "hero-scroll-main-to-select", "afterEvidenceId": "1bafcb2c1daa48d4a3cbe8e91af222cd"}
+      ]
+    },
+    {
+      "sourcePage": "mapSelect",
+      "actionMethod": "enterMap",
+      "elementTemplate": "mapSelect.{mapId}",
+      "parameters": ["mapId"],
+      "allowedParameters": {
+        "mapId": ["monkeyMeadow", "treeStump", "frozenOver", "spiceIslands", "ascent", "midnightMansion"]
+      },
+      "allowedTargetPages": ["difficultySelect"],
+      "settleRule": "changedStable+oraclePage",
+      "retryPolicy": {"maxAttempts": 2},
+      "sideEffects": ["opens difficulty selection for the selected map"],
+      "evidence": [
+        {"verified": true, "traceId": "select-monkey-meadow", "afterEvidenceId": "b8c4fe3c2a9b45379e61c78242a4b1c5"},
+        {"verified": true, "traceId": "map-tree-stump-to-difficulty", "afterEvidenceId": "37a698f078374acdbd94c1a4eb2873b2"},
+        {"verified": true, "traceId": "snow-select-map", "afterEvidenceId": "009dcc8936c341ee8bd1f00082155de7"},
+        {"verified": true, "traceId": "water-select-map", "afterEvidenceId": "ab927e3b9b514f608cc0412ca33c54fa"},
+        {"verified": true, "traceId": "ascent-unlocked-enter", "afterEvidenceId": "51e5e198565d42a581a961b9a11c4d2f"},
+        {"verified": true, "traceId": "dark-select-map", "afterEvidenceId": "fbfe1e5dec1b4d3eb1eab37c52ab6241"}
+      ]
+    },
+    {
+      "sourcePage": "difficultySelect",
+      "actionMethod": "back",
+      "element": "difficultySelect.back",
+      "allowedTargetPages": ["mapSelect"],
+      "settleRule": "changedStable+oraclePage",
+      "retryPolicy": {"maxAttempts": 2},
+      "sideEffects": ["returns to map selection"],
+      "evidence": [
+        {"verified": true, "traceId": "difficulty-to-map", "afterEvidenceId": "1d033688b24d4dcba68b1659e766b96d"}
+      ]
+    },
+    {
+      "sourcePage": "difficultySelect",
+      "actionMethod": "selectEasy",
+      "element": "difficultySelect.easy",
+      "conditions": {"difficultyId": "easy"},
+      "allowedTargetPages": ["easyModeSelect"],
+      "settleRule": "changedStable+oraclePage",
+      "retryPolicy": {"maxAttempts": 2},
+      "sideEffects": ["opens easy mode selection"],
+      "evidence": [
+        {"verified": true, "traceId": "difficulty-to-easy", "afterEvidenceId": "52824acf3b7549148cd3aa95f8d9296e"}
+      ]
+    },
+    {
+      "sourcePage": "difficultySelect",
+      "actionMethod": "selectMedium",
+      "element": "difficultySelect.medium",
+      "conditions": {"difficultyId": "medium"},
+      "allowedTargetPages": ["mediumModeSelect"],
+      "settleRule": "changedStable+oraclePage",
+      "retryPolicy": {"maxAttempts": 2},
+      "sideEffects": ["opens medium mode selection"],
+      "evidence": [
+        {"verified": true, "traceId": "sandbox-difficulty-medium", "afterEvidenceId": "de179315a6034ce7b89d6c773b27379f"}
+      ]
+    },
+    {
+      "sourcePage": "difficultySelect",
+      "actionMethod": "selectHard",
+      "element": "difficultySelect.hard",
+      "conditions": {"difficultyId": "hard"},
+      "allowedTargetPages": ["hardModeSelect"],
+      "settleRule": "changedStable+oraclePage",
+      "retryPolicy": {"maxAttempts": 2},
+      "sideEffects": ["opens hard mode selection"],
+      "evidence": [
+        {"verified": true, "traceId": "phase2b-hard-select", "afterEvidenceId": "bbc035b8afb14db4816e345cf9ccd6cd"}
+      ]
+    },
+    {
+      "sourcePage": "easyModeSelect",
+      "actionMethod": "back",
+      "element": "easyModeSelect.back",
+      "allowedTargetPages": ["difficultySelect"],
+      "settleRule": "changedStable+oraclePage",
+      "retryPolicy": {"maxAttempts": 2},
+      "sideEffects": ["returns to difficulty selection"],
+      "evidence": [
+        {"verified": true, "traceId": "easy-mode-to-difficulty", "afterEvidenceId": "58d5137ede354d4fb8b551fb341b45fa"}
+      ]
+    },
+    {
+      "sourcePage": "easyModeSelect",
+      "actionMethod": "startStandard",
+      "element": "easyModeSelect.standard",
+      "conditions": {"difficultyId": "easy", "modeId": "standard"},
+      "allowedTargetPages": ["inLevel"],
+      "settleRule": "changedStable+oraclePage",
+      "retryPolicy": {"maxAttempts": 2},
+      "sideEffects": ["starts the selected easy standard game"],
+      "evidence": [
+        {"verified": true, "traceId": "monkey-standard", "afterEvidenceId": "8a970e9ab84b4c4a881b18e14d3b6688"}
+      ]
+    },
+    {
+      "sourcePage": "mediumModeSelect",
+      "actionMethod": "back",
+      "element": "mediumModeSelect.back",
+      "allowedTargetPages": ["difficultySelect"],
+      "settleRule": "changedStable+oraclePage",
+      "retryPolicy": {"maxAttempts": 2},
+      "sideEffects": ["returns to difficulty selection"],
+      "evidence": [
+        {"verified": true, "traceId": "medium-to-difficulty", "afterEvidenceId": "7f5f779b26ff4286a53679ace4d08e49"}
+      ]
+    },
+    {
+      "sourcePage": "heroSelect",
+      "actionMethod": "back",
+      "element": "heroSelect.back",
+      "allowedTargetPages": ["mainMenu"],
+      "settleRule": "changedStable+oraclePage",
+      "retryPolicy": {"maxAttempts": 2},
+      "sideEffects": ["returns to the main menu"],
+      "evidence": [
+        {"verified": true, "traceId": "hero-v12-back-main", "afterEvidenceId": "242ec73939c04db5b580eafbb7baf079"}
+      ]
+    },
+    {
+      "sourcePage": "settings",
+      "actionMethod": "back",
+      "element": "settings.back",
+      "allowedTargetPages": ["mainMenu"],
+      "settleRule": "changedStable+oraclePage",
+      "retryPolicy": {"maxAttempts": 2},
+      "sideEffects": ["returns to the main menu"],
+      "evidence": [
+        {"verified": true, "traceId": "settings-back-main", "afterEvidenceId": "d37139678b1e4ebaa5622b8de5609bf5"}
+      ]
+    },
+    {
+      "sourcePage": "settings",
+      "actionMethod": "openHotkeys",
+      "element": "settings.hotkeys",
+      "allowedTargetPages": ["hotkeys"],
+      "settleRule": "changedStable+oraclePage",
+      "retryPolicy": {"maxAttempts": 2},
+      "sideEffects": ["opens hotkey settings"],
+      "evidence": [
+        {"verified": true, "traceId": "open-hotkeys", "afterEvidenceId": "c151a6053b9347628db668693b2bae2c"}
+      ]
+    },
+    {
+      "sourcePage": "hotkeys",
+      "actionMethod": "back",
+      "element": "hotkeys.back",
+      "allowedTargetPages": ["settings"],
+      "settleRule": "changedStable+oraclePage",
+      "retryPolicy": {"maxAttempts": 2},
+      "sideEffects": ["returns to settings"],
+      "evidence": [
+        {"verified": true, "traceId": "hotkeys-back", "afterEvidenceId": "da27ee7980a8428996edf7ea231507e4"}
+      ]
+    },
+    {
+      "sourcePage": "accessibility",
+      "actionMethod": "back",
+      "element": "accessibility.ok",
+      "allowedTargetPages": ["settings"],
+      "settleRule": "changedStable+oraclePage",
+      "retryPolicy": {"maxAttempts": 2},
+      "sideEffects": ["returns to settings"],
+      "evidence": [
+        {"verified": true, "traceId": "accessibility-ok", "afterEvidenceId": "663756371439421493fd8eec332b9228"}
+      ]
+    },
+    {
+      "sourcePage": "stageSettings",
+      "actionMethod": "home",
+      "element": "stageSettings.home",
+      "allowedTargetPages": ["mainMenu"],
+      "settleRule": "changedStable+oraclePage",
+      "retryPolicy": {"maxAttempts": 2},
+      "sideEffects": ["leaves the active game"],
+      "evidence": [
+        {"verified": true, "traceId": "stage-settings-home", "afterEvidenceId": "dd5c248eded7423997394322a2c463cd"}
+      ]
+    }
+  ]
+}
