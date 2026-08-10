@@ -200,6 +200,14 @@ public sealed class AutoTasksPageViewModel : ObservableObject
 
     public string ScriptIdDescription => _localizationService.T("Tasks.ScriptIdDescription");
 
+    public string LoopStageModeLabel => _localizationService.T("Tasks.LoopStageModeLabel");
+
+    public string LoopStageModeDescription => _localizationService.T("Tasks.LoopStageModeDescription");
+
+    public string ExitAfterRoundLabel => _localizationService.T("Tasks.ExitAfterRoundLabel");
+
+    public string ExitAfterRoundDescription => _localizationService.T("Tasks.ExitAfterRoundDescription");
+
     public string OdysseyScriptIdsLabel => _localizationService.T("Tasks.OdysseyScriptIdsLabel");
 
     public string OdysseyScriptIdsDescription => _localizationService.T("Tasks.OdysseyScriptIdsDescription");
@@ -267,7 +275,8 @@ public sealed class AutoTasksPageViewModel : ObservableObject
         {
             Key = AutoTaskKind.LoopStage.ToKey(),
             ShowStageTargetConfiguration = false,
-            ShowScriptIdConfiguration = true
+            ShowScriptIdConfiguration = true,
+            ShowLoopStageModeConfiguration = true
         };
     }
 
@@ -520,6 +529,10 @@ public sealed class AutoTasksPageViewModel : ObservableObject
             StageTarget = LoopStagePlaceholderStageTarget,
             OperationIntervalMs = Math.Max(20, task.OperationIntervalMs),
             PreferredScriptPath = filePath,
+            LoopStageRunMode = ParseEnumOrDefault(
+                task.SelectedLoopStageModeOption?.Code,
+                LoopStageRunMode.Standard),
+            ExitAfterRound = Math.Max(1, task.ExitAfterRound),
             VariantKey = scriptId,
             Key = task.Key
         };
@@ -625,6 +638,7 @@ public sealed class AutoTasksPageViewModel : ObservableObject
         var collectionVariantOptions = BuildCollectionVariantOptions();
         var blackBorderCategoryOptions = BuildBlackBorderCategoryOptions();
         var blackBorderExportTypeOptions = BuildBlackBorderExportTypeOptions();
+        var loopStageModeOptions = BuildLoopStageModeOptions();
 
         foreach (var task in Tasks)
         {
@@ -662,6 +676,13 @@ public sealed class AutoTasksPageViewModel : ObservableObject
                     ?? task.SubscriptionMapOptions.FirstOrDefault();
                 UpdateSubscriptionMapSelectionVisibility(task);
             }
+            else if (string.Equals(task.Key, AutoTaskKind.LoopStage.ToKey(), StringComparison.OrdinalIgnoreCase))
+            {
+                var previousModeCode = task.SelectedLoopStageModeOption?.Code;
+                task.LoopStageModeOptions = new ObservableCollection<LanguageOption>(loopStageModeOptions);
+                task.SelectedLoopStageModeOption = SelectOption(task.LoopStageModeOptions, previousModeCode)
+                    ?? task.LoopStageModeOptions.FirstOrDefault();
+            }
 
             if (_runtimeViewModelsByTaskKey.TryGetValue(task.Key, out var runtimeViewModel))
             {
@@ -690,6 +711,10 @@ public sealed class AutoTasksPageViewModel : ObservableObject
         OnPropertyChanged(nameof(ScriptConfigButtonText));
         OnPropertyChanged(nameof(ScriptIdLabel));
         OnPropertyChanged(nameof(ScriptIdDescription));
+        OnPropertyChanged(nameof(LoopStageModeLabel));
+        OnPropertyChanged(nameof(LoopStageModeDescription));
+        OnPropertyChanged(nameof(ExitAfterRoundLabel));
+        OnPropertyChanged(nameof(ExitAfterRoundDescription));
         OnPropertyChanged(nameof(OdysseyScriptIdsLabel));
         OnPropertyChanged(nameof(OdysseyScriptIdsDescription));
         OnPropertyChanged(nameof(CollectionSubscriptionLabel));
@@ -732,7 +757,9 @@ public sealed class AutoTasksPageViewModel : ObservableObject
             UpdateRuntimeSummary(task);
         }
         else if (string.Equals(task.Key, AutoTaskKind.LoopStage.ToKey(), StringComparison.OrdinalIgnoreCase) &&
-                 e.PropertyName == nameof(AutoTaskConfig.ScriptId))
+                 e.PropertyName is nameof(AutoTaskConfig.ScriptId)
+                     or nameof(AutoTaskConfig.SelectedLoopStageModeOption)
+                     or nameof(AutoTaskConfig.ExitAfterRound))
         {
             UpdateRuntimeSummary(task);
         }
@@ -770,6 +797,23 @@ public sealed class AutoTasksPageViewModel : ObservableObject
             {
                 Code = "double-cash-fast-track",
                 DisplayName = _localizationService.T("Tasks.CollectionOption.DoubleCashFastTrack")
+            }
+        ];
+    }
+
+    private IReadOnlyList<LanguageOption> BuildLoopStageModeOptions()
+    {
+        return
+        [
+            new LanguageOption
+            {
+                Code = LoopStageRunMode.Standard.ToString(),
+                DisplayName = _localizationService.T("Tasks.LoopStageMode.Standard")
+            },
+            new LanguageOption
+            {
+                Code = LoopStageRunMode.FreeplayUntilRound.ToString(),
+                DisplayName = _localizationService.T("Tasks.LoopStageMode.FreeplayUntilRound")
             }
         ];
     }
@@ -1383,6 +1427,18 @@ public sealed class AutoTasksPageViewModel : ObservableObject
         if (task.ShowScriptIdConfiguration && !string.IsNullOrWhiteSpace(task.ScriptId))
         {
             parts.Add($"{ScriptIdLabel}: {task.ScriptId.Trim()}");
+        }
+
+        if (task.ShowLoopStageModeConfiguration && !string.IsNullOrWhiteSpace(task.SelectedLoopStageModeOption?.DisplayName))
+        {
+            parts.Add($"{LoopStageModeLabel}: {task.SelectedLoopStageModeOption.DisplayName}");
+            if (string.Equals(
+                    task.SelectedLoopStageModeOption.Code,
+                    LoopStageRunMode.FreeplayUntilRound.ToString(),
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                parts.Add($"{ExitAfterRoundLabel}: {Math.Max(1, task.ExitAfterRound)}");
+            }
         }
 
         if (task.ShowOdysseyScriptIdConfiguration)

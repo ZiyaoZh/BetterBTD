@@ -218,7 +218,7 @@ public sealed class GameUiDetectionConfigService
     {
         return new GameUiDetectionConfig
         {
-            Version = 3,
+            Version = 4,
             ReferenceWidth = 1920,
             ReferenceHeight = 1080,
             DefaultTolerance = 50,
@@ -240,6 +240,9 @@ public sealed class GameUiDetectionConfigService
                     Eq(555, 197, "#FFFFFF"), Eq(1365, 324, "#FFFFFF"), Eq(791, 193, "#F34A12")),
                 CreateRule("stage_victory", "关卡通关界面", GameUiStateId.Victory, 935,
                     Eq(555, 197, "#FFFFFF"), Eq(1221, 152, "#FFFFFF"), Eq(585, 579, "#5F93D7")),
+                CreateRule("freeplay_prompt", "自由游戏确认界面", GameUiStateId.FreeplayPrompt, 965,
+                    Eq(1910, 40, "#B1814A"), Eq(13, 40, "#B1814A"),
+                    Eq(910, 203, "#A35121"), Eq(1036, 758, "#5ED900"), Eq(743, 384, "#F34F13")),
                 CreateRule("stage_hint", "关卡提示界面", GameUiStateId.StageHint, 928,
                     Eq(1080, 400, "#71E800"), Eq(1080, 500, "#6095D7"), Eq(1080, 725, "#65DC00")),
                 CreateRule("stage_level_up", "关卡升级界面", GameUiStateId.LevelUp, 927,

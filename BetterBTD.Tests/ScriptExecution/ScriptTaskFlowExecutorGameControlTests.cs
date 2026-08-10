@@ -101,6 +101,55 @@ public sealed class ScriptTaskFlowExecutorGameControlTests
         Assert.False(executor.IsRunning);
     }
 
+    [Fact]
+    public async Task ExecuteAsync_ExecutesOnlyRequestedSegmentIncludingFreeplayBoundary()
+    {
+        var leaseCoordinator = new GameControlLeaseCoordinator();
+        var input = new RecordingScriptInputService();
+        var executor = new ScriptTaskFlowExecutor(leaseCoordinator);
+        var instructions = new[]
+        {
+            new ScriptInstructionDocument { CommandType = ScriptCommandType.Comment.ToString() },
+            new ScriptInstructionDocument { CommandType = ScriptCommandType.FreeplayBoundary.ToString() },
+            new ScriptInstructionDocument { CommandType = ScriptCommandType.Comment.ToString() }
+        };
+        var taskFlow = new ScriptTaskFlow
+        {
+            SourceFilePath = "freeplay-boundary-test.json",
+            Document = new ScriptDocument { Instructions = [.. instructions] },
+            Steps =
+            [
+                new ScriptTaskFlowStep { Index = 0, CommandType = ScriptCommandType.Comment, Instruction = instructions[0] },
+                new ScriptTaskFlowStep { Index = 1, CommandType = ScriptCommandType.FreeplayBoundary, Instruction = instructions[1] },
+                new ScriptTaskFlowStep { Index = 2, CommandType = ScriptCommandType.Comment, Instruction = instructions[2] }
+            ],
+            MonkeyObjectsByBindingId = new Dictionary<string, ScriptMonkeyObjectDocument>()
+        };
+
+        var result = await executor.ExecuteAsync(
+            taskFlow,
+            new ScriptExecutionOptions
+            {
+                StartStepIndex = 1,
+                EndStepIndexExclusive = 2,
+                RequireCaptureService = false,
+                RequireTargetWindow = false,
+                RuntimeServices = new ScriptExecutionRuntimeServices
+                {
+                    Capture = new NullScriptCaptureService(),
+                    Input = input,
+                    GameStageState = new QueueGameStageStateService([null])
+                }
+            });
+
+        Assert.Equal(ScriptExecutionStatus.Completed, result.Status);
+        Assert.Equal(1, result.ExecutedStepCount);
+        Assert.Equal(1, result.LastCompletedStepIndex);
+        Assert.Empty(input.Clicks);
+        Assert.Empty(input.PressedKeys);
+        Assert.False(leaseCoordinator.HasActiveLease);
+    }
+
     private static async Task WaitUntilAsync(Func<bool> predicate)
     {
         using var cancellationSource = new CancellationTokenSource(TimeSpan.FromSeconds(2));

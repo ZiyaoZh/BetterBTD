@@ -35,6 +35,7 @@ public sealed class GameUiActionExecutor : IGameUiActionExecutor
         var collectionHandler = new CollectionGameUiActionHandler(inputSimulationService, gameCaptureService, navigationOcrService);
         var goldBalloonHandler = new GoldBalloonGameUiActionHandler(inputSimulationService, gameCaptureService, navigationOcrService);
         var blackBorderHandler = new BlackBorderGameUiActionHandler(inputSimulationService, gameCaptureService, navigationOcrService);
+        var loopStageHandler = new LoopStageGameUiActionHandler(inputSimulationService, gameCaptureService, navigationOcrService);
         var odysseyHandler = new OdysseyGameUiActionHandler(inputSimulationService, gameCaptureService, navigationOcrService);
         var raceHandler = new RaceGameUiActionHandler(inputSimulationService, gameCaptureService, navigationOcrService);
         _taskHandlers = new Dictionary<AutoTaskKind, IGameUiTaskActionHandler>
@@ -42,7 +43,7 @@ public sealed class GameUiActionExecutor : IGameUiActionExecutor
             [AutoTaskKind.Collection] = collectionHandler,
             [AutoTaskKind.GoldBalloon] = goldBalloonHandler,
             [AutoTaskKind.BlackBorder] = blackBorderHandler,
-            [AutoTaskKind.LoopStage] = blackBorderHandler,
+            [AutoTaskKind.LoopStage] = loopStageHandler,
             [AutoTaskKind.Odyssey] = odysseyHandler,
             [AutoTaskKind.Race] = raceHandler
         };

@@ -304,6 +304,7 @@ public sealed class ScriptEditorSequenceService
                 GetTargetMonkeyDisplayName(instruction, instructions, localizationService),
                 FormatCoordinate(instruction.PositionX),
                 FormatCoordinate(instruction.PositionY)),
+            ScriptCommandType.FreeplayBoundary => localizationService.T("Editor.Display.FreeplayBoundary"),
             ScriptCommandType.Comment => string.Format(
                 localizationService.T("Editor.Display.Comment"),
                 GetCommentPreview(instruction.CommentContent, localizationService)),

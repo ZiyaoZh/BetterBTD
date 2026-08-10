@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
+using BetterBTD.Models.AutoTasks;
 
 namespace BetterBTD.Models;
 
@@ -40,6 +41,30 @@ public partial class AutoTaskConfig : ObservableObject
 
     [ObservableProperty]
     private bool _showScriptIdConfiguration;
+
+    [ObservableProperty]
+    private bool _showLoopStageModeConfiguration;
+
+    [ObservableProperty]
+    private ObservableCollection<LanguageOption> _loopStageModeOptions = [];
+
+    [ObservableProperty]
+    private LanguageOption? _selectedLoopStageModeOption;
+
+    [ObservableProperty]
+    private int _exitAfterRound = 102;
+
+    public bool ShowExitAfterRoundConfiguration =>
+        ShowLoopStageModeConfiguration &&
+        string.Equals(
+            SelectedLoopStageModeOption?.Code,
+            LoopStageRunMode.FreeplayUntilRound.ToString(),
+            StringComparison.OrdinalIgnoreCase);
+
+    partial void OnSelectedLoopStageModeOptionChanged(LanguageOption? value)
+    {
+        OnPropertyChanged(nameof(ShowExitAfterRoundConfiguration));
+    }
 
     [ObservableProperty]
     private bool _showOdysseyScriptIdConfiguration;

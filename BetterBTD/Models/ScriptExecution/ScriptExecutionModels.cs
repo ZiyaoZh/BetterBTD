@@ -41,6 +41,8 @@ public sealed class ScriptExecutionOptions
 {
     public int StartStepIndex { get; init; }
 
+    public int? EndStepIndexExclusive { get; init; }
+
     public int? OverrideInstructionIntervalMs { get; init; }
 
     public ScriptExecutionOperationIntervalStrategy IntervalStrategy { get; init; } =

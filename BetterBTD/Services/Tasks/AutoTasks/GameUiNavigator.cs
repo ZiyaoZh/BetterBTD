@@ -176,6 +176,12 @@ public sealed class GameUiNavigator : IGameUiNavigator
                 Description = "Continue past the victory screen.",
                 ExpectedNextStates = [GameUiStateId.Reward, GameUiStateId.ConfirmDialog, GameUiStateId.MainMenu]
             },
+            GameUiStateId.FreeplayPrompt => new GameUiNavigationStep
+            {
+                ActionKind = GameUiActionKind.ConfirmDialog,
+                Description = "Confirm entering freeplay.",
+                ExpectedNextStates = [GameUiStateId.InLevel]
+            },
             GameUiStateId.Defeat => new GameUiNavigationStep
             {
                 ActionKind = GameUiActionKind.RetryStage,

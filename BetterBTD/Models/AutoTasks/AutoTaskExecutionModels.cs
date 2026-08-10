@@ -15,6 +15,12 @@ public enum AutoTaskKind
     Race
 }
 
+public enum LoopStageRunMode
+{
+    Standard,
+    FreeplayUntilRound
+}
+
 public enum AutoTaskRunState
 {
     Idle,
@@ -84,6 +90,7 @@ public enum GameUiStateId
     OdysseyReward,
     StageSettlement,
     Victory,
+    FreeplayPrompt,
     Defeat,
     Reward,
     ConfirmDialog,
@@ -135,6 +142,10 @@ public sealed class AutoTaskRequest
     public string PreferredScriptPath { get; init; } = string.Empty;
 
     public IReadOnlyList<string> PreferredScriptPaths { get; init; } = [];
+
+    public LoopStageRunMode LoopStageRunMode { get; init; } = LoopStageRunMode.Standard;
+
+    public int ExitAfterRound { get; init; }
 
     public string Key { get; init; } = string.Empty;
 }
@@ -188,6 +199,10 @@ public sealed class AutoTaskScriptQuery
     public string SlotId { get; init; } = string.Empty;
 
     public IReadOnlyList<string> RequiredTags { get; init; } = [];
+
+    public int StartStepIndex { get; init; }
+
+    public int? EndStepIndexExclusive { get; init; }
 
     public string Description { get; init; } = string.Empty;
 }
@@ -457,7 +472,10 @@ public sealed class AutoTaskRuntimeState
 
     public bool TryRecordStageCompletion(GameUiStateId state)
     {
-        if (!_isStageCompletionPending || !IsSuccessfulStageOutcome(state))
+        if (!_isStageCompletionPending ||
+            (Request.LoopStageRunMode == LoopStageRunMode.FreeplayUntilRound
+                ? !IsSuccessfulFreeplayOutcome(this, state)
+                : !IsSuccessfulStageOutcome(state)))
         {
             return false;
         }
@@ -517,6 +535,19 @@ public sealed class AutoTaskRuntimeState
             GameUiStateId.ThreeChests or
             GameUiStateId.RaceResult or
             GameUiStateId.BossResult;
+    }
+
+    private static bool IsSuccessfulFreeplayOutcome(AutoTaskRuntimeState state, GameUiStateId uiState)
+    {
+        return uiState == GameUiStateId.MainMenu &&
+               state.TryGetProperty<bool>(
+                   LoopStageAutoTaskStateKeys.TargetRoundReached,
+                   out var targetRoundReached) &&
+               targetRoundReached &&
+               state.TryGetProperty<LoopStageScriptRunState>(
+                   LoopStageAutoTaskStateKeys.ScriptRunState,
+                   out var runState) &&
+               runState == LoopStageScriptRunState.WaitingForExit;
     }
 }
 

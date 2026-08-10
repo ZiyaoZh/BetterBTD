@@ -21,7 +21,7 @@ UI-independent execution, automatic tasks, simulation, control leases, and helpe
 | `BetterBTD/Core/GameControl` | 1 |
 | `BetterBTD/Core/RobotControl` | 2 |
 | `BetterBTD/Core/ScriptExecution` | 7 |
-| `BetterBTD/Core/ScriptExecution/Handlers` | 15 |
+| `BetterBTD/Core/ScriptExecution/Handlers` | 16 |
 | `BetterBTD/Core/ScriptExecution/Handlers/Support` | 2 |
 | `BetterBTD/Core/ScriptExecution/Runtime` | 1 |
 | `BetterBTD/Core/Simulator` | 7 |
@@ -102,6 +102,7 @@ Paths are relative to the repository root. Open the linked file and verify curre
 | --- | --- |
 | [ActivateAbilityInstructionHandler.cs](../../../../../BetterBTD/Core/ScriptExecution/Handlers/ActivateAbilityInstructionHandler.cs) | Script instruction handlers and support code; primary symbols: ActivateAbilityInstructionHandler |
 | [CommentInstructionHandler.cs](../../../../../BetterBTD/Core/ScriptExecution/Handlers/CommentInstructionHandler.cs) | Script instruction handlers and support code; primary symbols: CommentInstructionHandler |
+| [FreeplayBoundaryInstructionHandler.cs](../../../../../BetterBTD/Core/ScriptExecution/Handlers/FreeplayBoundaryInstructionHandler.cs) | Script instruction handlers and support code; primary symbols: FreeplayBoundaryInstructionHandler |
 | [IScriptInstructionHandler.cs](../../../../../BetterBTD/Core/ScriptExecution/Handlers/IScriptInstructionHandler.cs) | Script instruction handlers and support code; primary symbols: IScriptInstructionHandler |
 | [ModifyMonkeyCoordinateInstructionHandler.cs](../../../../../BetterBTD/Core/ScriptExecution/Handlers/ModifyMonkeyCoordinateInstructionHandler.cs) | Script instruction handlers and support code; primary symbols: ModifyMonkeyCoordinateInstructionHandler |
 | [MouseClickInstructionHandler.cs](../../../../../BetterBTD/Core/ScriptExecution/Handlers/MouseClickInstructionHandler.cs) | Script instruction handlers and support code; primary symbols: MouseClickInstructionHandler |

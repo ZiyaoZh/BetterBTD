@@ -21,6 +21,7 @@ public sealed class ScriptInstructionHandlerRegistry
         Register(new NextRoundInstructionHandler());
         Register(new WaitInstructionHandler());
         Register(new ModifyMonkeyCoordinateInstructionHandler());
+        Register(new FreeplayBoundaryInstructionHandler());
         Register(new CommentInstructionHandler());
     }
 

@@ -23,7 +23,7 @@ Capture, recognition, persistence, settings, editor, task adapters, and protocol
 | `BetterBTD/Services/Shell/Localization` | 13 |
 | `BetterBTD/Services/Start` | 1 |
 | `BetterBTD/Services/Start/Capture` | 4 |
-| `BetterBTD/Services/Tasks/AutoTasks` | 16 |
+| `BetterBTD/Services/Tasks/AutoTasks` | 17 |
 | `BetterBTD/Services/Tasks/CaptureAnalysis` | 5 |
 | `BetterBTD/Services/Tasks/Input` | 3 |
 | `BetterBTD/Services/Tasks/RobotControl` | 2 |
@@ -131,6 +131,7 @@ Paths are relative to the repository root. Open the linked file and verify curre
 | [GameUiStateService.cs](../../../../../BetterBTD/Services/Tasks/AutoTasks/GameUiStateService.cs) | Automatic-task UI state, navigation, actions, and adapters; primary symbols: GameUiStateService, ConfiguredGameUiRecognizer, UnknownGameUiRecognizer |
 | [GoldBalloonGameUiActionHandler.cs](../../../../../BetterBTD/Services/Tasks/AutoTasks/GoldBalloonGameUiActionHandler.cs) | Automatic-task UI state, navigation, actions, and adapters; primary symbols: GoldBalloonGameUiActionHandler |
 | [IGameUiTaskActionHandler.cs](../../../../../BetterBTD/Services/Tasks/AutoTasks/IGameUiTaskActionHandler.cs) | Automatic-task UI state, navigation, actions, and adapters; primary symbols: IGameUiTaskActionHandler |
+| [LoopStageGameUiActionHandler.cs](../../../../../BetterBTD/Services/Tasks/AutoTasks/LoopStageGameUiActionHandler.cs) | Automatic-task UI state, navigation, actions, and adapters; primary symbols: LoopStageGameUiActionHandler |
 | [OdysseyGameUiActionHandler.cs](../../../../../BetterBTD/Services/Tasks/AutoTasks/OdysseyGameUiActionHandler.cs) | Automatic-task UI state, navigation, actions, and adapters; primary symbols: OdysseyGameUiActionHandler |
 | [RaceGameUiActionHandler.cs](../../../../../BetterBTD/Services/Tasks/AutoTasks/RaceGameUiActionHandler.cs) | Automatic-task UI state, navigation, actions, and adapters; primary symbols: RaceGameUiActionHandler |
 | [UnimplementedGameUiElementLocator.cs](../../../../../BetterBTD/Services/Tasks/AutoTasks/UnimplementedGameUiElementLocator.cs) | Automatic-task UI state, navigation, actions, and adapters; primary symbols: UnimplementedGameUiElementLocator |

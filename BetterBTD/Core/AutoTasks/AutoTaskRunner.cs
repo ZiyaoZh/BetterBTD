@@ -193,6 +193,8 @@ public sealed class AutoTaskRunner
 
                         var scriptExecutionOptions = new ScriptExecutionOptions
                         {
+                            StartStepIndex = decision.ScriptQuery.StartStepIndex,
+                            EndStepIndexExclusive = decision.ScriptQuery.EndStepIndexExclusive,
                             IntervalStrategy = ScriptExecutionOperationIntervalStrategy.CommonOperationInterval,
                             CommonOperationIntervalMs = Math.Max(0, request.OperationIntervalMs),
                             RequireCaptureService = true,
@@ -227,6 +229,12 @@ public sealed class AutoTaskRunner
                         {
                             if (scriptInterruptedSnapshot is not null && !cancellationToken.IsCancellationRequested)
                             {
+                                state.SetProperty(
+                                    LoopStageAutoTaskStateKeys.InterruptedUiState,
+                                    scriptInterruptedSnapshot.State);
+                                state.SetProperty(
+                                    LoopStageAutoTaskStateKeys.ResumeStepIndex,
+                                    Math.Max(0, scriptResult.LastCompletedStepIndex + 1));
                                 state.RecordScriptExecutionResult(scriptResult);
                                 state.Phase = AutoTaskPhase.SettlingResult;
                                 session.MarkPhase(
@@ -376,7 +384,9 @@ public sealed class AutoTaskRunner
                     .CaptureSnapshotAsync(cancellationToken)
                     .ConfigureAwait(false);
 
-                if (!ShouldInterruptStageScript(request.Kind, snapshot.State))
+                ObserveFreeplayTargetRound(request, state, snapshot);
+
+                if (!ShouldInterruptStageScript(request, state, snapshot.State))
                 {
                     continue;
                 }
@@ -411,9 +421,34 @@ public sealed class AutoTaskRunner
             or AutoTaskKind.Race;
     }
 
-    private static bool ShouldInterruptStageScript(AutoTaskKind kind, GameUiStateId state)
+    private static bool ShouldInterruptStageScript(
+        AutoTaskRequest request,
+        AutoTaskRuntimeState runtimeState,
+        GameUiStateId state)
     {
-        if (kind == AutoTaskKind.Race)
+        if (request.Kind == AutoTaskKind.LoopStage &&
+            request.LoopStageRunMode == LoopStageRunMode.FreeplayUntilRound)
+        {
+            var targetRoundReached = runtimeState.TryGetProperty<bool>(
+                LoopStageAutoTaskStateKeys.TargetRoundReached,
+                out var reached) && reached;
+            return runtimeState.TryGetProperty<LoopStageScriptRunState>(
+                       LoopStageAutoTaskStateKeys.ScriptRunState,
+                       out var runState) &&
+                   runState == LoopStageScriptRunState.RunningAfterBoundary &&
+                   (targetRoundReached || state is
+                       GameUiStateId.Defeat or
+                       GameUiStateId.LevelUp or
+                       GameUiStateId.InstaMonkeyReward or
+                       GameUiStateId.StageHint or
+                       GameUiStateId.Reward or
+                       GameUiStateId.ChestOpened or
+                       GameUiStateId.TwoChests or
+                       GameUiStateId.ThreeChests or
+                       GameUiStateId.ConfirmDialog);
+        }
+
+        if (request.Kind == AutoTaskKind.Race)
         {
             return state is
                 GameUiStateId.StageSettlement or
@@ -431,6 +466,34 @@ public sealed class AutoTaskRunner
             GameUiStateId.OdysseyStageVictory or
             GameUiStateId.OdysseySettlement or
             GameUiStateId.OdysseyReward;
+    }
+
+    private static void ObserveFreeplayTargetRound(
+        AutoTaskRequest request,
+        AutoTaskRuntimeState state,
+        GameUiSnapshot snapshot)
+    {
+        if (request.Kind != AutoTaskKind.LoopStage ||
+            request.LoopStageRunMode != LoopStageRunMode.FreeplayUntilRound ||
+            !state.TryGetProperty<LoopStageScriptRunState>(
+                LoopStageAutoTaskStateKeys.ScriptRunState,
+                out var runState) ||
+            runState != LoopStageScriptRunState.RunningAfterBoundary ||
+            (state.TryGetProperty<bool>(
+                 LoopStageAutoTaskStateKeys.TargetRoundReached,
+                 out var targetRoundReached) &&
+             targetRoundReached) ||
+            !state.TryGetProperty<LoopStageRoundProgressTracker>(
+                LoopStageAutoTaskStateKeys.RoundProgressTracker,
+                out var tracker))
+        {
+            return;
+        }
+
+        if (tracker.Observe(snapshot.StageState?.Round))
+        {
+            state.SetProperty(LoopStageAutoTaskStateKeys.TargetRoundReached, true);
+        }
     }
 
     private AutoTaskRuntimeScriptPreview TryLoadScriptPreview(string filePath)

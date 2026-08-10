@@ -15,7 +15,7 @@ Configuration, game elements, scripts, task contracts, and runtime DTOs.
 | Directory | Files |
 | --- | ---: |
 | `BetterBTD/Models` | 18 |
-| `BetterBTD/Models/AutoTasks` | 7 |
+| `BetterBTD/Models/AutoTasks` | 8 |
 | `BetterBTD/Models/GameElements` | 6 |
 | `BetterBTD/Models/MyScripts` | 5 |
 | `BetterBTD/Models/RobotControl` | 1 |
@@ -56,11 +56,12 @@ Paths are relative to the repository root. Open the linked file and verify curre
 
 | File | Description |
 | --- | --- |
-| [AutoTaskExecutionModels.cs](../../../../../BetterBTD/Models/AutoTasks/AutoTaskExecutionModels.cs) | Automatic-task configuration and runtime models; primary symbols: AutoTaskKind, AutoTaskRunState, AutoTaskPhase, AutoTaskExecutionStatus, AutoTaskDecisionKind |
+| [AutoTaskExecutionModels.cs](../../../../../BetterBTD/Models/AutoTasks/AutoTaskExecutionModels.cs) | Automatic-task configuration and runtime models; primary symbols: AutoTaskKind, LoopStageRunMode, AutoTaskRunState, AutoTaskPhase, AutoTaskExecutionStatus |
 | [BlackBorderAutoTaskModels.cs](../../../../../BetterBTD/Models/AutoTasks/BlackBorderAutoTaskModels.cs) | Automatic-task configuration and runtime models; primary symbols: BlackBorderAutoTaskScriptRunState, BlackBorderAutoTaskStageTask, BlackBorderAutoTaskScriptContext, BlackBorderAutoTaskStateKeys |
 | [CollectionAutoTaskModels.cs](../../../../../BetterBTD/Models/AutoTasks/CollectionAutoTaskModels.cs) | Automatic-task configuration and runtime models; primary symbols: CollectionAutoTaskScriptRunState, CollectionAutoTaskScriptContext, CollectionAutoTaskStateKeys |
 | [GameUiDetectionModels.cs](../../../../../BetterBTD/Models/AutoTasks/GameUiDetectionModels.cs) | Automatic-task configuration and runtime models; primary symbols: GameUiColorComparisonOperator, GameUiDetectionConfig, GameUiDetectionRule, GameUiColorCondition |
 | [GoldBalloonAutoTaskModels.cs](../../../../../BetterBTD/Models/AutoTasks/GoldBalloonAutoTaskModels.cs) | Automatic-task configuration and runtime models; primary symbols: GoldBalloonAutoTaskScriptRunState, GoldBalloonAutoTaskScriptContext, GoldBalloonAutoTaskStateKeys |
+| [LoopStageAutoTaskModels.cs](../../../../../BetterBTD/Models/AutoTasks/LoopStageAutoTaskModels.cs) | Automatic-task configuration and runtime models; primary symbols: LoopStageScriptRunState, LoopStageAutoTaskScriptContext, LoopStageAutoTaskStateKeys, LoopStageRoundProgressTracker |
 | [OdysseyAutoTaskModels.cs](../../../../../BetterBTD/Models/AutoTasks/OdysseyAutoTaskModels.cs) | Automatic-task configuration and runtime models; primary symbols: OdysseyAutoTaskScriptRunState, OdysseyAutoTaskStateKeys |
 | [RaceAutoTaskModels.cs](../../../../../BetterBTD/Models/AutoTasks/RaceAutoTaskModels.cs) | Automatic-task configuration and runtime models; primary symbols: RaceAutoTaskScriptRunState, RaceAutoTaskStateKeys |
 

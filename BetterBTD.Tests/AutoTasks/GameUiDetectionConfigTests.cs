@@ -23,6 +23,9 @@ public sealed class GameUiDetectionConfigTests
             Assert.NotEmpty(config.Rules);
             Assert.Contains(config.Rules, static rule => rule.State == GameUiStateId.MainMenu);
             Assert.Equal(50, config.DefaultTolerance);
+            var freeplayPromptRule = Assert.Single(config.Rules, static rule => rule.State == GameUiStateId.FreeplayPrompt);
+            var inLevelRule = Assert.Single(config.Rules, static rule => rule.State == GameUiStateId.InLevel);
+            Assert.True(freeplayPromptRule.Priority > inLevelRule.Priority);
 
             var json = File.ReadAllText(configFilePath);
             Assert.Contains("main_menu", json);

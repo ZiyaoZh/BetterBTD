@@ -42,6 +42,51 @@ public sealed class AutoTaskSkeletonTests
         Assert.Equal(1, state.CompletedStageCount);
     }
 
+    [Fact]
+    public void RuntimeState_FreeplayCountsOnlyAfterTargetRoundAndMainMenu()
+    {
+        var state = new AutoTaskRuntimeState(new AutoTaskRequest
+        {
+            Kind = AutoTaskKind.LoopStage,
+            StageTarget = CreateTarget(),
+            LoopStageRunMode = LoopStageRunMode.FreeplayUntilRound,
+            ExitAfterRound = 102
+        });
+
+        state.BeginStageAttempt();
+        state.RecordScriptExecutionResult(CreateSuccessfulScriptResult());
+        state.SetProperty(LoopStageAutoTaskStateKeys.ScriptRunState, LoopStageScriptRunState.WaitingForExit);
+        state.SetProperty(LoopStageAutoTaskStateKeys.TargetRoundReached, true);
+
+        Assert.False(state.TryRecordStageCompletion(GameUiStateId.Victory));
+        Assert.False(state.TryRecordStageCompletion(GameUiStateId.StageSettlement));
+        Assert.True(state.TryRecordStageCompletion(GameUiStateId.MainMenu));
+        Assert.Equal(1, state.CompletedStageCount);
+    }
+
+    [Fact]
+    public void RoundProgressTracker_RequiresConsecutiveValidTargetObservations()
+    {
+        var tracker = new LoopStageRoundProgressTracker(102);
+
+        Assert.False(tracker.Observe(null));
+        Assert.False(tracker.Observe(102));
+        Assert.False(tracker.Observe(101));
+        Assert.False(tracker.Observe(102));
+        Assert.True(tracker.Observe(102));
+    }
+
+    [Fact]
+    public void RoundProgressTracker_RejectsObviousHighValuesAndRestartsConfirmation()
+    {
+        var tracker = new LoopStageRoundProgressTracker(102);
+
+        Assert.False(tracker.Observe(102));
+        Assert.False(tracker.Observe(999));
+        Assert.False(tracker.Observe(102));
+        Assert.True(tracker.Observe(102));
+    }
+
     [Theory]
     [InlineData(GameUiStateId.MainMenu, GameUiActionKind.OpenMapSelection)]
     [InlineData(GameUiStateId.MapCategorySelect, GameUiActionKind.SelectMapCategory)]

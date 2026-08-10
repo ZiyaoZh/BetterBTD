@@ -322,7 +322,7 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
 
     public bool ShowNonExecutableInstructionHint => SelectedSequenceInstruction is { IsExecutable: false };
 
-    public bool ShowAdvancedProperties => SelectedSequenceInstruction?.Type is not ScriptCommandType.ModifyMonkeyCoordinate and not ScriptCommandType.Comment;
+    public bool ShowAdvancedProperties => SelectedSequenceInstruction?.Type is not ScriptCommandType.ModifyMonkeyCoordinate and not ScriptCommandType.FreeplayBoundary and not ScriptCommandType.Comment;
 
     public bool ShowMouseClickAdvancedProperties => SelectedSequenceInstruction?.Type == ScriptCommandType.MouseClick;
 
@@ -429,6 +429,7 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
     public string PropertyIntervalToNextInstructionText => _localizationService.T("Editor.Property.IntervalToNextInstruction");
     public string NonExecutableInstructionHintText => _localizationService.T("Editor.Property.NonExecutableHint");
     public string PropertyNotesText => _localizationService.T("Editor.Property.Notes");
+    public string PropertyFreeplayBoundaryText => _localizationService.T("Editor.Property.FreeplayBoundary");
     public string DeleteSelectedInstructionText => _localizationService.T("Editor.Command.DeleteSelected");
     public string CutSelectedInstructionText => _localizationService.T("Editor.Command.CutSelected");
     public string CopySelectedInstructionText => _localizationService.T("Editor.Command.CopySelected");
@@ -2447,6 +2448,7 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         OnPropertyChanged(nameof(PropertyIntervalToNextInstructionText));
         OnPropertyChanged(nameof(NonExecutableInstructionHintText));
         OnPropertyChanged(nameof(PropertyNotesText));
+        OnPropertyChanged(nameof(PropertyFreeplayBoundaryText));
         OnPropertyChanged(nameof(DeleteSelectedInstructionText));
         OnPropertyChanged(nameof(CutSelectedInstructionText));
         OnPropertyChanged(nameof(CopySelectedInstructionText));

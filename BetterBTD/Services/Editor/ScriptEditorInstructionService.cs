@@ -29,6 +29,7 @@ public sealed class ScriptEditorInstructionService
             CreateTemplate(ScriptCommandType.NextRound, "Editor.Command.NextRound.Title", "Editor.Command.NextRound.Description"),
             CreateTemplate(ScriptCommandType.Wait, "Editor.Command.Wait.Title", "Editor.Command.Wait.Description"),
             CreateTemplate(ScriptCommandType.ModifyMonkeyCoordinate, "Editor.Command.ModifyMonkeyCoordinate.Title", "Editor.Command.ModifyMonkeyCoordinate.Description"),
+            CreateTemplate(ScriptCommandType.FreeplayBoundary, "Editor.Command.FreeplayBoundary.Title", "Editor.Command.FreeplayBoundary.Description"),
             CreateTemplate(ScriptCommandType.Comment, "Editor.Command.Comment.Title", "Editor.Command.Comment.Description")
         ];
     }

@@ -727,6 +727,14 @@
             </StackPanel>
         </DataTemplate>
 
+        <DataTemplate x:Key="FreeplayBoundaryEditorTemplate">
+            <StackPanel Margin="0,0,0,10">
+                <TextBlock Style="{StaticResource CardDescriptionTextStyle}"
+                           Text="{Binding DataContext.PropertyFreeplayBoundaryText, RelativeSource={RelativeSource AncestorType=controls:ScriptInstructionPropertiesPanel}}"
+                           TextWrapping="Wrap" />
+            </StackPanel>
+        </DataTemplate>
+
         <controls:ScriptInstructionEditorTemplateSelector x:Key="InstructionEditorTemplateSelector"
                                                           PlaceMonkeyTemplate="{StaticResource PlaceMonkeyEditorTemplate}"
                                                           UpgradeMonkeyTemplate="{StaticResource UpgradeMonkeyEditorTemplate}"
@@ -739,6 +747,7 @@
                                                           NextRoundTemplate="{StaticResource NextRoundEditorTemplate}"
                                                           WaitTemplate="{StaticResource WaitEditorTemplate}"
                                                           ModifyMonkeyCoordinateTemplate="{StaticResource ModifyMonkeyCoordinateEditorTemplate}"
+                                                          FreeplayBoundaryTemplate="{StaticResource FreeplayBoundaryEditorTemplate}"
                                                           CommentTemplate="{StaticResource CommentEditorTemplate}" />
     </UserControl.Resources>
 

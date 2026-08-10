@@ -28,6 +28,8 @@ public sealed class ScriptInstructionEditorTemplateSelector : DataTemplateSelect
 
     public DataTemplate? ModifyMonkeyCoordinateTemplate { get; set; }
 
+    public DataTemplate? FreeplayBoundaryTemplate { get; set; }
+
     public DataTemplate? CommentTemplate { get; set; }
 
     public override DataTemplate? SelectTemplate(object item, DependencyObject container)
@@ -50,6 +52,7 @@ public sealed class ScriptInstructionEditorTemplateSelector : DataTemplateSelect
             ScriptCommandType.NextRound => NextRoundTemplate,
             ScriptCommandType.Wait => WaitTemplate,
             ScriptCommandType.ModifyMonkeyCoordinate => ModifyMonkeyCoordinateTemplate,
+            ScriptCommandType.FreeplayBoundary => FreeplayBoundaryTemplate,
             ScriptCommandType.Comment => CommentTemplate,
             _ => base.SelectTemplate(item, container)
         };

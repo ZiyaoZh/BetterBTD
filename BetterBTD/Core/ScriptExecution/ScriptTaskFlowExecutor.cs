@@ -123,7 +123,16 @@ public sealed class ScriptTaskFlowExecutor
         var lastCompletedStepIndex = -1;
         var normalizedStartStepIndex = taskFlow.Steps.Count == 0
             ? 0
-            : Math.Clamp(options.StartStepIndex, 0, taskFlow.Steps.Count - 1);
+            : Math.Clamp(options.StartStepIndex, 0, taskFlow.Steps.Count);
+        var normalizedEndStepIndexExclusive = options.EndStepIndexExclusive.HasValue
+            ? Math.Clamp(options.EndStepIndexExclusive.Value, 0, taskFlow.Steps.Count)
+            : taskFlow.Steps.Count;
+        if (normalizedEndStepIndexExclusive < normalizedStartStepIndex)
+        {
+            throw new ArgumentException(
+                "The script execution end step must be greater than or equal to the start step.",
+                nameof(options));
+        }
         var executionSession = new ScriptExecutionSession(taskFlow.SourceFilePath);
 
         EnterRunningState(executionSession, linkedCancellationSource);
@@ -135,7 +144,7 @@ public sealed class ScriptTaskFlowExecutor
 
             var state = new ScriptExecutionState();
             state.SeedMonkeyStates(taskFlow.Document.MonkeyObjects);
-            if (normalizedStartStepIndex > 0)
+            if (normalizedStartStepIndex > 0 && normalizedStartStepIndex < taskFlow.Steps.Count)
             {
                 var startStep = taskFlow.Steps[normalizedStartStepIndex];
                 executionSession.MarkContextBuilding(
@@ -157,7 +166,9 @@ public sealed class ScriptTaskFlowExecutor
                     .ConfigureAwait(false);
             }
 
-            foreach (var step in taskFlow.Steps.Skip(normalizedStartStepIndex))
+            foreach (var step in taskFlow.Steps
+                         .Skip(normalizedStartStepIndex)
+                         .TakeWhile(step => step.Index < normalizedEndStepIndexExclusive))
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 executionSession.EnterStep(step.Index, step.CommandType.ToString());
