@@ -126,6 +126,7 @@
                          dd:DragDrop.UseDefaultDragAdorner="True"
                          dd:DragDrop.SelectDroppedItems="True"
                          dd:DragDrop.DropHandler="{Binding}"
+                         dd:DragDrop.DropScrollingMode="None"
                          ScrollViewer.VerticalScrollBarVisibility="Auto"
                          ScrollViewer.CanContentScroll="True"
                          VirtualizingPanel.IsVirtualizing="True"
