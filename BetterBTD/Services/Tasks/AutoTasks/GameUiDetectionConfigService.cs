@@ -242,7 +242,7 @@ public sealed class GameUiDetectionConfigService
                     Eq(555, 197, "#FFFFFF"), Eq(1221, 152, "#FFFFFF"), Eq(585, 579, "#5F93D7")),
                 CreateRule("freeplay_prompt", "自由游戏确认界面", GameUiStateId.FreeplayPrompt, 965,
                     Eq(1910, 40, "#B1814A"), Eq(13, 40, "#B1814A"),
-                    Eq(910, 203, "#A35121"), Eq(1036, 758, "#5ED900"), Eq(743, 384, "#F34F13")),
+                    Eq(910, 203, "#009FDD"), Eq(1036, 758, "#5ED900"), Eq(743, 384, "#F34F13")),
                 CreateRule("stage_hint", "关卡提示界面", GameUiStateId.StageHint, 928,
                     Eq(1080, 400, "#71E800"), Eq(1080, 500, "#6095D7"), Eq(1080, 725, "#65DC00")),
                 CreateRule("stage_level_up", "关卡升级界面", GameUiStateId.LevelUp, 927,

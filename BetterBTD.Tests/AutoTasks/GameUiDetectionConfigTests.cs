@@ -74,6 +74,33 @@ public sealed class GameUiDetectionConfigTests
     }
 
     [Fact]
+    public void DefaultFreeplayPromptRule_MatchesObservedPromptPixels()
+    {
+        var tempDirectory = CreateTempDirectory();
+
+        try
+        {
+            var service = new GameUiDetectionConfigService(
+                Path.Combine(tempDirectory, "game_ui_detection_rules.json"));
+            var config = service.Current;
+            var rule = Assert.Single(config.Rules, static item => item.State == GameUiStateId.FreeplayPrompt);
+
+            using var frame = new Mat(1080, 1920, MatType.CV_8UC3, Scalar.All(0));
+            SetPixel(frame, 1910, 40, "#AA7B45");
+            SetPixel(frame, 13, 40, "#AA7C46");
+            SetPixel(frame, 910, 203, "#009FDD");
+            SetPixel(frame, 1036, 758, "#62E200");
+            SetPixel(frame, 743, 384, "#F34F13");
+
+            Assert.True(GameUiDetectionRuleEvaluator.IsMatch(frame, config, rule));
+        }
+        finally
+        {
+            Directory.Delete(tempDirectory, recursive: true);
+        }
+    }
+
+    [Fact]
     public void ConfigService_ReloadsCustomConfig()
     {
         var tempDirectory = CreateTempDirectory();
