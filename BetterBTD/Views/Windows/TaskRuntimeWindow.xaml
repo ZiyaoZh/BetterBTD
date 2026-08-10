@@ -319,50 +319,59 @@
             <Grid Grid.Row="6">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0"
-                           Style="{StaticResource CardTitleTextStyle}"
-                           Text="{Binding OutputTitle}"
-                           HorizontalAlignment="Left"
-                           TextAlignment="Left" />
+                <Grid Grid.Row="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
 
-                <WrapPanel Grid.Row="1"
-                           Margin="0,7,0,2">
-                    <StackPanel Margin="0,0,18,0"
+                    <TextBlock Grid.Column="0"
+                               Style="{StaticResource CardTitleTextStyle}"
+                               Text="{Binding OutputTitle}"
+                               TextTrimming="CharacterEllipsis"
+                               TextWrapping="NoWrap"
+                               HorizontalAlignment="Left"
+                               TextAlignment="Left" />
+
+                    <StackPanel Grid.Column="1"
+                                HorizontalAlignment="Right"
                                 Orientation="Horizontal">
-                        <TextBlock VerticalAlignment="Center"
-                                   FontSize="12"
-                                   Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                   Text="{Binding CompletedStageCountTitle}" />
-                        <TextBlock Margin="6,0,0,0"
-                                   VerticalAlignment="Center"
-                                   FontFamily="Consolas"
-                                   FontSize="12"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                                   Text="{Binding CompletedStageCountText}" />
-                    </StackPanel>
+                        <StackPanel Margin="0,0,18,0"
+                                    Orientation="Horizontal">
+                            <TextBlock VerticalAlignment="Center"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                       Text="{Binding CompletedStageCountTitle}" />
+                            <TextBlock Margin="6,0,0,0"
+                                       VerticalAlignment="Center"
+                                       FontFamily="Consolas"
+                                       FontSize="12"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                       Text="{Binding CompletedStageCountText}" />
+                        </StackPanel>
 
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock VerticalAlignment="Center"
-                                   FontSize="12"
-                                   Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                   Text="{Binding RuntimeDurationTitle}" />
-                        <TextBlock Margin="6,0,0,0"
-                                   VerticalAlignment="Center"
-                                   FontFamily="Consolas"
-                                   FontSize="12"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                                   Text="{Binding RuntimeDurationText}" />
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock VerticalAlignment="Center"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                       Text="{Binding RuntimeDurationTitle}" />
+                            <TextBlock Margin="6,0,0,0"
+                                       VerticalAlignment="Center"
+                                       FontFamily="Consolas"
+                                       FontSize="12"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                       Text="{Binding RuntimeDurationText}" />
+                        </StackPanel>
                     </StackPanel>
-                </WrapPanel>
+                </Grid>
 
                 <TextBox x:Name="LogTextBox"
-                         Grid.Row="2"
+                         Grid.Row="1"
                          Margin="0,10,0,0"
                          Style="{StaticResource SelectableLogTextBoxStyle}"
                          IsReadOnly="True"
