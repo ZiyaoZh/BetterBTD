@@ -17,6 +17,7 @@
 
 - [`btd6-game-driver`](../../.agents/skills/btd6-game-driver/SKILL.md)：独立观察和操控真实 BTD6，只在 Arrange/Recover 取得输入。
 - [`betterbtd-script-test`](../../.agents/skills/betterbtd-script-test/SKILL.md)：按场景协议编排 Test API 与 Game Driver，生成黑盒证据报告。
+- [`betterbtd-source-index`](../../.agents/skills/betterbtd-source-index/SKILL.md)：按项目结构和文件级索引快速定位 BetterBTD 源文件。
 
 ## 内部参考
 

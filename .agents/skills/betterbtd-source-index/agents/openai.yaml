@@ -1,0 +1,4 @@
+interface:
+  display_name: "BetterBTD Source Index"
+  short_description: "Navigate BetterBTD source files quickly"
+  default_prompt: "Use $betterbtd-source-index to locate and explain the BetterBTD source files relevant to this task."
