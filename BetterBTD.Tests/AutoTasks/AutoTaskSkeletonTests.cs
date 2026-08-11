@@ -1,9 +1,12 @@
 using BetterBTD.Core.AutoTasks;
 using BetterBTD.Core.AutoTasks.Runtime;
+using BetterBTD.Helpers;
+using BetterBTD.Models;
 using BetterBTD.Models.AutoTasks;
 using BetterBTD.Models.GameElements;
 using BetterBTD.Models.ScriptExecution;
 using BetterBTD.Services.Tasks.AutoTasks;
+using BetterBTD.Tests.TestDoubles;
 
 namespace BetterBTD.Tests.AutoTasks;
 
@@ -62,6 +65,50 @@ public sealed class AutoTaskSkeletonTests
         Assert.False(state.TryRecordStageCompletion(GameUiStateId.StageSettlement));
         Assert.True(state.TryRecordStageCompletion(GameUiStateId.MainMenu));
         Assert.Equal(1, state.CompletedStageCount);
+    }
+
+    [Fact]
+    public async Task LoopStageActionHandler_DoesNotTreatStageChallengeHintAsFreeplayConfirmation()
+    {
+        var dispatcher = new RecordingInputSimulationCommandDispatcher();
+        var inputService = new ScriptInputSimulationService(
+            new FakeScriptInputSimulationEnvironment(
+                new GameWindowInfo(
+                    (nint)123,
+                    "Test Window",
+                    new NativeWindowBounds(0, 0, 1920, 1080),
+                    new NativeWindowBounds(0, 0, 1920, 1080),
+                    1d)),
+            dispatcher);
+        var handler = new LoopStageGameUiActionHandler(
+            inputService,
+            GameCaptureService.Instance,
+            GameUiNavigationOcrService.Instance);
+        var state = new AutoTaskRuntimeState(new AutoTaskRequest
+        {
+            Kind = AutoTaskKind.LoopStage,
+            StageTarget = CreateTarget(),
+            LoopStageRunMode = LoopStageRunMode.FreeplayUntilRound,
+            ExitAfterRound = 102
+        });
+        state.SetProperty(
+            LoopStageAutoTaskStateKeys.ScriptRunState,
+            LoopStageScriptRunState.WaitingForFreeplayPrompt);
+        state.SetProperty(LoopStageAutoTaskStateKeys.FreeplayPromptConfirmed, false);
+        var snapshot = new GameUiSnapshot { State = GameUiStateId.StageChallengeWithHint };
+
+        var result = await handler.ExecuteAsync(
+            GameUiNavigator.Instance.GetNextStep(state.Request.StageTarget, snapshot),
+            state,
+            snapshot);
+
+        Assert.True(result.Succeeded);
+        Assert.False(
+            state.TryGetProperty<bool>(
+                LoopStageAutoTaskStateKeys.FreeplayPromptConfirmed,
+                out var promptConfirmed) &&
+            promptConfirmed);
+        Assert.NotEmpty(dispatcher.Commands);
     }
 
     [Fact]
