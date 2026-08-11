@@ -10,6 +10,7 @@ public enum LoopStageScriptRunState
     WaitingForFreeplayPrompt,
     RunningAfterBoundary,
     WaitingForBlockingUi,
+    WaitingForTargetRound,
     WaitingForExit,
     FinishedCurrentStage
 }

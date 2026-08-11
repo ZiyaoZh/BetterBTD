@@ -167,6 +167,36 @@ public sealed class LoopStageAutoTaskStrategy : IAutoTaskStrategy
                     AutoTaskPhase.SettlingResult);
         }
 
+        if (runState == LoopStageScriptRunState.WaitingForTargetRound)
+        {
+            if (snapshot.State == GameUiStateId.MainMenu)
+            {
+                return AutoTaskDecision.Fail(
+                    "Freeplay exited before the configured target round was confirmed.");
+            }
+
+            if (IsBlockingFreeplayUi(snapshot.State))
+            {
+                return AutoTaskDecision.Navigate(
+                    "Dismiss the blocking freeplay reward screen before continuing to monitor the target round.",
+                    AutoTaskPhase.SettlingResult);
+            }
+
+            if (snapshot.State is (GameUiStateId.InLevel or GameUiStateId.StageSettings) &&
+                IsTargetRoundReached(state, snapshot))
+            {
+                SetScriptRunState(state, LoopStageScriptRunState.WaitingForExit);
+                return AutoTaskDecision.Navigate(
+                    "Target round reached after the freeplay script completed. Exit the freeplay stage.",
+                    AutoTaskPhase.SettlingResult);
+            }
+
+            return AutoTaskDecision.Wait(
+                "Freeplay script completed. Waiting for consecutive confirmation of the target round.",
+                DefaultWaitDelayMs,
+                AutoTaskPhase.SettlingResult);
+        }
+
         if (runState == LoopStageScriptRunState.RunningBeforeBoundary ||
             runState == LoopStageScriptRunState.RunningAfterBoundary)
         {
@@ -370,9 +400,10 @@ public sealed class LoopStageAutoTaskStrategy : IAutoTaskStrategy
 
             if (GetScriptRunState(state) == LoopStageScriptRunState.RunningAfterBoundary)
             {
-                SetScriptRunState(state, LoopStageScriptRunState.WaitingForExit);
-                return AutoTaskDecision.Navigate(
-                    "Freeplay script completed. Exit from the in-level settings menu.",
+                SetScriptRunState(state, LoopStageScriptRunState.WaitingForTargetRound);
+                return AutoTaskDecision.Wait(
+                    "Freeplay script completed. Waiting for consecutive confirmation of the target round.",
+                    DefaultWaitDelayMs,
                     AutoTaskPhase.SettlingResult);
             }
         }

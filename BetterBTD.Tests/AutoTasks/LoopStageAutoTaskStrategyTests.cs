@@ -139,6 +139,70 @@ public sealed class LoopStageAutoTaskStrategyTests
     }
 
     [Fact]
+    public async Task FreeplayMode_WaitsForTargetRoundAfterFreeplayScriptCompletes()
+    {
+        var strategy = new LoopStageAutoTaskStrategy();
+        var state = new AutoTaskRuntimeState(new AutoTaskRequest
+        {
+            Kind = AutoTaskKind.LoopStage,
+            StageTarget = CreateTarget(),
+            PreferredScriptPath = "loop-stage.btd",
+            LoopStageRunMode = LoopStageRunMode.FreeplayUntilRound,
+            ExitAfterRound = 102
+        });
+        state.SetProperty(
+            LoopStageAutoTaskStateKeys.ResolvedScriptContext,
+            new LoopStageAutoTaskScriptContext
+            {
+                Category = BlackBorderMapCategory.Beginner,
+                Target = CreateTarget(),
+                Hero = HeroType.Quincy,
+                FilePath = "loop-stage.btd",
+                FreeplayBoundaryIndex = 1
+            });
+        state.SetProperty(
+            LoopStageAutoTaskStateKeys.RoundProgressTracker,
+            new LoopStageRoundProgressTracker(102));
+        state.SetProperty(
+            LoopStageAutoTaskStateKeys.ScriptRunState,
+            LoopStageScriptRunState.RunningAfterBoundary);
+        state.RecordScriptExecutionResult(CreateSuccessfulScriptResult());
+
+        var completedScriptDecision = await strategy.DecideNextAsync(
+            state,
+            new GameUiSnapshot
+            {
+                State = GameUiStateId.InLevel,
+                StageState = new GameStageStateSnapshot { Round = 101 }
+            });
+
+        Assert.Equal(AutoTaskDecisionKind.Wait, completedScriptDecision.Kind);
+        Assert.Equal(LoopStageScriptRunState.WaitingForTargetRound, GetScriptRunState(state));
+
+        var firstTargetObservation = await strategy.DecideNextAsync(
+            state,
+            new GameUiSnapshot
+            {
+                State = GameUiStateId.InLevel,
+                StageState = new GameStageStateSnapshot { Round = 102 }
+            });
+
+        Assert.Equal(AutoTaskDecisionKind.Wait, firstTargetObservation.Kind);
+        Assert.Equal(LoopStageScriptRunState.WaitingForTargetRound, GetScriptRunState(state));
+
+        var secondTargetObservation = await strategy.DecideNextAsync(
+            state,
+            new GameUiSnapshot
+            {
+                State = GameUiStateId.InLevel,
+                StageState = new GameStageStateSnapshot { Round = 102 }
+            });
+
+        Assert.Equal(AutoTaskDecisionKind.Navigate, secondTargetObservation.Kind);
+        Assert.Equal(LoopStageScriptRunState.WaitingForExit, GetScriptRunState(state));
+    }
+
+    [Fact]
     public async Task FreeplayMode_TreatsStageChallengeWithHintAsBlockingUi()
     {
         var strategy = new LoopStageAutoTaskStrategy();
