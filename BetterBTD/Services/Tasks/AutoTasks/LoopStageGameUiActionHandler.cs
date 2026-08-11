@@ -47,7 +47,7 @@ internal sealed class LoopStageGameUiActionHandler : AutoTaskGameUiActionHandler
             GameUiStateId.StageHint =>
                 Click(step, new WpfPoint(1140, 730), "Dismissed the stage hint."),
             GameUiStateId.StageChallengeWithHint =>
-                DismissStageChallengeWithHint(step),
+                DismissStageChallengeWithHint(step, state),
             GameUiStateId.InLevel => ExecuteInLevel(step, state),
             GameUiStateId.StageSettings => ExecuteStageSettings(step, state),
             GameUiStateId.StageSettlement => Click(step, new WpfPoint(964, 910), "Advanced past the stage settlement screen."),
@@ -321,8 +321,18 @@ internal sealed class LoopStageGameUiActionHandler : AutoTaskGameUiActionHandler
     }
 
     private GameUiActionExecutionResult DismissStageChallengeWithHint(
-        GameUiNavigationStep step)
+        GameUiNavigationStep step,
+        AutoTaskRuntimeState state)
     {
+        if (state.Request.LoopStageRunMode == LoopStageRunMode.FreeplayUntilRound &&
+            state.TryGetProperty<LoopStageScriptRunState>(
+                LoopStageAutoTaskStateKeys.ScriptRunState,
+                out var runState) &&
+            runState == LoopStageScriptRunState.WaitingForFreeplayPrompt)
+        {
+            state.SetProperty(LoopStageAutoTaskStateKeys.FreeplayPromptConfirmed, true);
+        }
+
         return Click(step, new WpfPoint(960, 760), "Dismissed the in-level hint overlay.");
     }
 
