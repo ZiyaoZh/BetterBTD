@@ -440,6 +440,7 @@ public sealed class AutoTaskRunner
                        GameUiStateId.Defeat or
                        GameUiStateId.LevelUp or
                        GameUiStateId.InstaMonkeyReward or
+                       GameUiStateId.StageChallengeWithHint or
                        GameUiStateId.StageHint or
                        GameUiStateId.Reward or
                        GameUiStateId.ChestOpened or

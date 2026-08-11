@@ -101,6 +101,40 @@ public sealed class GameUiDetectionConfigTests
     }
 
     [Fact]
+    public void DefaultStageChallengeWithHintRules_MatchBothObservedLayouts()
+    {
+        var tempDirectory = CreateTempDirectory();
+
+        try
+        {
+            var service = new GameUiDetectionConfigService(
+                Path.Combine(tempDirectory, "game_ui_detection_rules.json"));
+            var config = service.Current;
+            var rules = config.Rules
+                .Where(static item => item.State == GameUiStateId.StageChallengeWithHint)
+                .ToArray();
+
+            Assert.Equal(2, rules.Length);
+
+            using var firstFrame = new Mat(1080, 1920, MatType.CV_8UC3, Scalar.All(0));
+            SetPixel(firstFrame, 780, 380, "#F34A12");
+            SetPixel(firstFrame, 780, 760, "#5388D2");
+            SetPixel(firstFrame, 900, 760, "#62E200");
+            Assert.True(GameUiDetectionRuleEvaluator.IsMatch(firstFrame, config, rules[0]));
+
+            using var secondFrame = new Mat(1080, 1920, MatType.CV_8UC3, Scalar.All(0));
+            SetPixel(secondFrame, 820, 330, "#F24710");
+            SetPixel(secondFrame, 820, 760, "#D2D2D2");
+            SetPixel(secondFrame, 960, 760, "#FFFFFF");
+            Assert.True(GameUiDetectionRuleEvaluator.IsMatch(secondFrame, config, rules[1]));
+        }
+        finally
+        {
+            Directory.Delete(tempDirectory, recursive: true);
+        }
+    }
+
+    [Fact]
     public void ConfigService_ReloadsCustomConfig()
     {
         var tempDirectory = CreateTempDirectory();

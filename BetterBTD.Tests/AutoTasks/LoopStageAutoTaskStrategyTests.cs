@@ -138,6 +138,98 @@ public sealed class LoopStageAutoTaskStrategyTests
         Assert.Equal(AutoTaskPhase.SettlingResult, decision.NextPhase);
     }
 
+    [Fact]
+    public async Task FreeplayMode_TreatsStageChallengeWithHintAsBlockingUi()
+    {
+        var strategy = new LoopStageAutoTaskStrategy();
+        var state = new AutoTaskRuntimeState(new AutoTaskRequest
+        {
+            Kind = AutoTaskKind.LoopStage,
+            StageTarget = CreateTarget(),
+            PreferredScriptPath = "loop-stage.btd",
+            LoopStageRunMode = LoopStageRunMode.FreeplayUntilRound,
+            ExitAfterRound = 102
+        });
+        state.SetProperty(
+            LoopStageAutoTaskStateKeys.ResolvedScriptContext,
+            new LoopStageAutoTaskScriptContext
+            {
+                Category = BlackBorderMapCategory.Beginner,
+                Target = CreateTarget(),
+                Hero = HeroType.Quincy,
+                FilePath = "loop-stage.btd",
+                FreeplayBoundaryIndex = 1
+            });
+        state.SetProperty(
+            LoopStageAutoTaskStateKeys.ScriptRunState,
+            LoopStageScriptRunState.RunningAfterBoundary);
+        state.SetProperty(
+            LoopStageAutoTaskStateKeys.InterruptedUiState,
+            GameUiStateId.StageChallengeWithHint);
+        state.RecordScriptExecutionResult(CreateSuccessfulScriptResult());
+
+        var decision = await strategy.DecideNextAsync(
+            state,
+            new GameUiSnapshot { State = GameUiStateId.StageChallengeWithHint });
+
+        Assert.Equal(AutoTaskDecisionKind.Navigate, decision.Kind);
+        Assert.Equal(LoopStageScriptRunState.WaitingForBlockingUi, GetScriptRunState(state));
+    }
+
+    [Fact]
+    public async Task FreeplayMode_TreatsStageChallengeWithHintAsTheFreeplayTransition()
+    {
+        var scriptPath = CreateScript(
+            ScriptCommandType.Comment,
+            ScriptCommandType.FreeplayBoundary,
+            ScriptCommandType.Comment);
+
+        try
+        {
+            var strategy = new LoopStageAutoTaskStrategy();
+            var state = new AutoTaskRuntimeState(new AutoTaskRequest
+            {
+                Kind = AutoTaskKind.LoopStage,
+                StageTarget = CreateTarget(),
+                PreferredScriptPath = scriptPath,
+                LoopStageRunMode = LoopStageRunMode.FreeplayUntilRound,
+                ExitAfterRound = 102
+            });
+
+            await strategy.DecideNextAsync(
+                state,
+                new GameUiSnapshot { State = GameUiStateId.MainMenu });
+            await strategy.DecideNextAsync(
+                state,
+                new GameUiSnapshot { State = GameUiStateId.InLevel });
+
+            state.SetProperty(
+                LoopStageAutoTaskStateKeys.InterruptedUiState,
+                GameUiStateId.StageSettlement);
+            state.RecordScriptExecutionResult(CreateSuccessfulScriptResult());
+
+            var decision = await strategy.DecideNextAsync(
+                state,
+                new GameUiSnapshot { State = GameUiStateId.StageChallengeWithHint });
+
+            Assert.Equal(AutoTaskDecisionKind.Navigate, decision.Kind);
+            Assert.Equal(LoopStageScriptRunState.WaitingForFreeplayPrompt, GetScriptRunState(state));
+        }
+        finally
+        {
+            DeleteScript(scriptPath);
+        }
+    }
+
+    private static LoopStageScriptRunState GetScriptRunState(AutoTaskRuntimeState state)
+    {
+        return state.TryGetProperty<LoopStageScriptRunState>(
+            LoopStageAutoTaskStateKeys.ScriptRunState,
+            out var runState)
+            ? runState
+            : LoopStageScriptRunState.NotStarted;
+    }
+
     private static string CreateScript(params ScriptCommandType[] commandTypes)
     {
         var directoryPath = Path.Combine(Path.GetTempPath(), "BetterBTD.Tests", Guid.NewGuid().ToString("N"));

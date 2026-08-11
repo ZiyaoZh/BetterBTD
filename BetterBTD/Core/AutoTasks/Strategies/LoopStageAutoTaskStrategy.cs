@@ -480,6 +480,7 @@ public sealed class LoopStageAutoTaskStrategy : IAutoTaskStrategy
         return state is
             GameUiStateId.LevelUp or
             GameUiStateId.InstaMonkeyReward or
+            GameUiStateId.StageChallengeWithHint or
             GameUiStateId.StageHint or
             GameUiStateId.Reward or
             GameUiStateId.ChestOpened or

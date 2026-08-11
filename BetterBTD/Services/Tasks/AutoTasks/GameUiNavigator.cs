@@ -155,7 +155,7 @@ public sealed class GameUiNavigator : IGameUiNavigator
             {
                 ActionKind = GameUiActionKind.ConfirmDialog,
                 Description = "Dismiss the stage challenge hint.",
-                ExpectedNextStates = [GameUiStateId.InLevel]
+                ExpectedNextStates = [GameUiStateId.InLevel, GameUiStateId.FreeplayPrompt]
             },
             GameUiStateId.StageSettlement => new GameUiNavigationStep
             {
@@ -180,7 +180,7 @@ public sealed class GameUiNavigator : IGameUiNavigator
             {
                 ActionKind = GameUiActionKind.ConfirmDialog,
                 Description = "Confirm entering freeplay.",
-                ExpectedNextStates = [GameUiStateId.InLevel]
+                ExpectedNextStates = [GameUiStateId.InLevel, GameUiStateId.StageChallengeWithHint]
             },
             GameUiStateId.Defeat => new GameUiNavigationStep
             {
