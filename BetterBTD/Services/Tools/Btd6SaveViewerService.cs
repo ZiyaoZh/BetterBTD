@@ -12,12 +12,11 @@ namespace BetterBTD.Services.Tools;
 
 public sealed class Btd6SaveViewerService
 {
-    private const int HeaderLength = 44;
+    private const int HeaderPrefixLength = 8;
+    private const int MinimumHeaderPayloadLength = 36;
     private const int PasswordIndexLength = 8;
     private const int SaltLength = 24;
-    private const int DataOffset = HeaderLength + PasswordIndexLength + SaltLength;
-    private const int PlatformSteam = 18;
-    private const int PlatformAppleArcade = 95;
+    private const int AesBlockLength = 16;
     private const int SkuSteam = 1136;
     private const int SkuAppleArcade = 1108;
     private const int Pbkdf2Iterations = 10;
@@ -42,25 +41,40 @@ public sealed class Btd6SaveViewerService
     {
         ArgumentNullException.ThrowIfNull(data);
 
-        if (data.Length < DataOffset + 16)
+        if (data.Length < HeaderPrefixLength)
         {
-            throw new InvalidDataException("File is too small to be a valid BTD6 save.");
+            throw new InvalidDataException("File is too small to contain a BTD6 save header.");
         }
 
-        var version = BinaryPrimitives.ReadUInt32LittleEndian(data.AsSpan(0, sizeof(uint)));
-        if (version != 1)
+        var fileFormatVersion = BinaryPrimitives.ReadUInt32LittleEndian(data.AsSpan(0, sizeof(uint)));
+        var headerPayloadLength = BinaryPrimitives.ReadUInt32LittleEndian(data.AsSpan(4, sizeof(uint)));
+        if (headerPayloadLength < MinimumHeaderPayloadLength)
         {
-            throw new InvalidDataException($"Unexpected file version: {version}.");
+            throw new InvalidDataException(
+                $"Header payload size {headerPayloadLength} is smaller than the required {MinimumHeaderPayloadLength} bytes.");
         }
 
-        var platformId = (int)BinaryPrimitives.ReadUInt32LittleEndian(data.AsSpan(8, sizeof(uint)));
-        var salt = data.AsSpan(HeaderLength + PasswordIndexLength, SaltLength).ToArray();
-        var encrypted = data.AsSpan(DataOffset).ToArray();
-
-        if (encrypted.Length % 16 != 0)
+        var headerEnd = HeaderPrefixLength + (long)headerPayloadLength;
+        var dataOffset = headerEnd + PasswordIndexLength + SaltLength;
+        if (dataOffset > data.Length)
         {
-            throw new InvalidDataException($"Encrypted payload size {encrypted.Length} is not a multiple of 16.");
+            throw new InvalidDataException(
+                $"File is truncated before the encryption metadata ends at byte {dataOffset}.");
         }
+
+        var encryptedLength = data.Length - dataOffset;
+        if (encryptedLength < AesBlockLength || encryptedLength % AesBlockLength != 0)
+        {
+            throw new InvalidDataException(
+                $"Encrypted payload size {encryptedLength} is not a non-empty multiple of {AesBlockLength}.");
+        }
+
+        var headerEndOffset = checked((int)headerEnd);
+        var dataOffsetValue = checked((int)dataOffset);
+        // The first header-payload field is the write counter in both v1 and v2 containers.
+        var saveCount = BinaryPrimitives.ReadUInt32LittleEndian(data.AsSpan(HeaderPrefixLength, sizeof(uint)));
+        var salt = data.AsSpan(headerEndOffset + PasswordIndexLength, SaltLength).ToArray();
+        var encrypted = data.AsSpan(dataOffsetValue).ToArray();
 
         var jsonBytes = DecryptJsonBytes(encrypted, salt);
         var jsonText = DecodeJsonText(jsonBytes);
@@ -72,8 +86,8 @@ public sealed class Btd6SaveViewerService
             FilePath = filePath,
             FileName = string.IsNullOrWhiteSpace(filePath) ? string.Empty : Path.GetFileName(filePath),
             FileSizeBytes = data.Length,
-            PlatformId = platformId,
-            PlatformName = GetPlatformName(platformId),
+            FileFormatVersion = fileFormatVersion,
+            SaveCount = saveCount,
             SavedBySkuId = GetInt(obj, "savedBySkuId"),
             SavedBySkuName = GetSkuName(GetInt(obj, "savedBySkuId")),
             SavedByGameVersion = FormatToken(obj?["savedByGameVersion"]),
@@ -86,16 +100,6 @@ public sealed class Btd6SaveViewerService
             JsonSizeBytes = jsonBytes.Length,
             FormattedJson = root.ToString(Formatting.Indented),
             Root = root
-        };
-    }
-
-    public static string GetPlatformName(int platformId)
-    {
-        return platformId switch
-        {
-            PlatformSteam => "Steam",
-            PlatformAppleArcade => "Apple Arcade",
-            _ => $"Unknown ({platformId})"
         };
     }
 

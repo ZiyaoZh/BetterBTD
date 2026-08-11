@@ -332,8 +332,13 @@ public sealed partial class Btd6SaveViewerWindowViewModel : ObservableObject
     {
         yield return new Btd6SaveSummaryItem
         {
-            Label = _localizationService.T("Tools.SaveViewer.Summary.Platform"),
-            Value = $"{document.PlatformId} ({document.PlatformName})"
+            Label = _localizationService.T("Tools.SaveViewer.Summary.FileFormat"),
+            Value = document.FileFormatVersion.ToString(CultureInfo.CurrentCulture)
+        };
+        yield return new Btd6SaveSummaryItem
+        {
+            Label = _localizationService.T("Tools.SaveViewer.Summary.SaveCount"),
+            Value = document.SaveCount.ToString("N0", CultureInfo.CurrentCulture)
         };
         yield return new Btd6SaveSummaryItem
         {

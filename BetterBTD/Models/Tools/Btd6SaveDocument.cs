@@ -10,9 +10,9 @@ public sealed class Btd6SaveDocument
 
     public required long FileSizeBytes { get; init; }
 
-    public required int PlatformId { get; init; }
+    public required uint FileFormatVersion { get; init; }
 
-    public required string PlatformName { get; init; }
+    public required uint SaveCount { get; init; }
 
     public required int? SavedBySkuId { get; init; }
 
