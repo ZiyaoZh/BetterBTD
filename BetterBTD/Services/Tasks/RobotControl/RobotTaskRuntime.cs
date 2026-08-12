@@ -2,6 +2,7 @@ using BetterBTD.Core.RobotControl;
 using BetterBTD.Core.GameControl;
 using BetterBTD.Models.RobotControl;
 using BetterBTD.Services.Tasks.Input;
+using BetterBTD.Services.ChildSession;
 
 namespace BetterBTD.Services.Tasks.RobotControl;
 
@@ -98,6 +99,7 @@ public sealed class RobotTaskRuntime
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        ChildSessionRuntimeState.EnsurePrimaryCanControl();
 
         var leaseOwnerId = $"robot-task-{Guid.NewGuid():N}";
         if (!_gameControlLeaseCoordinator.TryAcquire(

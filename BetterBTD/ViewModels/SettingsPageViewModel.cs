@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using BetterBTD.Models;
 using BetterBTD.Services;
+using BetterBTD.Services.ChildSession;
 using BetterBTD.Services.Updates;
 using BetterBTD.Views.Windows;
 
@@ -64,6 +65,11 @@ public sealed class SettingsPageViewModel : ObservableObject
         get => _selectedUiLanguage;
         set
         {
+            if (!ChildSessionRuntimeState.CanPersistSharedData)
+            {
+                return;
+            }
+
             if (!SetProperty(ref _selectedUiLanguage, value) || value is null)
             {
                 return;
@@ -79,6 +85,11 @@ public sealed class SettingsPageViewModel : ObservableObject
         get => _selectedGameLanguage;
         set
         {
+            if (!ChildSessionRuntimeState.CanPersistSharedData)
+            {
+                return;
+            }
+
             if (!SetProperty(ref _selectedGameLanguage, value) || value is null)
             {
                 return;
@@ -93,6 +104,11 @@ public sealed class SettingsPageViewModel : ObservableObject
         get => _selectedTheme;
         set
         {
+            if (!ChildSessionRuntimeState.CanPersistSharedData)
+            {
+                return;
+            }
+
             if (!SetProperty(ref _selectedTheme, value) || value is null)
             {
                 return;
@@ -108,6 +124,11 @@ public sealed class SettingsPageViewModel : ObservableObject
         get => _startHotkey;
         set
         {
+            if (!ChildSessionRuntimeState.CanPersistSharedData)
+            {
+                return;
+            }
+
             if (SetProperty(ref _startHotkey, value))
             {
                 SaveCurrentConfiguration();
@@ -120,6 +141,11 @@ public sealed class SettingsPageViewModel : ObservableObject
         get => _stopHotkey;
         set
         {
+            if (!ChildSessionRuntimeState.CanPersistSharedData)
+            {
+                return;
+            }
+
             if (SetProperty(ref _stopHotkey, value))
             {
                 SaveCurrentConfiguration();
@@ -132,6 +158,11 @@ public sealed class SettingsPageViewModel : ObservableObject
         get => _gameStartHotkey;
         set
         {
+            if (!ChildSessionRuntimeState.CanPersistSharedData)
+            {
+                return;
+            }
+
             if (SetProperty(ref _gameStartHotkey, value))
             {
                 SaveCurrentConfiguration();
@@ -144,6 +175,11 @@ public sealed class SettingsPageViewModel : ObservableObject
         get => _gameStopHotkey;
         set
         {
+            if (!ChildSessionRuntimeState.CanPersistSharedData)
+            {
+                return;
+            }
+
             if (SetProperty(ref _gameStopHotkey, value))
             {
                 SaveCurrentConfiguration();
@@ -211,7 +247,7 @@ public sealed class SettingsPageViewModel : ObservableObject
         get => _selectedKeyboardMouseSimulationMode == KeyboardMouseSimulationMode.Standard;
         set
         {
-            if (value)
+            if (value && ChildSessionRuntimeState.CanPersistSharedData)
             {
                 SetKeyboardMouseSimulationMode(KeyboardMouseSimulationMode.Standard);
             }
@@ -223,7 +259,7 @@ public sealed class SettingsPageViewModel : ObservableObject
         get => _selectedKeyboardMouseSimulationMode == KeyboardMouseSimulationMode.Hardware;
         set
         {
-            if (value)
+            if (value && ChildSessionRuntimeState.CanPersistSharedData)
             {
                 SetKeyboardMouseSimulationMode(KeyboardMouseSimulationMode.Hardware);
             }
@@ -252,7 +288,7 @@ public sealed class SettingsPageViewModel : ObservableObject
 
     private void SaveCurrentConfiguration()
     {
-        if (_isRefreshingSelections)
+        if (_isRefreshingSelections || !ChildSessionRuntimeState.CanPersistSharedData)
         {
             return;
         }

@@ -210,5 +210,25 @@
                 </Grid>
             </StackPanel>
         </ui:CardExpander>
+
+        <ui:CardExpander Margin="0,0,0,12" HorizontalAlignment="Stretch" ContentPadding="0" Icon="{ui:SymbolIcon Desktop24}">
+            <ui:CardExpander.Header>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <ui:TextBlock FontWeight="SemiBold" Text="{Binding DesktopCloneTitle}" TextWrapping="Wrap" />
+                        <ui:TextBlock Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}" Text="{Binding DesktopCloneDescription}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Margin="0,0,24,0" Orientation="Horizontal">
+                        <ui:Button Margin="0,0,8,0" Command="{Binding StartDesktopCloneCommand}" Content="{Binding StartDesktopCloneText}" Icon="{ui:SymbolIcon Play24}" />
+                        <ui:Button Command="{Binding LogoffDesktopCloneCommand}" Content="{Binding LogoffDesktopCloneText}" Icon="{ui:SymbolIcon Dismiss24}" />
+                    </StackPanel>
+                </Grid>
+            </ui:CardExpander.Header>
+            <TextBlock Margin="16" Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}" Text="{Binding DesktopCloneStatus}" TextWrapping="Wrap" />
+        </ui:CardExpander>
     </StackPanel>
 </Page>

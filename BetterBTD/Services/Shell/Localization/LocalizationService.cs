@@ -17,6 +17,7 @@ public sealed partial class LocalizationService
             ["zh-CN"] = BuildZhCnResources(),
             ["en-US"] = BuildEnUsResources()
         };
+        AddChildSessionResources(_resources);
     }
 
     public static LocalizationService Instance => InstanceHolder.Value;

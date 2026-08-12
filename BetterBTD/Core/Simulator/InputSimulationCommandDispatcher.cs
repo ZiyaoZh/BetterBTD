@@ -1,5 +1,6 @@
 using BetterBTD.Core.Config;
 using BetterBTD.Models;
+using BetterBTD.Services.ChildSession;
 using BetterBTD.Services;
 using Fischless.WindowsInput;
 using Vanara.PInvoke;
@@ -31,6 +32,7 @@ internal sealed class InputSimulationCommandDispatcher : IInputSimulationCommand
         ArgumentNullException.ThrowIfNull(commands);
 
         var effectiveHardwareMode =
+            !ChildSessionRuntimeState.IsChildSession &&
             KeyboardMouseSimulationModeExtensions.Parse(ConfigurationService.Instance.Current.KeyboardMouseSimulationModeName) == KeyboardMouseSimulationMode.Hardware &&
             _hardwareInputSimulationService.TryEnsureInitialized();
 

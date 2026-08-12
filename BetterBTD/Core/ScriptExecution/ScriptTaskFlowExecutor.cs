@@ -3,6 +3,7 @@ using BetterBTD.Core.ScriptExecution.Runtime;
 using BetterBTD.Services.Tasks.ScriptExecution;
 using BetterBTD.Core.ScriptExecution.Handlers;
 using BetterBTD.Core.GameControl;
+using BetterBTD.Services.ChildSession;
 using System.Linq;
 
 namespace BetterBTD.Core.ScriptExecution;
@@ -113,6 +114,7 @@ public sealed class ScriptTaskFlowExecutor
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(taskFlow);
+        ChildSessionRuntimeState.EnsurePrimaryCanControl();
 
         using var gameControlScope = _gameControlLeaseCoordinator.AcquireOrJoinForScriptExecution();
         using var linkedCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);

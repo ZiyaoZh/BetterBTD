@@ -6,6 +6,7 @@ using System.Reflection;
 using BetterBTD.Core.Config;
 using BetterBTD.Models;
 using BetterBTD.Services;
+using BetterBTD.Services.ChildSession;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -66,6 +67,11 @@ public class KeyBindingsSettingsPageViewModel : ObservableObject
 
     private void ResetDefaultKeyBindings()
     {
+        if (!ChildSessionRuntimeState.CanPersistSharedData)
+        {
+            return;
+        }
+
         _config.TowerPlacement = new TowerPlacementBindings();
         _config.Abilities = new AbilityBindings();
         _config.HeroInventory = new HeroInventoryBindings();
@@ -225,13 +231,19 @@ public class KeyBindingsSettingsPageViewModel : ObservableObject
             return;
         }
 
+        if (!ChildSessionRuntimeState.CanPersistSharedData)
+        {
+            return;
+        }
+
         SetConfigValue(item.ConfigPropertyName, item.KeyValue);
         _configurationService.Save(_configurationService.Current);
     }
 
     private void OnConfigPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(KeyBindingsConfig.GlobalKeyMappingEnabled))
+        if (e.PropertyName == nameof(KeyBindingsConfig.GlobalKeyMappingEnabled) &&
+            ChildSessionRuntimeState.CanPersistSharedData)
         {
             _configurationService.Save(_configurationService.Current);
         }

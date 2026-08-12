@@ -15,12 +15,13 @@ Capture, recognition, persistence, settings, editor, task adapters, and protocol
 
 | Directory | Files |
 | --- | ---: |
+| `BetterBTD/Services/ChildSession` | 7 |
 | `BetterBTD/Services/Diagnostics` | 2 |
 | `BetterBTD/Services/Editor` | 3 |
 | `BetterBTD/Services/MyScripts` | 9 |
 | `BetterBTD/Services/Settings` | 3 |
 | `BetterBTD/Services/Shared` | 3 |
-| `BetterBTD/Services/Shell/Localization` | 13 |
+| `BetterBTD/Services/Shell/Localization` | 14 |
 | `BetterBTD/Services/Start` | 1 |
 | `BetterBTD/Services/Start/Capture` | 4 |
 | `BetterBTD/Services/Tasks/AutoTasks` | 17 |
@@ -35,6 +36,18 @@ Capture, recognition, persistence, settings, editor, task adapters, and protocol
 ## File Inventory
 
 Paths are relative to the repository root. Open the linked file and verify current behavior before editing.
+
+### `BetterBTD/Services/ChildSession`
+
+| File | Description |
+| --- | --- |
+| [ChildSessionConnectionFailedEventArgs.cs](../../../../../BetterBTD/Services/ChildSession/ChildSessionConnectionFailedEventArgs.cs) | Application services and infrastructure; primary symbols: ChildSessionConnectionFailedEventArgs |
+| [ChildSessionControlChannel.cs](../../../../../BetterBTD/Services/ChildSession/ChildSessionControlChannel.cs) | Application services and infrastructure; primary symbols: ChildSessionControlServer, ChildSessionControlClient |
+| [ChildSessionNativeMethods.cs](../../../../../BetterBTD/Services/ChildSession/ChildSessionNativeMethods.cs) | Application services and infrastructure; primary symbols: ChildSessionNativeMethods |
+| [ChildSessionProcessLauncher.cs](../../../../../BetterBTD/Services/ChildSession/ChildSessionProcessLauncher.cs) | Application services and infrastructure; primary symbols: ChildSessionProcessLauncher, ProcessLaunchInfo |
+| [ChildSessionRuntimeState.cs](../../../../../BetterBTD/Services/ChildSession/ChildSessionRuntimeState.cs) | Application services and infrastructure; primary symbols: ChildSessionRuntimeState |
+| [ChildSessionService.cs](../../../../../BetterBTD/Services/ChildSession/ChildSessionService.cs) | Application services and infrastructure; primary symbols: ChildSessionService |
+| [InstanceLaunchOptions.cs](../../../../../BetterBTD/Services/ChildSession/InstanceLaunchOptions.cs) | Application services and infrastructure; primary symbols: BetterBtdInstanceRole, InstanceLaunchOptions |
 
 ### `BetterBTD/Services/Diagnostics`
 
@@ -87,6 +100,7 @@ Paths are relative to the repository root. Open the linked file and verify curre
 | --- | --- |
 | [LocalizationService.cs](../../../../../BetterBTD/Services/Shell/Localization/LocalizationService.cs) | Localization resources and display text; primary symbols: LocalizationService |
 | [LocalizationService.Resources.CaptureTest.cs](../../../../../BetterBTD/Services/Shell/Localization/LocalizationService.Resources.CaptureTest.cs) | Localization resources and display text; primary symbols: LocalizationService |
+| [LocalizationService.Resources.ChildSession.cs](../../../../../BetterBTD/Services/Shell/Localization/LocalizationService.Resources.ChildSession.cs) | Localization resources and display text; primary symbols: LocalizationService |
 | [LocalizationService.Resources.cs](../../../../../BetterBTD/Services/Shell/Localization/LocalizationService.Resources.cs) | Localization resources and display text; primary symbols: LocalizationService |
 | [LocalizationService.Resources.Editor.cs](../../../../../BetterBTD/Services/Shell/Localization/LocalizationService.Resources.Editor.cs) | Localization resources and display text; primary symbols: LocalizationService |
 | [LocalizationService.Resources.Editor.PlaceMonkey.cs](../../../../../BetterBTD/Services/Shell/Localization/LocalizationService.Resources.Editor.PlaceMonkey.cs) | Localization resources and display text; primary symbols: LocalizationService |

@@ -6,6 +6,7 @@
 
 - [开发环境、构建与发布](development.md)
 - [项目架构](architecture.md)
+- [桌面分身](child-session.md)
 - [脚本文件格式](script-file-format.md)
 - [机器人控制 HTTP 协议](robot-control-http-api.md)
 - [BetterBTD Test API](test-api.md)

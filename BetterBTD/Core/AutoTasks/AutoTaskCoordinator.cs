@@ -1,6 +1,7 @@
 using BetterBTD.Models.AutoTasks;
 using BetterBTD.Core.GameControl;
 using BetterBTD.Services.Tasks.Input;
+using BetterBTD.Services.ChildSession;
 
 namespace BetterBTD.Core.AutoTasks;
 
@@ -91,6 +92,7 @@ public sealed class AutoTaskCoordinator
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
+        ChildSessionRuntimeState.EnsurePrimaryCanControl();
 
         var leaseOwnerId = $"auto-task-{Guid.NewGuid():N}";
         if (!_gameControlLeaseCoordinator.TryAcquire(

@@ -22,6 +22,11 @@ public sealed partial class LocalizationService
         ["Nav.Tools.Description"] = "计算器与辅助面板",
         ["Nav.Settings.Title"] = "选项设置",
         ["Nav.Settings.Description"] = "设置中心",
+        ["ChildSession.Reconnect"] = "重新连接",
+        ["ChildSession.Hide"] = "隐藏",
+        ["ChildSession.Logoff"] = "注销分身",
+        ["ChildSession.Mute"] = "静音",
+        ["ChildSession.Unmute"] = "取消静音",
 
         ["Header.Start.Title"] = "开始页面",
         ["Header.Start.Subtitle"] = "快速启动游戏与截图工具",
@@ -46,6 +51,11 @@ public sealed partial class LocalizationService
         ["Nav.Tools.Description"] = "Calculators and utility panels",
         ["Nav.Settings.Title"] = "Options",
         ["Nav.Settings.Description"] = "Settings center",
+        ["ChildSession.Reconnect"] = "Reconnect",
+        ["ChildSession.Hide"] = "Hide",
+        ["ChildSession.Logoff"] = "Log Off Clone",
+        ["ChildSession.Mute"] = "Mute",
+        ["ChildSession.Unmute"] = "Unmute",
 
         ["Header.Start.Title"] = "Start",
         ["Header.Start.Subtitle"] = "Quick launch for game and capture utility",

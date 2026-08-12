@@ -1,6 +1,7 @@
 using System.IO;
 using System.Text;
 using BetterBTD.Helpers;
+using BetterBTD.Services.ChildSession;
 
 namespace BetterBTD.Services.Diagnostics;
 
@@ -93,6 +94,7 @@ internal static class DiagnosticsLogFilePathFactory
         var logDirectory = UserDataPathHelper.ResolveUserDataDirectory(
             "Logs",
             logGroup.Trim(),
+            ChildSessionRuntimeState.LogSessionDirectoryName,
             DateTime.Now.ToString("yyyyMMdd"));
         var safeSessionName = SanitizeFileName(sessionName);
         var fileName = $"{DateTime.Now:HHmmss_fff}_{safeSessionName}.log";

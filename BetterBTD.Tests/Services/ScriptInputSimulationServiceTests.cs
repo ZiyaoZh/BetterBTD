@@ -6,6 +6,7 @@ using BetterBTD.Core.Simulator;
 using BetterBTD.Helpers;
 using BetterBTD.Models;
 using BetterBTD.Services;
+using BetterBTD.Services.ChildSession;
 using BetterBTD.Tests.TestDoubles;
 using InputMouseButton = Fischless.WindowsInput.MouseButton;
 
@@ -217,6 +218,31 @@ public sealed class ScriptInputSimulationServiceTests
                 Assert.Equal(InputSimulationCommandType.MouseButtonUp, command.Type);
                 Assert.Equal(InputMouseButton.LeftButton, command.MouseButton);
             });
+    }
+
+    [Fact]
+    public void InputIsBlockedWhenPrimaryChildSessionIsActive()
+    {
+        try
+        {
+            ChildSessionRuntimeState.Initialize(new InstanceLaunchOptions(
+                BetterBtdInstanceRole.Primary,
+                null,
+                null));
+            ChildSessionRuntimeState.SetPrimaryControlBlocked(true);
+            var dispatcher = new RecordingInputSimulationCommandDispatcher();
+            var service = new ScriptInputSimulationService(CreateEnvironment(), dispatcher);
+
+            Assert.Throws<InvalidOperationException>(() => service.PressKey(KeyId.U));
+            Assert.Empty(dispatcher.Commands);
+        }
+        finally
+        {
+            ChildSessionRuntimeState.Initialize(new InstanceLaunchOptions(
+                BetterBtdInstanceRole.Primary,
+                null,
+                null));
+        }
     }
 
     private static FakeScriptInputSimulationEnvironment CreateEnvironment(

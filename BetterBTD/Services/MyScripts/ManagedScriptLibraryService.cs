@@ -6,6 +6,7 @@ using BetterBTD.Models.AutoTasks;
 using BetterBTD.Models.GameElements;
 using BetterBTD.Models.MyScripts;
 using BetterBTD.Models.ScriptEditor;
+using BetterBTD.Services.ChildSession;
 
 namespace BetterBTD.Services.MyScripts;
 
@@ -76,6 +77,7 @@ public sealed class ManagedScriptLibraryService
 
     public string EnsureTaskBindingTemplate(AutoTaskKind taskKind)
     {
+        ChildSessionRuntimeState.EnsureSharedDataWritable();
         if (!TryGetDedicatedBindingFilePath(taskKind, out var filePath))
         {
             throw new InvalidOperationException($"Task kind '{taskKind}' does not use a dedicated binding file.");
@@ -105,9 +107,18 @@ public sealed class ManagedScriptLibraryService
         lock (_syncRoot)
         {
             var document = LoadManifest();
-            MigrateDedicatedBindings(document);
+            var canPersist = !ChildSessionRuntimeState.IsChildSession &&
+                             !ChildSessionRuntimeState.PrimaryControlBlocked;
+            if (canPersist)
+            {
+                MigrateDedicatedBindings(document);
+            }
+
             RefreshCachedMetadata(document, progress);
-            SaveManifest(document);
+            if (canPersist)
+            {
+                SaveManifest(document);
+            }
             return BuildSnapshot(document);
         }
     }
@@ -115,6 +126,7 @@ public sealed class ManagedScriptLibraryService
     public ManagedScriptAssetEntry ImportScript(string sourceFilePath)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sourceFilePath);
+        ChildSessionRuntimeState.EnsureSharedDataWritable();
 
         lock (_syncRoot)
         {
@@ -173,6 +185,7 @@ public sealed class ManagedScriptLibraryService
         IProgress<int>? progress = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sourceFilePath);
+        ChildSessionRuntimeState.EnsureSharedDataWritable();
 
         lock (_syncRoot)
         {
@@ -270,6 +283,7 @@ public sealed class ManagedScriptLibraryService
         string? displayName = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sourceFilePath);
+        ChildSessionRuntimeState.EnsureSharedDataWritable();
 
         lock (_syncRoot)
         {
@@ -370,6 +384,7 @@ public sealed class ManagedScriptLibraryService
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(scriptId);
         ArgumentException.ThrowIfNullOrWhiteSpace(targetFilePath);
+        ChildSessionRuntimeState.EnsureSharedDataWritable();
 
         lock (_syncRoot)
         {
@@ -397,6 +412,7 @@ public sealed class ManagedScriptLibraryService
     {
         ArgumentNullException.ThrowIfNull(scriptIds);
         ArgumentException.ThrowIfNullOrWhiteSpace(targetDirectoryPath);
+        ChildSessionRuntimeState.EnsureSharedDataWritable();
 
         var requestedScriptIds = scriptIds
             .Where(scriptId => !string.IsNullOrWhiteSpace(scriptId))
@@ -479,6 +495,7 @@ public sealed class ManagedScriptLibraryService
     public bool RemoveScript(string scriptId)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(scriptId);
+        ChildSessionRuntimeState.EnsureSharedDataWritable();
 
         return RemoveScripts([scriptId]) > 0;
     }
@@ -486,6 +503,7 @@ public sealed class ManagedScriptLibraryService
     public int RemoveScripts(IEnumerable<string> scriptIds)
     {
         ArgumentNullException.ThrowIfNull(scriptIds);
+        ChildSessionRuntimeState.EnsureSharedDataWritable();
 
         var requestedScriptIds = scriptIds
             .Where(scriptId => !string.IsNullOrWhiteSpace(scriptId))
@@ -532,6 +550,7 @@ public sealed class ManagedScriptLibraryService
     public void SetBinding(string slotId, string? scriptId)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(slotId);
+        ChildSessionRuntimeState.EnsureSharedDataWritable();
 
         lock (_syncRoot)
         {
@@ -630,7 +649,10 @@ public sealed class ManagedScriptLibraryService
         lock (_syncRoot)
         {
             var document = LoadManifest();
-            MigrateDedicatedBindings(document);
+            if (ChildSessionRuntimeState.CanPersistSharedData)
+            {
+                MigrateDedicatedBindings(document);
+            }
             var record = FindRecordByStoredFilePath(document, storedFilePath);
             if (record is null)
             {
@@ -650,7 +672,10 @@ public sealed class ManagedScriptLibraryService
         lock (_syncRoot)
         {
             var document = LoadManifest();
-            MigrateDedicatedBindings(document);
+            if (ChildSessionRuntimeState.CanPersistSharedData)
+            {
+                MigrateDedicatedBindings(document);
+            }
             var bindings = LoadCurrentBindings(document);
             var binding = bindings.FirstOrDefault(x => string.Equals(x.SlotId, slotId, StringComparison.OrdinalIgnoreCase));
             if (binding is null || string.IsNullOrWhiteSpace(binding.ScriptId))
@@ -676,7 +701,7 @@ public sealed class ManagedScriptLibraryService
 
     private ManagedScriptLibraryDocument LoadManifest()
     {
-        EnsureStorage();
+        EnsureStorageForRead();
 
         if (!File.Exists(_manifestFilePath))
         {
@@ -727,7 +752,7 @@ public sealed class ManagedScriptLibraryService
 
     private ManagedScriptTaskBindingDocument LoadTaskBindingDocument(string filePath)
     {
-        EnsureStorage();
+        EnsureStorageForRead();
 
         if (!File.Exists(filePath))
         {
@@ -1012,6 +1037,14 @@ public sealed class ManagedScriptLibraryService
         Directory.CreateDirectory(_rootDirectory);
         Directory.CreateDirectory(_assetsDirectory);
         Directory.CreateDirectory(_bindingsDirectory);
+    }
+
+    private void EnsureStorageForRead()
+    {
+        if (ChildSessionRuntimeState.CanPersistSharedData)
+        {
+            EnsureStorage();
+        }
     }
 
     private void RenameRecordScriptId(

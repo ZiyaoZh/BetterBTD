@@ -11,6 +11,7 @@ using BetterBTD.Services.Start;
 using BetterBTD.Views.Windows;
 using Fischless.GameCapture.BitBlt;
 using Microsoft.Win32;
+using BetterBTD.Services.ChildSession;
 
 namespace BetterBTD.ViewModels;
 
@@ -25,6 +26,7 @@ public sealed class StartPageViewModel : ObservableObject
     private readonly GameLaunchService _gameLaunchService;
     private readonly ConfigurationService _configurationService;
     private readonly AppDialogService _appDialogService;
+    private readonly ChildSessionService? _childSessionService;
 
     private bool _isCapturerRunning;
     private string _selectedCaptureMode = nameof(Fischless.GameCapture.CaptureModes.WindowsGraphicsCapture);
@@ -42,9 +44,14 @@ public sealed class StartPageViewModel : ObservableObject
         _gameLaunchService = GameLaunchService.Instance;
         _configurationService = ConfigurationService.Instance;
         _appDialogService = AppDialogService.Instance;
+        _childSessionService = ChildSessionService.Current;
 
         _localizationService.LanguageChanged += (_, _) => RaiseLocalizedProperties();
         _gameCaptureService.RunningStateChanged += OnGameCaptureRunningStateChanged;
+        if (_childSessionService is not null)
+        {
+            _childSessionService.StateChanged += OnChildSessionStateChanged;
+        }
 
         CaptureModes = new ObservableCollection<string>(_gameCaptureService.AvailableCaptureModes);
 
@@ -57,6 +64,8 @@ public sealed class StartPageViewModel : ObservableObject
         ManualPickWindowCommand = new RelayCommand(ManualPickWindow);
         OpenDisplayAdvancedGraphicsSettingsCommand = new RelayCommand(OpenDisplayAdvancedGraphicsSettings);
         SelectInstallPathCommand = new RelayCommand(SelectInstallPath);
+        StartDesktopCloneCommand = new AsyncRelayCommand(StartDesktopCloneAsync);
+        LogoffDesktopCloneCommand = new AsyncRelayCommand(LogoffDesktopCloneAsync);
 
         LoadConfiguration();
         IsCapturerRunning = _gameCaptureService.IsRunning;
@@ -73,6 +82,8 @@ public sealed class StartPageViewModel : ObservableObject
     public IRelayCommand ManualPickWindowCommand { get; }
     public IRelayCommand OpenDisplayAdvancedGraphicsSettingsCommand { get; }
     public IRelayCommand SelectInstallPathCommand { get; }
+    public IAsyncRelayCommand StartDesktopCloneCommand { get; }
+    public IAsyncRelayCommand LogoffDesktopCloneCommand { get; }
 
     public bool IsCapturerRunning
     {
@@ -208,6 +219,11 @@ public sealed class StartPageViewModel : ObservableObject
         : InstallPath;
     public string BrowseText => _localizationService.T("Start.Browse");
     public string SelectInstallPathDialogTitle => _localizationService.T("Start.SelectInstallPathDialogTitle");
+    public string DesktopCloneTitle => _localizationService.T("Start.DesktopCloneTitle");
+    public string DesktopCloneDescription => _localizationService.T("Start.DesktopCloneDescription");
+    public string StartDesktopCloneText => _localizationService.T("Start.StartDesktopClone");
+    public string LogoffDesktopCloneText => _localizationService.T("Start.LogoffDesktopClone");
+    public string DesktopCloneStatus => _childSessionService?.StatusText ?? _localizationService.T("Start.DesktopCloneUnavailable");
 
     private void OpenTutorial()
     {
@@ -222,6 +238,47 @@ public sealed class StartPageViewModel : ObservableObject
             FileName = tutorialUrl,
             UseShellExecute = true
         });
+    }
+
+    private async Task StartDesktopCloneAsync()
+    {
+        if (_childSessionService is null || !_childSessionService.IsPrimary)
+        {
+            return;
+        }
+
+        try
+        {
+            await _childSessionService.StartAsync();
+            OnPropertyChanged(nameof(DesktopCloneStatus));
+        }
+        catch (Exception ex)
+        {
+            ShowErrorDialog(_localizationService.T("Start.DesktopCloneStartFailed"), ex.GetBaseException().Message);
+        }
+    }
+
+    private void OnChildSessionStateChanged(object? sender, EventArgs e)
+    {
+        OnPropertyChanged(nameof(DesktopCloneStatus));
+    }
+
+    private async Task LogoffDesktopCloneAsync()
+    {
+        if (_childSessionService is null || !_childSessionService.IsPrimary)
+        {
+            return;
+        }
+
+        try
+        {
+            await _childSessionService.LogoffAndHideAsync();
+            OnPropertyChanged(nameof(DesktopCloneStatus));
+        }
+        catch (Exception ex)
+        {
+            ShowErrorDialog(_localizationService.T("Start.DesktopCloneLogoffFailed"), ex.GetBaseException().Message);
+        }
     }
 
     private async Task StartCaptureAsync()
@@ -414,7 +471,7 @@ public sealed class StartPageViewModel : ObservableObject
 
     private void PersistConfiguration(Action<AppConfiguration> updateConfiguration)
     {
-        if (_isLoadingConfiguration)
+        if (_isLoadingConfiguration || !ChildSessionRuntimeState.CanPersistSharedData)
         {
             return;
         }
@@ -510,5 +567,10 @@ public sealed class StartPageViewModel : ObservableObject
         OnPropertyChanged(nameof(InstallPathDisplayText));
         OnPropertyChanged(nameof(BrowseText));
         OnPropertyChanged(nameof(SelectInstallPathDialogTitle));
+        OnPropertyChanged(nameof(DesktopCloneTitle));
+        OnPropertyChanged(nameof(DesktopCloneDescription));
+        OnPropertyChanged(nameof(StartDesktopCloneText));
+        OnPropertyChanged(nameof(LogoffDesktopCloneText));
+        OnPropertyChanged(nameof(DesktopCloneStatus));
     }
 }

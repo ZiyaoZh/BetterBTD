@@ -19,6 +19,8 @@ using UiFluentWindow = Wpf.Ui.Controls.FluentWindow;
 using WpfPoint = System.Windows.Point;
 using WpfRect = System.Windows.Rect;
 using Size = OpenCvSharp.Size;
+using IoPath = System.IO.Path;
+using Path = System.Windows.Shapes.Path;
 
 namespace BetterBTD.Views.Windows;
 

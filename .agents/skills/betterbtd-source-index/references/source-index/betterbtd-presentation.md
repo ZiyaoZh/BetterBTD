@@ -14,9 +14,10 @@ WPF pages, windows, controls, ViewModels, and presentation support.
 
 | Directory | Files |
 | --- | ---: |
-| `BetterBTD/ViewModels` | 13 |
+| `BetterBTD/ViewModels` | 14 |
 | `BetterBTD/Views/Behavior` | 1 |
 | `BetterBTD/Views/Controls` | 4 |
+| `BetterBTD/Views/Controls/ChildSession` | 1 |
 | `BetterBTD/Views/Controls/Draggable` | 7 |
 | `BetterBTD/Views/Controls/Draggable/Adorners` | 5 |
 | `BetterBTD/Views/Controls/Drawer` | 3 |
@@ -28,7 +29,7 @@ WPF pages, windows, controls, ViewModels, and presentation support.
 | `BetterBTD/Views/Controls/WpfUi` | 1 |
 | `BetterBTD/Views/Converters` | 11 |
 | `BetterBTD/Views/Pages` | 12 |
-| `BetterBTD/Views/Windows` | 22 |
+| `BetterBTD/Views/Windows` | 24 |
 | `BetterBTD/Views/Windows/Overlay` | 6 |
 
 ## File Inventory
@@ -42,6 +43,7 @@ Paths are relative to the repository root. Open the linked file and verify curre
 | [AutoTasksPageViewModel.cs](../../../../../BetterBTD/ViewModels/AutoTasksPageViewModel.cs) | Page, window, and tool binding state and commands; primary symbols: AutoTasksPageViewModel |
 | [Btd6SaveJsonNodeViewModel.cs](../../../../../BetterBTD/ViewModels/Btd6SaveJsonNodeViewModel.cs) | Page, window, and tool binding state and commands; primary symbols: Btd6SaveJsonNodeViewModel, Btd6SaveSearchResultViewModel |
 | [Btd6SaveViewerWindowViewModel.cs](../../../../../BetterBTD/ViewModels/Btd6SaveViewerWindowViewModel.cs) | Page, window, and tool binding state and commands; primary symbols: Btd6SaveViewerWindowViewModel |
+| [ChildSessionWindowViewModel.cs](../../../../../BetterBTD/ViewModels/ChildSessionWindowViewModel.cs) | Page, window, and tool binding state and commands; primary symbols: ChildSessionWindowViewModel |
 | [KeyBindingsPageViewModel.cs](../../../../../BetterBTD/ViewModels/KeyBindingsPageViewModel.cs) | Page, window, and tool binding state and commands; primary symbols: KeyBindingsSettingsPageViewModel, KeyBindingsPageViewModel |
 | [MainWindowViewModel.cs](../../../../../BetterBTD/ViewModels/MainWindowViewModel.cs) | Page, window, and tool binding state and commands; primary symbols: MainWindowViewModel |
 | [MyScriptsPageViewModel.cs](../../../../../BetterBTD/ViewModels/MyScriptsPageViewModel.cs) | Page, window, and tool binding state and commands; primary symbols: MyScriptsPageViewModel, ManagedScriptListItemViewModel |
@@ -67,6 +69,12 @@ Paths are relative to the repository root. Open the linked file and verify curre
 | [CascadeSelector.xaml.cs](../../../../../BetterBTD/Views/Controls/CascadeSelector.xaml.cs) | Reusable WPF controls, behaviors, converters, and styles; primary symbols: CascadeSelector |
 | [TwoStateButton.cs](../../../../../BetterBTD/Views/Controls/TwoStateButton.cs) | Reusable WPF controls, behaviors, converters, and styles; primary symbols: TwoStateButton |
 | [WpfUiWindow.cs](../../../../../BetterBTD/Views/Controls/WpfUiWindow.cs) | Reusable WPF controls, behaviors, converters, and styles; primary symbols: WpfUiWindow |
+
+### `BetterBTD/Views/Controls/ChildSession`
+
+| File | Description |
+| --- | --- |
+| [RdpActiveXHost.cs](../../../../../BetterBTD/Views/Controls/ChildSession/RdpActiveXHost.cs) | Reusable WPF controls, behaviors, converters, and styles; primary symbols: RdpActiveXHost, IMsTscAxEvents, RdpEventSink, AutoReconnectContinueState, RemoteProgramResult |
 
 ### `BetterBTD/Views/Controls/Draggable`
 
@@ -187,6 +195,8 @@ Paths are relative to the repository root. Open the linked file and verify curre
 | [Btd6SaveViewerWindow.xaml.cs](../../../../../BetterBTD/Views/Windows/Btd6SaveViewerWindow.xaml.cs) | WPF windows, dialogs, and overlays; primary symbols: Btd6SaveViewerWindow |
 | [CaptureTestWindow.xaml](../../../../../BetterBTD/Views/Windows/CaptureTestWindow.xaml) | WPF windows, dialogs, and overlays; primary symbols: BetterBTD.Views.Windows.CaptureTestWindow, FluentWindow |
 | [CaptureTestWindow.xaml.cs](../../../../../BetterBTD/Views/Windows/CaptureTestWindow.xaml.cs) | WPF windows, dialogs, and overlays; primary symbols: CaptureTestWindow, PointGroupOverlayVisual, MapBadgeOverlayVisual |
+| [ChildSessionWindow.xaml](../../../../../BetterBTD/Views/Windows/ChildSessionWindow.xaml) | WPF windows, dialogs, and overlays; primary symbols: BetterBTD.Views.Windows.ChildSessionWindow, Window |
+| [ChildSessionWindow.xaml.cs](../../../../../BetterBTD/Views/Windows/ChildSessionWindow.xaml.cs) | WPF windows, dialogs, and overlays; primary symbols: ChildSessionWindow |
 | [ImportProgressWindow.xaml](../../../../../BetterBTD/Views/Windows/ImportProgressWindow.xaml) | WPF windows, dialogs, and overlays; primary symbols: BetterBTD.Views.Windows.ImportProgressWindow, FluentWindow |
 | [ImportProgressWindow.xaml.cs](../../../../../BetterBTD/Views/Windows/ImportProgressWindow.xaml.cs) | WPF windows, dialogs, and overlays; primary symbols: ImportProgressWindow |
 | [KeyBindingsWindow.xaml](../../../../../BetterBTD/Views/Windows/KeyBindingsWindow.xaml) | WPF windows, dialogs, and overlays; primary symbols: BetterBTD.Views.Windows.KeyBindingsWindow, FluentWindow |

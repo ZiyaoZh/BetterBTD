@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using BetterBTD.Helpers;
 using BetterBTD.Models.AutoTasks;
+using BetterBTD.Services.ChildSession;
 
 namespace BetterBTD.Services.Tasks.AutoTasks;
 
@@ -61,6 +62,12 @@ public sealed class GameUiDetectionConfigService
     public void Save(GameUiDetectionConfig config)
     {
         ArgumentNullException.ThrowIfNull(config);
+        ChildSessionRuntimeState.EnsurePrimaryCanControl();
+
+        if (ChildSessionRuntimeState.IsChildSession)
+        {
+            return;
+        }
 
         var normalized = Normalize(config);
         var directoryPath = Path.GetDirectoryName(_configFilePath);
@@ -81,7 +88,7 @@ public sealed class GameUiDetectionConfigService
     private GameUiDetectionConfig LoadOrCreate()
     {
         var directoryPath = Path.GetDirectoryName(_configFilePath);
-        if (!string.IsNullOrWhiteSpace(directoryPath))
+        if (ChildSessionRuntimeState.CanPersistSharedData && !string.IsNullOrWhiteSpace(directoryPath))
         {
             Directory.CreateDirectory(directoryPath);
         }
@@ -117,6 +124,11 @@ public sealed class GameUiDetectionConfigService
 
     private void Persist(GameUiDetectionConfig config)
     {
+        if (!ChildSessionRuntimeState.CanPersistSharedData)
+        {
+            return;
+        }
+
         var json = JsonSerializer.Serialize(config, JsonOptions);
         File.WriteAllText(_configFilePath, json);
     }

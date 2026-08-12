@@ -1,5 +1,6 @@
 using System.Text.Json;
 using BetterBTD.Models.AutoTasks;
+using BetterBTD.Services.ChildSession;
 using BetterBTD.Services.Tasks.AutoTasks;
 using OpenCvSharp;
 
@@ -71,6 +72,36 @@ public sealed class GameUiDetectionConfigTests
         var isMatch = GameUiDetectionRuleEvaluator.IsMatch(frame, config, config.Rules[0]);
 
         Assert.True(isMatch);
+    }
+
+    [Fact]
+    public void ConfigService_ChildSessionReadsDefaultsWithoutCreatingOrUpdatingFile()
+    {
+        var tempDirectory = CreateTempDirectory();
+
+        try
+        {
+            var configFilePath = Path.Combine(tempDirectory, "nested", "game_ui_detection_rules.json");
+            ChildSessionRuntimeState.Initialize(new InstanceLaunchOptions(
+                BetterBtdInstanceRole.ChildSession,
+                42,
+                "pipe-name"));
+            var service = new GameUiDetectionConfigService(configFilePath);
+
+            var config = service.Current;
+
+            Assert.NotEmpty(config.Rules);
+            Assert.False(File.Exists(configFilePath));
+            Assert.False(Directory.Exists(Path.GetDirectoryName(configFilePath)));
+        }
+        finally
+        {
+            ChildSessionRuntimeState.Initialize(new InstanceLaunchOptions(
+                BetterBtdInstanceRole.Primary,
+                null,
+                null));
+            Directory.Delete(tempDirectory, recursive: true);
+        }
     }
 
     [Fact]

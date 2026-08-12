@@ -6,6 +6,7 @@ using BetterBTD.Core.Config;
 using BetterBTD.Core.Simulator;
 using BetterBTD.Helpers;
 using BetterBTD.Models;
+using BetterBTD.Services.ChildSession;
 using Fischless.WindowsInput;
 using InputMouseButton = Fischless.WindowsInput.MouseButton;
 
@@ -79,6 +80,7 @@ public sealed class ScriptInputSimulationService
 
     public void MoveMouseToScriptCoordinate(Point scriptCoordinate)
     {
+        EnsureInputAllowed();
         var windowInfo = GetRequiredTargetWindowInfo();
         MoveMouseToScreenCoordinateCore(ConvertScriptToScreenCoordinate(scriptCoordinate, windowInfo));
     }
@@ -90,11 +92,13 @@ public sealed class ScriptInputSimulationService
 
     public void MoveMouseToScreenCoordinate(Point screenCoordinate)
     {
+        EnsureInputAllowed();
         MoveMouseToScreenCoordinateCore(screenCoordinate);
     }
 
     public void MoveMouseBy(int deltaX, int deltaY)
     {
+        EnsureInputAllowed();
         _dispatcher.Dispatch(InputSimulationCommandBuilder.BuildMoveMouseBy(deltaX, deltaY));
     }
 
@@ -134,6 +138,7 @@ public sealed class ScriptInputSimulationService
         int clickCount = 1,
         int holdMilliseconds = DefaultClickHoldMilliseconds)
     {
+        EnsureInputAllowed();
         MoveMouseToScreenCoordinateCore(screenCoordinate);
 
         if (DefaultMouseMoveSettleMilliseconds > 0)
@@ -149,16 +154,19 @@ public sealed class ScriptInputSimulationService
         int clickCount = 1,
         int holdMilliseconds = DefaultClickHoldMilliseconds)
     {
+        EnsureInputAllowed();
         ClickMouseCore(button, clickCount, holdMilliseconds);
     }
 
     public void ScrollMouseWheelVertical(int delta)
     {
+        EnsureInputAllowed();
         Simulation.SendInput.Mouse.VerticalScroll(delta);
     }
 
     public void MouseDown(InputMouseButton button = InputMouseButton.LeftButton)
     {
+        EnsureInputAllowed();
         _dispatcher.Dispatch(
         [
             new InputSimulationCommand
@@ -171,6 +179,7 @@ public sealed class ScriptInputSimulationService
 
     public void MouseUp(InputMouseButton button = InputMouseButton.LeftButton)
     {
+        EnsureInputAllowed();
         _dispatcher.Dispatch(
         [
             new InputSimulationCommand
@@ -183,38 +192,45 @@ public sealed class ScriptInputSimulationService
 
     public void PressKey(KeyId key)
     {
+        EnsureInputAllowed();
         _dispatcher.Dispatch(InputSimulationCommandBuilder.BuildSimulateKey(key));
     }
 
     public void KeyDown(KeyId key)
     {
+        EnsureInputAllowed();
         _dispatcher.Dispatch(InputSimulationCommandBuilder.BuildSimulateKey(key, Core.Simulator.Extensions.KeyType.KeyDown));
     }
 
     public void KeyUp(KeyId key)
     {
+        EnsureInputAllowed();
         _dispatcher.Dispatch(InputSimulationCommandBuilder.BuildSimulateKey(key, Core.Simulator.Extensions.KeyType.KeyUp));
     }
 
     public void HoldKey(KeyId key)
     {
+        EnsureInputAllowed();
         _dispatcher.Dispatch(InputSimulationCommandBuilder.BuildSimulateKey(key, Core.Simulator.Extensions.KeyType.Hold));
     }
 
     public void PressHotkey(HotkeyBinding hotkey)
     {
+        EnsureInputAllowed();
         ArgumentNullException.ThrowIfNull(hotkey);
         _dispatcher.Dispatch(InputSimulationCommandBuilder.BuildSimulateHotkey(hotkey));
     }
 
     public void PressCombination(ModifierKeys modifiers, params KeyId[] keys)
     {
+        EnsureInputAllowed();
         ArgumentNullException.ThrowIfNull(keys);
         _dispatcher.Dispatch(InputSimulationCommandBuilder.BuildSimulateCombination(modifiers, keys));
     }
 
     public void PressCombination(IEnumerable<KeyId> modifierKeys, IEnumerable<KeyId> keys)
     {
+        EnsureInputAllowed();
         ArgumentNullException.ThrowIfNull(modifierKeys);
         ArgumentNullException.ThrowIfNull(keys);
         _dispatcher.Dispatch(InputSimulationCommandBuilder.BuildSimulateCombination(modifierKeys, keys));
@@ -227,12 +243,18 @@ public sealed class ScriptInputSimulationService
 
     public void PrepareTargetWindowForInput()
     {
+        ChildSessionRuntimeState.EnsurePrimaryCanControl();
         var windowInfo = GetRequiredTargetWindowInfo();
         if (!NativeWindowHelper.IsForegroundWindow(windowInfo.Handle) &&
             NativeWindowHelper.TryActivateWindow(windowInfo.Handle))
         {
             Thread.Sleep(DefaultTargetWindowActivationSettleMilliseconds);
         }
+    }
+
+    private static void EnsureInputAllowed()
+    {
+        ChildSessionRuntimeState.EnsurePrimaryCanControl();
     }
 
     private void MoveMouseToScreenCoordinateCore(Point screenCoordinate)

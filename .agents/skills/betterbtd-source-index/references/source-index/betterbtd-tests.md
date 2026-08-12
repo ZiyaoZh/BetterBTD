@@ -21,7 +21,7 @@ xUnit behavior, compatibility, protocol, and test-double coverage.
 | `BetterBTD.Tests/RobotControl` | 2 |
 | `BetterBTD.Tests/ScriptExecution` | 2 |
 | `BetterBTD.Tests/ScriptExecution/Handlers` | 6 |
-| `BetterBTD.Tests/Services` | 17 |
+| `BetterBTD.Tests/Services` | 18 |
 | `BetterBTD.Tests/TestApi` | 4 |
 | `BetterBTD.Tests/TestDoubles` | 4 |
 | `BetterBTD.Tests/ViewModels` | 3 |
@@ -95,6 +95,7 @@ Paths are relative to the repository root. Open the linked file and verify curre
 | --- | --- |
 | [ApplicationUpdateServiceTests.cs](../../../../../BetterBTD.Tests/Services/ApplicationUpdateServiceTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: ApplicationUpdateServiceTests |
 | [Btd6SaveViewerServiceTests.cs](../../../../../BetterBTD.Tests/Services/Btd6SaveViewerServiceTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: Btd6SaveViewerServiceTests |
+| [ChildSessionRuntimeStateTests.cs](../../../../../BetterBTD.Tests/Services/ChildSessionRuntimeStateTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: ChildSessionRuntimeStateTests |
 | [GameElementCascadingItemsTests.cs](../../../../../BetterBTD.Tests/Services/GameElementCascadingItemsTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: GameElementCascadingItemsTests |
 | [GameLaunchServiceTests.cs](../../../../../BetterBTD.Tests/Services/GameLaunchServiceTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: GameLaunchServiceTests |
 | [GameOcrIconMatcherTests.cs](../../../../../BetterBTD.Tests/Services/GameOcrIconMatcherTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: GameOcrIconMatcherTests |

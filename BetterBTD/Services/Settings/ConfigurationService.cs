@@ -3,6 +3,7 @@ using System.IO;
 using System.Text.Json;
 using BetterBTD.Models;
 using BetterBTD.Models.ScriptExecution;
+using BetterBTD.Services.ChildSession;
 
 namespace BetterBTD.Services.Settings;
 
@@ -33,6 +34,12 @@ public sealed class ConfigurationService
     public void Save(AppConfiguration configuration)
     {
         ArgumentNullException.ThrowIfNull(configuration);
+        ChildSessionRuntimeState.EnsurePrimaryCanControl();
+
+        if (!ChildSessionRuntimeState.CanPersistSharedData)
+        {
+            return;
+        }
 
         Current.MaskWindowTargetTitle = configuration.MaskWindowTargetTitle;
         Current.CaptureModeName = configuration.CaptureModeName;

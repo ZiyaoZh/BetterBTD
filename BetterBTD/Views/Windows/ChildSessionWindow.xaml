@@ -1,0 +1,31 @@
+<Window x:Class="BetterBTD.Views.Windows.ChildSessionWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        xmlns:wfi="clr-namespace:System.Windows.Forms.Integration;assembly=WindowsFormsIntegration"
+        Title="{Binding TitleText}"
+        Width="1280"
+        Height="752"
+        MinWidth="640"
+        MinHeight="360"
+        Background="Black"
+        WindowStartupLocation="CenterScreen"
+        Closing="OnClosing"
+        Closed="OnClosed">
+    <Grid Background="Black">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <DockPanel Grid.Row="0" Height="34" Background="{DynamicResource ControlFillColorSecondaryBrush}">
+            <TextBlock Margin="12,0" VerticalAlignment="Center" Text="{Binding TitleText}" />
+            <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+                <ui:Button Margin="0,0,8,0" Padding="12,4" Command="{Binding ReconnectCommand}" Content="{Binding ReconnectText}" />
+                <ui:Button Margin="0,0,8,0" Padding="12,4" Command="{Binding ToggleMuteCommand}" Content="{Binding MuteText}" Icon="{ui:SymbolIcon SpeakerMute24}" />
+                <ui:Button Margin="0,0,8,0" Padding="12,4" Command="{Binding HideCommand}" Content="{Binding HideText}" />
+                <ui:Button Margin="0,0,8,0" Padding="12,4" Command="{Binding LogoffCommand}" Content="{Binding LogoffText}" />
+            </StackPanel>
+        </DockPanel>
+        <wfi:WindowsFormsHost x:Name="RdpHostElement" Grid.Row="1" Margin="3,0,3,3" />
+    </Grid>
+</Window>

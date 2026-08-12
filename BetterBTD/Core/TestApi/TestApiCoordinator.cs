@@ -7,6 +7,7 @@ using BetterBTD.Core.ScriptExecution;
 using BetterBTD.Core.ScriptExecution.Handlers;
 using BetterBTD.Models.ScriptExecution;
 using BetterBTD.Models.TestApi;
+using BetterBTD.Services.ChildSession;
 
 namespace BetterBTD.Core.TestApi;
 
@@ -145,6 +146,7 @@ internal sealed class TestApiCoordinator : ITestApiController
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
+        ChildSessionRuntimeState.EnsurePrimaryCanControl();
         ValidateCaptureRequest(request);
 
         var leaseOwnerId = $"test-capture-{Guid.NewGuid():N}";
@@ -264,6 +266,7 @@ internal sealed class TestApiCoordinator : ITestApiController
 
     public TestApiScriptExecuteResponse ExecuteScript(TestApiScriptExecuteRequest request)
     {
+        ChildSessionRuntimeState.EnsurePrimaryCanControl();
         ArgumentNullException.ThrowIfNull(request);
         ValidateExecuteRequest(request);
         var (scriptPath, sha256, taskFlow) = LoadAndValidateScript(request.ScriptPath);
@@ -395,6 +398,7 @@ internal sealed class TestApiCoordinator : ITestApiController
 
     public TestApiOperationControlResponse Pause(TestApiOperationControlRequest request)
     {
+        ChildSessionRuntimeState.EnsurePrimaryCanControl();
         var operation = GetControllableOperation(request);
         bool accepted;
         lock (_syncRoot)
@@ -422,6 +426,7 @@ internal sealed class TestApiCoordinator : ITestApiController
 
     public TestApiOperationControlResponse Resume(TestApiOperationControlRequest request)
     {
+        ChildSessionRuntimeState.EnsurePrimaryCanControl();
         var operation = GetControllableOperation(request);
         bool accepted;
         lock (_syncRoot)
@@ -450,6 +455,7 @@ internal sealed class TestApiCoordinator : ITestApiController
     public TestApiOperationControlResponse Cancel(TestApiOperationControlRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
+        ChildSessionRuntimeState.EnsurePrimaryCanControl();
         if (string.IsNullOrWhiteSpace(request.OperationId))
         {
             throw TestApiRequestException.BadRequest(

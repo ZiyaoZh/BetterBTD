@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Text.Json;
+using BetterBTD.Services.ChildSession;
 using System.Text.Json.Serialization;
 using BetterBTD.Models.GameElements;
 using BetterBTD.Models.ScriptEditor;
@@ -58,6 +59,7 @@ public sealed class ScriptDocumentService
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
         ArgumentNullException.ThrowIfNull(document);
+        ChildSessionRuntimeState.EnsureSharedDataWritable();
 
         var optimizedDocument = ScriptInstructionOptimizationService.Instance.OptimizeDocument(document);
 
