@@ -39,6 +39,12 @@ public sealed class GoldBalloonAutoTaskStrategy : IAutoTaskStrategy
 
         cancellationToken.ThrowIfCancellationRequested();
 
+        if (snapshot.State is not (GameUiStateId.Unknown or GameUiStateId.MapSearch))
+        {
+            state.RemoveProperty(GoldBalloonAutoTaskStateKeys.MapSearchPixelBaseline);
+            state.RemoveProperty(GoldBalloonAutoTaskStateKeys.MapSearchPixelChangedSince);
+        }
+
         ResetScriptLifecycleForNextStageIfNeeded(state, snapshot);
 
         if (state.HasPendingScriptOutcome)
@@ -46,13 +52,24 @@ public sealed class GoldBalloonAutoTaskStrategy : IAutoTaskStrategy
             return DecideAfterScriptExecution(state, snapshot);
         }
 
-        if (snapshot.State == GameUiStateId.MapSearchResults)
+        if (snapshot.State == GameUiStateId.MapSearch && IsMapSearchResultReady(state, snapshot))
         {
             var preloadDecision = await TryPreloadScriptContextAsync(state, snapshot, cancellationToken).ConfigureAwait(false);
             if (preloadDecision is not null)
             {
                 return preloadDecision;
             }
+        }
+        else if (snapshot.State == GameUiStateId.MapSearch &&
+                 MapSearchFlowState.IsResultConfirmationInProgress(
+                     state,
+                     snapshot,
+                     GoldBalloonAutoTaskStateKeys.MapSearchPixelBaseline))
+        {
+            return AutoTaskDecision.Wait(
+                "Waiting for gold balloon map search results to remain stable.",
+                DefaultWaitDelayMs,
+                AutoTaskPhase.NavigatingToStage);
         }
 
         return snapshot.State switch
@@ -192,7 +209,7 @@ public sealed class GoldBalloonAutoTaskStrategy : IAutoTaskStrategy
 
     private static bool TryGetRecognizedGoldBalloonMap(GameUiSnapshot snapshot, out GameMapType map)
     {
-        if (snapshot.Facts.TryGetValue("goldBalloonMap", out var rawMap) && rawMap is GameMapType typedMap)
+        if (snapshot.Facts.TryGetValue(MapSearchFlowState.GoldBalloonMapFact, out var rawMap) && rawMap is GameMapType typedMap)
         {
             map = typedMap;
             return true;
@@ -200,6 +217,15 @@ public sealed class GoldBalloonAutoTaskStrategy : IAutoTaskStrategy
 
         map = default;
         return false;
+    }
+
+    private static bool IsMapSearchResultReady(AutoTaskRuntimeState state, GameUiSnapshot snapshot)
+    {
+        return MapSearchFlowState.IsResultReady(
+            state,
+            snapshot,
+            GoldBalloonAutoTaskStateKeys.MapSearchPixelBaseline,
+            GoldBalloonAutoTaskStateKeys.MapSearchPixelChangedSince);
     }
 
     private static TEnum ParseEnum<TEnum>(string? value, TEnum fallback)
@@ -266,7 +292,6 @@ public sealed class GoldBalloonAutoTaskStrategy : IAutoTaskStrategy
             GameUiStateId.CollectionEvent or
             GameUiStateId.CollectionEventClaimable or
             GameUiStateId.MapSearch or
-            GameUiStateId.MapSearchResults or
             GameUiStateId.MapGrid or
             GameUiStateId.DifficultySelect or
             GameUiStateId.EasyModeSelect or

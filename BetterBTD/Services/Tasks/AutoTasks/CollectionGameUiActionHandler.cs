@@ -45,9 +45,7 @@ internal sealed class CollectionGameUiActionHandler : AutoTaskGameUiActionHandle
             case GameUiStateId.CollectionEventClaimable:
                 return Click(step, new WpfPoint(960, 680), "Opened the claimable collection chest.");
             case GameUiStateId.MapSearch:
-                return ExecuteMapSearch(step, state);
-            case GameUiStateId.MapSearchResults:
-                return ExecuteMapSearchResults(step, state, snapshot);
+                return ExecuteMapSearch(step, state, snapshot);
             case GameUiStateId.DifficultySelect:
                 return ExecuteDifficultySelect(step, state);
             case GameUiStateId.EasyModeSelect:
@@ -104,8 +102,23 @@ internal sealed class CollectionGameUiActionHandler : AutoTaskGameUiActionHandle
 
     private GameUiActionExecutionResult ExecuteMapSearch(
         GameUiNavigationStep step,
-        AutoTaskRuntimeState state)
+        AutoTaskRuntimeState state,
+        GameUiSnapshot snapshot)
     {
+        if (MapSearchFlowState.IsResultReady(
+                state,
+                snapshot,
+                CollectionAutoTaskStateKeys.MapSearchPixelBaseline,
+                CollectionAutoTaskStateKeys.MapSearchPixelChangedSince) &&
+            snapshot.Facts.TryGetValue(MapSearchFlowState.CollectionMapFact, out var rawMap) &&
+            rawMap is GameMapType recognizedMap)
+        {
+            state.SetProperty(CollectionAutoTaskStateKeys.RecognizedMap, recognizedMap);
+            state.SetProperty(CollectionAutoTaskStateKeys.MapSearchAttempts, 0);
+            state.SetProperty(CollectionAutoTaskStateKeys.HeroSelected, false);
+            return Click(step, new WpfPoint(540, 650), "Entered the recognized collection map.");
+        }
+
         var attempts = state.TryGetProperty<int>(CollectionAutoTaskStateKeys.MapSearchAttempts, out var currentAttempts)
             ? currentAttempts
             : 0;
@@ -113,23 +126,12 @@ internal sealed class CollectionGameUiActionHandler : AutoTaskGameUiActionHandle
             ? new WpfPoint(1275, 45)
             : new WpfPoint(1350, 45);
 
+        MapSearchFlowState.CapturePixelBaseline(
+            state,
+            snapshot,
+            CollectionAutoTaskStateKeys.MapSearchPixelBaseline);
         state.SetProperty(CollectionAutoTaskStateKeys.MapSearchAttempts, attempts + 1);
         return Click(step, searchButtonPoint, "Triggered collection map search.");
-    }
-
-    private GameUiActionExecutionResult ExecuteMapSearchResults(
-        GameUiNavigationStep step,
-        AutoTaskRuntimeState state,
-        GameUiSnapshot snapshot)
-    {
-        if (snapshot.Facts.TryGetValue("collectionMap", out var rawMap) && rawMap is GameMapType recognizedMap)
-        {
-            state.SetProperty(CollectionAutoTaskStateKeys.RecognizedMap, recognizedMap);
-        }
-
-        state.SetProperty(CollectionAutoTaskStateKeys.MapSearchAttempts, 0);
-        state.SetProperty(CollectionAutoTaskStateKeys.HeroSelected, false);
-        return Click(step, new WpfPoint(540, 650), "Entered the recognized collection map.");
     }
 
     private GameUiActionExecutionResult ExecuteDifficultySelect(

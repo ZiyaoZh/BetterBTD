@@ -15,7 +15,7 @@ xUnit behavior, compatibility, protocol, and test-double coverage.
 | Directory | Files |
 | --- | ---: |
 | `BetterBTD.Tests` | 4 |
-| `BetterBTD.Tests/AutoTasks` | 8 |
+| `BetterBTD.Tests/AutoTasks` | 9 |
 | `BetterBTD.Tests/Core/Simulator` | 1 |
 | `BetterBTD.Tests/GameControl` | 1 |
 | `BetterBTD.Tests/RobotControl` | 2 |
@@ -50,6 +50,7 @@ Paths are relative to the repository root. Open the linked file and verify curre
 | [GameUiDetectionConfigTests.cs](../../../../../BetterBTD.Tests/AutoTasks/GameUiDetectionConfigTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: GameUiDetectionConfigTests |
 | [LoopStageAutoTaskStrategyTests.cs](../../../../../BetterBTD.Tests/AutoTasks/LoopStageAutoTaskStrategyTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: LoopStageAutoTaskStrategyTests |
 | [ManagedAutoTaskScriptResolverTests.cs](../../../../../BetterBTD.Tests/AutoTasks/ManagedAutoTaskScriptResolverTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: ManagedAutoTaskScriptResolverTests |
+| [MapSearchFlowTests.cs](../../../../../BetterBTD.Tests/AutoTasks/MapSearchFlowTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: MapSearchFlowTests, StaticGameUiRecognizer |
 | [RaceAutoTaskStrategyTests.cs](../../../../../BetterBTD.Tests/AutoTasks/RaceAutoTaskStrategyTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: RaceAutoTaskStrategyTests |
 
 ### `BetterBTD.Tests/Core/Simulator`

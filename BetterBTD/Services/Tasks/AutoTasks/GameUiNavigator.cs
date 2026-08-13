@@ -43,16 +43,21 @@ public sealed class GameUiNavigator : IGameUiNavigator
             },
             GameUiStateId.MapSearch => new GameUiNavigationStep
             {
-                ActionKind = GameUiActionKind.SelectMapCategory,
-                Description = "Advance the collection map search flow.",
+                ActionKind = MapSearchFlowState.HasRecognizedMap(snapshot)
+                    ? GameUiActionKind.SelectMap
+                    : GameUiActionKind.SelectMapCategory,
+                Description = MapSearchFlowState.HasRecognizedMap(snapshot)
+                    ? "Select the recognized searched map entry."
+                    : "Advance the map search flow.",
                 PostActionDelayMs = 400,
-                ExpectedNextStates = [GameUiStateId.MapSearchResults, GameUiStateId.MapGrid]
-            },
-            GameUiStateId.MapSearchResults => new GameUiNavigationStep
-            {
-                ActionKind = GameUiActionKind.SelectMap,
-                Description = "Select the searched map entry.",
-                ExpectedNextStates = [GameUiStateId.DifficultySelect, GameUiStateId.EasyModeSelect, GameUiStateId.ModeSelect]
+                ExpectedNextStates =
+                [
+                    GameUiStateId.MapSearch,
+                    GameUiStateId.MapGrid,
+                    GameUiStateId.DifficultySelect,
+                    GameUiStateId.EasyModeSelect,
+                    GameUiStateId.ModeSelect
+                ]
             },
             GameUiStateId.MapGrid => new GameUiNavigationStep
             {
@@ -100,7 +105,7 @@ public sealed class GameUiNavigator : IGameUiNavigator
             {
                 ActionKind = GameUiActionKind.SelectMapCategory,
                 Description = "Advance from the collection event page into map search.",
-                ExpectedNextStates = [GameUiStateId.MapSearch, GameUiStateId.MapSearchResults, GameUiStateId.MapGrid]
+                ExpectedNextStates = [GameUiStateId.MapSearch, GameUiStateId.MapGrid]
             },
             GameUiStateId.CollectionEventClaimable => new GameUiNavigationStep
             {

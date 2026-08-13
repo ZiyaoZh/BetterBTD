@@ -30,20 +30,17 @@ internal static class GameUiDetectionRuleEvaluator
     private static bool IsConditionMatch(Mat frame, GameUiDetectionConfig config, GameUiColorCondition condition)
     {
         var expectedColor = ParseHexColor(condition.ColorHex);
-        var actualPoint = ScaleReferencePoint(
+        var actualColor = ReadPixelAtReference(
+            frame,
+            config,
             condition.X,
-            condition.Y,
-            config.ReferenceWidth,
-            config.ReferenceHeight,
-            frame.Width,
-            frame.Height);
-        var actualColor = ReadPixel(frame, actualPoint.X, actualPoint.Y);
+            condition.Y);
         var tolerance = condition.Tolerance ?? config.DefaultTolerance;
 
         var isEqual =
-            Math.Abs(actualColor.R - expectedColor.R) <= tolerance &&
-            Math.Abs(actualColor.G - expectedColor.G) <= tolerance &&
-            Math.Abs(actualColor.B - expectedColor.B) <= tolerance;
+            Math.Abs(actualColor.Red - expectedColor.R) <= tolerance &&
+            Math.Abs(actualColor.Green - expectedColor.G) <= tolerance &&
+            Math.Abs(actualColor.Blue - expectedColor.B) <= tolerance;
 
         return condition.Operator switch
         {
@@ -51,6 +48,26 @@ internal static class GameUiDetectionRuleEvaluator
             GameUiColorComparisonOperator.NotEquals => !isEqual,
             _ => false
         };
+    }
+
+    internal static GameUiPixelSample ReadPixelAtReference(
+        Mat frame,
+        GameUiDetectionConfig config,
+        int referenceX,
+        int referenceY)
+    {
+        ArgumentNullException.ThrowIfNull(frame);
+        ArgumentNullException.ThrowIfNull(config);
+
+        var actualPoint = ScaleReferencePoint(
+            referenceX,
+            referenceY,
+            config.ReferenceWidth,
+            config.ReferenceHeight,
+            frame.Width,
+            frame.Height);
+        var color = ReadPixel(frame, actualPoint.X, actualPoint.Y);
+        return new GameUiPixelSample(color.R, color.G, color.B, config.DefaultTolerance);
     }
 
     private static (int X, int Y) ScaleReferencePoint(

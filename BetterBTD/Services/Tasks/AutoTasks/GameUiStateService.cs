@@ -24,6 +24,8 @@ public sealed class GameUiStateService : IGameUiStateService
         .ToArray();
     private static readonly OpenCvRect CollectionExpertMapReferenceRegion = new(360, 520, 360, 250);
     private static readonly OpenCvRect GoldBalloonBeginnerMapReferenceRegion = new(360, 207, 360, 250);
+    private const int MapSearchTransitionPixelX = 962;
+    private const int MapSearchTransitionPixelY = 837;
 
     private readonly GameCaptureService _gameCaptureService;
     private readonly GameStageStateService _gameStageStateService;
@@ -201,31 +203,40 @@ public sealed class GameUiStateService : IGameUiStateService
             ? new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             : new Dictionary<string, object?>(snapshot.Facts, StringComparer.OrdinalIgnoreCase);
 
-        if (snapshot.State == GameUiStateId.MapSearchResults &&
+        if (snapshot.State == GameUiStateId.MapSearch)
+        {
+            facts[MapSearchFlowState.PixelSampleFact] = GameUiDetectionRuleEvaluator.ReadPixelAtReference(
+                context.Frame,
+                _detectionConfigService.Current,
+                MapSearchTransitionPixelX,
+                MapSearchTransitionPixelY);
+        }
+
+        if (snapshot.State == GameUiStateId.MapSearch &&
             TryRecognizeCollectionMap(context.Frame, out var collectionMap, out var collectionMapMatches))
         {
             if (collectionMapMatches.Count > 0)
             {
-                facts["collectionMapMatches"] = collectionMapMatches;
+                facts[MapSearchFlowState.CollectionMapMatchesFact] = collectionMapMatches;
             }
 
             if (collectionMap.HasValue)
             {
-                facts["collectionMap"] = collectionMap.Value;
+                facts[MapSearchFlowState.CollectionMapFact] = collectionMap.Value;
             }
         }
 
-        if (snapshot.State == GameUiStateId.MapSearchResults &&
+        if (snapshot.State == GameUiStateId.MapSearch &&
             TryRecognizeGoldBalloonMap(context.Frame, out var goldBalloonMap, out var goldBalloonMapMatches))
         {
             if (goldBalloonMapMatches.Count > 0)
             {
-                facts["goldBalloonMapMatches"] = goldBalloonMapMatches;
+                facts[MapSearchFlowState.GoldBalloonMapMatchesFact] = goldBalloonMapMatches;
             }
 
             if (goldBalloonMap.HasValue)
             {
-                facts["goldBalloonMap"] = goldBalloonMap.Value;
+                facts[MapSearchFlowState.GoldBalloonMapFact] = goldBalloonMap.Value;
             }
         }
 

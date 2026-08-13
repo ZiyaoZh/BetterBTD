@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using BetterBTD.Helpers;
 using BetterBTD.Models.AutoTasks;
@@ -10,6 +11,10 @@ namespace BetterBTD.Services.Tasks.AutoTasks;
 
 public sealed class GameUiDetectionConfigService
 {
+    private const string RetiredMapSearchResultsRuleKey = "map_search_results";
+    private const string RetiredMapSearchResultsStateName = "MapSearchResults";
+    private const int RetiredMapSearchResultsStateValue = 5;
+
     private static readonly Lazy<GameUiDetectionConfigService> InstanceHolder = new(() => new GameUiDetectionConfigService());
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -102,7 +107,7 @@ public sealed class GameUiDetectionConfigService
 
         try
         {
-            var json = File.ReadAllText(_configFilePath);
+            var json = RemoveRetiredMapSearchResultsRules(File.ReadAllText(_configFilePath));
             var config = JsonSerializer.Deserialize<GameUiDetectionConfig>(json, JsonOptions);
             if (config is null)
             {
@@ -149,7 +154,7 @@ public sealed class GameUiDetectionConfigService
             ReferenceHeight = config.ReferenceHeight > 0 ? config.ReferenceHeight : 1080,
             DefaultTolerance = NormalizeDefaultTolerance(config),
             Rules = config.Rules
-                .Where(static rule => rule is not null)
+                .Where(static rule => rule is not null && !IsRetiredMapSearchResultsRule(rule))
                 .Select(NormalizeRule)
                 .ToList()
         };
@@ -230,7 +235,7 @@ public sealed class GameUiDetectionConfigService
     {
         return new GameUiDetectionConfig
         {
-            Version = 4,
+            Version = 5,
             ReferenceWidth = 1920,
             ReferenceHeight = 1080,
             DefaultTolerance = 50,
@@ -261,8 +266,6 @@ public sealed class GameUiDetectionConfigService
                     Eq(1910, 40, "#543E2A"), Eq(13, 40, "#543E2A")),
                 CreateRule("main_menu", "游戏主界面", GameUiStateId.MainMenu, 700,
                     Eq(966, 945, "#FFFFFF"), Eq(1382, 942, "#FFFFFF"), Eq(80, 186, "#C4E8EB")),
-                CreateRule("map_search_results", "关卡已搜索界面", GameUiStateId.MapSearchResults, 690,
-                    Eq(983, 48, "#385373"), Eq(778, 43, "#578CD4"), Eq(962, 837, "#409FFF")),
                 CreateRule("map_search", "关卡搜索界面", GameUiStateId.MapSearch, 680,
                     Eq(983, 48, "#385373"), Eq(778, 43, "#578CD4")),
                 CreateRule("map_grid", "关卡选择界面", GameUiStateId.MapGrid, 670,
@@ -360,6 +363,72 @@ public sealed class GameUiDetectionConfigService
 
         syncedRules.AddRange(customRules);
         target.Rules = syncedRules;
+    }
+
+    private static bool IsRetiredMapSearchResultsRule(GameUiDetectionRule rule)
+    {
+        return Convert.ToInt32(rule.State) == RetiredMapSearchResultsStateValue ||
+               string.Equals(
+                   rule.Key?.Trim(),
+                   RetiredMapSearchResultsRuleKey,
+                   StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string RemoveRetiredMapSearchResultsRules(string json)
+    {
+        var root = JsonNode.Parse(json);
+        if (root is not JsonObject rootObject ||
+            !TryGetPropertyValue(rootObject, "Rules", out var rulesNode) ||
+            rulesNode is not JsonArray rules)
+        {
+            return json;
+        }
+
+        for (var index = rules.Count - 1; index >= 0; index--)
+        {
+            if (rules[index] is JsonObject rule && IsRetiredMapSearchResultsRule(rule))
+            {
+                rules.RemoveAt(index);
+            }
+        }
+
+        return root.ToJsonString(JsonOptions);
+    }
+
+    private static bool IsRetiredMapSearchResultsRule(JsonObject rule)
+    {
+        if (TryGetPropertyValue(rule, "Key", out var keyNode) &&
+            keyNode is JsonValue keyValue &&
+            keyValue.TryGetValue<string>(out var key) &&
+            string.Equals(key, RetiredMapSearchResultsRuleKey, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        if (!TryGetPropertyValue(rule, "State", out var stateNode) || stateNode is not JsonValue stateValue)
+        {
+            return false;
+        }
+
+        return stateValue.TryGetValue<string>(out var stateName)
+            ? string.Equals(stateName, RetiredMapSearchResultsStateName, StringComparison.OrdinalIgnoreCase)
+            : stateValue.TryGetValue<int>(out var stateValueNumber) &&
+              stateValueNumber == RetiredMapSearchResultsStateValue;
+    }
+
+    private static bool TryGetPropertyValue(JsonObject source, string propertyName, out JsonNode? value)
+    {
+        foreach (var property in source)
+        {
+            if (string.Equals(property.Key, propertyName, StringComparison.OrdinalIgnoreCase))
+            {
+                value = property.Value;
+                return true;
+            }
+        }
+
+        value = null;
+        return false;
     }
 
     private static GameUiDetectionRule CreateRule(

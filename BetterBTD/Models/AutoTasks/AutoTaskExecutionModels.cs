@@ -67,8 +67,7 @@ public enum GameUiStateId
     StageChallengeWithHint,
     MapCategorySelect,
     MapSearch,
-    MapSearchResults,
-    MapGrid,
+    MapGrid = 6,
     DifficultySelect,
     EasyModeSelect,
     MediumModeSelect,
@@ -164,6 +163,143 @@ public sealed class GameUiSnapshot
         new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
 
     public string Summary { get; init; } = string.Empty;
+}
+
+public readonly record struct GameUiPixelSample(int Red, int Green, int Blue, int Tolerance)
+{
+    public bool HasChangedFrom(GameUiPixelSample baseline)
+    {
+        var tolerance = Math.Max(Tolerance, baseline.Tolerance);
+        return Math.Abs(Red - baseline.Red) > tolerance ||
+               Math.Abs(Green - baseline.Green) > tolerance ||
+               Math.Abs(Blue - baseline.Blue) > tolerance;
+    }
+}
+
+public static class MapSearchFlowState
+{
+    private static readonly TimeSpan ResultConfirmationWindow = TimeSpan.FromMilliseconds(1000);
+    private const int LegacyResultPixelRed = 0x40;
+    private const int LegacyResultPixelGreen = 0x9F;
+    private const int LegacyResultPixelBlue = 0xFF;
+
+    public const string PixelSampleFact = "mapSearchPixelSample";
+    public const string CollectionMapFact = "collectionMap";
+    public const string CollectionMapMatchesFact = "collectionMapMatches";
+    public const string GoldBalloonMapFact = "goldBalloonMap";
+    public const string GoldBalloonMapMatchesFact = "goldBalloonMapMatches";
+
+    public static bool TryGetPixelSample(GameUiSnapshot snapshot, out GameUiPixelSample sample)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+
+        if (snapshot.Facts.TryGetValue(PixelSampleFact, out var rawSample) &&
+            rawSample is GameUiPixelSample typedSample)
+        {
+            sample = typedSample;
+            return true;
+        }
+
+        sample = default;
+        return false;
+    }
+
+    public static void CapturePixelBaseline(
+        AutoTaskRuntimeState state,
+        GameUiSnapshot snapshot,
+        string baselineStateKey)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(snapshot);
+        ArgumentException.ThrowIfNullOrWhiteSpace(baselineStateKey);
+
+        if (!state.TryGetProperty<GameUiPixelSample>(baselineStateKey, out _) &&
+            TryGetPixelSample(snapshot, out var sample))
+        {
+            state.SetProperty(baselineStateKey, sample);
+        }
+    }
+
+    public static bool HasPixelChanged(
+        AutoTaskRuntimeState state,
+        GameUiSnapshot snapshot,
+        string baselineStateKey)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(snapshot);
+        ArgumentException.ThrowIfNullOrWhiteSpace(baselineStateKey);
+
+        return state.TryGetProperty<GameUiPixelSample>(baselineStateKey, out var baseline) &&
+               TryGetPixelSample(snapshot, out var current) &&
+               current.HasChangedFrom(baseline);
+    }
+
+    public static bool IsResultReady(
+        AutoTaskRuntimeState state,
+        GameUiSnapshot snapshot,
+        string baselineStateKey,
+        string changedSinceStateKey)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(snapshot);
+        ArgumentException.ThrowIfNullOrWhiteSpace(baselineStateKey);
+        ArgumentException.ThrowIfNullOrWhiteSpace(changedSinceStateKey);
+
+        if (!IsResultConfirmationInProgress(state, snapshot, baselineStateKey))
+        {
+            state.RemoveProperty(changedSinceStateKey);
+            return false;
+        }
+
+        return HasRemainedChangedForConfirmationWindow(state, snapshot, changedSinceStateKey);
+    }
+
+    public static bool IsResultConfirmationInProgress(
+        AutoTaskRuntimeState state,
+        GameUiSnapshot snapshot,
+        string baselineStateKey)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(snapshot);
+        ArgumentException.ThrowIfNullOrWhiteSpace(baselineStateKey);
+
+        return state.TryGetProperty<GameUiPixelSample>(baselineStateKey, out _)
+            ? HasPixelChanged(state, snapshot, baselineStateKey)
+            : IsLegacyResultPixel(snapshot);
+    }
+
+    private static bool IsLegacyResultPixel(GameUiSnapshot snapshot)
+    {
+        if (!TryGetPixelSample(snapshot, out var sample))
+        {
+            return false;
+        }
+
+        return Math.Abs(sample.Red - LegacyResultPixelRed) <= sample.Tolerance &&
+               Math.Abs(sample.Green - LegacyResultPixelGreen) <= sample.Tolerance &&
+               Math.Abs(sample.Blue - LegacyResultPixelBlue) <= sample.Tolerance;
+    }
+
+    private static bool HasRemainedChangedForConfirmationWindow(
+        AutoTaskRuntimeState state,
+        GameUiSnapshot snapshot,
+        string changedSinceStateKey)
+    {
+        if (!state.TryGetProperty<DateTimeOffset>(changedSinceStateKey, out var changedSince))
+        {
+            state.SetProperty(changedSinceStateKey, snapshot.CapturedAt);
+            return false;
+        }
+
+        return snapshot.CapturedAt - changedSince >= ResultConfirmationWindow;
+    }
+
+    public static bool HasRecognizedMap(GameUiSnapshot snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+        return snapshot.Facts.ContainsKey(CollectionMapFact) ||
+               snapshot.Facts.ContainsKey(GoldBalloonMapFact);
+    }
 }
 
 public sealed class GameUiNavigationStep

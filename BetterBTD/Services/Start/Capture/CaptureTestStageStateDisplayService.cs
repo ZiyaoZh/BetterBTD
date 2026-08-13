@@ -99,21 +99,25 @@ public sealed class CaptureTestStageStateDisplayService
         GameUiSnapshot? gameUiSnapshot)
     {
         ArgumentNullException.ThrowIfNull(localizationService);
-        if (gameUiSnapshot?.State != GameUiStateId.MapSearchResults)
+        if (gameUiSnapshot?.State != GameUiStateId.MapSearch ||
+            (!gameUiSnapshot.Facts.ContainsKey(MapSearchFlowState.CollectionMapFact) &&
+             !gameUiSnapshot.Facts.ContainsKey(MapSearchFlowState.CollectionMapMatchesFact) &&
+             !gameUiSnapshot.Facts.ContainsKey(MapSearchFlowState.GoldBalloonMapFact) &&
+             !gameUiSnapshot.Facts.ContainsKey(MapSearchFlowState.GoldBalloonMapMatchesFact)))
         {
             return string.Empty;
         }
 
-        var recognizedMapKey = gameUiSnapshot.Facts.ContainsKey("collectionMap")
-            ? "collectionMap"
-            : gameUiSnapshot.Facts.ContainsKey("goldBalloonMap")
-                ? "goldBalloonMap"
-                : gameUiSnapshot.Facts.ContainsKey("collectionMapMatches")
-                    ? "collectionMap"
-                    : "goldBalloonMap";
-        var matchesKey = string.Equals(recognizedMapKey, "goldBalloonMap", StringComparison.Ordinal)
-            ? "goldBalloonMapMatches"
-            : "collectionMapMatches";
+        var recognizedMapKey = gameUiSnapshot.Facts.ContainsKey(MapSearchFlowState.CollectionMapFact)
+            ? MapSearchFlowState.CollectionMapFact
+            : gameUiSnapshot.Facts.ContainsKey(MapSearchFlowState.GoldBalloonMapFact)
+                ? MapSearchFlowState.GoldBalloonMapFact
+                : gameUiSnapshot.Facts.ContainsKey(MapSearchFlowState.CollectionMapMatchesFact)
+                    ? MapSearchFlowState.CollectionMapFact
+                    : MapSearchFlowState.GoldBalloonMapFact;
+        var matchesKey = string.Equals(recognizedMapKey, MapSearchFlowState.GoldBalloonMapFact, StringComparison.Ordinal)
+            ? MapSearchFlowState.GoldBalloonMapMatchesFact
+            : MapSearchFlowState.CollectionMapMatchesFact;
 
         if (!gameUiSnapshot.Facts.TryGetValue(matchesKey, out var rawMatches) ||
             rawMatches is not IReadOnlyList<MapTemplateMatchResult> matches ||

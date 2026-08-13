@@ -39,6 +39,12 @@ public sealed class CollectionAutoTaskStrategy : IAutoTaskStrategy
 
         cancellationToken.ThrowIfCancellationRequested();
 
+        if (snapshot.State is not (GameUiStateId.Unknown or GameUiStateId.MapSearch))
+        {
+            state.RemoveProperty(CollectionAutoTaskStateKeys.MapSearchPixelBaseline);
+            state.RemoveProperty(CollectionAutoTaskStateKeys.MapSearchPixelChangedSince);
+        }
+
         ResetScriptLifecycleForNextStageIfNeeded(state, snapshot);
 
         if (state.HasPendingScriptOutcome)
@@ -46,13 +52,24 @@ public sealed class CollectionAutoTaskStrategy : IAutoTaskStrategy
             return DecideAfterScriptExecution(state, snapshot);
         }
 
-        if (snapshot.State == GameUiStateId.MapSearchResults)
+        if (snapshot.State == GameUiStateId.MapSearch && IsMapSearchResultReady(state, snapshot))
         {
             var preloadDecision = await TryPreloadScriptContextAsync(state, snapshot, cancellationToken).ConfigureAwait(false);
             if (preloadDecision is not null)
             {
                 return preloadDecision;
             }
+        }
+        else if (snapshot.State == GameUiStateId.MapSearch &&
+                 MapSearchFlowState.IsResultConfirmationInProgress(
+                     state,
+                     snapshot,
+                     CollectionAutoTaskStateKeys.MapSearchPixelBaseline))
+        {
+            return AutoTaskDecision.Wait(
+                "Waiting for collection map search results to remain stable.",
+                DefaultWaitDelayMs,
+                AutoTaskPhase.NavigatingToStage);
         }
 
         return snapshot.State switch
@@ -206,7 +223,7 @@ public sealed class CollectionAutoTaskStrategy : IAutoTaskStrategy
 
     private static bool TryGetRecognizedCollectionMap(GameUiSnapshot snapshot, out GameMapType map)
     {
-        if (snapshot.Facts.TryGetValue("collectionMap", out var rawMap) && rawMap is GameMapType typedMap)
+        if (snapshot.Facts.TryGetValue(MapSearchFlowState.CollectionMapFact, out var rawMap) && rawMap is GameMapType typedMap)
         {
             map = typedMap;
             return true;
@@ -214,6 +231,15 @@ public sealed class CollectionAutoTaskStrategy : IAutoTaskStrategy
 
         map = default;
         return false;
+    }
+
+    private static bool IsMapSearchResultReady(AutoTaskRuntimeState state, GameUiSnapshot snapshot)
+    {
+        return MapSearchFlowState.IsResultReady(
+            state,
+            snapshot,
+            CollectionAutoTaskStateKeys.MapSearchPixelBaseline,
+            CollectionAutoTaskStateKeys.MapSearchPixelChangedSince);
     }
 
     private static TEnum ParseEnum<TEnum>(string? value, TEnum fallback)
@@ -280,7 +306,6 @@ public sealed class CollectionAutoTaskStrategy : IAutoTaskStrategy
             GameUiStateId.CollectionEvent or
             GameUiStateId.CollectionEventClaimable or
             GameUiStateId.MapSearch or
-            GameUiStateId.MapSearchResults or
             GameUiStateId.MapGrid or
             GameUiStateId.DifficultySelect or
             GameUiStateId.EasyModeSelect or

@@ -9,6 +9,13 @@ namespace BetterBTD.Tests.AutoTasks;
 public sealed class GameUiDetectionConfigTests
 {
     [Fact]
+    public void GameUiStateId_DoesNotRetainMapSearchResultsValue()
+    {
+        Assert.False(Enum.IsDefined(typeof(GameUiStateId), 5));
+        Assert.Equal(6, (int)GameUiStateId.MapGrid);
+    }
+
+    [Fact]
     public void ConfigService_CreatesDefaultConfigFile_WhenMissing()
     {
         var tempDirectory = CreateTempDirectory();
@@ -24,6 +31,14 @@ public sealed class GameUiDetectionConfigTests
             Assert.NotEmpty(config.Rules);
             Assert.Contains(config.Rules, static rule => rule.State == GameUiStateId.MainMenu);
             Assert.Equal(50, config.DefaultTolerance);
+            var mapSearchRule = Assert.Single(config.Rules, static rule => rule.State == GameUiStateId.MapSearch);
+            Assert.Equal("map_search", mapSearchRule.Key);
+            Assert.Equal(680, mapSearchRule.Priority);
+            Assert.Collection(
+                mapSearchRule.AllOf,
+                condition => AssertCondition(condition, 983, 48, "#385373"),
+                condition => AssertCondition(condition, 778, 43, "#578CD4"));
+            Assert.DoesNotContain(config.Rules, static rule => rule.Key == "map_search_results");
             var freeplayPromptRule = Assert.Single(config.Rules, static rule => rule.State == GameUiStateId.FreeplayPrompt);
             var inLevelRule = Assert.Single(config.Rules, static rule => rule.State == GameUiStateId.InLevel);
             Assert.True(freeplayPromptRule.Priority > inLevelRule.Priority);
@@ -72,6 +87,23 @@ public sealed class GameUiDetectionConfigTests
         var isMatch = GameUiDetectionRuleEvaluator.IsMatch(frame, config, config.Rules[0]);
 
         Assert.True(isMatch);
+    }
+
+    [Fact]
+    public void RuleEvaluator_ReadPixelAtReference_ScalesCoordinatesAndUsesConfigTolerance()
+    {
+        using var frame = new Mat(540, 960, MatType.CV_8UC3, Scalar.All(0));
+        SetPixel(frame, 481, 418, "#123456");
+        var config = new GameUiDetectionConfig
+        {
+            ReferenceWidth = 1920,
+            ReferenceHeight = 1080,
+            DefaultTolerance = 37
+        };
+
+        var sample = GameUiDetectionRuleEvaluator.ReadPixelAtReference(frame, config, 962, 837);
+
+        Assert.Equal(new GameUiPixelSample(0x12, 0x34, 0x56, 37), sample);
     }
 
     [Fact]
@@ -370,11 +402,94 @@ public sealed class GameUiDetectionConfigTests
         }
     }
 
+    [Fact]
+    public void ConfigService_RemovesRetiredMapSearchResultsRules_AndPreservesOtherRules()
+    {
+        var tempDirectory = CreateTempDirectory();
+
+        try
+        {
+            var configFilePath = Path.Combine(tempDirectory, "game_ui_detection_rules.json");
+            File.WriteAllText(
+                configFilePath,
+                """
+                {
+                  "Version": 4,
+                  "ReferenceWidth": 1920,
+                  "ReferenceHeight": 1080,
+                  "DefaultTolerance": 50,
+                  "Rules": [
+                    {
+                      "Key": "map_search_results",
+                      "DisplayName": "Retired",
+                      "State": "MapSearchResults",
+                      "Priority": 690,
+                      "IsEnabled": true,
+                      "AllOf": []
+                    },
+                    {
+                      "Key": "retired_by_numeric_state",
+                      "DisplayName": "Retired numeric",
+                      "State": 5,
+                      "Priority": 1,
+                      "IsEnabled": true,
+                      "AllOf": []
+                    },
+                    {
+                      "Key": "custom_map_grid",
+                      "DisplayName": "Custom map grid",
+                      "State": 6,
+                      "Priority": 10,
+                      "IsEnabled": true,
+                      "AllOf": [
+                        {
+                          "X": 1,
+                          "Y": 2,
+                          "ColorHex": "#010203",
+                          "Operator": "Equals"
+                        }
+                      ]
+                    }
+                  ]
+                }
+                """);
+
+            var service = new GameUiDetectionConfigService(configFilePath);
+            var reloaded = service.Reload();
+
+            Assert.Equal(5, reloaded.Version);
+            Assert.DoesNotContain(reloaded.Rules, static rule => rule.Key == "map_search_results");
+            Assert.DoesNotContain(reloaded.Rules, static rule => rule.Key == "retired_by_numeric_state");
+            var customRule = Assert.Single(reloaded.Rules, static rule => rule.Key == "custom_map_grid");
+            Assert.Equal(GameUiStateId.MapGrid, customRule.State);
+
+            var migratedJson = File.ReadAllText(configFilePath);
+            Assert.DoesNotContain("MapSearchResults", migratedJson, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("map_search_results", migratedJson, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            Directory.Delete(tempDirectory, recursive: true);
+        }
+    }
+
     private static string CreateTempDirectory()
     {
         var directoryPath = Path.Combine(Path.GetTempPath(), "BetterBTD.Tests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(directoryPath);
         return directoryPath;
+    }
+
+    private static void AssertCondition(
+        GameUiColorCondition condition,
+        int x,
+        int y,
+        string colorHex)
+    {
+        Assert.Equal(x, condition.X);
+        Assert.Equal(y, condition.Y);
+        Assert.Equal(colorHex, condition.ColorHex);
+        Assert.Equal(GameUiColorComparisonOperator.Equals, condition.Operator);
     }
 
     private static string SerializeConfig(GameUiDetectionConfig config)

@@ -43,9 +43,7 @@ internal sealed class GoldBalloonGameUiActionHandler : AutoTaskGameUiActionHandl
             case GameUiStateId.CollectionEventClaimable:
                 return Click(step, new WpfPoint(960, 680), "Opened the claimable gold balloon chest.");
             case GameUiStateId.MapSearch:
-                return ExecuteMapSearch(step, state);
-            case GameUiStateId.MapSearchResults:
-                return ExecuteMapSearchResults(step, state, snapshot);
+                return ExecuteMapSearch(step, state, snapshot);
             case GameUiStateId.DifficultySelect:
                 return ExecuteDifficultySelect(step, state);
             case GameUiStateId.EasyModeSelect:
@@ -102,8 +100,23 @@ internal sealed class GoldBalloonGameUiActionHandler : AutoTaskGameUiActionHandl
 
     private GameUiActionExecutionResult ExecuteMapSearch(
         GameUiNavigationStep step,
-        AutoTaskRuntimeState state)
+        AutoTaskRuntimeState state,
+        GameUiSnapshot snapshot)
     {
+        if (MapSearchFlowState.IsResultReady(
+                state,
+                snapshot,
+                GoldBalloonAutoTaskStateKeys.MapSearchPixelBaseline,
+                GoldBalloonAutoTaskStateKeys.MapSearchPixelChangedSince) &&
+            snapshot.Facts.TryGetValue(MapSearchFlowState.GoldBalloonMapFact, out var rawMap) &&
+            rawMap is GameMapType recognizedMap)
+        {
+            state.SetProperty(GoldBalloonAutoTaskStateKeys.RecognizedMap, recognizedMap);
+            state.SetProperty(GoldBalloonAutoTaskStateKeys.MapSearchAttempts, 0);
+            state.SetProperty(GoldBalloonAutoTaskStateKeys.HeroSelected, false);
+            return Click(step, new WpfPoint(540, 650), "Entered the recognized gold balloon map.");
+        }
+
         var attempts = state.TryGetProperty<int>(GoldBalloonAutoTaskStateKeys.MapSearchAttempts, out var currentAttempts)
             ? currentAttempts
             : 0;
@@ -111,23 +124,12 @@ internal sealed class GoldBalloonGameUiActionHandler : AutoTaskGameUiActionHandl
             ? new WpfPoint(1275, 45)
             : new WpfPoint(1350, 45);
 
+        MapSearchFlowState.CapturePixelBaseline(
+            state,
+            snapshot,
+            GoldBalloonAutoTaskStateKeys.MapSearchPixelBaseline);
         state.SetProperty(GoldBalloonAutoTaskStateKeys.MapSearchAttempts, attempts + 1);
         return Click(step, searchButtonPoint, "Triggered gold balloon map search.");
-    }
-
-    private GameUiActionExecutionResult ExecuteMapSearchResults(
-        GameUiNavigationStep step,
-        AutoTaskRuntimeState state,
-        GameUiSnapshot snapshot)
-    {
-        if (snapshot.Facts.TryGetValue("goldBalloonMap", out var rawMap) && rawMap is GameMapType recognizedMap)
-        {
-            state.SetProperty(GoldBalloonAutoTaskStateKeys.RecognizedMap, recognizedMap);
-        }
-
-        state.SetProperty(GoldBalloonAutoTaskStateKeys.MapSearchAttempts, 0);
-        state.SetProperty(GoldBalloonAutoTaskStateKeys.HeroSelected, false);
-        return Click(step, new WpfPoint(540, 650), "Entered the recognized gold balloon map.");
     }
 
     private GameUiActionExecutionResult ExecuteDifficultySelect(

@@ -28,5 +28,7 @@ public static class GoldBalloonAutoTaskStateKeys
     public const string RecognizedMap = "GoldBalloon.RecognizedMap";
     public const string HeroSelected = "GoldBalloon.HeroSelected";
     public const string MapSearchAttempts = "GoldBalloon.MapSearchAttempts";
+    public const string MapSearchPixelBaseline = "GoldBalloon.MapSearchPixelBaseline";
+    public const string MapSearchPixelChangedSince = "GoldBalloon.MapSearchPixelChangedSince";
     public const string ScriptRunState = "GoldBalloon.ScriptRunState";
 }
