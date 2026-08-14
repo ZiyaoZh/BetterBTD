@@ -1,6 +1,7 @@
 using System.IO;
 using BetterBTD.Core.AutoTasks.Runtime;
 using BetterBTD.Models.AutoTasks;
+using BetterBTD.Models.GameElements;
 using BetterBTD.Models.ScriptExecution;
 using BetterBTD.Services.Tasks.AutoTasks;
 
@@ -83,7 +84,12 @@ public sealed class AutoTaskRunner
                 session.MarkLoopIteration(state.LoopIteration);
 
                 await session
-                    .ReachCheckpointAsync("CaptureUiState", "Capturing current game UI state.", null, cancellationToken)
+                    .ReachCheckpointAsync(
+                        "CaptureUiState",
+                        AutoTaskActivityKind.CapturingUi,
+                        "Capturing current game UI state.",
+                        null,
+                        cancellationToken)
                     .ConfigureAwait(false);
 
                 var snapshot = await runtimeServices.GameUiState
@@ -108,7 +114,12 @@ public sealed class AutoTaskRunner
                 {
                     case AutoTaskDecisionKind.Wait:
                         await session
-                            .ReachCheckpointAsync("Wait", decision.Description, null, cancellationToken)
+                            .ReachCheckpointAsync(
+                                "Wait",
+                                AutoTaskActivityKind.Waiting,
+                                decision.Description,
+                                null,
+                                cancellationToken)
                             .ConfigureAwait(false);
                         await session
                             .DelayAsync(ResolveDelay(decision.DelayMs, options), cancellationToken)
@@ -118,7 +129,12 @@ public sealed class AutoTaskRunner
                     case AutoTaskDecisionKind.Navigate:
                         var step = runtimeServices.Navigator.GetNextStep(request.StageTarget, snapshot);
                         await session
-                            .ReachCheckpointAsync("Navigate", step.Description, null, cancellationToken)
+                            .ReachCheckpointAsync(
+                                "Navigate",
+                                AutoTaskActivityKind.Navigating,
+                                step.Description,
+                                null,
+                                cancellationToken)
                             .ConfigureAwait(false);
 
                         var navigationResult = await runtimeServices.UiActionExecutor
@@ -163,7 +179,12 @@ public sealed class AutoTaskRunner
                         }
 
                         await session
-                            .ReachCheckpointAsync("ResolveScript", decision.Description, null, cancellationToken)
+                            .ReachCheckpointAsync(
+                                "ResolveScript",
+                                AutoTaskActivityKind.ResolvingScript,
+                                decision.Description,
+                                null,
+                                cancellationToken)
                             .ConfigureAwait(false);
 
                         var scriptResolution = await runtimeServices.ScriptResolver
@@ -200,6 +221,15 @@ public sealed class AutoTaskRunner
                             RequireCaptureService = true,
                             RequireTargetWindow = true
                         };
+
+                        await session
+                            .ReachCheckpointAsync(
+                                "ExecuteScript",
+                                AutoTaskActivityKind.ExecutingScript,
+                                "Executing resolved auto-task script.",
+                                null,
+                                cancellationToken)
+                            .ConfigureAwait(false);
 
                         EventHandler<ScriptExecutionProgressSnapshot>? scriptProgressHandler = (_, progressSnapshot) =>
                             session.UpdateActiveScriptProgress(progressSnapshot);
@@ -239,6 +269,7 @@ public sealed class AutoTaskRunner
                                 state.Phase = AutoTaskPhase.SettlingResult;
                                 session.MarkPhase(
                                     state.Phase,
+                                    AutoTaskActivityKind.HandlingResult,
                                     $"Detected stage result UI '{scriptInterruptedSnapshot.State}'. Stopped the running script and continued the result flow.");
                                 break;
                             }
@@ -263,7 +294,10 @@ public sealed class AutoTaskRunner
 
                         state.RecordScriptExecutionResult(scriptResult);
                         state.Phase = AutoTaskPhase.SettlingResult;
-                        session.MarkPhase(state.Phase, "Underlying script completed. Continue auto-task state flow.");
+                        session.MarkPhase(
+                            state.Phase,
+                            AutoTaskActivityKind.HandlingResult,
+                            "Underlying script completed. Continue auto-task state flow.");
                         break;
 
                     case AutoTaskDecisionKind.Complete:
@@ -369,6 +403,7 @@ public sealed class AutoTaskRunner
             }
 
             GameUiSnapshot? interruptedSnapshot = null;
+            var lastPublishedUiSnapshot = state.LastUiSnapshot;
             while (!scriptTask.IsCompleted)
             {
                 var completedTask = await Task
@@ -386,16 +421,25 @@ public sealed class AutoTaskRunner
 
                 ObserveFreeplayTargetRound(request, state, snapshot);
 
-                if (!ShouldInterruptStageScript(request, state, snapshot.State))
+                var shouldInterrupt = ShouldInterruptStageScript(request, state, snapshot.State);
+                state.RecordUiSnapshot(snapshot);
+
+                if (HasDisplayableUiStateChanged(lastPublishedUiSnapshot, snapshot) || shouldInterrupt)
+                {
+                    session.UpdateUiSnapshot(
+                        snapshot,
+                        shouldInterrupt
+                            ? $"Detected stage result UI '{snapshot.State}' while the script was running."
+                            : $"Updated UI state '{snapshot.State}' while the script was running.");
+                    lastPublishedUiSnapshot = snapshot;
+                }
+
+                if (!shouldInterrupt)
                 {
                     continue;
                 }
 
                 interruptedSnapshot = snapshot;
-                state.RecordUiSnapshot(snapshot);
-                session.UpdateUiSnapshot(
-                    snapshot,
-                    $"Detected stage result UI '{snapshot.State}' while the script was running.");
                 linkedScriptCancellationSource.Cancel();
                 break;
             }
@@ -467,6 +511,64 @@ public sealed class AutoTaskRunner
             GameUiStateId.OdysseyStageVictory or
             GameUiStateId.OdysseySettlement or
             GameUiStateId.OdysseyReward;
+    }
+
+    private static bool HasDisplayableUiStateChanged(
+        GameUiSnapshot? previous,
+        GameUiSnapshot current)
+    {
+        if (previous is null || previous.State != current.State)
+        {
+            return true;
+        }
+
+        return current.State switch
+        {
+            GameUiStateId.InLevel => HasDisplayableStageStateChanged(previous.StageState, current.StageState),
+            GameUiStateId.MapSearch => !Equals(ResolveRecognizedMap(previous), ResolveRecognizedMap(current)),
+            _ => false
+        };
+    }
+
+    private static bool HasDisplayableStageStateChanged(
+        GameStageStateSnapshot? previous,
+        GameStageStateSnapshot? current)
+    {
+        return previous?.Gold != current?.Gold ||
+               previous?.Round != current?.Round ||
+               HasDisplayableUpgradePanelChanged(previous?.LeftUpgradePanel, current?.LeftUpgradePanel) ||
+               HasDisplayableUpgradePanelChanged(previous?.RightUpgradePanel, current?.RightUpgradePanel);
+    }
+
+    private static bool HasDisplayableUpgradePanelChanged(
+        GameStageUpgradePanelState? previous,
+        GameStageUpgradePanelState? current)
+    {
+        var wasVisible = previous?.IsVisible == true;
+        var isVisible = current?.IsVisible == true;
+        if (wasVisible != isVisible)
+        {
+            return true;
+        }
+
+        return isVisible &&
+               (previous?.TopPathLevel != current?.TopPathLevel ||
+                previous?.MiddlePathLevel != current?.MiddlePathLevel ||
+                previous?.BottomPathLevel != current?.BottomPathLevel);
+    }
+
+    private static GameMapType? ResolveRecognizedMap(GameUiSnapshot snapshot)
+    {
+        if (snapshot.Facts.TryGetValue(MapSearchFlowState.CollectionMapFact, out var map) &&
+            map is GameMapType collectionMap)
+        {
+            return collectionMap;
+        }
+
+        return snapshot.Facts.TryGetValue(MapSearchFlowState.GoldBalloonMapFact, out map) &&
+               map is GameMapType goldBalloonMap
+            ? goldBalloonMap
+            : null;
     }
 
     private static void ObserveFreeplayTargetRound(

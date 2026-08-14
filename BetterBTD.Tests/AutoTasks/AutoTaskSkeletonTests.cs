@@ -285,6 +285,10 @@ public sealed class AutoTaskSkeletonTests
 
         await scriptExecutor.Started.Task.WaitAsync(TimeSpan.FromSeconds(2));
 
+        Assert.Equal(
+            AutoTaskActivityKind.ExecutingScript,
+            runner.CurrentSession?.GetSnapshot().CurrentActivity);
+
         Assert.True(runner.RequestPause());
         Assert.Equal(1, scriptExecutor.PauseRequestCount);
 
@@ -525,6 +529,131 @@ public sealed class AutoTaskSkeletonTests
         Assert.Equal(new[] { uiState }, strategy.InterruptedSnapshots);
     }
 
+    [Fact]
+    public async Task Runner_PublishesDisplayableUiChangesWhileStageScriptIsRunning()
+    {
+        var uiStateService = new QueueGameUiStateService(
+        [
+            new GameUiSnapshot
+            {
+                State = GameUiStateId.InLevel,
+                StageState = new GameStageStateSnapshot
+                {
+                    Gold = 100,
+                    Round = 1,
+                    RightUpgradePanel = new GameStageUpgradePanelState
+                    {
+                        IsVisible = false,
+                        TopPathLevel = 1
+                    }
+                }
+            },
+            new GameUiSnapshot
+            {
+                State = GameUiStateId.InLevel,
+                StageState = new GameStageStateSnapshot
+                {
+                    Gold = 250,
+                    Round = 2,
+                    RightUpgradePanel = new GameStageUpgradePanelState
+                    {
+                        IsVisible = false,
+                        TopPathLevel = 2
+                    }
+                }
+            },
+            new GameUiSnapshot
+            {
+                State = GameUiStateId.InLevel,
+                StageState = new GameStageStateSnapshot
+                {
+                    Gold = 250,
+                    Round = 2,
+                    RightUpgradePanel = new GameStageUpgradePanelState
+                    {
+                        IsVisible = false,
+                        TopPathLevel = 9
+                    }
+                }
+            }
+        ]);
+        var scriptExecutor = new BlockingAutoTaskScriptExecutor();
+        var runtimeServices = new AutoTaskRuntimeServices
+        {
+            GameUiState = uiStateService,
+            Navigator = GameUiNavigator.Instance,
+            UiActionExecutor = new RecordingGameUiActionExecutor(),
+            ScriptResolver = new RecordingAutoTaskScriptResolver("collection-stage.json"),
+            ScriptExecutor = scriptExecutor
+        };
+        var runner = new AutoTaskRunner(
+            new SingleStrategyRegistry(new InterruptAwareCollectionStrategy()),
+            runtimeServices,
+            AutoTaskRuntimeScriptPreviewService.Instance);
+        using var cancellationSource = new CancellationTokenSource();
+
+        var executionTask = runner.ExecuteAsync(
+            new AutoTaskRequest
+            {
+                Kind = AutoTaskKind.Collection,
+                StageTarget = CreateTarget(),
+                PreferredScriptPath = "collection-stage.json"
+            },
+            new AutoTaskExecutionOptions
+            {
+                RuntimeServices = runtimeServices,
+                MaxLoopIterations = 10
+            },
+            cancellationSource.Token);
+
+        await scriptExecutor.Started.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        var session = runner.CurrentSession ?? throw new InvalidOperationException("Auto-task session was not available.");
+        var displayedUiUpdateCount = 0;
+        EventHandler<AutoTaskProgressSnapshot> progressHandler = (_, snapshot) =>
+        {
+            if (snapshot.CurrentActivity == AutoTaskActivityKind.ExecutingScript &&
+                snapshot.LastUiSnapshot?.StageState?.Round == 2)
+            {
+                Interlocked.Increment(ref displayedUiUpdateCount);
+            }
+        };
+        session.ProgressChanged += progressHandler;
+
+        try
+        {
+            await WaitUntilAsync(() => uiStateService.CaptureCount >= 3, TimeSpan.FromSeconds(2));
+
+            cancellationSource.Cancel();
+            var result = await executionTask.WaitAsync(TimeSpan.FromSeconds(2));
+            var monitoredSnapshot = result.FinalProgress;
+
+            Assert.Equal(AutoTaskExecutionStatus.Cancelled, result.Status);
+            Assert.Equal(250, monitoredSnapshot.LastUiSnapshot?.StageState?.Gold);
+            Assert.Equal(2, monitoredSnapshot.LastUiSnapshot?.StageState?.Round);
+            Assert.Equal(1, Volatile.Read(ref displayedUiUpdateCount));
+        }
+        finally
+        {
+            session.ProgressChanged -= progressHandler;
+            cancellationSource.Cancel();
+            await executionTask;
+        }
+    }
+
+    private static async Task WaitUntilAsync(Func<bool> condition, TimeSpan timeout)
+    {
+        var startedAt = DateTime.UtcNow;
+        while (!condition())
+        {
+            if (DateTime.UtcNow - startedAt >= timeout)
+            {
+                throw new TimeoutException("Expected condition was not reached before the timeout.");
+            }
+
+            await Task.Delay(20);
+        }
+    }
+
     private static StageEntryTarget CreateTarget()
     {
         return new StageEntryTarget
@@ -550,7 +679,10 @@ public sealed class AutoTaskSkeletonTests
     {
         private readonly Queue<GameUiSnapshot> _snapshots;
         private GameUiSnapshot _lastSnapshot;
+        private int _captureCount;
         public int ResetCount { get; private set; }
+
+        public int CaptureCount => Volatile.Read(ref _captureCount);
 
         public QueueGameUiStateService(IEnumerable<GameUiSnapshot> snapshots)
         {
@@ -561,6 +693,7 @@ public sealed class AutoTaskSkeletonTests
         public Task<GameUiSnapshot> CaptureSnapshotAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            Interlocked.Increment(ref _captureCount);
 
             if (_snapshots.Count > 0)
             {

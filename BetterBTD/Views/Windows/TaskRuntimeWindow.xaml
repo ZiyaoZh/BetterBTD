@@ -45,13 +45,6 @@
             </Setter>
         </Style>
 
-        <Style x:Key="SelectableLogTextBoxStyle"
-               TargetType="TextBox"
-               BasedOn="{StaticResource DefaultTextBoxStyle}">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Padding" Value="0" />
-        </Style>
     </ui:FluentWindow.Resources>
 
     <Grid>
@@ -330,7 +323,7 @@
 
                     <TextBlock Grid.Column="0"
                                Style="{StaticResource CardTitleTextStyle}"
-                               Text="{Binding OutputTitle}"
+                               Text="{Binding ActivityTitle}"
                                TextTrimming="CharacterEllipsis"
                                TextWrapping="NoWrap"
                                HorizontalAlignment="Left"
@@ -370,23 +363,52 @@
                     </StackPanel>
                 </Grid>
 
-                <TextBox x:Name="LogTextBox"
-                         Grid.Row="1"
-                         Margin="0,10,0,0"
-                         Style="{StaticResource SelectableLogTextBoxStyle}"
-                         IsReadOnly="True"
-                         IsReadOnlyCaretVisible="True"
-                         AcceptsReturn="True"
-                         Text="{Binding LogText, Mode=OneWay}"
-                         FontFamily="Consolas"
-                         FontSize="12"
-                         Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                         TextAlignment="Left"
-                         TextWrapping="Wrap"
-                         VerticalScrollBarVisibility="Visible"
-                         HorizontalScrollBarVisibility="Disabled"
-                         Loaded="OnLogTextBoxLoaded"
-                         TextChanged="OnLogTextBoxTextChanged" />
+                <Grid Grid.Row="1"
+                      Margin="0,10,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="92" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0"
+                               Grid.Column="0"
+                               Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                               Text="{Binding CurrentPhaseLabel}" />
+                    <TextBlock Grid.Row="0"
+                               Grid.Column="1"
+                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                               Text="{Binding CurrentPhaseText}"
+                               TextWrapping="Wrap" />
+
+                    <TextBlock Grid.Row="1"
+                               Grid.Column="0"
+                               Margin="0,8,0,0"
+                               Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                               Text="{Binding CurrentActivityLabel}" />
+                    <TextBlock Grid.Row="1"
+                               Grid.Column="1"
+                               Margin="0,8,0,0"
+                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                               Text="{Binding CurrentActivityText}"
+                               TextWrapping="Wrap" />
+
+                    <TextBlock Grid.Row="2"
+                               Grid.Column="0"
+                               Margin="0,8,0,0"
+                               Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                               Text="{Binding ActivityStatusLabel}" />
+                    <TextBlock Grid.Row="2"
+                               Grid.Column="1"
+                               Margin="0,8,0,0"
+                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                               Text="{Binding ActivityStatusText}"
+                               TextWrapping="Wrap" />
+                </Grid>
             </Grid>
         </Grid>
     </Grid>

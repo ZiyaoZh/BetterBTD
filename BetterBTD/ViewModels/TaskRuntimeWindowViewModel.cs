@@ -1,7 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -43,7 +42,9 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
     private string _taskDisplayName = string.Empty;
     private string _taskSummaryText = string.Empty;
     private string _statusText = string.Empty;
-    private string _logText = string.Empty;
+    private string _currentPhaseText = string.Empty;
+    private string _currentActivityText = string.Empty;
+    private string _activityStatusText = string.Empty;
     private string _completedStageCountText = string.Empty;
     private string _runtimeDurationText = string.Empty;
     private bool _isRunning;
@@ -54,7 +55,6 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
     private DateTimeOffset? _runtimeStartedAt;
     private ScriptExecutionStepItem? _focusedStep;
     private ScriptExecutionStepItem? _selectedStep;
-    private string _lastLogSignature = string.Empty;
     private string _sequenceSignature = string.Empty;
     private AutoTaskProgressSnapshot? _pendingProgressSnapshot;
     private bool _isProgressFlushScheduled;
@@ -82,7 +82,10 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
         _runtimeDurationTimer.Tick += OnRuntimeDurationTimerTick;
 
         UpdateTaskMetadata(taskDisplayName, taskSummaryText);
-        _statusText = _localizationService.T("Tasks.Runtime.NotStarted");
+        _statusText = BuildUiInfoText(new AutoTaskProgressSnapshot());
+        _currentPhaseText = _localizationService.T("Tasks.Runtime.NotStarted");
+        _currentActivityText = _localizationService.T("Tasks.Runtime.NotStarted");
+        _activityStatusText = _localizationService.T("Tasks.Runtime.NotStarted");
         var runtimeMetricPlaceholder = _localizationService.T("Tasks.Runtime.Metrics.NotStarted");
         _completedStageCountText = runtimeMetricPlaceholder;
         _runtimeDurationText = runtimeMetricPlaceholder;
@@ -94,8 +97,6 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
     }
 
     public ObservableCollection<ScriptExecutionStepItem> Steps { get; } = [];
-
-    public ObservableCollection<string> LogLines { get; } = [];
 
     public IAsyncRelayCommand StartCommand { get; }
 
@@ -125,10 +126,22 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
         private set => SetProperty(ref _statusText, value);
     }
 
-    public string LogText
+    public string CurrentPhaseText
     {
-        get => _logText;
-        private set => SetProperty(ref _logText, value);
+        get => _currentPhaseText;
+        private set => SetProperty(ref _currentPhaseText, value);
+    }
+
+    public string CurrentActivityText
+    {
+        get => _currentActivityText;
+        private set => SetProperty(ref _currentActivityText, value);
+    }
+
+    public string ActivityStatusText
+    {
+        get => _activityStatusText;
+        private set => SetProperty(ref _activityStatusText, value);
     }
 
     public bool IsRunning
@@ -171,7 +184,13 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
 
     public string StatusTitle => _localizationService.T("Tasks.Runtime.Status");
 
-    public string OutputTitle => _localizationService.T("Tasks.Runtime.Log");
+    public string ActivityTitle => _localizationService.T("Tasks.Runtime.ActivityTitle");
+
+    public string CurrentPhaseLabel => _localizationService.T("Tasks.Runtime.Activity.Phase");
+
+    public string CurrentActivityLabel => _localizationService.T("Tasks.Runtime.Activity.Action");
+
+    public string ActivityStatusLabel => _localizationService.T("Tasks.Runtime.Activity.Status");
 
     public string CompletedStageCountTitle => _localizationService.T("Tasks.Runtime.Metrics.CompletedStages");
 
@@ -252,8 +271,8 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
 
         EnsureSequence(snapshot);
         UpdateSequenceProgress(snapshot);
-        StatusText = BuildStatusText(snapshot);
-        AppendProgressLog(snapshot);
+        StatusText = BuildUiInfoText(snapshot);
+        UpdateActivityDisplay(snapshot);
     }
 
     public void ApplyResult(AutoTaskExecutionResult result)
@@ -277,8 +296,10 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
             _ => _localizationService.T("Tasks.Runtime.UnknownResult")
         };
 
-        StatusText = BuildStatusText(result.FinalProgress, finalText);
-        AppendLog(finalText);
+        StatusText = BuildUiInfoText(result.FinalProgress);
+        CurrentPhaseText = LocalizeEnum("Tasks.Runtime.Phase", result.FinalProgress.Phase);
+        CurrentActivityText = LocalizeEnum("Tasks.Runtime.Activity", result.FinalProgress.CurrentActivity);
+        ActivityStatusText = finalText;
     }
 
     public void ApplyUnexpectedException(Exception exception)
@@ -288,8 +309,9 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
         StopAcceptingProgressSnapshots();
         IsRunning = false;
         StopRuntimeDuration();
-        StatusText = string.Format(_localizationService.T("Tasks.Runtime.UnexpectedError"), exception.Message);
-        AppendLog(StatusText);
+        CurrentPhaseText = LocalizeEnum("Tasks.Runtime.Phase", AutoTaskPhase.Failed);
+        CurrentActivityText = LocalizeEnum("Tasks.Runtime.Activity", AutoTaskActivityKind.None);
+        ActivityStatusText = string.Format(_localizationService.T("Tasks.Runtime.UnexpectedError"), exception.Message);
     }
 
     public void HandleWindowClosing()
@@ -347,25 +369,23 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
         StopCommand.NotifyCanExecuteChanged();
         StopRuntimeDuration();
         _requestStop();
-        StatusText = _localizationService.T("Tasks.Runtime.StopRequested");
-        AppendLog(StatusText);
+        ActivityStatusText = _localizationService.T("Tasks.Runtime.StopRequested");
     }
 
     private void PrepareForExecution()
     {
         BeginAcceptingProgressSnapshots();
         _isStopRequested = false;
-        _lastLogSignature = string.Empty;
         _sequenceSignature = string.Empty;
-        LogLines.Clear();
-        LogText = string.Empty;
         CompletedStageCountText = _localizationService.T("Tasks.Runtime.Metrics.NotStarted");
         BeginRuntimeDuration();
         SetSequencePlaceholder(_localizationService.T("Tasks.Runtime.ScriptPending"));
         FocusedStep = Steps.FirstOrDefault();
         IsRunning = true;
-        StatusText = _localizationService.T("Tasks.Runtime.Starting");
-        AppendLog(StatusText);
+        StatusText = BuildUiInfoText(new AutoTaskProgressSnapshot());
+        CurrentPhaseText = LocalizeEnum("Tasks.Runtime.Phase", AutoTaskPhase.PreparingStage);
+        CurrentActivityText = LocalizeEnum("Tasks.Runtime.Activity", AutoTaskActivityKind.Preparing);
+        ActivityStatusText = _localizationService.T("Tasks.Runtime.Starting");
     }
 
     private void BeginAcceptingProgressSnapshots()
@@ -613,148 +633,55 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
             : progress.LastCompletedStepIndex);
     }
 
-    private string BuildStatusText(AutoTaskProgressSnapshot snapshot, string? finalLineOverride = null)
+    private string BuildUiInfoText(AutoTaskProgressSnapshot snapshot)
     {
         ArgumentNullException.ThrowIfNull(snapshot);
 
         var builder = new StringBuilder();
-        AppendStatusLine(builder, _localizationService.T("Tasks.Runtime.Status.RunState"), Humanize(snapshot.RunState));
-        AppendStatusLine(builder, _localizationService.T("Tasks.Runtime.Status.Phase"), Humanize(snapshot.Phase));
-        AppendStatusLine(builder, _localizationService.T("Tasks.Runtime.Status.Checkpoint"), string.IsNullOrWhiteSpace(snapshot.CurrentCheckpoint)
-            ? _localizationService.T("Tasks.Runtime.Unknown")
-            : snapshot.CurrentCheckpoint);
+        var uiSnapshot = snapshot.LastUiSnapshot;
+        var uiState = uiSnapshot?.State ?? snapshot.CurrentUiState;
+        AppendStatusLine(
+            builder,
+            _localizationService.T("Tasks.Runtime.Status.UiState"),
+            LocalizeEnum("CaptureTest.GameUiState", uiState));
 
-        if (snapshot.LastUiSnapshot is { } uiSnapshot)
+        if (uiSnapshot?.State == GameUiStateId.InLevel && uiSnapshot.StageState is { } stageState)
         {
-            AppendStatusLine(builder, _localizationService.T("Tasks.Runtime.Status.UiState"), Humanize(uiSnapshot.State));
-            AppendStatusLine(builder, _localizationService.T("Tasks.Runtime.Status.UiSummary"), string.IsNullOrWhiteSpace(uiSnapshot.Summary)
-                ? _localizationService.T("Tasks.Runtime.Unknown")
-                : uiSnapshot.Summary);
-            AppendStatusLine(builder, _localizationService.T("Tasks.Runtime.Status.Confidence"), $"{uiSnapshot.Confidence:P0}");
+            if (stageState.Gold.HasValue)
+            {
+                AppendStatusLine(
+                    builder,
+                    _localizationService.T("Tasks.Runtime.Status.Gold"),
+                    stageState.Gold.Value.ToString(CultureInfo.InvariantCulture));
+            }
 
+            if (stageState.Round.HasValue)
+            {
+                AppendStatusLine(
+                    builder,
+                    _localizationService.T("Tasks.Runtime.Status.Round"),
+                    stageState.Round.Value.ToString(CultureInfo.InvariantCulture));
+            }
+
+            AppendUpgradePanel(
+                builder,
+                _localizationService.T("Tasks.Runtime.Status.LeftUpgrade"),
+                stageState.LeftUpgradePanel);
+            AppendUpgradePanel(
+                builder,
+                _localizationService.T("Tasks.Runtime.Status.RightUpgrade"),
+                stageState.RightUpgradePanel);
+        }
+        else if (uiSnapshot?.State == GameUiStateId.MapSearch)
+        {
             var recognizedMap = ResolveRecognizedMapText(uiSnapshot);
             if (!string.IsNullOrWhiteSpace(recognizedMap))
             {
                 AppendStatusLine(builder, _localizationService.T("Tasks.Runtime.Status.Map"), recognizedMap);
             }
-
-            if (uiSnapshot.StageState is { } stageState)
-            {
-                if (stageState.IsInLevel.HasValue)
-                {
-                    AppendStatusLine(builder, _localizationService.T("Tasks.Runtime.Status.InLevel"), FormatBool(stageState.IsInLevel.Value));
-                }
-
-                if (stageState.Gold.HasValue)
-                {
-                    AppendStatusLine(builder, _localizationService.T("Tasks.Runtime.Status.Gold"), stageState.Gold.Value.ToString());
-                }
-
-                if (stageState.Round.HasValue)
-                {
-                    AppendStatusLine(builder, _localizationService.T("Tasks.Runtime.Status.Round"), stageState.Round.Value.ToString());
-                }
-
-                if (!string.IsNullOrWhiteSpace(stageState.StageTarget))
-                {
-                    AppendStatusLine(builder, _localizationService.T("Tasks.Runtime.Status.StageTarget"), stageState.StageTarget);
-                }
-            }
         }
-
-        if (!string.IsNullOrWhiteSpace(snapshot.ActiveScriptDisplayName))
-        {
-            AppendStatusLine(builder, _localizationService.T("Tasks.Runtime.Status.Script"), snapshot.ActiveScriptDisplayName);
-        }
-
-        if (!string.IsNullOrWhiteSpace(snapshot.ActiveScriptPath))
-        {
-            AppendStatusLine(builder, _localizationService.T("Tasks.Runtime.Status.ScriptPath"), snapshot.ActiveScriptPath);
-        }
-
-        if (snapshot.ActiveScriptProgress is { } scriptProgress &&
-            TryResolveScriptStepTitle(snapshot, scriptProgress, out var stepTitle))
-        {
-            AppendStatusLine(
-                builder,
-                _localizationService.T("Tasks.Runtime.Status.ScriptStep"),
-                $"#{scriptProgress.CurrentStepIndex + 1:000} {stepTitle}");
-        }
-
-        if (snapshot.ConsecutiveNavigationFailures > 0)
-        {
-            AppendStatusLine(
-                builder,
-                _localizationService.T("Tasks.Runtime.Status.NavigationFailures"),
-                snapshot.ConsecutiveNavigationFailures.ToString());
-        }
-
-        AppendStatusLine(
-            builder,
-            _localizationService.T("Tasks.Runtime.Status.Message"),
-            string.IsNullOrWhiteSpace(finalLineOverride) ? snapshot.Message : finalLineOverride);
 
         return builder.ToString().TrimEnd();
-    }
-
-    private void AppendProgressLog(AutoTaskProgressSnapshot snapshot)
-    {
-        ArgumentNullException.ThrowIfNull(snapshot);
-
-        var signature = string.Join("|",
-            snapshot.RunState,
-            snapshot.Phase,
-            snapshot.CurrentUiState,
-            snapshot.CurrentCheckpoint,
-            snapshot.ConsecutiveNavigationFailures,
-            snapshot.ActiveScriptPath,
-            snapshot.Message);
-
-        if (string.Equals(signature, _lastLogSignature, StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        _lastLogSignature = signature;
-
-        var parts = new List<string>
-        {
-            Humanize(snapshot.Phase)
-        };
-
-        if (snapshot.CurrentUiState != GameUiStateId.Unknown)
-        {
-            parts.Add(Humanize(snapshot.CurrentUiState));
-        }
-
-        if (!string.IsNullOrWhiteSpace(snapshot.ActiveScriptDisplayName))
-        {
-            parts.Add($"{_localizationService.T("Tasks.Runtime.Status.Script")}: {snapshot.ActiveScriptDisplayName}");
-        }
-
-        if (!string.IsNullOrWhiteSpace(snapshot.Message))
-        {
-            parts.Add(snapshot.Message);
-        }
-
-        if (snapshot.ConsecutiveNavigationFailures > 0)
-        {
-            parts.Add($"{_localizationService.T("Tasks.Runtime.Status.NavigationFailures")}: {snapshot.ConsecutiveNavigationFailures}");
-        }
-
-        AppendLog(string.Join(" | ", parts));
-    }
-
-    private void AppendLog(string message)
-    {
-        if (string.IsNullOrWhiteSpace(message))
-        {
-            return;
-        }
-
-        var line = $"[{DateTime.Now:HH:mm:ss}] {message.Trim()}";
-        LogLines.Add(line);
-        LogText = string.Join(Environment.NewLine, LogLines);
     }
 
     private static void ApplyStepVisual(
@@ -791,30 +718,43 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
             : Steps[stepIndex];
     }
 
-    private bool TryResolveScriptStepTitle(
-        AutoTaskProgressSnapshot taskSnapshot,
-        ScriptExecutionProgressSnapshot scriptProgress,
-        out string title)
+    private void UpdateActivityDisplay(AutoTaskProgressSnapshot snapshot)
     {
-        if (scriptProgress.CurrentStepIndex >= 0 &&
-            scriptProgress.CurrentStepIndex < taskSnapshot.ActiveScriptSteps.Count)
+        CurrentPhaseText = LocalizeEnum("Tasks.Runtime.Phase", snapshot.Phase);
+        CurrentActivityText = LocalizeEnum("Tasks.Runtime.Activity", snapshot.CurrentActivity);
+
+        if (snapshot.ConsecutiveNavigationFailures > 0)
         {
-            title = taskSnapshot.ActiveScriptSteps[scriptProgress.CurrentStepIndex];
-            return true;
+            ActivityStatusText = string.Format(
+                CultureInfo.CurrentCulture,
+                _localizationService.T("Tasks.Runtime.ActivityStatus.NavigationRetry"),
+                snapshot.ConsecutiveNavigationFailures);
+            return;
         }
 
-        title = string.Empty;
-        return false;
+        ActivityStatusText = snapshot.RunState switch
+        {
+            AutoTaskRunState.Idle => _localizationService.T("Tasks.Runtime.ActivityStatus.Idle"),
+            AutoTaskRunState.Running when snapshot.CurrentActivity == AutoTaskActivityKind.Waiting =>
+                _localizationService.T("Tasks.Runtime.ActivityStatus.Waiting"),
+            AutoTaskRunState.Running => _localizationService.T("Tasks.Runtime.ActivityStatus.Running"),
+            AutoTaskRunState.PauseRequested => _localizationService.T("Tasks.Runtime.ActivityStatus.PauseRequested"),
+            AutoTaskRunState.Paused => _localizationService.T("Tasks.Runtime.ActivityStatus.Paused"),
+            AutoTaskRunState.Completed => _localizationService.T("Tasks.Runtime.ActivityStatus.Completed"),
+            AutoTaskRunState.Cancelled => _localizationService.T("Tasks.Runtime.ActivityStatus.Cancelled"),
+            AutoTaskRunState.Failed => _localizationService.T("Tasks.Runtime.ActivityStatus.Failed"),
+            _ => _localizationService.T("Tasks.Runtime.Unknown")
+        };
     }
 
     private string ResolveRecognizedMapText(GameUiSnapshot snapshot)
     {
-        if (snapshot.Facts.TryGetValue("collectionMap", out var rawMap) && rawMap is GameMapType map)
+        if (snapshot.Facts.TryGetValue(MapSearchFlowState.CollectionMapFact, out var rawMap) && rawMap is GameMapType map)
         {
             return GameElementCatalog.GetMapDisplayName(map);
         }
 
-        if (snapshot.Facts.TryGetValue("goldBalloonMap", out rawMap) && rawMap is GameMapType goldBalloonMap)
+        if (snapshot.Facts.TryGetValue(MapSearchFlowState.GoldBalloonMapFact, out rawMap) && rawMap is GameMapType goldBalloonMap)
         {
             return GameElementCatalog.GetMapDisplayName(goldBalloonMap);
         }
@@ -822,11 +762,33 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
         return string.Empty;
     }
 
-    private string FormatBool(bool value)
+    private void AppendUpgradePanel(
+        StringBuilder builder,
+        string label,
+        GameStageUpgradePanelState panel)
     {
-        return value
-            ? _localizationService.T("Tasks.Runtime.Yes")
-            : _localizationService.T("Tasks.Runtime.No");
+        if (panel.IsVisible != true)
+        {
+            return;
+        }
+
+        var levels = new List<string>(3);
+        AppendUpgradeLevel(levels, "CaptureTest.PathTop", panel.TopPathLevel);
+        AppendUpgradeLevel(levels, "CaptureTest.PathMiddle", panel.MiddlePathLevel);
+        AppendUpgradeLevel(levels, "CaptureTest.PathBottom", panel.BottomPathLevel);
+
+        if (levels.Count > 0)
+        {
+            AppendStatusLine(builder, label, string.Join(" / ", levels));
+        }
+    }
+
+    private void AppendUpgradeLevel(List<string> levels, string labelKey, int? level)
+    {
+        if (level.HasValue)
+        {
+            levels.Add($"{_localizationService.T(labelKey)} {level.Value.ToString(CultureInfo.InvariantCulture)}");
+        }
     }
 
     private static void AppendStatusLine(StringBuilder builder, string label, string? value)
@@ -841,18 +803,13 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
         builder.AppendLine(value.Trim());
     }
 
-    private static string Humanize<T>(T value) where T : struct, Enum
+    private string LocalizeEnum<T>(string keyPrefix, T value) where T : struct, Enum
     {
-        var text = value.ToString();
-        if (string.IsNullOrWhiteSpace(text))
-        {
-            return string.Empty;
-        }
-
-        return Regex.Replace(
-            Regex.Replace(text, "([A-Z])([A-Z][a-z])", "$1 $2"),
-            "([a-z0-9])([A-Z])",
-            "$1 $2");
+        var key = $"{keyPrefix}.{value}";
+        var localized = _localizationService.T(key);
+        return string.Equals(localized, key, StringComparison.Ordinal)
+            ? value.ToString()
+            : localized;
     }
 
     private static Brush CreateBrush(string hex)

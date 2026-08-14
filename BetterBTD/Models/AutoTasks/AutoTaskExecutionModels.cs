@@ -44,6 +44,18 @@ public enum AutoTaskPhase
     Failed
 }
 
+public enum AutoTaskActivityKind
+{
+    None,
+    Preparing,
+    CapturingUi,
+    Waiting,
+    Navigating,
+    ResolvingScript,
+    ExecutingScript,
+    HandlingResult
+}
+
 public enum AutoTaskExecutionStatus
 {
     Completed,
@@ -454,6 +466,8 @@ public sealed class AutoTaskProgressSnapshot
 
     public AutoTaskPhase Phase { get; set; } = AutoTaskPhase.PreparingStage;
 
+    public AutoTaskActivityKind CurrentActivity { get; set; } = AutoTaskActivityKind.None;
+
     public DateTimeOffset StartedAt { get; set; } = DateTimeOffset.UtcNow;
 
     public DateTimeOffset LastUpdatedAt { get; set; } = DateTimeOffset.UtcNow;
@@ -492,6 +506,7 @@ public sealed class AutoTaskProgressSnapshot
             TaskKind = TaskKind,
             RunState = RunState,
             Phase = Phase,
+            CurrentActivity = CurrentActivity,
             StartedAt = StartedAt,
             LastUpdatedAt = LastUpdatedAt,
             LoopIteration = LoopIteration,

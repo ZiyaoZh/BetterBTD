@@ -8,7 +8,6 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using BetterBTD.ViewModels;
 using Wpf.Ui.Controls;
-using WpfTextBox = System.Windows.Controls.TextBox;
 
 namespace BetterBTD.Views.Windows;
 
@@ -40,7 +39,6 @@ public partial class TaskRuntimeWindow : FluentWindow
         ModShift | ModControl | ModAlt | ModWin
     ];
 
-    private int _lastLogTextLength;
     private HwndSource? _hwndSource;
     private bool _isGlobalHotkeyRegistered;
     private readonly HashSet<int> _registeredHotkeyIds = [];
@@ -140,39 +138,6 @@ public partial class TaskRuntimeWindow : FluentWindow
                 ScrollItemIntoPreferredView(SequenceListBox, viewModel.FocusedStep);
             }
         }, DispatcherPriority.Background);
-    }
-
-    private void OnLogTextBoxLoaded(object sender, RoutedEventArgs e)
-    {
-        if (sender is not WpfTextBox textBox)
-        {
-            return;
-        }
-
-        _lastLogTextLength = textBox.Text.Length;
-        textBox.CaretIndex = textBox.Text.Length;
-        textBox.ScrollToEnd();
-    }
-
-    private void OnLogTextBoxTextChanged(object sender, TextChangedEventArgs e)
-    {
-        if (sender is not WpfTextBox textBox)
-        {
-            return;
-        }
-
-        var shouldAutoScroll = !textBox.IsKeyboardFocusWithin ||
-                               (textBox.SelectionLength == 0 && textBox.CaretIndex >= _lastLogTextLength);
-
-        _lastLogTextLength = textBox.Text.Length;
-
-        if (!shouldAutoScroll)
-        {
-            return;
-        }
-
-        textBox.CaretIndex = textBox.Text.Length;
-        textBox.ScrollToEnd();
     }
 
     private void OnSequenceListBoxSelectionChanged(object sender, SelectionChangedEventArgs e)

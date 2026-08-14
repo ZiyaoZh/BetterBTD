@@ -50,6 +50,7 @@ public sealed class AutoTaskExecutionSession
         PublishUpdate(
             AutoTaskRunState.Running,
             phase,
+            AutoTaskActivityKind.Preparing,
             null,
             null,
             0,
@@ -90,6 +91,21 @@ public sealed class AutoTaskExecutionSession
         PublishUpdate(
             null,
             phase,
+            null,
+            null,
+            null,
+            0,
+            null,
+            message,
+            resetPauseRequested: false);
+    }
+
+    public void MarkPhase(AutoTaskPhase phase, AutoTaskActivityKind activity, string message)
+    {
+        PublishUpdate(
+            null,
+            phase,
+            activity,
             null,
             null,
             0,
@@ -218,11 +234,17 @@ public sealed class AutoTaskExecutionSession
         return true;
     }
 
-    public async Task ReachCheckpointAsync(string checkpoint, string? message, int? attempt, CancellationToken cancellationToken)
+    public async Task ReachCheckpointAsync(
+        string checkpoint,
+        AutoTaskActivityKind activity,
+        string? message,
+        int? attempt,
+        CancellationToken cancellationToken)
     {
         PublishUpdate(
             null,
             null,
+            activity,
             null,
             checkpoint,
             attempt ?? 0,
@@ -313,6 +335,7 @@ public sealed class AutoTaskExecutionSession
             _runState = runState;
             _progressSnapshot.RunState = runState;
             _progressSnapshot.Phase = phase;
+            _progressSnapshot.CurrentActivity = AutoTaskActivityKind.None;
             _progressSnapshot.CurrentCheckpoint = runState.ToString();
             _progressSnapshot.CurrentAttempt = 0;
             _progressSnapshot.IsPauseRequested = false;
@@ -327,6 +350,7 @@ public sealed class AutoTaskExecutionSession
     private void PublishUpdate(
         AutoTaskRunState? runState,
         AutoTaskPhase? phase,
+        AutoTaskActivityKind? activity,
         GameUiStateId? uiState,
         string? checkpoint,
         int currentAttempt,
@@ -346,6 +370,11 @@ public sealed class AutoTaskExecutionSession
             if (phase.HasValue)
             {
                 _progressSnapshot.Phase = phase.Value;
+            }
+
+            if (activity.HasValue)
+            {
+                _progressSnapshot.CurrentActivity = activity.Value;
             }
 
             if (uiState.HasValue)
