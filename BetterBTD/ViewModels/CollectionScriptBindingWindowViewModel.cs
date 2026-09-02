@@ -216,12 +216,15 @@ public sealed partial class CollectionScriptBindingWindowViewModel : ObservableO
         string boundScriptId,
         bool isBrokenBinding)
     {
+        var filteredScripts = scripts
+            .Where(script => map is null || script.Map == map.Value)
+            .ToList();
         var choices = new ObservableCollection<CollectionScriptChoiceViewModel>
         {
             new(string.Empty, _localizationService.T("Tasks.CollectionBinding.Unconfigured"), false)
         };
 
-        foreach (var script in scripts
+        foreach (var script in filteredScripts
                      .OrderByDescending(script => IsRecommended(script, map))
                      .ThenBy(script => script.DisplayName, StringComparer.CurrentCultureIgnoreCase))
         {
@@ -239,7 +242,9 @@ public sealed partial class CollectionScriptBindingWindowViewModel : ObservableO
                 hasIssue));
         }
 
-        if (isBrokenBinding &&
+        if ((isBrokenBinding ||
+             (boundScriptId.Length > 0 && filteredScripts.All(script =>
+                 !string.Equals(script.ScriptId, boundScriptId, StringComparison.OrdinalIgnoreCase)))) &&
             choices.All(choice => !string.Equals(choice.ScriptId, boundScriptId, StringComparison.OrdinalIgnoreCase)))
         {
             choices.Insert(1, new CollectionScriptChoiceViewModel(

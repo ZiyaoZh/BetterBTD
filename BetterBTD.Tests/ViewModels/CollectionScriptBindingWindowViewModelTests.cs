@@ -69,6 +69,30 @@ public sealed class CollectionScriptBindingWindowViewModelTests
     }
 
     [Fact]
+    public void ScriptChoices_AreFilteredToTheRowMap()
+    {
+        var rootDirectory = CreateRootDirectory();
+
+        try
+        {
+            var service = CreateLibraryService(rootDirectory);
+            var darkCastleScript = ImportCollectionScript(service, rootDirectory, GameMapType.DarkCastle);
+            var logsScript = ImportCollectionScript(service, rootDirectory, GameMapType.Logs);
+            using var viewModel = CreateViewModel(service, "simple");
+
+            var darkCastleRow = Assert.Single(viewModel.SelectedMode!.Rows, item =>
+                item.SlotId == ManagedScriptSlotIdFactory.CreateCollectionSlotId("simple", GameMapType.DarkCastle));
+
+            Assert.Contains(darkCastleRow.ScriptChoices, choice => choice.ScriptId == darkCastleScript.ScriptId);
+            Assert.DoesNotContain(darkCastleRow.ScriptChoices, choice => choice.ScriptId == logsScript.ScriptId);
+        }
+        finally
+        {
+            Directory.Delete(rootDirectory, recursive: true);
+        }
+    }
+
+    [Fact]
     public void DisposeWithoutSaving_DoesNotPersistEditedBinding()
     {
         var rootDirectory = CreateRootDirectory();
