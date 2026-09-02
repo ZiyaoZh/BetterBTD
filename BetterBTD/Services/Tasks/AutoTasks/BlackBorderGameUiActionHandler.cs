@@ -1,4 +1,5 @@
 using BetterBTD.Core.AutoTasks.Runtime;
+using BetterBTD.Models;
 using BetterBTD.Models.AutoTasks;
 using BetterBTD.Models.GameElements;
 using BetterBTD.Models.MyScripts;
@@ -12,8 +13,21 @@ namespace BetterBTD.Services.Tasks.AutoTasks;
 
 internal sealed class BlackBorderGameUiActionHandler : AutoTaskGameUiActionHandlerBase
 {
-    private static readonly OpenCvRect BlackBorderMapGridReferenceRegion = new(150, 220, 1620, 620);
+    private static readonly OpenCvRect[] BlackBorderVisibleMapSlotReferenceRegions =
+    [
+        new(150, 220, 540, 310),
+        new(690, 220, 540, 310),
+        new(1230, 220, 540, 310),
+        new(150, 530, 540, 310),
+        new(690, 530, 540, 310),
+        new(1230, 530, 540, 310)
+    ];
+
+    private static readonly WpfPoint MapSelectionScrollPoint = new(960, 540);
+
     private const int MapCategoryClickCaptureDelayMs = 500;
+    private const int MapSelectionNextPageScrollDelta = -5;
+    private const double MapSelectionClickYOffset1080p = -60d;
 
     public BlackBorderGameUiActionHandler(
         ScriptInputSimulationService inputSimulationService,
@@ -41,7 +55,7 @@ internal sealed class BlackBorderGameUiActionHandler : AutoTaskGameUiActionHandl
                 return Click(step, new WpfPoint(960, 940), "Opened black border map selection from the main menu.");
             case GameUiStateId.MapCategorySelect:
             case GameUiStateId.MapGrid:
-                return await ExecuteMapSelectionAsync(step, state, cancellationToken).ConfigureAwait(false);
+                return ExecuteMapSelection(step, state);
             case GameUiStateId.DifficultySelect:
                 return ExecuteDifficultySelect(step, state);
             case GameUiStateId.EasyModeSelect:
@@ -113,15 +127,16 @@ internal sealed class BlackBorderGameUiActionHandler : AutoTaskGameUiActionHandl
         }
     }
 
-    private async Task<GameUiActionExecutionResult> ExecuteMapSelectionAsync(
+    private GameUiActionExecutionResult ExecuteMapSelection(
         GameUiNavigationStep step,
-        AutoTaskRuntimeState state,
-        CancellationToken cancellationToken)
+        AutoTaskRuntimeState state)
     {
         if (!TryGetScriptContext(state, out var context))
         {
             return PressEscape(step, "Black border script metadata is unavailable. Returning from map selection.");
         }
+
+        BlackBorderMapSearchStateMachine.EnsureCurrentContext(state, context);
 
         if (!GameCaptureService.TryCaptureFrame(out _, out var frame))
         {
@@ -139,52 +154,39 @@ internal sealed class BlackBorderGameUiActionHandler : AutoTaskGameUiActionHandl
             {
                 return locatedResult;
             }
-        }
 
-        var categoryPoint = GetCategorySelectionPoint(context.Category);
-        InputSimulationService.PrepareTargetWindowForInput();
-        InputSimulationService.ClickMouseAtScriptCoordinate(categoryPoint);
-        await Task.Delay(MapCategoryClickCaptureDelayMs, cancellationToken).ConfigureAwait(false);
-
-        if (!GameCaptureService.TryCaptureFrame(out _, out frame))
-        {
-            return new GameUiActionExecutionResult
+            if (!BlackBorderMapSearchStateMachine.IsCategorySelected(state))
             {
-                Succeeded = false,
-                Message = "Failed to capture the black border map selection screen after selecting the map category.",
-                RecommendedDelayMs = step.PostActionDelayMs
-            };
-        }
-
-        using (frame)
-        {
-            if (TryBuildMapSelectionResult(step, state, context, frame, out var locatedResult))
-            {
-                return locatedResult;
+                var categoryPoint = GetCategorySelectionPoint(context.Category);
+                InputSimulationService.PrepareTargetWindowForInput();
+                InputSimulationService.ClickMouseAtScriptCoordinate(categoryPoint);
+                BlackBorderMapSearchStateMachine.MarkCategorySelected(state);
+                return Success(
+                    step,
+                    $"Selected black border map category '{context.Category}' before searching for '{context.Target.Map}'.",
+                    MapCategoryClickCaptureDelayMs);
             }
-        }
 
-        var attempts = state.TryGetProperty<int>(BlackBorderAutoTaskStateKeys.MapLocateAttempts, out var currentAttempts)
-            ? currentAttempts + 1
-            : 1;
+            var missDecision = BlackBorderMapSearchStateMachine.CreateMissDecision(state);
 
-        if (attempts > 10)
-        {
-            state.RemoveProperty(BlackBorderAutoTaskStateKeys.ResolvedScriptContext);
-            state.SetProperty(BlackBorderAutoTaskStateKeys.MapLocateAttempts, 0);
-            state.SetProperty(BlackBorderAutoTaskStateKeys.HeroSelected, false);
-            state.SetProperty(BlackBorderAutoTaskStateKeys.SkipCurrentTaskRequested, true);
+            if (missDecision.IsTerminal)
+            {
+                BlackBorderMapSearchStateMachine.MarkSearchExhausted(state);
+                return Success(
+                    step,
+                    $"Black border map '{context.Target.Map}' was not found after scanning {BlackBorderMapSearchStateMachine.MaxPages} page(s). Skipping the current queued stage.",
+                    600);
+            }
+
+            InputSimulationService.PrepareTargetWindowForInput();
+            InputSimulationService.MoveMouseToScriptCoordinate(MapSelectionScrollPoint);
+            InputSimulationService.ScrollMouseWheelVertical(MapSelectionNextPageScrollDelta);
+            BlackBorderMapSearchStateMachine.MarkPageAdvanced(state, missDecision);
             return Success(
                 step,
-                $"Black border map '{context.Target.Map}' was not found after 10 attempts. Skipping the current queued stage.",
-                600);
+                $"Black border map '{context.Target.Map}' was not found on page {missDecision.PageIndex}. Advanced to page {missDecision.NextPageIndex} ({missDecision.Attempts}/{BlackBorderMapSearchStateMachine.MaxPages}).",
+                700);
         }
-
-        state.SetProperty(BlackBorderAutoTaskStateKeys.MapLocateAttempts, attempts);
-        return Success(
-            step,
-            $"Black border map '{context.Target.Map}' was not found yet. Retrying map selection ({attempts}/10).",
-            600);
     }
 
     private bool TryBuildMapSelectionResult(
@@ -196,7 +198,7 @@ internal sealed class BlackBorderGameUiActionHandler : AutoTaskGameUiActionHandl
     {
         result = null!;
 
-        if (!TryLocateMap(frame, context.Target.Map, out var mapPoint))
+        if (!TryLocateMapInVisibleSlots(frame, context.Target.Map, out var mapPoint, out var matchInfo, out var slotIndex))
         {
             return false;
         }
@@ -205,21 +207,24 @@ internal sealed class BlackBorderGameUiActionHandler : AutoTaskGameUiActionHandl
             BlackBorderBadgeDetection.TryIsStageBadgeAcquired(frame, context.Target, mapPoint, out var isAcquired) &&
             isAcquired)
         {
-            state.SetProperty(BlackBorderAutoTaskStateKeys.MapLocateAttempts, 0);
-            state.SetProperty(BlackBorderAutoTaskStateKeys.HeroSelected, false);
             state.SetProperty(BlackBorderAutoTaskStateKeys.SkipCurrentTaskRequested, true);
+            var currentPageIndex = BlackBorderMapSearchStateMachine.MarkMapFound(state);
             result = Success(
                 step,
-                $"Black border badge for '{context.Target.Map}/{context.Target.Difficulty}/{context.Target.Mode}' is already acquired. Skipping the current queued stage.",
+                $"Black border badge for '{context.Target.Map}/{context.Target.Difficulty}/{context.Target.Mode}' is already acquired. Page {currentPageIndex}, slot {slotIndex + 1}, score {FormatScore(matchInfo.Score)}. Skipping the current queued stage.",
                 600);
             return true;
         }
 
+        var selectedPageIndex = BlackBorderMapSearchStateMachine.GetCurrentPageIndex(state);
+        var clickPoint = ApplyMapSelectionClickOffset(mapPoint);
         InputSimulationService.PrepareTargetWindowForInput();
-        InputSimulationService.ClickMouseAtScriptCoordinate(mapPoint);
-        state.SetProperty(BlackBorderAutoTaskStateKeys.MapLocateAttempts, 0);
-        state.SetProperty(BlackBorderAutoTaskStateKeys.HeroSelected, false);
-        result = Success(step, $"Selected black border map '{context.Target.Map}'.", 800);
+        InputSimulationService.ClickMouseAtScriptCoordinate(clickPoint);
+        BlackBorderMapSearchStateMachine.MarkMapFound(state);
+        result = Success(
+            step,
+            $"Selected black border map '{context.Target.Map}' on page {selectedPageIndex}, slot {slotIndex + 1}, score {FormatScore(matchInfo.Score)}, click ({Math.Round(clickPoint.X)}, {Math.Round(clickPoint.Y)}).",
+            800);
         return true;
     }
 
@@ -333,22 +338,67 @@ internal sealed class BlackBorderGameUiActionHandler : AutoTaskGameUiActionHandl
         return Click(step, new WpfPoint(850, 850), "Surrendered from the current black border stage.");
     }
 
-    private bool TryLocateMap(
+    private bool TryLocateMapInVisibleSlots(
         OpenCvSharp.Mat frame,
         GameMapType map,
-        out WpfPoint point)
+        out WpfPoint point,
+        out TemplateMatchInfo matchInfo,
+        out int slotIndex)
     {
-        var mapGridRegion = ScaleReferenceRect(BlackBorderMapGridReferenceRegion, frame.Width, frame.Height);
-        using var captureRegion = new OpenCvSharp.Mat(frame, mapGridRegion);
-        return NavigationOcrService.TryLocateMap(
-            captureRegion,
-            map,
-            frame.Width,
-            frame.Height,
-            mapGridRegion.X,
-            mapGridRegion.Y,
-            out point,
-            out _);
+        point = default;
+        matchInfo = default;
+        slotIndex = -1;
+
+        var bestPoint = default(WpfPoint);
+        var bestMatch = default(TemplateMatchInfo);
+        var bestSlotIndex = -1;
+        var foundAny = false;
+
+        for (var index = 0; index < BlackBorderVisibleMapSlotReferenceRegions.Length; index++)
+        {
+            var slotRegion = ScaleReferenceRect(BlackBorderVisibleMapSlotReferenceRegions[index], frame.Width, frame.Height);
+            using var captureRegion = new OpenCvSharp.Mat(frame, slotRegion);
+            if (!NavigationOcrService.TryLocateMap(
+                    captureRegion,
+                    map,
+                    frame.Width,
+                    frame.Height,
+                    slotRegion.X,
+                    slotRegion.Y,
+                    out var candidatePoint,
+                    out var candidateMatch))
+            {
+                continue;
+            }
+
+            if (!foundAny || candidateMatch.Score > bestMatch.Score)
+            {
+                bestPoint = candidatePoint;
+                bestMatch = candidateMatch;
+                bestSlotIndex = index;
+                foundAny = true;
+            }
+        }
+
+        if (!foundAny)
+        {
+            return false;
+        }
+
+        point = bestPoint;
+        matchInfo = bestMatch;
+        slotIndex = bestSlotIndex;
+        return true;
+    }
+
+    private static WpfPoint ApplyMapSelectionClickOffset(WpfPoint point)
+    {
+        return new WpfPoint(point.X, Math.Max(0d, point.Y + MapSelectionClickYOffset1080p));
+    }
+
+    private static string FormatScore(double score)
+    {
+        return score.ToString("F3", System.Globalization.CultureInfo.InvariantCulture);
     }
 
     private static WpfPoint GetCategorySelectionPoint(BlackBorderMapCategory category)

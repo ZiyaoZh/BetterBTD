@@ -35,6 +35,9 @@ public static class BlackBorderAutoTaskStateKeys
     public const string ResolvedScriptContext = "BlackBorder.ResolvedScriptContext";
     public const string HeroSelected = "BlackBorder.HeroSelected";
     public const string MapLocateAttempts = "BlackBorder.MapLocateAttempts";
+    public const string MapSearchSignature = "BlackBorder.MapSearchSignature";
+    public const string MapSearchCategorySelected = "BlackBorder.MapSearchCategorySelected";
+    public const string MapSearchPageIndex = "BlackBorder.MapSearchPageIndex";
     public const string ScriptRunState = "BlackBorder.ScriptRunState";
     public const string SkipCurrentTaskRequested = "BlackBorder.SkipCurrentTaskRequested";
 }
