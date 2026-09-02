@@ -11,6 +11,7 @@ using BetterBTD.Models.GameElements;
 using BetterBTD.Models.MyScripts;
 using BetterBTD.Services;
 using BetterBTD.Services.Shared;
+using BetterBTD.Services.Tasks.AutoTasks;
 using BetterBTD.Services.Tasks.RobotControl;
 using BetterBTD.Views.Windows;
 using Microsoft.Win32;
@@ -63,6 +64,7 @@ public sealed class AutoTasksPageViewModel : ObservableObject
     private readonly GameCaptureService _gameCaptureService;
     private readonly MaskWindowService _maskWindowService;
     private readonly AutoTaskCoordinator _autoTaskCoordinator;
+    private readonly AutoTaskDependencyPreflightService _autoTaskDependencyPreflightService;
     private readonly RobotTaskRuntime _robotTaskRuntime;
     private readonly ManagedScriptLibraryService _managedScriptLibraryService;
     private readonly CollectionScriptSubscriptionService _collectionScriptSubscriptionService;
@@ -83,6 +85,7 @@ public sealed class AutoTasksPageViewModel : ObservableObject
             GameCaptureService.Instance,
             MaskWindowService.Instance,
             AutoTaskCoordinator.Instance,
+            AutoTaskDependencyPreflightService.Instance,
             RobotTaskRuntime.Instance,
             ManagedScriptLibraryService.Instance,
             CollectionScriptSubscriptionService.Instance,
@@ -98,6 +101,7 @@ public sealed class AutoTasksPageViewModel : ObservableObject
         GameCaptureService gameCaptureService,
         MaskWindowService maskWindowService,
         AutoTaskCoordinator autoTaskCoordinator,
+        AutoTaskDependencyPreflightService autoTaskDependencyPreflightService,
         RobotTaskRuntime robotTaskRuntime,
         ManagedScriptLibraryService managedScriptLibraryService,
         CollectionScriptSubscriptionService collectionScriptSubscriptionService,
@@ -111,6 +115,7 @@ public sealed class AutoTasksPageViewModel : ObservableObject
         _gameCaptureService = gameCaptureService ?? throw new ArgumentNullException(nameof(gameCaptureService));
         _maskWindowService = maskWindowService ?? throw new ArgumentNullException(nameof(maskWindowService));
         _autoTaskCoordinator = autoTaskCoordinator ?? throw new ArgumentNullException(nameof(autoTaskCoordinator));
+        _autoTaskDependencyPreflightService = autoTaskDependencyPreflightService ?? throw new ArgumentNullException(nameof(autoTaskDependencyPreflightService));
         _robotTaskRuntime = robotTaskRuntime ?? throw new ArgumentNullException(nameof(robotTaskRuntime));
         _managedScriptLibraryService = managedScriptLibraryService ?? throw new ArgumentNullException(nameof(managedScriptLibraryService));
         _collectionScriptSubscriptionService = collectionScriptSubscriptionService ?? throw new ArgumentNullException(nameof(collectionScriptSubscriptionService));
@@ -469,6 +474,10 @@ public sealed class AutoTasksPageViewModel : ObservableObject
             Kind = AutoTaskKind.Collection,
             StageTarget = CollectionPlaceholderStageTarget,
             VariantKey = selectedVariantKey,
+            RequiredScriptSlotIds = GameElementCatalog.Maps
+                .Where(map => map.Tier == MapDifficultyTier.Expert)
+                .Select(map => ManagedScriptSlotIdFactory.CreateCollectionSlotId(selectedVariantKey, map.Type))
+                .ToList(),
             OperationIntervalMs = Math.Max(20, task.OperationIntervalMs),
             Key = task.Key
         };
@@ -480,6 +489,10 @@ public sealed class AutoTasksPageViewModel : ObservableObject
         {
             Kind = AutoTaskKind.GoldBalloon,
             StageTarget = GoldBalloonPlaceholderStageTarget,
+            RequiredScriptSlotIds = GameElementCatalog.Maps
+                .Where(map => map.Tier == MapDifficultyTier.Beginner)
+                .Select(map => ManagedScriptSlotIdFactory.CreateGoldBalloonSlotId(map.Type))
+                .ToList(),
             OperationIntervalMs = Math.Max(20, task.OperationIntervalMs),
             Key = task.Key
         };
@@ -505,6 +518,12 @@ public sealed class AutoTasksPageViewModel : ObservableObject
             Kind = AutoTaskKind.BlackBorder,
             StageTarget = firstTarget,
             VariantKey = BuildBlackBorderScopeVariantKey(category, scopeMapCode),
+            RequiredScriptSlotIds = scopeTargets
+                .Select(target => ManagedScriptSlotIdFactory.CreateBlackBorderSlotId(
+                    target.Map,
+                    target.Difficulty,
+                    target.Mode))
+                .ToList(),
             OperationIntervalMs = Math.Max(20, task.OperationIntervalMs),
             Key = task.Key
         };
@@ -1280,13 +1299,22 @@ public sealed class AutoTasksPageViewModel : ObservableObject
             return existingWindow;
         }
 
+        AutoTaskRequest? preflightedRequest = null;
         var runtimeViewModel = new TaskRuntimeWindowViewModel(
             _localizationService,
             task.Title,
             BuildTaskRuntimeSummary(task),
             task.OperationIntervalMs,
-            viewModel => StartTaskExecutionAsync(task, viewModel),
-            () => _autoTaskCoordinator.RequestStop());
+            startExecutionAsync: viewModel => StartTaskExecutionAsync(
+                task,
+                viewModel,
+                preflightedRequest ?? throw new InvalidOperationException("Auto-task preflight request is unavailable.")),
+            requestStop: () => _autoTaskCoordinator.RequestStop(),
+            preflightAsync: async (viewModel, cancellationToken) =>
+            {
+                preflightedRequest = await PreflightTaskExecutionAsync(task, viewModel, cancellationToken);
+                return preflightedRequest is not null;
+            });
         var runtimeWindow = new TaskRuntimeWindow(runtimeViewModel);
 
         var owner = Application.Current?.Windows
@@ -1305,9 +1333,40 @@ public sealed class AutoTasksPageViewModel : ObservableObject
         return runtimeWindow;
     }
 
+    private async Task<AutoTaskRequest?> PreflightTaskExecutionAsync(
+        AutoTaskConfig task,
+        TaskRuntimeWindowViewModel runtimeViewModel,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            task.OperationIntervalMs = runtimeViewModel.OperationIntervalMs;
+            var request = BuildRequest(task);
+            var issues = await _autoTaskDependencyPreflightService
+                .ValidateKeyBindingsAsync(request, _configurationService.Current.KeyBindings, cancellationToken);
+            if (issues.Count == 0)
+            {
+                return request;
+            }
+
+            ShowMissingKeyBindingsDialog(issues);
+            return null;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return null;
+        }
+        catch (Exception ex)
+        {
+            ShowDialog("Tasks.Dialog.StartFailed.Title", ex.Message);
+            return null;
+        }
+    }
+
     private async Task StartTaskExecutionAsync(
         AutoTaskConfig task,
-        TaskRuntimeWindowViewModel runtimeViewModel)
+        TaskRuntimeWindowViewModel runtimeViewModel,
+        AutoTaskRequest request)
     {
         EventHandler<AutoTaskProgressSnapshot>? progressHandler = (_, snapshot) =>
             runtimeViewModel.PostProgressSnapshot(snapshot);
@@ -1315,8 +1374,6 @@ public sealed class AutoTasksPageViewModel : ObservableObject
         try
         {
             EnsureCaptureServiceRunning();
-            task.OperationIntervalMs = runtimeViewModel.OperationIntervalMs;
-            var request = BuildRequest(task);
 
             _autoTaskCoordinator.ProgressChanged += progressHandler;
             RunOnUiThread(() => SetRunningTask(task.Key));
@@ -1341,6 +1398,40 @@ public sealed class AutoTasksPageViewModel : ObservableObject
             _autoTaskCoordinator.ProgressChanged -= progressHandler;
             RunOnUiThread(ClearRunningTask);
         }
+    }
+
+    private void ShowMissingKeyBindingsDialog(IReadOnlyList<AutoTaskKeyBindingPreflightIssue> issues)
+    {
+        var issueLines = issues.Select(issue => string.Format(
+            _localizationService.T("Tasks.Dialog.MissingKeyBindings.Item"),
+            issue.ScriptDisplayName,
+            issue.KeyBindingIssue.FirstStepIndex + 1,
+            _localizationService.T(issue.KeyBindingIssue.LocalizationKey)));
+        var result = _appDialogService.Show(new AppDialogRequest
+        {
+            Title = _localizationService.T("Tasks.Dialog.MissingKeyBindings.Title"),
+            Message = string.Format(
+                _localizationService.T("Tasks.Dialog.MissingKeyBindings.Message"),
+                string.Join(Environment.NewLine, issueLines)),
+            PrimaryButtonText = _localizationService.T("Tasks.Dialog.MissingKeyBindings.Configure"),
+            CloseButtonText = _localizationService.T("Tasks.Dialog.Cancel")
+        });
+
+        if (result != AppDialogResult.Primary)
+        {
+            return;
+        }
+
+        var window = new KeyBindingsWindow(issues[0].KeyBindingIssue.ConfigPropertyPath);
+        var owner = Application.Current?.Windows.OfType<Window>().FirstOrDefault(candidate => candidate.IsActive)
+                    ?? Application.Current?.MainWindow;
+        if (owner is not null && owner != window)
+        {
+            window.Owner = owner;
+        }
+
+        window.Show();
+        _ = window.Activate();
     }
 
     private void EnsureCaptureServiceRunning()

@@ -34,6 +34,7 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
     private readonly Dispatcher _dispatcher;
     private readonly DispatcherTimer _runtimeDurationTimer;
     private readonly TimeProvider _timeProvider;
+    private readonly Func<TaskRuntimeWindowViewModel, CancellationToken, Task<bool>> _preflightAsync;
     private readonly Func<TaskRuntimeWindowViewModel, Task> _startExecutionAsync;
     private readonly Action _requestStop;
     private readonly object _progressDispatchSync = new();
@@ -59,6 +60,7 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
     private AutoTaskProgressSnapshot? _pendingProgressSnapshot;
     private bool _isProgressFlushScheduled;
     private bool _acceptProgressSnapshots;
+    private CancellationTokenSource? _preflightCancellationSource;
 
     public TaskRuntimeWindowViewModel(
         LocalizationService localizationService,
@@ -67,11 +69,13 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
         int operationIntervalMs,
         Func<TaskRuntimeWindowViewModel, Task> startExecutionAsync,
         Action requestStop,
-        TimeProvider? timeProvider = null)
+        TimeProvider? timeProvider = null,
+        Func<TaskRuntimeWindowViewModel, CancellationToken, Task<bool>>? preflightAsync = null)
     {
         _localizationService = localizationService ?? throw new ArgumentNullException(nameof(localizationService));
         _dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
         _timeProvider = timeProvider ?? TimeProvider.System;
+        _preflightAsync = preflightAsync ?? ((_, _) => Task.FromResult(true));
         _startExecutionAsync = startExecutionAsync ?? throw new ArgumentNullException(nameof(startExecutionAsync));
         _requestStop = requestStop ?? throw new ArgumentNullException(nameof(requestStop));
         _operationIntervalMs = Math.Clamp(operationIntervalMs, 20, 5000);
@@ -316,6 +320,7 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
 
     public void HandleWindowClosing()
     {
+        _preflightCancellationSource?.Cancel();
         if (IsRunning)
         {
             StopExecution();
@@ -330,21 +335,40 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
         }
 
         _isDisposed = true;
+        _preflightCancellationSource?.Cancel();
         StopRuntimeDuration();
         _runtimeDurationTimer.Tick -= OnRuntimeDurationTimerTick;
     }
 
     private async Task StartExecutionAsync()
     {
-        PrepareForExecution();
-
+        using var preflightCancellationSource = new CancellationTokenSource();
+        _preflightCancellationSource = preflightCancellationSource;
         try
         {
+            if (!await _preflightAsync(this, preflightCancellationSource.Token) ||
+                preflightCancellationSource.IsCancellationRequested ||
+                _isDisposed)
+            {
+                return;
+            }
+
+            PrepareForExecution();
             await _startExecutionAsync(this);
+        }
+        catch (OperationCanceledException) when (preflightCancellationSource.IsCancellationRequested)
+        {
         }
         catch (Exception ex)
         {
             ApplyUnexpectedException(ex);
+        }
+        finally
+        {
+            if (ReferenceEquals(_preflightCancellationSource, preflightCancellationSource))
+            {
+                _preflightCancellationSource = null;
+            }
         }
     }
 

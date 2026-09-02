@@ -154,6 +154,8 @@ public sealed class AutoTaskRequest
 
     public IReadOnlyList<string> PreferredScriptPaths { get; init; } = [];
 
+    public IReadOnlyList<string> RequiredScriptSlotIds { get; init; } = [];
+
     public LoopStageRunMode LoopStageRunMode { get; init; } = LoopStageRunMode.Standard;
 
     public int ExitAfterRound { get; init; }

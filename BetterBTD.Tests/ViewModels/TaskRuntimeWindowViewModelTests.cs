@@ -51,6 +51,53 @@ public sealed class TaskRuntimeWindowViewModelTests
     }
 
     [Fact]
+    public async Task StartExecution_PreflightRejected_DoesNotEnterRunningStateOrExecute()
+    {
+        var executionCount = 0;
+        using var viewModel = CreateViewModel(
+            new ManualTimeProvider(DateTimeOffset.UtcNow),
+            _ =>
+            {
+                executionCount++;
+                return Task.CompletedTask;
+            },
+            (_, _) => Task.FromResult(false));
+
+        await viewModel.StartCommand.ExecuteAsync(null);
+
+        Assert.False(viewModel.IsRunning);
+        Assert.Equal(0, executionCount);
+    }
+
+    [Fact]
+    public async Task CloseDuringPreflight_CancelsPreflightAndDoesNotExecute()
+    {
+        var preflightStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var executionCount = 0;
+        using var viewModel = CreateViewModel(
+            new ManualTimeProvider(DateTimeOffset.UtcNow),
+            _ =>
+            {
+                executionCount++;
+                return Task.CompletedTask;
+            },
+            async (_, cancellationToken) =>
+            {
+                preflightStarted.SetResult();
+                await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+                return true;
+            });
+
+        var startTask = viewModel.StartCommand.ExecuteAsync(null);
+        await preflightStarted.Task;
+        viewModel.HandleWindowClosing();
+        await startTask;
+
+        Assert.False(viewModel.IsRunning);
+        Assert.Equal(0, executionCount);
+    }
+
+    [Fact]
     public void ApplyResult_FreezesRuntimeDuration()
     {
         var timeProvider = new ManualTimeProvider(new DateTimeOffset(2026, 8, 10, 14, 32, 8, TimeSpan.Zero));
@@ -239,13 +286,15 @@ public sealed class TaskRuntimeWindowViewModelTests
 
     private static TaskRuntimeWindowViewModel CreateViewModel(
         TimeProvider timeProvider,
-        Func<TaskRuntimeWindowViewModel, Task>? startExecutionAsync = null)
+        Func<TaskRuntimeWindowViewModel, Task>? startExecutionAsync = null,
+        Func<TaskRuntimeWindowViewModel, CancellationToken, Task<bool>>? preflightAsync = null)
     {
         return new TaskRuntimeWindowViewModel(
             LocalizationService.Instance,
             "Test Task",
             "Test task summary",
             operationIntervalMs: 200,
+            preflightAsync: preflightAsync,
             startExecutionAsync: startExecutionAsync ?? (_ => Task.CompletedTask),
             requestStop: () => { },
             timeProvider: timeProvider);

@@ -24,7 +24,7 @@ Capture, recognition, persistence, settings, editor, task adapters, and protocol
 | `BetterBTD/Services/Shell/Localization` | 14 |
 | `BetterBTD/Services/Start` | 1 |
 | `BetterBTD/Services/Start/Capture` | 4 |
-| `BetterBTD/Services/Tasks/AutoTasks` | 18 |
+| `BetterBTD/Services/Tasks/AutoTasks` | 19 |
 | `BetterBTD/Services/Tasks/CaptureAnalysis` | 5 |
 | `BetterBTD/Services/Tasks/Input` | 3 |
 | `BetterBTD/Services/Tasks/RobotControl` | 2 |
@@ -132,6 +132,7 @@ Paths are relative to the repository root. Open the linked file and verify curre
 
 | File | Description |
 | --- | --- |
+| [AutoTaskDependencyPreflightService.cs](../../../../../BetterBTD/Services/Tasks/AutoTasks/AutoTaskDependencyPreflightService.cs) | Automatic-task UI state, navigation, actions, and adapters; primary symbols: AutoTaskKeyBindingPreflightIssue, AutoTaskScriptDependency, AutoTaskDependencyPreflightService |
 | [AutoTaskGameUiActionHandlerBase.cs](../../../../../BetterBTD/Services/Tasks/AutoTasks/AutoTaskGameUiActionHandlerBase.cs) | Automatic-task UI state, navigation, actions, and adapters; primary symbols: AutoTaskGameUiActionHandlerBase |
 | [AutoTaskRuntimeAdapters.cs](../../../../../BetterBTD/Services/Tasks/AutoTasks/AutoTaskRuntimeAdapters.cs) | Automatic-task UI state, navigation, actions, and adapters; primary symbols: ManagedAutoTaskScriptResolver, ScriptTaskFlowAutoTaskScriptExecutorAdapter, AutoTaskRuntimeServiceFactory |
 | [AutoTaskRuntimeScriptPreviewService.cs](../../../../../BetterBTD/Services/Tasks/AutoTasks/AutoTaskRuntimeScriptPreviewService.cs) | Automatic-task UI state, navigation, actions, and adapters; primary symbols: AutoTaskRuntimeScriptPreviewService, AutoTaskRuntimeScriptPreview |

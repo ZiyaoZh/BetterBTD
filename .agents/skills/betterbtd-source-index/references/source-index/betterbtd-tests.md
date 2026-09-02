@@ -15,7 +15,7 @@ xUnit behavior, compatibility, protocol, and test-double coverage.
 | Directory | Files |
 | --- | ---: |
 | `BetterBTD.Tests` | 4 |
-| `BetterBTD.Tests/AutoTasks` | 10 |
+| `BetterBTD.Tests/AutoTasks` | 11 |
 | `BetterBTD.Tests/Core/Simulator` | 1 |
 | `BetterBTD.Tests/GameControl` | 1 |
 | `BetterBTD.Tests/RobotControl` | 2 |
@@ -43,6 +43,7 @@ Paths are relative to the repository root. Open the linked file and verify curre
 
 | File | Description |
 | --- | --- |
+| [AutoTaskDependencyPreflightServiceTests.cs](../../../../../BetterBTD.Tests/AutoTasks/AutoTaskDependencyPreflightServiceTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: AutoTaskDependencyPreflightServiceTests |
 | [AutoTaskSkeletonTests.cs](../../../../../BetterBTD.Tests/AutoTasks/AutoTaskSkeletonTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: AutoTaskSkeletonTests, QueueGameUiStateService, RecordingGameUiActionExecutor, RecordingAutoTaskScriptResolver, RecordingAutoTaskScriptExecutor |
 | [BlackBorderBadgeDetectionTests.cs](../../../../../BetterBTD.Tests/AutoTasks/BlackBorderBadgeDetectionTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: BlackBorderBadgeDetectionTests |
 | [BlackBorderMapSearchStateMachineTests.cs](../../../../../BetterBTD.Tests/AutoTasks/BlackBorderMapSearchStateMachineTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: BlackBorderMapSearchStateMachineTests |
