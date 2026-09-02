@@ -56,6 +56,17 @@ public class KeyBindingsSettingsPageViewModel : ObservableObject
 
     public IRelayCommand ResetDefaultKeyBindingsCommand { get; }
 
+    public KeyBindingSettingItem? FindItem(string configPropertyPath)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(configPropertyPath);
+        return KeyBindingSettingModels
+            .SelectMany(EnumerateItems)
+            .FirstOrDefault(item => string.Equals(
+                item.ConfigPropertyName,
+                configPropertyPath,
+                StringComparison.OrdinalIgnoreCase));
+    }
+
     private void BuildKeyBindingsList()
     {
         KeyBindingSettingModels.Clear();

@@ -19,7 +19,7 @@ xUnit behavior, compatibility, protocol, and test-double coverage.
 | `BetterBTD.Tests/Core/Simulator` | 1 |
 | `BetterBTD.Tests/GameControl` | 1 |
 | `BetterBTD.Tests/RobotControl` | 2 |
-| `BetterBTD.Tests/ScriptExecution` | 2 |
+| `BetterBTD.Tests/ScriptExecution` | 3 |
 | `BetterBTD.Tests/ScriptExecution/Handlers` | 6 |
 | `BetterBTD.Tests/Services` | 18 |
 | `BetterBTD.Tests/TestApi` | 4 |
@@ -77,6 +77,7 @@ Paths are relative to the repository root. Open the linked file and verify curre
 | File | Description |
 | --- | --- |
 | [ScriptExecutionIntervalStrategyTests.cs](../../../../../BetterBTD.Tests/ScriptExecution/ScriptExecutionIntervalStrategyTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: ScriptExecutionIntervalStrategyTests |
+| [ScriptKeyBindingPreflightValidatorTests.cs](../../../../../BetterBTD.Tests/ScriptExecution/ScriptKeyBindingPreflightValidatorTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: ScriptKeyBindingPreflightValidatorTests |
 | [ScriptTaskFlowExecutorGameControlTests.cs](../../../../../BetterBTD.Tests/ScriptExecution/ScriptTaskFlowExecutorGameControlTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: ScriptTaskFlowExecutorGameControlTests |
 
 ### `BetterBTD.Tests/ScriptExecution/Handlers`

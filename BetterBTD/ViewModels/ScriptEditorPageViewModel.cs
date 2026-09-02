@@ -1181,9 +1181,7 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         ScriptTaskFlow taskFlow;
         try
         {
-            EnsureCaptureServiceRunning();
             taskFlow = _scriptTaskFlowService.Build(scriptDocumentSnapshot, sourceFilePath);
-            _scriptInputSimulationService.PrepareTargetWindowForInput();
         }
         catch (Exception ex)
         {
@@ -1192,6 +1190,29 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
                 _localizationService.LanguageCode.Equals("en-US", StringComparison.OrdinalIgnoreCase)
                     ? $"Failed to build the execution task.\n\n{ex.Message}"
                     : $"构建执行任务失败。\n\n{ex.Message}");
+            return;
+        }
+
+        var keyBindingIssues = ScriptKeyBindingPreflightValidator.Validate(
+            taskFlow,
+            _configurationService.Current.KeyBindings,
+            startStepIndex);
+        if (keyBindingIssues.Count > 0)
+        {
+            ShowMissingKeyBindingsDialog(keyBindingIssues);
+            return;
+        }
+
+        try
+        {
+            EnsureCaptureServiceRunning();
+            _scriptInputSimulationService.PrepareTargetWindowForInput();
+        }
+        catch (Exception ex)
+        {
+            ShowMessageDialog(
+                _localizationService.T("Editor.Debug.Run"),
+                string.Format(_localizationService.T("Editor.Runtime.StartFailed"), ex.Message));
             return;
         }
 
@@ -1260,6 +1281,39 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
 
         _maskWindowService.Start();
         _maskWindowService.RefreshNow();
+    }
+
+    private void ShowMissingKeyBindingsDialog(IReadOnlyList<ScriptKeyBindingPreflightIssue> issues)
+    {
+        var issueLines = issues.Select(issue => string.Format(
+            _localizationService.T("Editor.Runtime.MissingKeyBindings.Item"),
+            issue.FirstStepIndex + 1,
+            _localizationService.T(issue.LocalizationKey)));
+        var result = _appDialogService.Show(new AppDialogRequest
+        {
+            Title = _localizationService.T("Editor.Runtime.MissingKeyBindings.Title"),
+            Message = string.Format(
+                _localizationService.T("Editor.Runtime.MissingKeyBindings.Message"),
+                string.Join(Environment.NewLine, issueLines)),
+            PrimaryButtonText = _localizationService.T("Editor.Runtime.MissingKeyBindings.Configure"),
+            CloseButtonText = _localizationService.T("Editor.Dialog.Cancel")
+        });
+
+        if (result != AppDialogResult.Primary)
+        {
+            return;
+        }
+
+        var window = new KeyBindingsWindow(issues[0].ConfigPropertyPath);
+        var owner = Application.Current?.Windows.OfType<Window>().FirstOrDefault(candidate => candidate.IsActive)
+                    ?? Application.Current?.MainWindow;
+        if (owner is not null && owner != window)
+        {
+            window.Owner = owner;
+        }
+
+        window.Show();
+        _ = window.Activate();
     }
 
     private GameCaptureOptions BuildCaptureOptions()

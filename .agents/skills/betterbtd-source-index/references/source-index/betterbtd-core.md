@@ -20,7 +20,7 @@ UI-independent execution, automatic tasks, simulation, control leases, and helpe
 | `BetterBTD/Core/Config` | 2 |
 | `BetterBTD/Core/GameControl` | 1 |
 | `BetterBTD/Core/RobotControl` | 2 |
-| `BetterBTD/Core/ScriptExecution` | 7 |
+| `BetterBTD/Core/ScriptExecution` | 8 |
 | `BetterBTD/Core/ScriptExecution/Handlers` | 16 |
 | `BetterBTD/Core/ScriptExecution/Handlers/Support` | 2 |
 | `BetterBTD/Core/ScriptExecution/Runtime` | 1 |
@@ -93,6 +93,7 @@ Paths are relative to the repository root. Open the linked file and verify curre
 | [ScriptExecutionRuntimeContextBuilder.cs](../../../../../BetterBTD/Core/ScriptExecution/ScriptExecutionRuntimeContextBuilder.cs) | UI-independent script execution, sessions, and scheduling; primary symbols: struct, ScriptExecutionRuntimeContextBuilder |
 | [ScriptExecutionRuntimeLogging.cs](../../../../../BetterBTD/Core/ScriptExecution/ScriptExecutionRuntimeLogging.cs) | UI-independent script execution, sessions, and scheduling; primary symbols: ScriptExecutionRuntimeLogger, ScriptExecutionPollingLogScope, ScriptExecutionRuntimeDiagnostics, PopWhenDisposed |
 | [ScriptExecutionSession.cs](../../../../../BetterBTD/Core/ScriptExecution/ScriptExecutionSession.cs) | UI-independent script execution, sessions, and scheduling; primary symbols: ScriptExecutionSession, AsyncManualResetEvent |
+| [ScriptKeyBindingPreflightValidator.cs](../../../../../BetterBTD/Core/ScriptExecution/ScriptKeyBindingPreflightValidator.cs) | UI-independent script execution, sessions, and scheduling; primary symbols: ScriptKeyBindingPreflightIssue, ScriptKeyBindingPreflightValidator, Requirement |
 | [ScriptTaskFlowExecutor.cs](../../../../../BetterBTD/Core/ScriptExecution/ScriptTaskFlowExecutor.cs) | UI-independent script execution, sessions, and scheduling; primary symbols: ScriptTaskFlowExecutor |
 | [ScriptTaskFlowService.cs](../../../../../BetterBTD/Core/ScriptExecution/ScriptTaskFlowService.cs) | UI-independent script execution, sessions, and scheduling; primary symbols: ScriptTaskFlowService |
 

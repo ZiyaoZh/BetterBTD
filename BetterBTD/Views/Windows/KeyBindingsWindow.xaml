@@ -81,7 +81,9 @@
                         <Border x:Name="TreeColumnStar" Grid.Column="0" />
                     </Grid>
 
-                    <ui:TreeListView BorderThickness="0" ItemsSource="{Binding KeyBindingSettingModels}">
+                    <ui:TreeListView x:Name="KeyBindingsTree"
+                                     BorderThickness="0"
+                                     ItemsSource="{Binding KeyBindingSettingModels}">
                         <ui:TreeListView.Columns>
                             <GridViewColumnCollection>
                                 <ui:GridViewColumn Width="{Binding ActualWidth, ElementName=TreeColumnStar}" Header="{Binding ActionHeaderText}">
