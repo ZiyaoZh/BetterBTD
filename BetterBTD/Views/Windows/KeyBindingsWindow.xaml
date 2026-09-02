@@ -88,6 +88,12 @@
                         <ui:TreeListView.Columns>
                             <GridViewColumnCollection>
                                 <ui:GridViewColumn Width="{Binding ActualWidth, ElementName=TreeColumnStar}" Header="{Binding ActionHeaderText}">
+                                    <ui:GridViewColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <ui:TextBlock Foreground="{DynamicResource TextPrimaryBrush}"
+                                                          Text="{Binding}" />
+                                        </DataTemplate>
+                                    </ui:GridViewColumn.HeaderTemplate>
                                     <ui:GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <ui:TreeRowExpander Content="{Binding ActionName}"
@@ -96,6 +102,12 @@
                                     </ui:GridViewColumn.CellTemplate>
                                 </ui:GridViewColumn>
                                 <ui:GridViewColumn Width="170" Header="{Binding KeyBindingHeaderText}">
+                                    <ui:GridViewColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <ui:TextBlock Foreground="{DynamicResource TextPrimaryBrush}"
+                                                          Text="{Binding}" />
+                                        </DataTemplate>
+                                    </ui:GridViewColumn.HeaderTemplate>
                                     <ui:GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <kb:KeyBindingTextBox Padding="16,6,16,6"
