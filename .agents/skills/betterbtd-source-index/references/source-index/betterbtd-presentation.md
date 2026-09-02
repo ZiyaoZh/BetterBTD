@@ -14,7 +14,7 @@ WPF pages, windows, controls, ViewModels, and presentation support.
 
 | Directory | Files |
 | --- | ---: |
-| `BetterBTD/ViewModels` | 14 |
+| `BetterBTD/ViewModels` | 15 |
 | `BetterBTD/Views/Behavior` | 1 |
 | `BetterBTD/Views/Controls` | 4 |
 | `BetterBTD/Views/Controls/ChildSession` | 1 |
@@ -29,7 +29,7 @@ WPF pages, windows, controls, ViewModels, and presentation support.
 | `BetterBTD/Views/Controls/WpfUi` | 1 |
 | `BetterBTD/Views/Converters` | 11 |
 | `BetterBTD/Views/Pages` | 12 |
-| `BetterBTD/Views/Windows` | 24 |
+| `BetterBTD/Views/Windows` | 26 |
 | `BetterBTD/Views/Windows/Overlay` | 6 |
 
 ## File Inventory
@@ -44,6 +44,7 @@ Paths are relative to the repository root. Open the linked file and verify curre
 | [Btd6SaveJsonNodeViewModel.cs](../../../../../BetterBTD/ViewModels/Btd6SaveJsonNodeViewModel.cs) | Page, window, and tool binding state and commands; primary symbols: Btd6SaveJsonNodeViewModel, Btd6SaveSearchResultViewModel |
 | [Btd6SaveViewerWindowViewModel.cs](../../../../../BetterBTD/ViewModels/Btd6SaveViewerWindowViewModel.cs) | Page, window, and tool binding state and commands; primary symbols: Btd6SaveViewerWindowViewModel |
 | [ChildSessionWindowViewModel.cs](../../../../../BetterBTD/ViewModels/ChildSessionWindowViewModel.cs) | Page, window, and tool binding state and commands; primary symbols: ChildSessionWindowViewModel |
+| [CollectionScriptBindingWindowViewModel.cs](../../../../../BetterBTD/ViewModels/CollectionScriptBindingWindowViewModel.cs) | Page, window, and tool binding state and commands; primary symbols: CollectionScriptBindingWindowViewModel, CollectionScriptBindingModeViewModel, CollectionScriptBindingRowViewModel, CollectionScriptChoiceViewModel |
 | [KeyBindingsPageViewModel.cs](../../../../../BetterBTD/ViewModels/KeyBindingsPageViewModel.cs) | Page, window, and tool binding state and commands; primary symbols: KeyBindingsSettingsPageViewModel, KeyBindingsPageViewModel |
 | [MainWindowViewModel.cs](../../../../../BetterBTD/ViewModels/MainWindowViewModel.cs) | Page, window, and tool binding state and commands; primary symbols: MainWindowViewModel |
 | [MyScriptsPageViewModel.cs](../../../../../BetterBTD/ViewModels/MyScriptsPageViewModel.cs) | Page, window, and tool binding state and commands; primary symbols: MyScriptsPageViewModel, ManagedScriptListItemViewModel |
@@ -197,6 +198,8 @@ Paths are relative to the repository root. Open the linked file and verify curre
 | [CaptureTestWindow.xaml.cs](../../../../../BetterBTD/Views/Windows/CaptureTestWindow.xaml.cs) | WPF windows, dialogs, and overlays; primary symbols: CaptureTestWindow, PointGroupOverlayVisual, MapBadgeOverlayVisual |
 | [ChildSessionWindow.xaml](../../../../../BetterBTD/Views/Windows/ChildSessionWindow.xaml) | WPF windows, dialogs, and overlays; primary symbols: BetterBTD.Views.Windows.ChildSessionWindow, Window |
 | [ChildSessionWindow.xaml.cs](../../../../../BetterBTD/Views/Windows/ChildSessionWindow.xaml.cs) | WPF windows, dialogs, and overlays; primary symbols: ChildSessionWindow |
+| [CollectionScriptBindingWindow.xaml](../../../../../BetterBTD/Views/Windows/CollectionScriptBindingWindow.xaml) | WPF windows, dialogs, and overlays; primary symbols: BetterBTD.Views.Windows.CollectionScriptBindingWindow, FluentWindow |
+| [CollectionScriptBindingWindow.xaml.cs](../../../../../BetterBTD/Views/Windows/CollectionScriptBindingWindow.xaml.cs) | WPF windows, dialogs, and overlays; primary symbols: CollectionScriptBindingWindow |
 | [ImportProgressWindow.xaml](../../../../../BetterBTD/Views/Windows/ImportProgressWindow.xaml) | WPF windows, dialogs, and overlays; primary symbols: BetterBTD.Views.Windows.ImportProgressWindow, FluentWindow |
 | [ImportProgressWindow.xaml.cs](../../../../../BetterBTD/Views/Windows/ImportProgressWindow.xaml.cs) | WPF windows, dialogs, and overlays; primary symbols: ImportProgressWindow |
 | [KeyBindingsWindow.xaml](../../../../../BetterBTD/Views/Windows/KeyBindingsWindow.xaml) | WPF windows, dialogs, and overlays; primary symbols: BetterBTD.Views.Windows.KeyBindingsWindow, FluentWindow |

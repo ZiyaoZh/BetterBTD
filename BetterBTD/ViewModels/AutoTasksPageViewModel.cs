@@ -73,6 +73,7 @@ public sealed class AutoTasksPageViewModel : ObservableObject
     private readonly Dictionary<string, TaskRuntimeWindow> _runtimeWindowsByTaskKey = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, TaskRuntimeWindowViewModel> _runtimeViewModelsByTaskKey = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, TextFileEditorWindow> _textEditorWindowsByKey = new(StringComparer.OrdinalIgnoreCase);
+    private CollectionScriptBindingWindow? _collectionScriptBindingWindow;
     private bool _isImportingAssets;
 
     private string _runningTaskKey = string.Empty;
@@ -985,6 +986,12 @@ public sealed class AutoTasksPageViewModel : ObservableObject
         }
 
         var taskKind = ResolveTaskKind(task.Key);
+        if (taskKind == AutoTaskKind.Collection)
+        {
+            OpenCollectionScriptConfig(task);
+            return;
+        }
+
         var editorKey = $"{taskKind}:bindings";
         if (_textEditorWindowsByKey.TryGetValue(editorKey, out var existingWindow))
         {
@@ -1363,6 +1370,55 @@ public sealed class AutoTasksPageViewModel : ObservableObject
         }
     }
 
+    private void OpenCollectionScriptConfig(AutoTaskConfig task)
+    {
+        if (_collectionScriptBindingWindow is not null)
+        {
+            RunOnUiThread(() =>
+            {
+                if (!_collectionScriptBindingWindow.IsVisible)
+                {
+                    _collectionScriptBindingWindow.Show();
+                }
+
+                _collectionScriptBindingWindow.Activate();
+            });
+            return;
+        }
+
+        try
+        {
+            var viewModel = new CollectionScriptBindingWindowViewModel(
+                _localizationService,
+                _appDialogService,
+                _managedScriptLibraryService,
+                task.SelectedVariantOption?.Code,
+                () => _collectionScriptBindingWindow?.Close());
+            var window = new CollectionScriptBindingWindow(viewModel);
+            var owner = Application.Current?.Windows
+                .OfType<Window>()
+                .FirstOrDefault(x => x.IsActive)
+                ?? Application.Current?.MainWindow;
+            if (owner is not null && !ReferenceEquals(owner, window))
+            {
+                window.Owner = owner;
+            }
+
+            window.Closed += OnCollectionScriptBindingWindowClosed;
+            _collectionScriptBindingWindow = window;
+
+            RunOnUiThread(() =>
+            {
+                window.Show();
+                window.Activate();
+            });
+        }
+        catch (Exception ex)
+        {
+            ShowDialog("Tasks.Dialog.ScriptConfigOpenFailed.Title", ex.Message);
+        }
+    }
+
     private async Task StartTaskExecutionAsync(
         AutoTaskConfig task,
         TaskRuntimeWindowViewModel runtimeViewModel,
@@ -1590,6 +1646,20 @@ public sealed class AutoTasksPageViewModel : ObservableObject
         }
 
         _textEditorWindowsByKey.Remove(entry.Key);
+    }
+
+    private void OnCollectionScriptBindingWindowClosed(object? sender, EventArgs e)
+    {
+        if (sender is not CollectionScriptBindingWindow window)
+        {
+            return;
+        }
+
+        window.Closed -= OnCollectionScriptBindingWindowClosed;
+        if (ReferenceEquals(_collectionScriptBindingWindow, window))
+        {
+            _collectionScriptBindingWindow = null;
+        }
     }
 
     private static AutoTaskKind ResolveTaskKind(string taskKey)

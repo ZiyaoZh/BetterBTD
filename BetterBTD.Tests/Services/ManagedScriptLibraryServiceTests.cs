@@ -2,6 +2,7 @@ using BetterBTD.Models.AutoTasks;
 using BetterBTD.Models.GameElements;
 using BetterBTD.Models.MyScripts;
 using BetterBTD.Models.ScriptEditor;
+using BetterBTD.Services.ChildSession;
 using BetterBTD.Services.MyScripts;
 using System.IO.Compression;
 using System.Text.Json;
@@ -10,6 +11,255 @@ namespace BetterBTD.Tests.Services;
 
 public sealed class ManagedScriptLibraryServiceTests
 {
+    [Fact]
+    public void SetTaskBindings_ReplacesCollectionBindings()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), $"betterbtd-library-{Guid.NewGuid():N}");
+        var sourceDirectory = Path.Combine(rootDirectory, "source");
+
+        try
+        {
+            Directory.CreateDirectory(sourceDirectory);
+            var firstSourcePath = Path.Combine(sourceDirectory, "dark-castle.btd");
+            var secondSourcePath = Path.Combine(sourceDirectory, "muddy-puddles.btd");
+            ScriptDocumentService.Instance.Save(firstSourcePath, CreateDocument(
+                GameMapType.DarkCastle, StageDifficulty.Easy, StageMode.Standard, ["collection"]));
+            ScriptDocumentService.Instance.Save(secondSourcePath, CreateDocument(
+                GameMapType.MuddyPuddles, StageDifficulty.Easy, StageMode.Standard, ["collection"]));
+
+            var service = new ManagedScriptLibraryService(
+                Path.Combine(rootDirectory, "managed"),
+                ScriptDocumentService.Instance,
+                ManagedScriptSlotCatalogService.Instance);
+            var first = service.ImportScript(firstSourcePath);
+            var second = service.ImportScript(secondSourcePath);
+            var firstSlotId = ManagedScriptSlotIdFactory.CreateCollectionSlotId("simple", GameMapType.DarkCastle);
+            var secondSlotId = ManagedScriptSlotIdFactory.CreateCollectionSlotId("simple", GameMapType.MuddyPuddles);
+            var clearedSlotId = ManagedScriptSlotIdFactory.CreateCollectionSlotId("double-cash", GameMapType.DarkCastle);
+            var emptySlotId = ManagedScriptSlotIdFactory.CreateCollectionSlotId("fast-track", GameMapType.DarkCastle);
+            service.SetBinding(clearedSlotId, first.ScriptId);
+            service.SetBinding(emptySlotId, first.ScriptId);
+
+            service.SetTaskBindings(AutoTaskKind.Collection, new Dictionary<string, string?>
+            {
+                [firstSlotId] = first.ScriptId,
+                [secondSlotId] = second.ScriptId,
+                [clearedSlotId] = null,
+                [emptySlotId] = "   "
+            });
+
+            var snapshot = service.GetSnapshot();
+            Assert.Equal(first.ScriptId, snapshot.Slots.Single(slot => slot.Definition.SlotId == firstSlotId).BoundScriptId);
+            Assert.Equal(second.ScriptId, snapshot.Slots.Single(slot => slot.Definition.SlotId == secondSlotId).BoundScriptId);
+            Assert.False(snapshot.Slots.Single(slot => slot.Definition.SlotId == clearedSlotId).HasBinding);
+            Assert.False(snapshot.Slots.Single(slot => slot.Definition.SlotId == emptySlotId).HasBinding);
+
+            var bindingFilePath = service.GetTaskBindingFilePath(AutoTaskKind.Collection);
+            var bindingDocument = JsonSerializer.Deserialize<ManagedScriptTaskBindingDocument>(File.ReadAllText(bindingFilePath));
+            Assert.NotNull(bindingDocument);
+            Assert.Equal(first.ScriptId, bindingDocument.Bindings[firstSlotId]);
+            Assert.Equal(second.ScriptId, bindingDocument.Bindings[secondSlotId]);
+            Assert.Equal(string.Empty, bindingDocument.Bindings[clearedSlotId]);
+            Assert.Equal(string.Empty, bindingDocument.Bindings[emptySlotId]);
+            var collectionSlots = ManagedScriptSlotCatalogService.Instance.GetByTaskKind(AutoTaskKind.Collection);
+            Assert.Equal(collectionSlots.Count, bindingDocument.Bindings.Count);
+            Assert.All(collectionSlots, slot => Assert.True(bindingDocument.Bindings.ContainsKey(slot.SlotId)));
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void SetTaskBindings_ValidationFailureDoesNotModifyCollectionBindings()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), $"betterbtd-library-{Guid.NewGuid():N}");
+        var sourceFilePath = Path.Combine(rootDirectory, "source", "collection.btd");
+
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(sourceFilePath)!);
+            ScriptDocumentService.Instance.Save(sourceFilePath, CreateDocument(
+                GameMapType.DarkCastle, StageDifficulty.Easy, StageMode.Standard, ["collection"]));
+
+            var service = new ManagedScriptLibraryService(
+                Path.Combine(rootDirectory, "managed"),
+                ScriptDocumentService.Instance,
+                ManagedScriptSlotCatalogService.Instance);
+            var imported = service.ImportScript(sourceFilePath);
+            var collectionSlotId = ManagedScriptSlotIdFactory.CreateCollectionSlotId("simple", GameMapType.DarkCastle);
+            service.SetBinding(collectionSlotId, imported.ScriptId);
+            var bindingFilePath = service.GetTaskBindingFilePath(AutoTaskKind.Collection);
+            var originalJson = File.ReadAllText(bindingFilePath);
+            var otherCollectionSlotId = ManagedScriptSlotIdFactory.CreateCollectionSlotId(
+                "simple",
+                GameMapType.MuddyPuddles);
+
+            Assert.Throws<InvalidOperationException>(() => service.SetTaskBindings(
+                AutoTaskKind.Collection,
+                new Dictionary<string, string?>
+                {
+                    [otherCollectionSlotId] = imported.ScriptId,
+                    [collectionSlotId] = "missing-script"
+                }));
+            Assert.Equal(originalJson, File.ReadAllText(bindingFilePath));
+
+            var goldBalloonSlotId = ManagedScriptSlotIdFactory.CreateGoldBalloonSlotId(GameMapType.MonkeyMeadow);
+            Assert.Throws<InvalidOperationException>(() => service.SetTaskBindings(
+                AutoTaskKind.Collection,
+                new Dictionary<string, string?>
+                {
+                    [otherCollectionSlotId] = imported.ScriptId,
+                    [goldBalloonSlotId] = imported.ScriptId
+                }));
+            Assert.Equal(originalJson, File.ReadAllText(bindingFilePath));
+
+            Assert.Throws<InvalidOperationException>(() => service.SetTaskBindings(
+                AutoTaskKind.Custom,
+                new Dictionary<string, string?>()));
+            Assert.Equal(originalJson, File.ReadAllText(bindingFilePath));
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void SetTaskBindings_PreservesBrokenBindingInAnotherCollectionMode()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), $"betterbtd-library-{Guid.NewGuid():N}");
+        var sourceFilePath = Path.Combine(rootDirectory, "source", "collection.btd");
+
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(sourceFilePath)!);
+            ScriptDocumentService.Instance.Save(sourceFilePath, CreateDocument(
+                GameMapType.DarkCastle, StageDifficulty.Easy, StageMode.Standard, ["collection"]));
+
+            var service = new ManagedScriptLibraryService(
+                Path.Combine(rootDirectory, "managed"),
+                ScriptDocumentService.Instance,
+                ManagedScriptSlotCatalogService.Instance);
+            var imported = service.ImportScript(sourceFilePath);
+            var currentModeSlotId = ManagedScriptSlotIdFactory.CreateCollectionSlotId("simple", GameMapType.DarkCastle);
+            var otherModeSlotId = ManagedScriptSlotIdFactory.CreateCollectionSlotId("double-cash", GameMapType.DarkCastle);
+            var bindingFilePath = service.EnsureTaskBindingTemplate(AutoTaskKind.Collection);
+            var bindingDocument = JsonSerializer.Deserialize<ManagedScriptTaskBindingDocument>(File.ReadAllText(bindingFilePath));
+            Assert.NotNull(bindingDocument);
+            bindingDocument.Bindings[otherModeSlotId] = "missing-script";
+            File.WriteAllText(bindingFilePath, JsonSerializer.Serialize(bindingDocument));
+
+            service.SetTaskBindings(AutoTaskKind.Collection, new Dictionary<string, string?>
+            {
+                [currentModeSlotId] = imported.ScriptId,
+                [otherModeSlotId] = "missing-script"
+            });
+
+            bindingDocument = JsonSerializer.Deserialize<ManagedScriptTaskBindingDocument>(File.ReadAllText(bindingFilePath));
+            Assert.NotNull(bindingDocument);
+            Assert.Equal(imported.ScriptId, bindingDocument.Bindings[currentModeSlotId]);
+            Assert.Equal("missing-script", bindingDocument.Bindings[otherModeSlotId]);
+
+            var originalJson = File.ReadAllText(bindingFilePath);
+            Assert.Throws<InvalidOperationException>(() => service.SetTaskBindings(
+                AutoTaskKind.Collection,
+                new Dictionary<string, string?> { [otherModeSlotId] = "different-missing-script" }));
+            Assert.Equal(originalJson, File.ReadAllText(bindingFilePath));
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void SetTaskBindings_PreservesUnknownFutureSlot()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), $"betterbtd-library-{Guid.NewGuid():N}");
+
+        try
+        {
+            var service = new ManagedScriptLibraryService(
+                Path.Combine(rootDirectory, "managed"),
+                ScriptDocumentService.Instance,
+                ManagedScriptSlotCatalogService.Instance);
+            var bindingFilePath = service.EnsureTaskBindingTemplate(AutoTaskKind.Collection);
+            var bindingDocument = JsonSerializer.Deserialize<ManagedScriptTaskBindingDocument>(File.ReadAllText(bindingFilePath));
+            Assert.NotNull(bindingDocument);
+            const string futureSlotId = "collection/future-mode/FutureMap";
+            bindingDocument.Bindings[futureSlotId] = "future-script";
+            File.WriteAllText(bindingFilePath, JsonSerializer.Serialize(bindingDocument));
+            var managedSlotId = ManagedScriptSlotIdFactory.CreateCollectionSlotId("simple", GameMapType.DarkCastle);
+
+            service.SetTaskBindings(AutoTaskKind.Collection, new Dictionary<string, string?>
+            {
+                [managedSlotId] = null
+            });
+
+            bindingDocument = JsonSerializer.Deserialize<ManagedScriptTaskBindingDocument>(File.ReadAllText(bindingFilePath));
+            Assert.NotNull(bindingDocument);
+            Assert.Equal("future-script", bindingDocument.Bindings[futureSlotId]);
+            Assert.Equal(string.Empty, bindingDocument.Bindings[managedSlotId]);
+            var collectionSlots = ManagedScriptSlotCatalogService.Instance.GetByTaskKind(AutoTaskKind.Collection);
+            Assert.All(collectionSlots, slot => Assert.True(bindingDocument.Bindings.ContainsKey(slot.SlotId)));
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void SetTaskBindings_ChildSessionDoesNotModifyCollectionBindings()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), $"betterbtd-library-{Guid.NewGuid():N}");
+
+        try
+        {
+            var service = new ManagedScriptLibraryService(
+                Path.Combine(rootDirectory, "managed"),
+                ScriptDocumentService.Instance,
+                ManagedScriptSlotCatalogService.Instance);
+            var bindingFilePath = service.EnsureTaskBindingTemplate(AutoTaskKind.Collection);
+            var originalJson = File.ReadAllText(bindingFilePath);
+            var slotId = ManagedScriptSlotIdFactory.CreateCollectionSlotId("simple", GameMapType.DarkCastle);
+            ChildSessionRuntimeState.Initialize(new InstanceLaunchOptions(
+                BetterBtdInstanceRole.ChildSession,
+                null,
+                null));
+
+            Assert.Throws<InvalidOperationException>(() => service.SetTaskBindings(
+                AutoTaskKind.Collection,
+                new Dictionary<string, string?> { [slotId] = null }));
+            Assert.Equal(originalJson, File.ReadAllText(bindingFilePath));
+        }
+        finally
+        {
+            ChildSessionRuntimeState.Initialize(new InstanceLaunchOptions(
+                BetterBtdInstanceRole.Primary,
+                null,
+                null));
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
+    }
+
     [Fact]
     public void ImportBindExportFlow_StoresManagedScriptAndResolvesSlotBinding()
     {

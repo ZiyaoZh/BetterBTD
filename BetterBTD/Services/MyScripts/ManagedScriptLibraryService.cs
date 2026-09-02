@@ -623,6 +623,65 @@ public sealed class ManagedScriptLibraryService
         }
     }
 
+    public void SetTaskBindings(
+        AutoTaskKind taskKind,
+        IReadOnlyDictionary<string, string?> bindings)
+    {
+        ArgumentNullException.ThrowIfNull(bindings);
+        ChildSessionRuntimeState.EnsureSharedDataWritable();
+
+        if (!TryGetDedicatedBindingFilePath(taskKind, out var bindingFilePath))
+        {
+            throw new InvalidOperationException($"Task kind '{taskKind}' does not use a dedicated binding file.");
+        }
+
+        lock (_syncRoot)
+        {
+            var document = LoadManifest();
+            var currentBindings = LoadTaskBindingDocument(bindingFilePath);
+            var normalizedBindings = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+            foreach (var binding in bindings)
+            {
+                if (!_slotCatalogService.TryGetById(binding.Key, out var slot) || slot.TaskKind != taskKind)
+                {
+                    throw new InvalidOperationException("Managed script slot does not belong to the requested task kind.");
+                }
+
+                if (!normalizedBindings.TryAdd(binding.Key.Trim(), binding.Value?.Trim()))
+                {
+                    throw new InvalidOperationException("Managed script slot was specified more than once.");
+                }
+            }
+
+            var availableScriptIds = document.Scripts
+                .Select(script => script.ScriptId)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            foreach (var binding in normalizedBindings.ToList())
+            {
+                if (string.IsNullOrWhiteSpace(binding.Value) || availableScriptIds.Contains(binding.Value))
+                {
+                    continue;
+                }
+
+                if (currentBindings.Bindings.TryGetValue(binding.Key, out var currentScriptId) &&
+                    string.Equals(currentScriptId, binding.Value, StringComparison.OrdinalIgnoreCase))
+                {
+                    normalizedBindings[binding.Key] = currentScriptId;
+                    continue;
+                }
+
+                throw new InvalidOperationException("Managed script asset was not found.");
+            }
+
+            foreach (var binding in normalizedBindings)
+            {
+                currentBindings.Bindings[binding.Key] = binding.Value ?? string.Empty;
+            }
+
+            SaveTaskBindingDocumentAtomically(bindingFilePath, currentBindings);
+        }
+    }
+
     public bool TryGetManagedScriptFilePath(string scriptId, out string filePath)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(scriptId);
@@ -771,17 +830,45 @@ public sealed class ManagedScriptLibraryService
         ArgumentNullException.ThrowIfNull(document);
 
         EnsureStorage();
+        File.WriteAllText(filePath, SerializeTaskBindingDocument(filePath, document));
+    }
+
+    private void SaveTaskBindingDocumentAtomically(string filePath, ManagedScriptTaskBindingDocument document)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+
+        EnsureStorage();
+        var json = SerializeTaskBindingDocument(filePath, document);
+        var temporaryFilePath = Path.Combine(
+            Path.GetDirectoryName(filePath)!,
+            $".{Path.GetFileName(filePath)}.{Guid.NewGuid():N}.tmp");
+
+        try
+        {
+            File.WriteAllText(temporaryFilePath, json);
+            File.Move(temporaryFilePath, filePath, overwrite: true);
+        }
+        finally
+        {
+            if (File.Exists(temporaryFilePath))
+            {
+                File.Delete(temporaryFilePath);
+            }
+        }
+    }
+
+    private string SerializeTaskBindingDocument(string filePath, ManagedScriptTaskBindingDocument document)
+    {
         NormalizeTaskBindingDocument(filePath, document);
 
         var persistedVersion = IsBlackBorderBindingFile(filePath)
             ? Math.Max(document.Version, 2)
             : document.Version;
-        var json = JsonSerializer.Serialize(new
+        return JsonSerializer.Serialize(new
         {
             Version = persistedVersion,
             Bindings = new Dictionary<string, string>(document.Bindings, StringComparer.OrdinalIgnoreCase)
         }, JsonOptions);
-        File.WriteAllText(filePath, json);
     }
 
     private void RefreshCachedMetadata(

@@ -67,7 +67,7 @@ MyScripts\
 
 绑定保存 `SlotId → ScriptId`，因此一个脚本可被多个槽位复用。删除脚本时需要同步清理或标记失效绑定。
 
-收集、金气球和黑框使用专用绑定文件；循环刷关、竞速和奥德赛在任务请求中携带一个或多个脚本 ID。
+收集、金气球和黑框使用专用绑定文件；循环刷关、竞速和奥德赛在任务请求中携带一个或多个脚本 ID。专用文件属于内部持久化格式：收集任务由 `CollectionScriptBindingWindowViewModel` 读取脚本库快照，并通过 `ManagedScriptLibraryService.SetTaskBindings` 整批校验和保存，界面不直接编辑 JSON。
 
 ## 订阅包
 
@@ -80,7 +80,7 @@ MyScripts\
 
 ## 页面职责
 
-`MyScriptsPageViewModel` 负责筛选、选择和命令状态，`ManagedScriptLibraryService` 负责持久化。页面不直接扫描或修改文件结构。
+`MyScriptsPageViewModel` 负责筛选、选择和命令状态，收集绑定窗口负责暂存用户选择，`ManagedScriptLibraryService` 负责持久化。页面不直接扫描或修改文件结构。
 
 脚本编辑器从脚本库打开文件后保存时，应刷新库中的元数据缓存。另存为外部路径不会自动成为新的托管脚本，仍需显式导入。
 
@@ -90,6 +90,8 @@ MyScripts\
 - `BetterBTD/Services/MyScripts/ManagedScriptLibraryService.cs`
 - `BetterBTD/Services/MyScripts/ManagedScriptSlotCatalogService.cs`
 - `BetterBTD/ViewModels/MyScriptsPageViewModel.cs`
+- `BetterBTD/ViewModels/CollectionScriptBindingWindowViewModel.cs`
 - `BetterBTD/Views/Pages/MyScriptsPageView.xaml`
+- `BetterBTD/Views/Windows/CollectionScriptBindingWindow.xaml`
 
 返回 [开发者文档](../README.md) · [脚本文件格式](../script-file-format.md)
