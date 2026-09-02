@@ -44,7 +44,7 @@
 
             <ui:TextBlock Grid.Row="1"
                           Margin="0,0,0,8"
-                          Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                          Foreground="{DynamicResource TextSecondaryBrush}"
                           Text="{Binding PageSubtitle}"
                           TextWrapping="Wrap" />
 
@@ -56,7 +56,7 @@
 
                 <StackPanel Grid.Column="0">
                     <ui:TextBlock FontWeight="SemiBold" Text="{Binding ResetDefaultTitle}" />
-                    <ui:TextBlock Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                    <ui:TextBlock Foreground="{DynamicResource TextSecondaryBrush}"
                                   Text="{Binding ResetDefaultSubtitle}"
                                   TextWrapping="Wrap" />
                 </StackPanel>
@@ -83,13 +83,15 @@
 
                     <ui:TreeListView x:Name="KeyBindingsTree"
                                      BorderThickness="0"
+                                     Foreground="{DynamicResource TextPrimaryBrush}"
                                      ItemsSource="{Binding KeyBindingSettingModels}">
                         <ui:TreeListView.Columns>
                             <GridViewColumnCollection>
                                 <ui:GridViewColumn Width="{Binding ActualWidth, ElementName=TreeColumnStar}" Header="{Binding ActionHeaderText}">
                                     <ui:GridViewColumn.CellTemplate>
                                         <DataTemplate>
-                                            <ui:TreeRowExpander Content="{Binding ActionName}" />
+                                            <ui:TreeRowExpander Content="{Binding ActionName}"
+                                                                Foreground="{DynamicResource TextPrimaryBrush}" />
                                         </DataTemplate>
                                     </ui:GridViewColumn.CellTemplate>
                                 </ui:GridViewColumn>
@@ -97,6 +99,8 @@
                                     <ui:GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <kb:KeyBindingTextBox Padding="16,6,16,6"
+                                                                  Background="{DynamicResource SubtleSurfaceBrush}"
+                                                                  Foreground="{DynamicResource TextPrimaryBrush}"
                                                                   VerticalAlignment="Center"
                                                                   KeyBinding="{Binding KeyValue, Mode=TwoWay}"
                                                                   Style="{StaticResource DefaultTextBoxStyle}"
