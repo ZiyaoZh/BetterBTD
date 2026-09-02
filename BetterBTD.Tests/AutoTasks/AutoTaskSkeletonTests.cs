@@ -10,11 +10,11 @@ namespace BetterBTD.Tests.AutoTasks;
 public sealed class AutoTaskSkeletonTests
 {
     [Fact]
-    public void AutoTaskExecutionOptions_UsesRaisedDefaultLoopLimit()
+    public void AutoTaskExecutionOptions_HasNoDefaultLoopLimit()
     {
         var options = new AutoTaskExecutionOptions();
 
-        Assert.Equal(20000, options.MaxLoopIterations);
+        Assert.Null(options.MaxLoopIterations);
     }
 
     [Fact]

@@ -449,7 +449,10 @@ public sealed class AutoTaskDecision
 
 public sealed class AutoTaskExecutionOptions
 {
-    public int MaxLoopIterations { get; init; } = 20000;
+    /// <summary>
+    /// Maximum number of UI decision loops to execute. A null value means no limit.
+    /// </summary>
+    public int? MaxLoopIterations { get; init; }
 
     public int MaxConsecutiveNavigationFailures { get; init; } = 5;
 

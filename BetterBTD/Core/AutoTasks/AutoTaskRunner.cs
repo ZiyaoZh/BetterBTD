@@ -76,7 +76,7 @@ public sealed class AutoTaskRunner
 
         try
         {
-            while (state.LoopIteration < options.MaxLoopIterations)
+            while (options.MaxLoopIterations is null || state.LoopIteration < options.MaxLoopIterations.Value)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
