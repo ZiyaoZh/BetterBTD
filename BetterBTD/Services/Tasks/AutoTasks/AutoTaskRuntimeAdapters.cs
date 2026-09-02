@@ -174,6 +174,7 @@ public static class AutoTaskRuntimeServiceFactory
             Navigator = GameUiNavigator.Instance,
             UiActionExecutor = GameUiActionExecutor.Instance,
             StuckRecoveryExecutor = GameUiStuckRecoveryExecutor.Instance,
+            FailureArtifactWriter = AutoTaskFailureArtifactService.Instance,
             ScriptResolver = ManagedAutoTaskScriptResolver.Instance,
             ScriptExecutor = ScriptTaskFlowAutoTaskScriptExecutorAdapter.Instance
         };

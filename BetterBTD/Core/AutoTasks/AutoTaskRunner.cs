@@ -68,6 +68,34 @@ public sealed class AutoTaskRunner
         options ??= new AutoTaskExecutionOptions();
 
         var runtimeServices = options.RuntimeServices ?? _defaultRuntimeServices;
+        var result = await ExecuteCoreAsync(request, options, runtimeServices, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (result.Status == AutoTaskExecutionStatus.Failed &&
+            runtimeServices.FailureArtifactWriter is not null)
+        {
+            try
+            {
+                await runtimeServices.FailureArtifactWriter
+                    .WriteAsync(result, CancellationToken.None)
+                    .ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(
+                    $"Failed to write auto-task failure artifacts: {ex}");
+            }
+        }
+
+        return result;
+    }
+
+    private async Task<AutoTaskExecutionResult> ExecuteCoreAsync(
+        AutoTaskRequest request,
+        AutoTaskExecutionOptions options,
+        AutoTaskRuntimeServices runtimeServices,
+        CancellationToken cancellationToken)
+    {
         var strategy = _strategyRegistry.GetRequiredStrategy(request.Kind);
         var state = new AutoTaskRuntimeState(request);
         var stuckUiTracker = ShouldUseStuckUiRecovery(request.Kind)

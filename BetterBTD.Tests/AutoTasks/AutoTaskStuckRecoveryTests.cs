@@ -43,14 +43,16 @@ public sealed class AutoTaskStuckRecoveryTests
             CreateSnapshot(GameUiStateId.MainMenu, startedAt.AddSeconds(11), 2)
         ]);
         var recovery = new RecordingRecoveryExecutor();
-        var runner = CreateRunner(uiState, recovery);
+        var artifactWriter = new RecordingFailureArtifactWriter(throwOnWrite: false);
+        var runner = CreateRunner(uiState, recovery, artifactWriter);
 
         var result = await runner.ExecuteAsync(
             CreateRequest(),
-            CreateOptions(CreateRuntimeServices(uiState, recovery)));
+            CreateOptions(CreateRuntimeServices(uiState, recovery, artifactWriter)));
 
         Assert.Equal(AutoTaskExecutionStatus.Completed, result.Status);
         Assert.Equal([new GameUiRecoveryPoint(100, 200)], recovery.ClickedPoints);
+        Assert.Equal(0, artifactWriter.WriteCount);
     }
 
     [Fact]
@@ -90,22 +92,25 @@ public sealed class AutoTaskStuckRecoveryTests
             CreateSnapshot(GameUiStateId.Loading, startedAt.AddSeconds(10), 1)
         ]);
         var recovery = new RecordingRecoveryExecutor();
-        var runner = CreateRunner(uiState, recovery);
+        var artifactWriter = new RecordingFailureArtifactWriter(throwOnWrite: true);
+        var runner = CreateRunner(uiState, recovery, artifactWriter);
 
         var result = await runner.ExecuteAsync(
             CreateRequest(),
-            CreateOptions(CreateRuntimeServices(uiState, recovery)));
+            CreateOptions(CreateRuntimeServices(uiState, recovery, artifactWriter)));
 
         Assert.Equal(AutoTaskExecutionStatus.Failed, result.Status);
         Assert.Equal("StuckUiRecovery", result.Failure?.Checkpoint);
         Assert.Empty(recovery.ClickedPoints);
+        Assert.Equal(1, artifactWriter.WriteCount);
     }
 
     private static AutoTaskRunner CreateRunner(
         IGameUiStateService uiState,
-        IGameUiStuckRecoveryExecutor recovery)
+        IGameUiStuckRecoveryExecutor recovery,
+        IAutoTaskFailureArtifactWriter? failureArtifactWriter = null)
     {
-        var runtimeServices = CreateRuntimeServices(uiState, recovery);
+        var runtimeServices = CreateRuntimeServices(uiState, recovery, failureArtifactWriter);
         return new AutoTaskRunner(
             new SingleStrategyRegistry(new RecoveryTestStrategy()),
             runtimeServices,
@@ -114,7 +119,8 @@ public sealed class AutoTaskStuckRecoveryTests
 
     private static AutoTaskRuntimeServices CreateRuntimeServices(
         IGameUiStateService uiState,
-        IGameUiStuckRecoveryExecutor recovery)
+        IGameUiStuckRecoveryExecutor recovery,
+        IAutoTaskFailureArtifactWriter? failureArtifactWriter = null)
     {
         return new AutoTaskRuntimeServices
         {
@@ -122,9 +128,29 @@ public sealed class AutoTaskStuckRecoveryTests
             Navigator = new NoOpNavigator(),
             UiActionExecutor = new NoOpActionExecutor(),
             StuckRecoveryExecutor = recovery,
+            FailureArtifactWriter = failureArtifactWriter,
             ScriptResolver = new UnusedScriptResolver(),
             ScriptExecutor = new UnusedScriptExecutor()
         };
+    }
+
+    private sealed class RecordingFailureArtifactWriter(bool throwOnWrite) : IAutoTaskFailureArtifactWriter
+    {
+        public int WriteCount { get; private set; }
+
+        public Task WriteAsync(
+            AutoTaskExecutionResult result,
+            CancellationToken cancellationToken = default)
+        {
+            WriteCount++;
+            Assert.Equal(AutoTaskExecutionStatus.Failed, result.Status);
+            if (throwOnWrite)
+            {
+                throw new IOException("Simulated artifact write failure.");
+            }
+
+            return Task.CompletedTask;
+        }
     }
 
     private static AutoTaskExecutionOptions CreateOptions(AutoTaskRuntimeServices runtimeServices)

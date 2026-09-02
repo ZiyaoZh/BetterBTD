@@ -52,6 +52,13 @@ public interface IGameUiStuckRecoveryExecutor
         CancellationToken cancellationToken = default);
 }
 
+public interface IAutoTaskFailureArtifactWriter
+{
+    Task WriteAsync(
+        AutoTaskExecutionResult result,
+        CancellationToken cancellationToken = default);
+}
+
 public interface IGameUiElementLocator
 {
     bool TryLocateScriptPoint(
@@ -110,6 +117,8 @@ public sealed class AutoTaskRuntimeServices
     public required IGameUiActionExecutor UiActionExecutor { get; init; }
 
     public IGameUiStuckRecoveryExecutor? StuckRecoveryExecutor { get; init; }
+
+    public IAutoTaskFailureArtifactWriter? FailureArtifactWriter { get; init; }
 
     public required IAutoTaskScriptResolver ScriptResolver { get; init; }
 
