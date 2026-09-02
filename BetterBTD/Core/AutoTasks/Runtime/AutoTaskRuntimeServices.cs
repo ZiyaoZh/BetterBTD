@@ -45,6 +45,13 @@ public interface IGameUiActionExecutor
         CancellationToken cancellationToken = default);
 }
 
+public interface IGameUiStuckRecoveryExecutor
+{
+    Task<GameUiActionExecutionResult> ClickAsync(
+        GameUiRecoveryPoint point,
+        CancellationToken cancellationToken = default);
+}
+
 public interface IGameUiElementLocator
 {
     bool TryLocateScriptPoint(
@@ -101,6 +108,8 @@ public sealed class AutoTaskRuntimeServices
     public required IGameUiNavigator Navigator { get; init; }
 
     public required IGameUiActionExecutor UiActionExecutor { get; init; }
+
+    public IGameUiStuckRecoveryExecutor? StuckRecoveryExecutor { get; init; }
 
     public required IAutoTaskScriptResolver ScriptResolver { get; init; }
 

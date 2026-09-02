@@ -24,7 +24,7 @@ Capture, recognition, persistence, settings, editor, task adapters, and protocol
 | `BetterBTD/Services/Shell/Localization` | 14 |
 | `BetterBTD/Services/Start` | 1 |
 | `BetterBTD/Services/Start/Capture` | 4 |
-| `BetterBTD/Services/Tasks/AutoTasks` | 19 |
+| `BetterBTD/Services/Tasks/AutoTasks` | 20 |
 | `BetterBTD/Services/Tasks/CaptureAnalysis` | 5 |
 | `BetterBTD/Services/Tasks/Input` | 3 |
 | `BetterBTD/Services/Tasks/RobotControl` | 2 |
@@ -145,6 +145,7 @@ Paths are relative to the repository root. Open the linked file and verify curre
 | [GameUiDetectionRuleEvaluator.cs](../../../../../BetterBTD/Services/Tasks/AutoTasks/GameUiDetectionRuleEvaluator.cs) | Automatic-task UI state, navigation, actions, and adapters; primary symbols: GameUiDetectionRuleEvaluator, struct |
 | [GameUiNavigator.cs](../../../../../BetterBTD/Services/Tasks/AutoTasks/GameUiNavigator.cs) | Automatic-task UI state, navigation, actions, and adapters; primary symbols: GameUiNavigator |
 | [GameUiStateService.cs](../../../../../BetterBTD/Services/Tasks/AutoTasks/GameUiStateService.cs) | Automatic-task UI state, navigation, actions, and adapters; primary symbols: GameUiStateService, ConfiguredGameUiRecognizer, UnknownGameUiRecognizer |
+| [GameUiStuckRecoveryExecutor.cs](../../../../../BetterBTD/Services/Tasks/AutoTasks/GameUiStuckRecoveryExecutor.cs) | Automatic-task UI state, navigation, actions, and adapters; primary symbols: GameUiStuckRecoveryExecutor |
 | [GoldBalloonGameUiActionHandler.cs](../../../../../BetterBTD/Services/Tasks/AutoTasks/GoldBalloonGameUiActionHandler.cs) | Automatic-task UI state, navigation, actions, and adapters; primary symbols: GoldBalloonGameUiActionHandler |
 | [IGameUiTaskActionHandler.cs](../../../../../BetterBTD/Services/Tasks/AutoTasks/IGameUiTaskActionHandler.cs) | Automatic-task UI state, navigation, actions, and adapters; primary symbols: IGameUiTaskActionHandler |
 | [LoopStageGameUiActionHandler.cs](../../../../../BetterBTD/Services/Tasks/AutoTasks/LoopStageGameUiActionHandler.cs) | Automatic-task UI state, navigation, actions, and adapters; primary symbols: LoopStageGameUiActionHandler |

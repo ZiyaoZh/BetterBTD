@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using BetterBTD.Core.AutoTasks.Runtime;
 using BetterBTD.Models.GameElements;
 using BetterBTD.Models.ScriptExecution;
@@ -170,6 +171,9 @@ public sealed class GameUiSnapshot
     public GameUiStateId State { get; init; } = GameUiStateId.Unknown;
 
     public double Confidence { get; init; }
+
+    [JsonIgnore]
+    public ulong? VisualFingerprint { get; init; }
 
     public GameStageStateSnapshot? StageState { get; init; }
 
@@ -449,6 +453,16 @@ public sealed class AutoTaskDecision
 
 public sealed class AutoTaskExecutionOptions
 {
+    private static readonly IReadOnlyList<GameUiRecoveryPoint> DefaultStuckRecoveryPoints =
+        Array.AsReadOnly<GameUiRecoveryPoint>(
+        [
+            new(960, 840),
+            new(960, 760),
+            new(1340, 850),
+            new(850, 810),
+            new(80, 55)
+        ]);
+
     /// <summary>
     /// Maximum number of UI decision loops to execute. A null value means no limit.
     /// </summary>
@@ -458,8 +472,16 @@ public sealed class AutoTaskExecutionOptions
 
     public int DefaultDecisionDelayMs { get; init; } = 400;
 
+    public TimeSpan StuckUiTimeout { get; init; } = TimeSpan.FromSeconds(10);
+
+    public int StuckRecoveryDelayMs { get; init; } = 800;
+
+    public IReadOnlyList<GameUiRecoveryPoint> StuckRecoveryPoints { get; init; } = DefaultStuckRecoveryPoints;
+
     public AutoTaskRuntimeServices? RuntimeServices { get; init; }
 }
+
+public readonly record struct GameUiRecoveryPoint(int X, int Y);
 
 public sealed class AutoTaskProgressSnapshot
 {

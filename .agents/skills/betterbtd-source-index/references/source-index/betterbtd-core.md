@@ -14,7 +14,7 @@ UI-independent execution, automatic tasks, simulation, control leases, and helpe
 
 | Directory | Files |
 | --- | ---: |
-| `BetterBTD/Core/AutoTasks` | 4 |
+| `BetterBTD/Core/AutoTasks` | 5 |
 | `BetterBTD/Core/AutoTasks/Runtime` | 1 |
 | `BetterBTD/Core/AutoTasks/Strategies` | 8 |
 | `BetterBTD/Core/Config` | 2 |
@@ -44,6 +44,7 @@ Paths are relative to the repository root. Open the linked file and verify curre
 | [AutoTaskExecutionSession.cs](../../../../../BetterBTD/Core/AutoTasks/AutoTaskExecutionSession.cs) | Automatic-task coordination, sessions, and registry; primary symbols: AutoTaskExecutionSession |
 | [AutoTaskRunner.cs](../../../../../BetterBTD/Core/AutoTasks/AutoTaskRunner.cs) | Automatic-task coordination, sessions, and registry; primary symbols: AutoTaskRunner |
 | [AutoTaskStrategyRegistry.cs](../../../../../BetterBTD/Core/AutoTasks/AutoTaskStrategyRegistry.cs) | Automatic-task coordination, sessions, and registry; primary symbols: AutoTaskStrategyRegistry |
+| [AutoTaskStuckUiTracker.cs](../../../../../BetterBTD/Core/AutoTasks/AutoTaskStuckUiTracker.cs) | Automatic-task coordination, sessions, and registry; primary symbols: AutoTaskStuckUiTracker, struct |
 
 ### `BetterBTD/Core/AutoTasks/Runtime`
 

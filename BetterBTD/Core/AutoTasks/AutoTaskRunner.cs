@@ -17,6 +17,7 @@ public sealed class AutoTaskRunner
 
     private AutoTaskExecutionSession? _currentSession;
     private IAutoTaskScriptExecutor? _currentScriptExecutor;
+    private int _stuckTrackingGeneration;
 
     public AutoTaskRunner()
         : this(
@@ -49,6 +50,11 @@ public sealed class AutoTaskRunner
     {
         var sessionResumed = _currentSession?.Resume() == true;
         var scriptResumed = _currentScriptExecutor?.Resume() == true;
+        if (sessionResumed || scriptResumed)
+        {
+            Interlocked.Increment(ref _stuckTrackingGeneration);
+        }
+
         return sessionResumed || scriptResumed;
     }
 
@@ -64,6 +70,10 @@ public sealed class AutoTaskRunner
         var runtimeServices = options.RuntimeServices ?? _defaultRuntimeServices;
         var strategy = _strategyRegistry.GetRequiredStrategy(request.Kind);
         var state = new AutoTaskRuntimeState(request);
+        var stuckUiTracker = ShouldUseStuckUiRecovery(request.Kind)
+            ? new AutoTaskStuckUiTracker(options.StuckUiTimeout)
+            : null;
+        var observedStuckTrackingGeneration = Volatile.Read(ref _stuckTrackingGeneration);
         var session = new AutoTaskExecutionSession(
             string.IsNullOrWhiteSpace(request.Key) ? request.Kind.ToKey() : request.Key,
             request.Kind);
@@ -99,6 +109,46 @@ public sealed class AutoTaskRunner
                 state.RecordUiSnapshot(snapshot);
                 session.UpdateUiSnapshot(snapshot, $"Detected UI state '{snapshot.State}'.");
                 UpdateStageCompletion(state, session, snapshot);
+
+                var currentStuckTrackingGeneration = Volatile.Read(ref _stuckTrackingGeneration);
+                if (observedStuckTrackingGeneration != currentStuckTrackingGeneration)
+                {
+                    stuckUiTracker?.Reset();
+                    observedStuckTrackingGeneration = currentStuckTrackingGeneration;
+                }
+
+                if (stuckUiTracker?.Observe(snapshot, state.Phase, state.CompletedStageCount) == true)
+                {
+                    if (snapshot.State == GameUiStateId.Loading)
+                    {
+                        return BuildFailedResult(
+                            session,
+                            state,
+                            "StuckUiRecovery",
+                            $"UI state '{snapshot.State}' did not change for {options.StuckUiTimeout.TotalSeconds:F1} seconds. Recovery clicks are disabled while loading.");
+                    }
+
+                    var recoveryFailure = await TryRecoverStuckUiAsync(
+                            runtimeServices,
+                            session,
+                            state,
+                            snapshot,
+                            options,
+                            cancellationToken)
+                        .ConfigureAwait(false);
+                    if (recoveryFailure is not null)
+                    {
+                        return BuildFailedResult(
+                            session,
+                            state,
+                            "StuckUiRecovery",
+                            recoveryFailure,
+                            attempt: options.StuckRecoveryPoints.Count);
+                    }
+
+                    stuckUiTracker.Reset();
+                    continue;
+                }
 
                 var decision = await strategy
                     .DecideNextAsync(state, snapshot, cancellationToken)
@@ -352,6 +402,70 @@ public sealed class AutoTaskRunner
     private static int ResolveDelay(int delayMs, AutoTaskExecutionOptions options)
     {
         return delayMs > 0 ? delayMs : options.DefaultDecisionDelayMs;
+    }
+
+    private static bool ShouldUseStuckUiRecovery(AutoTaskKind kind)
+    {
+        return kind is AutoTaskKind.Collection
+            or AutoTaskKind.GoldBalloon
+            or AutoTaskKind.BlackBorder
+            or AutoTaskKind.LoopStage
+            or AutoTaskKind.Race;
+    }
+
+    private static async Task<string?> TryRecoverStuckUiAsync(
+        AutoTaskRuntimeServices runtimeServices,
+        AutoTaskExecutionSession session,
+        AutoTaskRuntimeState state,
+        GameUiSnapshot stuckSnapshot,
+        AutoTaskExecutionOptions options,
+        CancellationToken cancellationToken)
+    {
+        if (runtimeServices.StuckRecoveryExecutor is null)
+        {
+            return $"UI state '{stuckSnapshot.State}' is stuck, but no recovery executor is configured.";
+        }
+
+        if (options.StuckRecoveryPoints.Count == 0)
+        {
+            return $"UI state '{stuckSnapshot.State}' is stuck, but no recovery points are configured.";
+        }
+
+        for (var index = 0; index < options.StuckRecoveryPoints.Count; index++)
+        {
+            var point = options.StuckRecoveryPoints[index];
+            var attempt = index + 1;
+            await session
+                .ReachCheckpointAsync(
+                    "StuckUiRecovery",
+                    AutoTaskActivityKind.Navigating,
+                    $"Trying stuck-UI recovery point {attempt}/{options.StuckRecoveryPoints.Count} at ({point.X}, {point.Y}).",
+                    attempt,
+                    cancellationToken)
+                .ConfigureAwait(false);
+
+            await runtimeServices.StuckRecoveryExecutor
+                .ClickAsync(point, cancellationToken)
+                .ConfigureAwait(false);
+            await session
+                .DelayAsync(Math.Max(0, options.StuckRecoveryDelayMs), cancellationToken)
+                .ConfigureAwait(false);
+
+            var recoveredSnapshot = await runtimeServices.GameUiState
+                .CaptureSnapshotAsync(cancellationToken)
+                .ConfigureAwait(false);
+            state.RecordUiSnapshot(recoveredSnapshot);
+            session.UpdateUiSnapshot(
+                recoveredSnapshot,
+                $"Observed UI state '{recoveredSnapshot.State}' after stuck-recovery attempt {attempt}.");
+
+            if (!AutoTaskStuckUiTracker.IsSameInterface(stuckSnapshot, recoveredSnapshot))
+            {
+                return null;
+            }
+        }
+
+        return $"UI state '{stuckSnapshot.State}' did not change for {options.StuckUiTimeout.TotalSeconds:F1} seconds and remained unchanged after {options.StuckRecoveryPoints.Count} recovery clicks.";
     }
 
     private static void UpdateStageCompletion(
@@ -620,7 +734,8 @@ public sealed class AutoTaskRunner
         AutoTaskRuntimeState state,
         string checkpoint,
         string message,
-        Exception? exception = null)
+        Exception? exception = null,
+        int? attempt = null)
     {
         session.MarkFailed(state.Phase, message);
 
@@ -634,7 +749,7 @@ public sealed class AutoTaskRunner
                 Phase = state.Phase,
                 UiState = state.LastUiSnapshot?.State ?? GameUiStateId.Unknown,
                 Checkpoint = checkpoint,
-                Attempt = state.ConsecutiveNavigationFailures,
+                Attempt = attempt ?? state.ConsecutiveNavigationFailures,
                 Message = message
             }
         };

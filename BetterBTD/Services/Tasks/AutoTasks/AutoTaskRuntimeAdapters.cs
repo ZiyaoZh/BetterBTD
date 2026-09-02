@@ -173,6 +173,7 @@ public static class AutoTaskRuntimeServiceFactory
             GameUiState = GameUiStateService.Instance,
             Navigator = GameUiNavigator.Instance,
             UiActionExecutor = GameUiActionExecutor.Instance,
+            StuckRecoveryExecutor = GameUiStuckRecoveryExecutor.Instance,
             ScriptResolver = ManagedAutoTaskScriptResolver.Instance,
             ScriptExecutor = ScriptTaskFlowAutoTaskScriptExecutorAdapter.Instance
         };

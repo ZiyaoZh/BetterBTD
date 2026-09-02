@@ -139,6 +139,7 @@ public sealed class GameUiStateService : IGameUiStateService
                         CapturedAt = snapshot.CapturedAt,
                         State = snapshot.State,
                         Confidence = snapshot.Confidence,
+                        VisualFingerprint = snapshot.VisualFingerprint,
                         StageState = stageState,
                         Facts = snapshot.Facts,
                         Summary = snapshot.Summary
@@ -189,6 +190,7 @@ public sealed class GameUiStateService : IGameUiStateService
             CapturedAt = snapshot.CapturedAt,
             State = GameUiStateId.Unknown,
             Confidence = 0d,
+            VisualFingerprint = snapshot.VisualFingerprint,
             StageState = snapshot.StageState,
             Summary = $"UI state '{snapshot.State}' is pending confirmation ({stabilizedMilliseconds:F0}/{UiStateConfirmationWindow.TotalMilliseconds:F0} ms)."
         };
@@ -246,20 +248,52 @@ public sealed class GameUiStateService : IGameUiStateService
             facts["homeButtonPoint1080p"] = homeButtonPoint;
         }
 
-        if (facts.Count == snapshot.Facts.Count)
-        {
-            return snapshot;
-        }
-
         return new GameUiSnapshot
         {
             CapturedAt = snapshot.CapturedAt,
             State = snapshot.State,
             Confidence = snapshot.Confidence,
+            VisualFingerprint = ComputeVisualFingerprint(context.Frame),
             StageState = snapshot.StageState,
             Facts = facts,
             Summary = snapshot.Summary
         };
+    }
+
+    private static ulong? ComputeVisualFingerprint(Mat frame)
+    {
+        using var grayscale = new Mat();
+        switch (frame.Channels())
+        {
+            case 1:
+                frame.CopyTo(grayscale);
+                break;
+            case 3:
+                Cv2.CvtColor(frame, grayscale, ColorConversionCodes.BGR2GRAY);
+                break;
+            case 4:
+                Cv2.CvtColor(frame, grayscale, ColorConversionCodes.BGRA2GRAY);
+                break;
+            default:
+                return null;
+        }
+
+        using var resized = new Mat();
+        Cv2.Resize(grayscale, resized, new OpenCvSharp.Size(9, 8), 0d, 0d, InterpolationFlags.Area);
+
+        ulong fingerprint = 0;
+        for (var y = 0; y < 8; y++)
+        {
+            for (var x = 0; x < 8; x++)
+            {
+                if (resized.At<byte>(y, x) > resized.At<byte>(y, x + 1))
+                {
+                    fingerprint |= 1UL << ((y * 8) + x);
+                }
+            }
+        }
+
+        return fingerprint;
     }
 
     private bool TryRecognizeCollectionMap(
