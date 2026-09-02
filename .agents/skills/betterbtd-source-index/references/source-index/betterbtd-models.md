@@ -56,7 +56,7 @@ Paths are relative to the repository root. Open the linked file and verify curre
 
 | File | Description |
 | --- | --- |
-| [AutoTaskExecutionModels.cs](../../../../../BetterBTD/Models/AutoTasks/AutoTaskExecutionModels.cs) | Automatic-task configuration and runtime models; primary symbols: AutoTaskKind, LoopStageRunMode, AutoTaskRunState, AutoTaskPhase, AutoTaskExecutionStatus |
+| [AutoTaskExecutionModels.cs](../../../../../BetterBTD/Models/AutoTasks/AutoTaskExecutionModels.cs) | Automatic-task configuration and runtime models; primary symbols: AutoTaskKind, LoopStageRunMode, AutoTaskRunState, AutoTaskPhase, AutoTaskActivityKind |
 | [BlackBorderAutoTaskModels.cs](../../../../../BetterBTD/Models/AutoTasks/BlackBorderAutoTaskModels.cs) | Automatic-task configuration and runtime models; primary symbols: BlackBorderAutoTaskScriptRunState, BlackBorderAutoTaskStageTask, BlackBorderAutoTaskScriptContext, BlackBorderAutoTaskStateKeys |
 | [CollectionAutoTaskModels.cs](../../../../../BetterBTD/Models/AutoTasks/CollectionAutoTaskModels.cs) | Automatic-task configuration and runtime models; primary symbols: CollectionAutoTaskScriptRunState, CollectionAutoTaskScriptContext, CollectionAutoTaskStateKeys |
 | [GameUiDetectionModels.cs](../../../../../BetterBTD/Models/AutoTasks/GameUiDetectionModels.cs) | Automatic-task configuration and runtime models; primary symbols: GameUiColorComparisonOperator, GameUiDetectionConfig, GameUiDetectionRule, GameUiColorCondition |

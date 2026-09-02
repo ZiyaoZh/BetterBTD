@@ -24,7 +24,7 @@ Capture, recognition, persistence, settings, editor, task adapters, and protocol
 | `BetterBTD/Services/Shell/Localization` | 14 |
 | `BetterBTD/Services/Start` | 1 |
 | `BetterBTD/Services/Start/Capture` | 4 |
-| `BetterBTD/Services/Tasks/AutoTasks` | 17 |
+| `BetterBTD/Services/Tasks/AutoTasks` | 18 |
 | `BetterBTD/Services/Tasks/CaptureAnalysis` | 5 |
 | `BetterBTD/Services/Tasks/Input` | 3 |
 | `BetterBTD/Services/Tasks/RobotControl` | 2 |
@@ -137,6 +137,7 @@ Paths are relative to the repository root. Open the linked file and verify curre
 | [AutoTaskRuntimeScriptPreviewService.cs](../../../../../BetterBTD/Services/Tasks/AutoTasks/AutoTaskRuntimeScriptPreviewService.cs) | Automatic-task UI state, navigation, actions, and adapters; primary symbols: AutoTaskRuntimeScriptPreviewService, AutoTaskRuntimeScriptPreview |
 | [BlackBorderBadgeDetection.cs](../../../../../BetterBTD/Services/Tasks/AutoTasks/BlackBorderBadgeDetection.cs) | Automatic-task UI state, navigation, actions, and adapters; primary symbols: BlackBorderBadgeDetection, struct, BlackBorderBadgeState |
 | [BlackBorderGameUiActionHandler.cs](../../../../../BetterBTD/Services/Tasks/AutoTasks/BlackBorderGameUiActionHandler.cs) | Automatic-task UI state, navigation, actions, and adapters; primary symbols: BlackBorderGameUiActionHandler |
+| [BlackBorderMapSearchStateMachine.cs](../../../../../BetterBTD/Services/Tasks/AutoTasks/BlackBorderMapSearchStateMachine.cs) | Automatic-task UI state, navigation, actions, and adapters; primary symbols: BlackBorderMapSearchStateMachine, struct |
 | [CollectionGameUiActionHandler.cs](../../../../../BetterBTD/Services/Tasks/AutoTasks/CollectionGameUiActionHandler.cs) | Automatic-task UI state, navigation, actions, and adapters; primary symbols: CollectionGameUiActionHandler |
 | [GameUiActionExecutor.cs](../../../../../BetterBTD/Services/Tasks/AutoTasks/GameUiActionExecutor.cs) | Automatic-task UI state, navigation, actions, and adapters; primary symbols: GameUiActionExecutor |
 | [GameUiDetectionConfigService.cs](../../../../../BetterBTD/Services/Tasks/AutoTasks/GameUiDetectionConfigService.cs) | Automatic-task UI state, navigation, actions, and adapters; primary symbols: GameUiDetectionConfigService |
