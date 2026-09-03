@@ -14,6 +14,7 @@ public partial class ScriptEditorWorkspace : UserControl
     private ScrollViewer? _instructionSequenceScrollViewer;
     private DragAutoScrollDirection _instructionSequenceAutoScrollDirection;
     private bool _isInstructionSequenceDragActive;
+    private bool _restoreInstructionSequenceKeyboardFocus;
 
     public ScriptEditorWorkspace()
     {
@@ -48,20 +49,31 @@ public partial class ScriptEditorWorkspace : UserControl
 
     private void InstructionSequenceListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (sender is not ListBox listBox || listBox.SelectedItem is null)
+        if (sender is not ListBox listBox)
         {
             return;
         }
 
+        _restoreInstructionSequenceKeyboardFocus |= listBox.IsKeyboardFocusWithin;
         _ = Dispatcher.BeginInvoke(() =>
         {
-            if (listBox.SelectedItem is null)
+            var selectedItem = listBox.SelectedItem;
+            if (selectedItem is null)
             {
+                _restoreInstructionSequenceKeyboardFocus = false;
                 return;
             }
 
+            listBox.ScrollIntoView(selectedItem);
             listBox.UpdateLayout();
-            listBox.ScrollIntoView(listBox.SelectedItem);
+
+            var restoreKeyboardFocus = _restoreInstructionSequenceKeyboardFocus;
+            _restoreInstructionSequenceKeyboardFocus = false;
+            if (restoreKeyboardFocus &&
+                listBox.ItemContainerGenerator.ContainerFromItem(selectedItem) is ListBoxItem container)
+            {
+                _ = container.Focus();
+            }
         }, DispatcherPriority.Background);
     }
 
