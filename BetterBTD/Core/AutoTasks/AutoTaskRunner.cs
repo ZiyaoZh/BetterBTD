@@ -207,10 +207,8 @@ public sealed class AutoTaskRunner
                     var recoveryFailure = await TryRecoverStuckUiAsync(
                             runtimeServices,
                             session,
-                            state,
                             snapshot,
                             options,
-                            ObserveNextUiSnapshotAsync,
                             cancellationToken)
                         .ConfigureAwait(false);
                     if (recoveryFailure is not null)
@@ -538,10 +536,8 @@ public sealed class AutoTaskRunner
     private static async Task<string?> TryRecoverStuckUiAsync(
         AutoTaskRuntimeServices runtimeServices,
         AutoTaskExecutionSession session,
-        AutoTaskRuntimeState state,
         GameUiSnapshot stuckSnapshot,
         AutoTaskExecutionOptions options,
-        Func<CancellationToken, Task<GameUiSnapshot>> observeNextUiSnapshotAsync,
         CancellationToken cancellationToken)
     {
         if (runtimeServices.StuckRecoveryExecutor is null)
@@ -570,26 +566,15 @@ public sealed class AutoTaskRunner
             await runtimeServices.StuckRecoveryExecutor
                 .ClickAsync(point, cancellationToken)
                 .ConfigureAwait(false);
-            await session
-                .DelayAsync(Math.Max(0, options.StuckRecoveryDelayMs), cancellationToken)
-                .ConfigureAwait(false);
-
-            var recoveredSnapshot = await observeNextUiSnapshotAsync(cancellationToken).ConfigureAwait(false);
-            state.RecordUiSnapshot(recoveredSnapshot);
-            session.UpdateUiSnapshot(
-                recoveredSnapshot,
-                $"Observed UI state '{recoveredSnapshot.State}' after stuck-recovery attempt {attempt}.");
-
-            if (AutoTaskStuckUiTracker.HasVisualFingerprintChanged(
-                    stuckSnapshot,
-                    recoveredSnapshot,
-                    options.VisualFingerprintDistanceTolerance))
+            if (index < options.StuckRecoveryPoints.Count - 1)
             {
-                return null;
+                await session
+                    .DelayAsync(Math.Max(0, options.StuckRecoveryDelayMs), cancellationToken)
+                    .ConfigureAwait(false);
             }
         }
 
-        return $"UI state '{stuckSnapshot.State}' did not change for {options.StuckUiTimeout.TotalSeconds:F1} seconds and its visual fingerprint remained unchanged after {options.StuckRecoveryPoints.Count} recovery clicks.";
+        return null;
     }
 
     private static void UpdateStageCompletion(

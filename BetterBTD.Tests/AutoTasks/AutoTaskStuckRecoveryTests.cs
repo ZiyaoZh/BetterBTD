@@ -250,17 +250,16 @@ public sealed class AutoTaskStuckRecoveryTests
     }
 
     [Fact]
-    public async Task Runner_RecoversWhenFirstClickChangesVisualFingerprintWithoutChangingUiState()
+    public async Task Runner_ClicksEntireRecoverySequenceWithoutObservingBetweenClicks()
     {
         var startedAt = DateTimeOffset.UtcNow;
         var uiState = new QueueUiStateService(
         [
             CreateSnapshot(GameUiStateId.Unknown, startedAt, 0),
             CreateSnapshot(GameUiStateId.Unknown, startedAt.AddSeconds(10), 0),
-            CreateSnapshot(GameUiStateId.Unknown, startedAt.AddSeconds(11), ulong.MaxValue),
-            CreateSnapshot(GameUiStateId.MainMenu, startedAt.AddSeconds(12), ulong.MaxValue)
+            CreateSnapshot(GameUiStateId.MainMenu, startedAt.AddSeconds(11), ulong.MaxValue)
         ]);
-        var recovery = new RecordingRecoveryExecutor();
+        var recovery = new RecordingRecoveryExecutor(() => uiState.CaptureCount);
         var artifactWriter = new RecordingFailureArtifactWriter(throwOnWrite: false);
         var runner = CreateRunner(uiState, recovery, artifactWriter);
 
@@ -269,20 +268,23 @@ public sealed class AutoTaskStuckRecoveryTests
             CreateOptions(CreateRuntimeServices(uiState, recovery, artifactWriter)));
 
         Assert.Equal(AutoTaskExecutionStatus.Completed, result.Status);
-        Assert.Equal([new GameUiRecoveryPoint(100, 200)], recovery.ClickedPoints);
+        Assert.Equal(
+            [new GameUiRecoveryPoint(100, 200), new GameUiRecoveryPoint(300, 400)],
+            recovery.ClickedPoints);
+        Assert.Equal([2, 2], recovery.CaptureCountsAtClick);
+        Assert.Equal(3, uiState.CaptureCount);
         Assert.Equal(0, artifactWriter.WriteCount);
     }
 
     [Fact]
-    public async Task Runner_ContinuesRecoveryWhenUiStateChangesWithoutVisualFingerprintChange()
+    public async Task Runner_ContinuesNavigationAfterRecoveryWhenVisualFingerprintRemainsUnchanged()
     {
         var startedAt = DateTimeOffset.UtcNow;
         var uiState = new QueueUiStateService(
         [
-            CreateSnapshot(GameUiStateId.Unknown, startedAt, 0),
-            CreateSnapshot(GameUiStateId.Unknown, startedAt.AddSeconds(10), 0),
-            CreateSnapshot(GameUiStateId.MainMenu, startedAt.AddSeconds(11), 0),
-            CreateSnapshot(GameUiStateId.MainMenu, startedAt.AddSeconds(12), ulong.MaxValue)
+            CreateSnapshot(GameUiStateId.Unknown, startedAt, 1),
+            CreateSnapshot(GameUiStateId.Unknown, startedAt.AddSeconds(10), 1),
+            CreateSnapshot(GameUiStateId.MainMenu, startedAt.AddSeconds(11), 1)
         ]);
         var recovery = new RecordingRecoveryExecutor();
         var runner = CreateRunner(uiState, recovery);
@@ -292,33 +294,6 @@ public sealed class AutoTaskStuckRecoveryTests
             CreateOptions(CreateRuntimeServices(uiState, recovery)));
 
         Assert.Equal(AutoTaskExecutionStatus.Completed, result.Status);
-        Assert.Equal(
-            [new GameUiRecoveryPoint(100, 200), new GameUiRecoveryPoint(300, 400)],
-            recovery.ClickedPoints);
-    }
-
-    [Fact]
-    public async Task Runner_FailsUnknownAfterAllRecoveryClicksLeaveInterfaceUnchanged()
-    {
-        var startedAt = DateTimeOffset.UtcNow;
-        var uiState = new QueueUiStateService(
-        [
-            CreateSnapshot(GameUiStateId.Unknown, startedAt, 1),
-            CreateSnapshot(GameUiStateId.Unknown, startedAt.AddSeconds(10), 1),
-            CreateSnapshot(GameUiStateId.Unknown, startedAt.AddSeconds(11), 1),
-            CreateSnapshot(GameUiStateId.Unknown, startedAt.AddSeconds(12), 1)
-        ]);
-        var recovery = new RecordingRecoveryExecutor();
-        var runner = CreateRunner(uiState, recovery);
-
-        var result = await runner.ExecuteAsync(
-            CreateRequest(),
-            CreateOptions(CreateRuntimeServices(uiState, recovery)));
-
-        Assert.Equal(AutoTaskExecutionStatus.Failed, result.Status);
-        Assert.Equal("StuckUiRecovery", result.Failure?.Checkpoint);
-        Assert.Equal(GameUiStateId.Unknown, result.Failure?.UiState);
-        Assert.Equal(2, result.Failure?.Attempt);
         Assert.Equal(
             [new GameUiRecoveryPoint(100, 200), new GameUiRecoveryPoint(300, 400)],
             recovery.ClickedPoints);
@@ -439,9 +414,12 @@ public sealed class AutoTaskStuckRecoveryTests
         private readonly Queue<GameUiSnapshot> _snapshots = new(snapshots);
         private GameUiSnapshot? _lastSnapshot;
 
+        public int CaptureCount { get; private set; }
+
         public Task<GameUiSnapshot> CaptureSnapshotAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            CaptureCount++;
             if (_snapshots.Count > 0)
             {
                 _lastSnapshot = _snapshots.Dequeue();
@@ -455,9 +433,11 @@ public sealed class AutoTaskStuckRecoveryTests
         }
     }
 
-    private sealed class RecordingRecoveryExecutor : IGameUiStuckRecoveryExecutor
+    private sealed class RecordingRecoveryExecutor(Func<int>? getCaptureCount = null) : IGameUiStuckRecoveryExecutor
     {
         public List<GameUiRecoveryPoint> ClickedPoints { get; } = [];
+
+        public List<int> CaptureCountsAtClick { get; } = [];
 
         public Task<GameUiActionExecutionResult> ClickAsync(
             GameUiRecoveryPoint point,
@@ -465,6 +445,11 @@ public sealed class AutoTaskStuckRecoveryTests
         {
             cancellationToken.ThrowIfCancellationRequested();
             ClickedPoints.Add(point);
+            if (getCaptureCount is not null)
+            {
+                CaptureCountsAtClick.Add(getCaptureCount());
+            }
+
             return Task.FromResult(new GameUiActionExecutionResult { Succeeded = true });
         }
     }

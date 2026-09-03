@@ -50,22 +50,6 @@ internal sealed class AutoTaskStuckUiTracker
         _baseline = null;
     }
 
-    public static bool HasVisualFingerprintChanged(
-        GameUiSnapshot baseline,
-        GameUiSnapshot current,
-        int visualFingerprintDistanceTolerance = 6)
-    {
-        ArgumentNullException.ThrowIfNull(baseline);
-        ArgumentNullException.ThrowIfNull(current);
-
-        return baseline.VisualFingerprint.HasValue &&
-               current.VisualFingerprint.HasValue &&
-               !AreVisualFingerprintsEquivalent(
-                   baseline.VisualFingerprint,
-                   current.VisualFingerprint,
-                   Math.Clamp(visualFingerprintDistanceTolerance, 0, 64));
-    }
-
     private bool IsSameInterface(Observation baseline, Observation current)
     {
         return baseline.State == current.State &&
