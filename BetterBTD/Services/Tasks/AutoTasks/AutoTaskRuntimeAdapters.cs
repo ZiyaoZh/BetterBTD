@@ -171,6 +171,7 @@ public static class AutoTaskRuntimeServiceFactory
         return new AutoTaskRuntimeServices
         {
             GameUiState = GameUiStateService.Instance,
+            NavigationObservation = NavigationObservationService.Instance,
             Navigator = GameUiNavigator.Instance,
             UiActionExecutor = GameUiActionExecutor.Instance,
             StuckRecoveryExecutor = GameUiStuckRecoveryExecutor.Instance,

@@ -56,6 +56,14 @@
 - 兼容性/真实环境：保留旧 `ExecuteAsync`、自动任务脚本适配器和 Runner 行为，现有调用路径未切换；未控制游戏输入，未进行 BTD6 实机验证。脚本观察默认降级可能返回空/未知值，后续导航控制器需结合任务上下文决定是否继续。
 - 下一阶段：阶段 4，实现 `AutoTaskNavigationController`，让导航持续消费单一观察流并管理 Worker 生命周期；先覆盖脚本运行中导航不中断、脚本完成后等待胜负结果、胜负取消和普通弹窗暂停/恢复。
 
+### 阶段 4：导航控制器（稳定运行口径）
+
+- 完成：新增 `AutoTaskNavigationController`，以单一 `INavigationObservationService` 观察流驱动挑战状态；脚本在 `InLevel` 快照后通过 Worker 启动，Worker 完成仅进入等待结果状态；胜负/结算快照会先取消仍在运行的 Worker；普通弹窗会请求暂停，弹窗消失后恢复。控制器忽略 `Unknown` 快照并继续观察。
+- 未完成：`AutoTaskRunner`、运行页面尚未切换到该控制器；弹窗具体点击动作和输入仲裁仍由旧流程负责。
+- 验证：`dotnet build BetterBTD.slnx -c Release /p:Platform=x64 --no-restore` 通过，0 错误；尚未完成全量测试和真实 BTD6 场景验证。
+- 兼容性/真实环境：默认运行路径未改变；新增控制器未引入 Stage 5 输入仲裁，真实弹窗和胜负结算仍未验证。
+- 下一阶段：接入 Runner 会话，增加 Worker ACK 超时降级和控制器回归测试。
+
 ### 后续记录模板
 
 复制以下模板追加到本文件，不要覆盖已有记录：
