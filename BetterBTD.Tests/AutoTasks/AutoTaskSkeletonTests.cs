@@ -1,5 +1,7 @@
 using BetterBTD.Core.AutoTasks;
 using BetterBTD.Core.AutoTasks.Runtime;
+using BetterBTD.Core.ScriptExecution;
+using BetterBTD.Core.ScriptExecution.Runtime;
 using BetterBTD.Models.AutoTasks;
 using BetterBTD.Models.GameElements;
 using BetterBTD.Models.ScriptExecution;
@@ -151,18 +153,15 @@ public sealed class AutoTaskSkeletonTests
         var actionExecutor = new RecordingGameUiActionExecutor();
         var scriptResolver = new RecordingAutoTaskScriptResolver("custom-stage.json");
         var scriptExecutor = new RecordingAutoTaskScriptExecutor(CreateSuccessfulScriptResult());
-
-        var runtimeServices = new AutoTaskRuntimeServices
-        {
-            GameUiState = uiStateService,
-            Navigator = GameUiNavigator.Instance,
-            UiActionExecutor = actionExecutor,
-            ScriptResolver = scriptResolver,
-            ScriptExecutor = scriptExecutor
-        };
+        await using var runtime = CreateRuntimeServices(
+            uiStateService,
+            actionExecutor,
+            scriptResolver,
+            scriptExecutor);
+        var runtimeServices = runtime.Services;
 
         var runner = new AutoTaskRunner();
-        var result = await runner.ExecuteAsync(
+        var resultTask = runner.ExecuteAsync(
             new AutoTaskRequest
             {
                 Kind = AutoTaskKind.Custom,
@@ -175,6 +174,12 @@ public sealed class AutoTaskSkeletonTests
                 MaxLoopIterations = 10
             });
 
+        runtime.Navigation.Publish(GameUiStateId.InLevel);
+        await WaitUntilAsync(() => scriptExecutor.ExecutedFilePaths.Count == 1, TimeSpan.FromSeconds(2));
+        Assert.False(resultTask.IsCompleted);
+        runtime.Navigation.Publish(GameUiStateId.Victory);
+
+        var result = await resultTask.WaitAsync(TimeSpan.FromSeconds(2));
         Assert.Equal(AutoTaskExecutionStatus.Completed, result.Status);
         Assert.Single(scriptResolver.Queries);
         Assert.Equal("custom-stage.json", scriptResolver.Queries[0].PreferredFilePath);
@@ -191,23 +196,21 @@ public sealed class AutoTaskSkeletonTests
         [
             new GameUiSnapshot { State = GameUiStateId.MainMenu },
             new GameUiSnapshot { State = GameUiStateId.InLevel },
-            new GameUiSnapshot { State = GameUiStateId.InLevel }
+            new GameUiSnapshot { State = GameUiStateId.Victory }
         ]);
         var actionExecutor = new RecordingGameUiActionExecutor();
         var scriptResolver = new RecordingAutoTaskScriptResolver("nav-stage.json");
         var scriptExecutor = new RecordingAutoTaskScriptExecutor(CreateSuccessfulScriptResult());
 
-        var runtimeServices = new AutoTaskRuntimeServices
-        {
-            GameUiState = uiStateService,
-            Navigator = GameUiNavigator.Instance,
-            UiActionExecutor = actionExecutor,
-            ScriptResolver = scriptResolver,
-            ScriptExecutor = scriptExecutor
-        };
+        await using var runtime = CreateRuntimeServices(
+            uiStateService,
+            actionExecutor,
+            scriptResolver,
+            scriptExecutor);
+        var runtimeServices = runtime.Services;
 
         var runner = new AutoTaskRunner();
-        var result = await runner.ExecuteAsync(
+        var resultTask = runner.ExecuteAsync(
             new AutoTaskRequest
             {
                 Kind = AutoTaskKind.Custom,
@@ -220,6 +223,11 @@ public sealed class AutoTaskSkeletonTests
                 MaxLoopIterations = 10
             });
 
+        runtime.Navigation.Publish(GameUiStateId.InLevel);
+        await WaitUntilAsync(() => scriptExecutor.ExecutedFilePaths.Count == 1, TimeSpan.FromSeconds(2));
+        runtime.Navigation.Publish(GameUiStateId.Victory);
+
+        var result = await resultTask.WaitAsync(TimeSpan.FromSeconds(2));
         Assert.Equal(AutoTaskExecutionStatus.Completed, result.Status);
         Assert.Single(actionExecutor.ExecutedSteps);
         Assert.Equal(GameUiActionKind.OpenMapSelection, actionExecutor.ExecutedSteps[0].ActionKind);
@@ -232,19 +240,18 @@ public sealed class AutoTaskSkeletonTests
         var uiStateService = new QueueGameUiStateService(
         [
             new GameUiSnapshot { State = GameUiStateId.InLevel },
-            new GameUiSnapshot { State = GameUiStateId.InLevel }
+            new GameUiSnapshot { State = GameUiStateId.Victory }
         ]);
-        var runtimeServices = new AutoTaskRuntimeServices
-        {
-            GameUiState = uiStateService,
-            Navigator = GameUiNavigator.Instance,
-            UiActionExecutor = new RecordingGameUiActionExecutor(),
-            ScriptResolver = new RecordingAutoTaskScriptResolver("custom-stage.json"),
-            ScriptExecutor = new RecordingAutoTaskScriptExecutor(CreateSuccessfulScriptResult())
-        };
+        var scriptExecutor = new RecordingAutoTaskScriptExecutor(CreateSuccessfulScriptResult());
+        await using var runtime = CreateRuntimeServices(
+            uiStateService,
+            new RecordingGameUiActionExecutor(),
+            new RecordingAutoTaskScriptResolver("custom-stage.json"),
+            scriptExecutor);
+        var runtimeServices = runtime.Services;
 
         var runner = new AutoTaskRunner();
-        var result = await runner.ExecuteAsync(
+        var resultTask = runner.ExecuteAsync(
             new AutoTaskRequest
             {
                 Kind = AutoTaskKind.Custom,
@@ -257,6 +264,11 @@ public sealed class AutoTaskSkeletonTests
                 MaxLoopIterations = 10
             });
 
+        runtime.Navigation.Publish(GameUiStateId.InLevel);
+        await WaitUntilAsync(() => scriptExecutor.ExecutedFilePaths.Count == 1, TimeSpan.FromSeconds(2));
+        runtime.Navigation.Publish(GameUiStateId.Victory);
+
+        var result = await resultTask.WaitAsync(TimeSpan.FromSeconds(2));
         Assert.Equal(AutoTaskExecutionStatus.Completed, result.Status);
         Assert.Equal(2, uiStateService.ResetCount);
     }
@@ -267,18 +279,16 @@ public sealed class AutoTaskSkeletonTests
         var uiStateService = new QueueGameUiStateService(
         [
             new GameUiSnapshot { State = GameUiStateId.InLevel },
-            new GameUiSnapshot { State = GameUiStateId.InLevel }
+            new GameUiSnapshot { State = GameUiStateId.Victory }
         ]);
         var scriptExecutor = new BlockingAutoTaskScriptExecutor();
 
-        var runtimeServices = new AutoTaskRuntimeServices
-        {
-            GameUiState = uiStateService,
-            Navigator = GameUiNavigator.Instance,
-            UiActionExecutor = new RecordingGameUiActionExecutor(),
-            ScriptResolver = new RecordingAutoTaskScriptResolver("blocking-stage.json"),
-            ScriptExecutor = scriptExecutor
-        };
+        await using var runtime = CreateRuntimeServices(
+            uiStateService,
+            new RecordingGameUiActionExecutor(),
+            new RecordingAutoTaskScriptResolver("blocking-stage.json"),
+            scriptExecutor);
+        var runtimeServices = runtime.Services;
 
         var runner = new AutoTaskRunner();
         var executionTask = runner.ExecuteAsync(
@@ -294,6 +304,7 @@ public sealed class AutoTaskSkeletonTests
                 MaxLoopIterations = 10
             });
 
+        runtime.Navigation.Publish(GameUiStateId.InLevel);
         await scriptExecutor.Started.Task.WaitAsync(TimeSpan.FromSeconds(2));
 
         Assert.Equal(
@@ -307,13 +318,14 @@ public sealed class AutoTaskSkeletonTests
         Assert.Equal(1, scriptExecutor.ResumeCount);
 
         scriptExecutor.Complete(CreateSuccessfulScriptResult());
+        runtime.Navigation.Publish(GameUiStateId.Victory);
 
-        var result = await executionTask;
+        var result = await executionTask.WaitAsync(TimeSpan.FromSeconds(2));
         Assert.Equal(AutoTaskExecutionStatus.Completed, result.Status);
     }
 
     [Fact]
-    public async Task Runner_CancellationWaitsForUnderlyingStageScriptToExit()
+    public async Task Runner_CancellationSignalsUnderlyingStageScriptWorker()
     {
         var uiStateService = new QueueGameUiStateService(
         [
@@ -321,14 +333,12 @@ public sealed class AutoTaskSkeletonTests
         ]);
         var strategy = new InterruptAwareCollectionStrategy();
         var scriptExecutor = new DelayedCancellationAutoTaskScriptExecutor();
-        var runtimeServices = new AutoTaskRuntimeServices
-        {
-            GameUiState = uiStateService,
-            Navigator = GameUiNavigator.Instance,
-            UiActionExecutor = new RecordingGameUiActionExecutor(),
-            ScriptResolver = new RecordingAutoTaskScriptResolver("collection-stage.json"),
-            ScriptExecutor = scriptExecutor
-        };
+        await using var runtime = CreateRuntimeServices(
+            uiStateService,
+            new RecordingGameUiActionExecutor(),
+            new RecordingAutoTaskScriptResolver("collection-stage.json"),
+            scriptExecutor);
+        var runtimeServices = runtime.Services;
         var runner = new AutoTaskRunner(
             new SingleStrategyRegistry(strategy),
             runtimeServices,
@@ -349,45 +359,49 @@ public sealed class AutoTaskSkeletonTests
             },
             cancellationSource.Token);
 
+        runtime.Navigation.Publish(GameUiStateId.InLevel);
         await scriptExecutor.Started.Task.WaitAsync(TimeSpan.FromSeconds(2));
         cancellationSource.Cancel();
-        await scriptExecutor.CancellationObserved.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        try
+        {
+            await scriptExecutor.CancellationObserved.Task.WaitAsync(TimeSpan.FromSeconds(2));
+            var result = await executionTask.WaitAsync(TimeSpan.FromSeconds(2));
 
-        Assert.False(executionTask.IsCompleted);
-        scriptExecutor.AllowExit();
+            Assert.Equal(AutoTaskExecutionStatus.Cancelled, result.Status);
+            Assert.True(scriptExecutor.IsRunning);
+        }
+        finally
+        {
+            scriptExecutor.AllowExit();
+        }
 
-        var result = await executionTask.WaitAsync(TimeSpan.FromSeconds(2));
-        Assert.Equal(AutoTaskExecutionStatus.Cancelled, result.Status);
-        Assert.False(scriptExecutor.IsRunning);
+        await WaitUntilAsync(() => !scriptExecutor.IsRunning, TimeSpan.FromSeconds(2));
     }
 
     [Fact]
-    public async Task Runner_MonitorFailurePreservesOriginalExceptionAfterScriptExits()
+    public async Task Runner_FailsWhenNavigationRuntimeIsMissing()
     {
-        var uiStateService = new ThrowAfterFirstCaptureGameUiStateService();
-        var scriptExecutor = new DelayedCancellationAutoTaskScriptExecutor
-        {
-            ThrowOnCancellation = true
-        };
+        var uiStateService = new QueueGameUiStateService(
+        [
+            new GameUiSnapshot { State = GameUiStateId.InLevel }
+        ]);
+        var scriptExecutor = new RecordingAutoTaskScriptExecutor(CreateSuccessfulScriptResult());
         var runtimeServices = new AutoTaskRuntimeServices
         {
             GameUiState = uiStateService,
             Navigator = GameUiNavigator.Instance,
             UiActionExecutor = new RecordingGameUiActionExecutor(),
-            ScriptResolver = new RecordingAutoTaskScriptResolver("collection-stage.json"),
+            ScriptResolver = new RecordingAutoTaskScriptResolver("custom-stage.json"),
             ScriptExecutor = scriptExecutor
         };
-        var runner = new AutoTaskRunner(
-            new SingleStrategyRegistry(new InterruptAwareCollectionStrategy()),
-            runtimeServices,
-            AutoTaskRuntimeScriptPreviewService.Instance);
+        var runner = new AutoTaskRunner();
 
-        var executionTask = runner.ExecuteAsync(
+        var result = await runner.ExecuteAsync(
             new AutoTaskRequest
             {
-                Kind = AutoTaskKind.Collection,
+                Kind = AutoTaskKind.Custom,
                 StageTarget = CreateTarget(),
-                PreferredScriptPath = "collection-stage.json"
+                PreferredScriptPath = "custom-stage.json"
             },
             new AutoTaskExecutionOptions
             {
@@ -395,14 +409,9 @@ public sealed class AutoTaskSkeletonTests
                 MaxLoopIterations = 10
             });
 
-        await scriptExecutor.CancellationObserved.Task.WaitAsync(TimeSpan.FromSeconds(2));
-        Assert.False(executionTask.IsCompleted);
-        scriptExecutor.AllowExit();
-
-        var result = await executionTask.WaitAsync(TimeSpan.FromSeconds(2));
         Assert.Equal(AutoTaskExecutionStatus.Failed, result.Status);
-        Assert.Equal("monitor capture failed", result.Exception?.Message);
-        Assert.False(scriptExecutor.IsRunning);
+        Assert.Equal("NavigationController", result.Failure?.Checkpoint);
+        Assert.Empty(scriptExecutor.ExecutedFilePaths);
     }
 
     [Fact]
@@ -411,27 +420,24 @@ public sealed class AutoTaskSkeletonTests
         var uiStateService = new QueueGameUiStateService(
         [
             new GameUiSnapshot { State = GameUiStateId.InLevel },
-            new GameUiSnapshot { State = GameUiStateId.Defeat },
             new GameUiSnapshot { State = GameUiStateId.Defeat }
         ]);
         var strategy = new InterruptAwareCollectionStrategy();
         var scriptExecutor = new BlockingAutoTaskScriptExecutor();
 
-        var runtimeServices = new AutoTaskRuntimeServices
-        {
-            GameUiState = uiStateService,
-            Navigator = GameUiNavigator.Instance,
-            UiActionExecutor = new RecordingGameUiActionExecutor(),
-            ScriptResolver = new RecordingAutoTaskScriptResolver("collection-stage.json"),
-            ScriptExecutor = scriptExecutor
-        };
+        await using var runtime = CreateRuntimeServices(
+            uiStateService,
+            new RecordingGameUiActionExecutor(),
+            new RecordingAutoTaskScriptResolver("collection-stage.json"),
+            scriptExecutor);
+        var runtimeServices = runtime.Services;
 
         var runner = new AutoTaskRunner(
             new SingleStrategyRegistry(strategy),
             runtimeServices,
             AutoTaskRuntimeScriptPreviewService.Instance);
 
-        var result = await runner.ExecuteAsync(
+        var resultTask = runner.ExecuteAsync(
             new AutoTaskRequest
             {
                 Kind = AutoTaskKind.Collection,
@@ -444,8 +450,13 @@ public sealed class AutoTaskSkeletonTests
                 MaxLoopIterations = 10
             });
 
+        runtime.Navigation.Publish(GameUiStateId.InLevel);
+        await scriptExecutor.Started.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        runtime.Navigation.Publish(GameUiStateId.Defeat);
+
+        var result = await resultTask.WaitAsync(TimeSpan.FromSeconds(2));
         Assert.Equal(AutoTaskExecutionStatus.Completed, result.Status);
-        Assert.True(scriptExecutor.CancellationObserved);
+        await WaitUntilAsync(() => scriptExecutor.CancellationObserved, TimeSpan.FromSeconds(2));
         Assert.Equal(new[] { GameUiStateId.Defeat }, strategy.InterruptedSnapshots);
     }
 
@@ -455,27 +466,24 @@ public sealed class AutoTaskSkeletonTests
         var uiStateService = new QueueGameUiStateService(
         [
             new GameUiSnapshot { State = GameUiStateId.InLevel },
-            new GameUiSnapshot { State = GameUiStateId.StageSettlement },
             new GameUiSnapshot { State = GameUiStateId.StageSettlement }
         ]);
         var strategy = new InterruptAwareCollectionStrategy();
         var scriptExecutor = new BlockingAutoTaskScriptExecutor();
 
-        var runtimeServices = new AutoTaskRuntimeServices
-        {
-            GameUiState = uiStateService,
-            Navigator = GameUiNavigator.Instance,
-            UiActionExecutor = new RecordingGameUiActionExecutor(),
-            ScriptResolver = new RecordingAutoTaskScriptResolver("collection-stage.json"),
-            ScriptExecutor = scriptExecutor
-        };
+        await using var runtime = CreateRuntimeServices(
+            uiStateService,
+            new RecordingGameUiActionExecutor(),
+            new RecordingAutoTaskScriptResolver("collection-stage.json"),
+            scriptExecutor);
+        var runtimeServices = runtime.Services;
 
         var runner = new AutoTaskRunner(
             new SingleStrategyRegistry(strategy),
             runtimeServices,
             AutoTaskRuntimeScriptPreviewService.Instance);
 
-        var result = await runner.ExecuteAsync(
+        var resultTask = runner.ExecuteAsync(
             new AutoTaskRequest
             {
                 Kind = AutoTaskKind.Collection,
@@ -488,41 +496,43 @@ public sealed class AutoTaskSkeletonTests
                 MaxLoopIterations = 10
             });
 
+        runtime.Navigation.Publish(GameUiStateId.InLevel);
+        await scriptExecutor.Started.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        runtime.Navigation.Publish(GameUiStateId.StageSettlement);
+
+        var result = await resultTask.WaitAsync(TimeSpan.FromSeconds(2));
         Assert.Equal(AutoTaskExecutionStatus.Completed, result.Status);
-        Assert.True(scriptExecutor.CancellationObserved);
+        await WaitUntilAsync(() => scriptExecutor.CancellationObserved, TimeSpan.FromSeconds(2));
         Assert.Equal(new[] { GameUiStateId.StageSettlement }, strategy.InterruptedSnapshots);
     }
 
     [Theory]
     [InlineData(GameUiStateId.StageHint)]
-    [InlineData(GameUiStateId.StageSettings)]
-    public async Task Runner_InterruptsRaceScript_WhenHandledRaceUiDetected(
+    [InlineData(GameUiStateId.ConfirmDialog)]
+    public async Task Runner_PausesAndResumesRaceScript_WhenPopupDetected(
         GameUiStateId uiState)
     {
         var uiStateService = new QueueGameUiStateService(
         [
             new GameUiSnapshot { State = GameUiStateId.InLevel },
-            new GameUiSnapshot { State = uiState },
-            new GameUiSnapshot { State = uiState }
+            new GameUiSnapshot { State = GameUiStateId.RaceResult }
         ]);
         var strategy = new InterruptAwareRaceStrategy();
         var scriptExecutor = new BlockingAutoTaskScriptExecutor();
 
-        var runtimeServices = new AutoTaskRuntimeServices
-        {
-            GameUiState = uiStateService,
-            Navigator = GameUiNavigator.Instance,
-            UiActionExecutor = new RecordingGameUiActionExecutor(),
-            ScriptResolver = new RecordingAutoTaskScriptResolver("race-stage.json"),
-            ScriptExecutor = scriptExecutor
-        };
+        await using var runtime = CreateRuntimeServices(
+            uiStateService,
+            new RecordingGameUiActionExecutor(),
+            new RecordingAutoTaskScriptResolver("race-stage.json"),
+            scriptExecutor);
+        var runtimeServices = runtime.Services;
 
         var runner = new AutoTaskRunner(
             new SingleStrategyRegistry(strategy),
             runtimeServices,
             AutoTaskRuntimeScriptPreviewService.Instance);
 
-        var result = await runner.ExecuteAsync(
+        var resultTask = runner.ExecuteAsync(
             new AutoTaskRequest
             {
                 Kind = AutoTaskKind.Race,
@@ -535,120 +545,70 @@ public sealed class AutoTaskSkeletonTests
                 MaxLoopIterations = 10
             });
 
+        runtime.Navigation.Publish(GameUiStateId.InLevel);
+        await scriptExecutor.Started.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        runtime.Navigation.Publish(uiState);
+        await WaitUntilAsync(() => scriptExecutor.PauseRequestCount == 1, TimeSpan.FromSeconds(2));
+        runtime.Navigation.Publish(GameUiStateId.InLevel);
+        await WaitUntilAsync(() => scriptExecutor.ResumeCount == 1, TimeSpan.FromSeconds(2));
+        runtime.Navigation.Publish(GameUiStateId.RaceResult);
+
+        var result = await resultTask.WaitAsync(TimeSpan.FromSeconds(2));
         Assert.Equal(AutoTaskExecutionStatus.Completed, result.Status);
-        Assert.True(scriptExecutor.CancellationObserved);
-        Assert.Equal(new[] { uiState }, strategy.InterruptedSnapshots);
+        Assert.Equal(new[] { GameUiStateId.RaceResult }, strategy.InterruptedSnapshots);
     }
 
     [Fact]
-    public async Task Runner_PublishesDisplayableUiChangesWhileStageScriptIsRunning()
+    public async Task Runner_WaitsForResultAfterScriptWorkerCompletes()
     {
         var uiStateService = new QueueGameUiStateService(
         [
-            new GameUiSnapshot
-            {
-                State = GameUiStateId.InLevel,
-                StageState = new GameStageStateSnapshot
-                {
-                    Gold = 100,
-                    Round = 1,
-                    RightUpgradePanel = new GameStageUpgradePanelState
-                    {
-                        IsVisible = false,
-                        TopPathLevel = 1
-                    }
-                }
-            },
-            new GameUiSnapshot
-            {
-                State = GameUiStateId.InLevel,
-                StageState = new GameStageStateSnapshot
-                {
-                    Gold = 250,
-                    Round = 2,
-                    RightUpgradePanel = new GameStageUpgradePanelState
-                    {
-                        IsVisible = false,
-                        TopPathLevel = 2
-                    }
-                }
-            },
-            new GameUiSnapshot
-            {
-                State = GameUiStateId.InLevel,
-                StageState = new GameStageStateSnapshot
-                {
-                    Gold = 250,
-                    Round = 2,
-                    RightUpgradePanel = new GameStageUpgradePanelState
-                    {
-                        IsVisible = false,
-                        TopPathLevel = 9
-                    }
-                }
-            }
+            new GameUiSnapshot { State = GameUiStateId.InLevel },
+            new GameUiSnapshot { State = GameUiStateId.Victory }
         ]);
-        var scriptExecutor = new BlockingAutoTaskScriptExecutor();
-        var runtimeServices = new AutoTaskRuntimeServices
-        {
-            GameUiState = uiStateService,
-            Navigator = GameUiNavigator.Instance,
-            UiActionExecutor = new RecordingGameUiActionExecutor(),
-            ScriptResolver = new RecordingAutoTaskScriptResolver("collection-stage.json"),
-            ScriptExecutor = scriptExecutor
-        };
-        var runner = new AutoTaskRunner(
-            new SingleStrategyRegistry(new InterruptAwareCollectionStrategy()),
-            runtimeServices,
-            AutoTaskRuntimeScriptPreviewService.Instance);
-        using var cancellationSource = new CancellationTokenSource();
+        var scriptExecutor = new RecordingAutoTaskScriptExecutor(CreateSuccessfulScriptResult());
+        await using var runtime = CreateRuntimeServices(
+            uiStateService,
+            new RecordingGameUiActionExecutor(),
+            new RecordingAutoTaskScriptResolver("custom-stage.json"),
+            scriptExecutor);
+        var runner = new AutoTaskRunner();
 
         var executionTask = runner.ExecuteAsync(
             new AutoTaskRequest
             {
-                Kind = AutoTaskKind.Collection,
+                Kind = AutoTaskKind.Custom,
                 StageTarget = CreateTarget(),
-                PreferredScriptPath = "collection-stage.json"
+                PreferredScriptPath = "custom-stage.json"
             },
             new AutoTaskExecutionOptions
             {
-                RuntimeServices = runtimeServices,
+                RuntimeServices = runtime.Services,
                 MaxLoopIterations = 10
-            },
-            cancellationSource.Token);
+            });
 
-        await scriptExecutor.Started.Task.WaitAsync(TimeSpan.FromSeconds(2));
-        var session = runner.CurrentSession ?? throw new InvalidOperationException("Auto-task session was not available.");
-        var displayedUiUpdateCount = 0;
-        EventHandler<AutoTaskProgressSnapshot> progressHandler = (_, snapshot) =>
-        {
-            if (snapshot.CurrentActivity == AutoTaskActivityKind.ExecutingScript &&
-                snapshot.LastUiSnapshot?.StageState?.Round == 2)
-            {
-                Interlocked.Increment(ref displayedUiUpdateCount);
-            }
-        };
-        session.ProgressChanged += progressHandler;
+        runtime.Navigation.Publish(GameUiStateId.InLevel);
+        await WaitUntilAsync(() => scriptExecutor.ExecutedFilePaths.Count == 1, TimeSpan.FromSeconds(2));
 
-        try
-        {
-            await WaitUntilAsync(() => uiStateService.CaptureCount >= 3, TimeSpan.FromSeconds(2));
+        Assert.False(executionTask.IsCompleted);
 
-            cancellationSource.Cancel();
-            var result = await executionTask.WaitAsync(TimeSpan.FromSeconds(2));
-            var monitoredSnapshot = result.FinalProgress;
+        runtime.Navigation.Publish(GameUiStateId.Victory);
+        var result = await executionTask.WaitAsync(TimeSpan.FromSeconds(2));
 
-            Assert.Equal(AutoTaskExecutionStatus.Cancelled, result.Status);
-            Assert.Equal(250, monitoredSnapshot.LastUiSnapshot?.StageState?.Gold);
-            Assert.Equal(2, monitoredSnapshot.LastUiSnapshot?.StageState?.Round);
-            Assert.Equal(1, Volatile.Read(ref displayedUiUpdateCount));
-        }
-        finally
-        {
-            session.ProgressChanged -= progressHandler;
-            cancellationSource.Cancel();
-            await executionTask;
-        }
+        Assert.Equal(AutoTaskExecutionStatus.Completed, result.Status);
+    }
+
+    private static TestAutoTaskRuntime CreateRuntimeServices(
+        IGameUiStateService gameUiState,
+        IGameUiActionExecutor actionExecutor,
+        IAutoTaskScriptResolver scriptResolver,
+        IAutoTaskScriptExecutor scriptExecutor)
+    {
+        return new TestAutoTaskRuntime(
+            gameUiState,
+            actionExecutor,
+            scriptResolver,
+            scriptExecutor);
     }
 
     private static async Task WaitUntilAsync(Func<bool> condition, TimeSpan timeout)
@@ -690,10 +650,7 @@ public sealed class AutoTaskSkeletonTests
     {
         private readonly Queue<GameUiSnapshot> _snapshots;
         private GameUiSnapshot _lastSnapshot;
-        private int _captureCount;
         public int ResetCount { get; private set; }
-
-        public int CaptureCount => Volatile.Read(ref _captureCount);
 
         public QueueGameUiStateService(IEnumerable<GameUiSnapshot> snapshots)
         {
@@ -704,7 +661,6 @@ public sealed class AutoTaskSkeletonTests
         public Task<GameUiSnapshot> CaptureSnapshotAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            Interlocked.Increment(ref _captureCount);
 
             if (_snapshots.Count > 0)
             {
@@ -831,12 +787,24 @@ public sealed class AutoTaskSkeletonTests
         public bool RequestPause()
         {
             PauseRequestCount++;
+            ProgressChanged?.Invoke(this, new ScriptExecutionProgressSnapshot
+            {
+                RunState = ScriptExecutionRunState.PauseRequested
+            });
+            ProgressChanged?.Invoke(this, new ScriptExecutionProgressSnapshot
+            {
+                RunState = ScriptExecutionRunState.Paused
+            });
             return true;
         }
 
         public bool Resume()
         {
             ResumeCount++;
+            ProgressChanged?.Invoke(this, new ScriptExecutionProgressSnapshot
+            {
+                RunState = ScriptExecutionRunState.Running
+            });
             return true;
         }
 
@@ -899,8 +867,6 @@ public sealed class AutoTaskSkeletonTests
 
         public bool IsRunning { get; private set; }
 
-        public bool ThrowOnCancellation { get; init; }
-
         public bool RequestPause() => false;
 
         public bool Resume() => false;
@@ -926,11 +892,6 @@ public sealed class AutoTaskSkeletonTests
             {
                 CancellationObserved.TrySetResult();
                 await _allowExit.Task;
-                if (ThrowOnCancellation)
-                {
-                    throw;
-                }
-
                 return new ScriptExecutionResult
                 {
                     Status = ScriptExecutionStatus.Cancelled,
@@ -954,23 +915,132 @@ public sealed class AutoTaskSkeletonTests
         }
     }
 
-    private sealed class ThrowAfterFirstCaptureGameUiStateService : IGameUiStateService
+    private sealed class TestAutoTaskRuntime : IAsyncDisposable
     {
-        private int _captureCount;
+        private readonly ScriptTaskFlowWorker _worker;
 
-        public Task<GameUiSnapshot> CaptureSnapshotAsync(CancellationToken cancellationToken = default)
+        public TestAutoTaskRuntime(
+            IGameUiStateService gameUiState,
+            IGameUiActionExecutor actionExecutor,
+            IAutoTaskScriptResolver scriptResolver,
+            IAutoTaskScriptExecutor scriptExecutor)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (Interlocked.Increment(ref _captureCount) == 1)
+            Navigation = new TestNavigationObservationService();
+            _worker = new ScriptTaskFlowWorker(
+                new AutoTaskScriptExecutionEngineAdapter(scriptExecutor),
+                TimeProvider.System);
+            Services = new AutoTaskRuntimeServices
             {
-                return Task.FromResult(new GameUiSnapshot { State = GameUiStateId.InLevel });
-            }
-
-            throw new InvalidOperationException("monitor capture failed");
+                GameUiState = gameUiState,
+                NavigationObservation = Navigation,
+                Navigator = GameUiNavigator.Instance,
+                UiActionExecutor = actionExecutor,
+                ScriptResolver = scriptResolver,
+                ScriptExecutor = scriptExecutor,
+                ScriptWorker = _worker
+            };
         }
 
-        public void ResetStabilizationState()
+        public TestNavigationObservationService Navigation { get; }
+
+        public AutoTaskRuntimeServices Services { get; }
+
+        public async ValueTask DisposeAsync()
         {
+            await Navigation.StopAsync();
+            await _worker.StopAsync();
+        }
+    }
+
+    private sealed class TestNavigationObservationService : INavigationObservationService
+    {
+        private readonly System.Threading.Channels.Channel<NavigationObservation> _observations =
+            System.Threading.Channels.Channel.CreateUnbounded<NavigationObservation>();
+        private long _sequence;
+        private bool _isRunning;
+
+        public NavigationObservation? LatestObservation { get; private set; }
+
+        public NavigationObservationDiagnostics GetDiagnostics()
+        {
+            return new NavigationObservationDiagnostics
+            {
+                IsRunning = _isRunning,
+                PublishedCount = Volatile.Read(ref _sequence)
+            };
+        }
+
+        public void Start(CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            _isRunning = true;
+        }
+
+        public async IAsyncEnumerable<NavigationObservation> SubscribeAsync(
+            [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            await foreach (var observation in _observations.Reader.ReadAllAsync(cancellationToken))
+            {
+                yield return observation;
+            }
+        }
+
+        public Task StopAsync()
+        {
+            _isRunning = false;
+            _observations.Writer.TryComplete();
+            return Task.CompletedTask;
+        }
+
+        public void Publish(GameUiStateId state)
+        {
+            var capturedAt = DateTimeOffset.UtcNow;
+            var snapshot = new GameUiSnapshot
+            {
+                CapturedAt = capturedAt,
+                State = state
+            };
+            var observation = new NavigationObservation(
+                Interlocked.Increment(ref _sequence),
+                capturedAt,
+                snapshot);
+            LatestObservation = observation;
+            Assert.True(_observations.Writer.TryWrite(observation));
+        }
+    }
+
+    private sealed class AutoTaskScriptExecutionEngineAdapter : IScriptTaskFlowExecutionEngine
+    {
+        private readonly IAutoTaskScriptExecutor _executor;
+
+        public AutoTaskScriptExecutionEngineAdapter(IAutoTaskScriptExecutor executor)
+        {
+            _executor = executor;
+        }
+
+        public bool IsRunning => _executor.IsRunning;
+
+        public event EventHandler<ScriptExecutionProgressSnapshot>? ProgressChanged
+        {
+            add => _executor.ProgressChanged += value;
+            remove => _executor.ProgressChanged -= value;
+        }
+
+        public bool RequestPause() => _executor.RequestPause();
+
+        public bool Resume() => _executor.Resume();
+
+        public bool RequestStop() => _executor.IsRunning;
+
+        public Task<ScriptExecutionResult> ExecuteAsync(
+            string filePath,
+            ScriptExecutionOptions? options = null,
+            CancellationToken cancellationToken = default)
+        {
+            return _executor.ExecuteAsync(
+                filePath,
+                options ?? new ScriptExecutionOptions(),
+                cancellationToken);
         }
     }
 
