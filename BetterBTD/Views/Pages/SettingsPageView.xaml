@@ -301,9 +301,9 @@
                                 <Grid Margin="0,0,0,8">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="120" />
+                                        <ColumnDefinition Width="180" />
                                         <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="120" />
+                                        <ColumnDefinition Width="180" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <ui:TextBlock VerticalAlignment="Center" Text="{Binding DataContext.AutoTaskRecoveryPointXLabel, RelativeSource={RelativeSource AncestorType=Page}}" />
