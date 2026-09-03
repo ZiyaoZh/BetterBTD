@@ -120,12 +120,7 @@ public sealed class ScriptWorkerContractTests
     [InlineData(ScriptWorkerState.CancellationRequested)]
     public void RequiredWorkerStates_CanBeRepresentedAlongsideStageState(ScriptWorkerState workerState)
     {
-        var stageState = workerState switch
-        {
-            ScriptWorkerState.Completed => BetterBTD.Models.AutoTasks.StageChallengeState.ScriptCompletedWaitingForResult,
-            ScriptWorkerState.Paused => BetterBTD.Models.AutoTasks.StageChallengeState.HandlingPopup,
-            _ => BetterBTD.Models.AutoTasks.StageChallengeState.HandlingVictory
-        };
+        var stageState = BetterBTD.Models.AutoTasks.StageChallengeState.InLevel;
 
         Assert.True(Enum.IsDefined(stageState));
         Assert.True(Enum.IsDefined(workerState));

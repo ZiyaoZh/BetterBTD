@@ -36,29 +36,22 @@ public sealed class NavigationCoordinationContractTests
     {
         var allowed = new HashSet<(StageChallengeState From, StageChallengeState To)>
         {
-            (StageChallengeState.Preparing, StageChallengeState.EnteringStage),
-            (StageChallengeState.EnteringStage, StageChallengeState.InStageBeforeScript),
-            (StageChallengeState.EnteringStage, StageChallengeState.HandlingPopup),
-            (StageChallengeState.InStageBeforeScript, StageChallengeState.ScriptRunning),
-            (StageChallengeState.InStageBeforeScript, StageChallengeState.ResultDetected),
-            (StageChallengeState.InStageBeforeScript, StageChallengeState.HandlingPopup),
-            (StageChallengeState.ScriptRunning, StageChallengeState.ScriptCompletedWaitingForResult),
-            (StageChallengeState.ScriptRunning, StageChallengeState.ResultDetected),
-            (StageChallengeState.ScriptRunning, StageChallengeState.HandlingPopup),
-            (StageChallengeState.ScriptCompletedWaitingForResult, StageChallengeState.ResultDetected),
-            (StageChallengeState.ScriptCompletedWaitingForResult, StageChallengeState.HandlingPopup),
-            (StageChallengeState.ResultDetected, StageChallengeState.HandlingVictory),
-            (StageChallengeState.ResultDetected, StageChallengeState.HandlingDefeat),
-            (StageChallengeState.HandlingPopup, StageChallengeState.EnteringStage),
-            (StageChallengeState.HandlingPopup, StageChallengeState.InStageBeforeScript),
-            (StageChallengeState.HandlingPopup, StageChallengeState.ScriptRunning),
-            (StageChallengeState.HandlingPopup, StageChallengeState.ScriptCompletedWaitingForResult),
-            (StageChallengeState.HandlingPopup, StageChallengeState.ResultDetected),
-            (StageChallengeState.HandlingVictory, StageChallengeState.Completed),
-            (StageChallengeState.HandlingDefeat, StageChallengeState.Completed)
+            (StageChallengeState.Navigating, StageChallengeState.InLevel),
+            (StageChallengeState.InLevel, StageChallengeState.OffLevelGrace),
+            (StageChallengeState.InLevel, StageChallengeState.NavigationFallback),
+            (StageChallengeState.OffLevelGrace, StageChallengeState.InLevel),
+            (StageChallengeState.OffLevelGrace, StageChallengeState.PausingForRecovery),
+            (StageChallengeState.OffLevelGrace, StageChallengeState.NavigationFallback),
+            (StageChallengeState.PausingForRecovery, StageChallengeState.Recovering),
+            (StageChallengeState.PausingForRecovery, StageChallengeState.InLevel),
+            (StageChallengeState.PausingForRecovery, StageChallengeState.NavigationFallback),
+            (StageChallengeState.Recovering, StageChallengeState.Resuming),
+            (StageChallengeState.Recovering, StageChallengeState.InLevel),
+            (StageChallengeState.Recovering, StageChallengeState.NavigationFallback),
+            (StageChallengeState.Resuming, StageChallengeState.InLevel)
         };
         var nonTerminalStates = Enum.GetValues<StageChallengeState>()
-            .Except([StageChallengeState.Completed, StageChallengeState.Failed, StageChallengeState.Cancelled]);
+            .Except([StageChallengeState.NavigationFallback, StageChallengeState.Failed, StageChallengeState.Cancelled]);
         foreach (var state in nonTerminalStates)
         {
             allowed.Add((state, StageChallengeState.Failed));
@@ -80,24 +73,25 @@ public sealed class NavigationCoordinationContractTests
         var occurredAt = new DateTimeOffset(2026, 9, 3, 10, 1, 0, TimeSpan.Zero);
 
         var transition = StageChallengeStateTransitions.Create(
-            StageChallengeState.ScriptRunning,
-            StageChallengeState.HandlingPopup,
+            StageChallengeState.OffLevelGrace,
+            StageChallengeState.PausingForRecovery,
             "level-up popup detected",
             occurredAt,
             23);
 
-        Assert.Equal(StageChallengeState.ScriptRunning, transition.PreviousState);
-        Assert.Equal(StageChallengeState.HandlingPopup, transition.CurrentState);
+        Assert.Equal(StageChallengeState.OffLevelGrace, transition.PreviousState);
+        Assert.Equal(StageChallengeState.PausingForRecovery, transition.CurrentState);
         Assert.Equal("level-up popup detected", transition.Reason);
         Assert.Equal(occurredAt, transition.OccurredAt);
         Assert.Equal(23, transition.NavigationSequence);
     }
 
     [Fact]
-    public void WorkerCompletion_DoesNotCompleteStageChallenge()
+    public void WorkerCompletion_IsIndependentFromNavigationState()
     {
-        Assert.False(StageChallengeStateTransitions.CanTransition(
-            StageChallengeState.ScriptCompletedWaitingForResult,
-            StageChallengeState.Completed));
+        Assert.True(Enum.IsDefined(StageChallengeState.InLevel));
+        Assert.DoesNotContain(
+            Enum.GetNames<StageChallengeState>(),
+            name => name.Contains("Result", StringComparison.Ordinal));
     }
 }

@@ -15,7 +15,7 @@ xUnit behavior, compatibility, protocol, and test-double coverage.
 | Directory | Files |
 | --- | ---: |
 | `BetterBTD.Tests` | 4 |
-| `BetterBTD.Tests/AutoTasks` | 15 |
+| `BetterBTD.Tests/AutoTasks` | 16 |
 | `BetterBTD.Tests/Core/Simulator` | 1 |
 | `BetterBTD.Tests/GameControl` | 2 |
 | `BetterBTD.Tests/RobotControl` | 2 |
@@ -45,6 +45,7 @@ Paths are relative to the repository root. Open the linked file and verify curre
 | --- | --- |
 | [AutoTaskDependencyPreflightServiceTests.cs](../../../../../BetterBTD.Tests/AutoTasks/AutoTaskDependencyPreflightServiceTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: AutoTaskDependencyPreflightServiceTests |
 | [AutoTaskFailureArtifactServiceTests.cs](../../../../../BetterBTD.Tests/AutoTasks/AutoTaskFailureArtifactServiceTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: AutoTaskFailureArtifactServiceTests, FixedTimeProvider |
+| [AutoTaskNavigationControllerTests.cs](../../../../../BetterBTD.Tests/AutoTasks/AutoTaskNavigationControllerTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: AutoTaskNavigationControllerTests, TestObservationService, RecordingRecoveryExecutor, ControllableEngine |
 | [AutoTaskSkeletonTests.cs](../../../../../BetterBTD.Tests/AutoTasks/AutoTaskSkeletonTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: AutoTaskSkeletonTests, QueueGameUiStateService, RecordingGameUiActionExecutor, RecordingAutoTaskScriptResolver, RecordingAutoTaskScriptExecutor |
 | [AutoTaskStuckRecoveryTests.cs](../../../../../BetterBTD.Tests/AutoTasks/AutoTaskStuckRecoveryTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: AutoTaskStuckRecoveryTests, RecordingFailureArtifactWriter, QueueUiStateService, RecordingRecoveryExecutor, RecoveryTestStrategy |
 | [BlackBorderBadgeDetectionTests.cs](../../../../../BetterBTD.Tests/AutoTasks/BlackBorderBadgeDetectionTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: BlackBorderBadgeDetectionTests |

@@ -1,5 +1,6 @@
 using BetterBTD.Core.ScriptExecution;
 using BetterBTD.Core.ScriptExecution.Runtime;
+using BetterBTD.Core.GameControl;
 using BetterBTD.Models.ScriptExecution;
 
 namespace BetterBTD.Tests.ScriptExecution;
@@ -125,6 +126,34 @@ public sealed class ScriptTaskFlowWorkerTests
         await worker.StopAsync();
     }
 
+    [Fact]
+    public async Task StartCommand_CarriesAmbientControlContextsIntoExecution()
+    {
+        var engine = new ControllableExecutionEngine { CompleteSynchronously = true };
+        var worker = new ScriptTaskFlowWorker(engine, TimeProvider.System);
+        var arbiter = new GameInputArbiter();
+        Assert.True(arbiter.TryAcquire("auto-task", GameInputPriority.Navigation, out var navigationLease));
+        var inputContext = new InputArbiterContextState(arbiter, navigationLease);
+        var runId = Guid.NewGuid();
+
+        using (GameControlLeaseContext.Push("auto-task-owner"))
+        using (GameInputArbiterContext.Push(inputContext))
+        {
+            Assert.True(worker.TryPostCommand(CreateCommand(
+                ScriptWorkerCommandKind.Start,
+                runId,
+                1,
+                new ScriptWorkerStartRequest("context.json", CreateOptions()))));
+        }
+
+        await WaitUntilAsync(() => worker.State == ScriptWorkerState.Completed);
+
+        Assert.Equal("auto-task-owner", engine.CapturedGameControlOwnerId);
+        Assert.Same(inputContext, engine.CapturedInputContext);
+        navigationLease.Dispose();
+        await worker.StopAsync();
+    }
+
     private static ScriptExecutionOptions CreateOptions()
     {
         return new ScriptExecutionOptions
@@ -173,6 +202,17 @@ public sealed class ScriptTaskFlowWorkerTests
         throw new Xunit.Sdk.XunitException($"Worker event '{expectedKind}' was not published.");
     }
 
+    private static async Task WaitUntilAsync(Func<bool> condition)
+    {
+        var timeoutAt = DateTime.UtcNow.AddSeconds(2);
+        while (!condition())
+        {
+            if (DateTime.UtcNow >= timeoutAt)
+                throw new TimeoutException("Expected worker state was not reached.");
+            await Task.Delay(10);
+        }
+    }
+
     private sealed class ControllableExecutionEngine : IScriptTaskFlowExecutionEngine
     {
         private TaskCompletionSource<ScriptExecutionResult> _completionSource = CreateCompletionSource();
@@ -187,6 +227,10 @@ public sealed class ScriptTaskFlowWorkerTests
         public int RequestStopCallCount { get; private set; }
 
         public bool CompleteSynchronously { get; init; }
+
+        public string? CapturedGameControlOwnerId { get; private set; }
+
+        public InputArbiterContextState? CapturedInputContext { get; private set; }
 
         public event EventHandler<ScriptExecutionProgressSnapshot>? ProgressChanged;
 
@@ -232,6 +276,8 @@ public sealed class ScriptTaskFlowWorkerTests
             CancellationToken cancellationToken = default)
         {
             ExecuteCallCount++;
+            CapturedGameControlOwnerId = GameControlLeaseContext.CurrentOwnerId;
+            CapturedInputContext = GameInputArbiterContext.Current;
             IsRunning = true;
             _completionSource = CreateCompletionSource();
             _cancellationRegistration = cancellationToken.Register(

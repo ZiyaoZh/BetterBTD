@@ -18,6 +18,10 @@ public sealed class AutoTaskSkeletonTests
 
         Assert.Null(options.MaxLoopIterations);
         Assert.Equal(TimeSpan.FromSeconds(5), options.WorkerAcknowledgementTimeout);
+        Assert.Equal(TimeSpan.FromSeconds(5), options.ScriptOffLevelGracePeriod);
+        Assert.Equal(TimeSpan.FromSeconds(5), options.ScriptRecoveryTimeout);
+        Assert.Equal(TimeSpan.FromMilliseconds(800), options.ScriptRecoveryClickInterval);
+        Assert.Equal(new GameUiRecoveryPoint(960, 540), options.ScriptRecoveryPoint);
     }
 
     [Fact]
@@ -171,7 +175,8 @@ public sealed class AutoTaskSkeletonTests
             new AutoTaskExecutionOptions
             {
                 RuntimeServices = runtimeServices,
-                MaxLoopIterations = 10
+                MaxLoopIterations = 10,
+                ScriptOffLevelGracePeriod = TimeSpan.Zero
             });
 
         runtime.Navigation.Publish(GameUiStateId.InLevel);
@@ -318,6 +323,9 @@ public sealed class AutoTaskSkeletonTests
         Assert.Equal(1, scriptExecutor.ResumeCount);
 
         scriptExecutor.Complete(CreateSuccessfulScriptResult());
+        await WaitUntilAsync(
+            () => runtime.WorkerState == ScriptWorkerState.Completed,
+            TimeSpan.FromSeconds(2));
         runtime.Navigation.Publish(GameUiStateId.Victory);
 
         var result = await executionTask.WaitAsync(TimeSpan.FromSeconds(2));
@@ -365,10 +373,11 @@ public sealed class AutoTaskSkeletonTests
         try
         {
             await scriptExecutor.CancellationObserved.Task.WaitAsync(TimeSpan.FromSeconds(2));
+            scriptExecutor.AllowExit();
             var result = await executionTask.WaitAsync(TimeSpan.FromSeconds(2));
 
             Assert.Equal(AutoTaskExecutionStatus.Cancelled, result.Status);
-            Assert.True(scriptExecutor.IsRunning);
+            Assert.False(scriptExecutor.IsRunning);
         }
         finally
         {
@@ -406,7 +415,8 @@ public sealed class AutoTaskSkeletonTests
             new AutoTaskExecutionOptions
             {
                 RuntimeServices = runtimeServices,
-                MaxLoopIterations = 10
+                MaxLoopIterations = 10,
+                ScriptOffLevelGracePeriod = TimeSpan.Zero
             });
 
         Assert.Equal(AutoTaskExecutionStatus.Failed, result.Status);
@@ -447,7 +457,8 @@ public sealed class AutoTaskSkeletonTests
             new AutoTaskExecutionOptions
             {
                 RuntimeServices = runtimeServices,
-                MaxLoopIterations = 10
+                MaxLoopIterations = 10,
+                ScriptOffLevelGracePeriod = TimeSpan.Zero
             });
 
         runtime.Navigation.Publish(GameUiStateId.InLevel);
@@ -493,7 +504,8 @@ public sealed class AutoTaskSkeletonTests
             new AutoTaskExecutionOptions
             {
                 RuntimeServices = runtimeServices,
-                MaxLoopIterations = 10
+                MaxLoopIterations = 10,
+                ScriptOffLevelGracePeriod = TimeSpan.Zero
             });
 
         runtime.Navigation.Publish(GameUiStateId.InLevel);
@@ -524,7 +536,8 @@ public sealed class AutoTaskSkeletonTests
             uiStateService,
             new RecordingGameUiActionExecutor(),
             new RecordingAutoTaskScriptResolver("race-stage.json"),
-            scriptExecutor);
+            scriptExecutor,
+            new SuccessfulRecoveryExecutor());
         var runtimeServices = runtime.Services;
 
         var runner = new AutoTaskRunner(
@@ -542,7 +555,8 @@ public sealed class AutoTaskSkeletonTests
             new AutoTaskExecutionOptions
             {
                 RuntimeServices = runtimeServices,
-                MaxLoopIterations = 10
+                MaxLoopIterations = 10,
+                ScriptOffLevelGracePeriod = TimeSpan.Zero
             });
 
         runtime.Navigation.Publish(GameUiStateId.InLevel);
@@ -551,6 +565,10 @@ public sealed class AutoTaskSkeletonTests
         await WaitUntilAsync(() => scriptExecutor.PauseRequestCount == 1, TimeSpan.FromSeconds(2));
         runtime.Navigation.Publish(GameUiStateId.InLevel);
         await WaitUntilAsync(() => scriptExecutor.ResumeCount == 1, TimeSpan.FromSeconds(2));
+        scriptExecutor.Complete(CreateSuccessfulScriptResult());
+        await WaitUntilAsync(
+            () => runtime.WorkerState == ScriptWorkerState.Completed,
+            TimeSpan.FromSeconds(2));
         runtime.Navigation.Publish(GameUiStateId.RaceResult);
 
         var result = await resultTask.WaitAsync(TimeSpan.FromSeconds(2));
@@ -602,13 +620,15 @@ public sealed class AutoTaskSkeletonTests
         IGameUiStateService gameUiState,
         IGameUiActionExecutor actionExecutor,
         IAutoTaskScriptResolver scriptResolver,
-        IAutoTaskScriptExecutor scriptExecutor)
+        IAutoTaskScriptExecutor scriptExecutor,
+        IGameUiStuckRecoveryExecutor? recoveryExecutor = null)
     {
         return new TestAutoTaskRuntime(
             gameUiState,
             actionExecutor,
             scriptResolver,
-            scriptExecutor);
+            scriptExecutor,
+            recoveryExecutor);
     }
 
     private static async Task WaitUntilAsync(Func<bool> condition, TimeSpan timeout)
@@ -923,7 +943,8 @@ public sealed class AutoTaskSkeletonTests
             IGameUiStateService gameUiState,
             IGameUiActionExecutor actionExecutor,
             IAutoTaskScriptResolver scriptResolver,
-            IAutoTaskScriptExecutor scriptExecutor)
+            IAutoTaskScriptExecutor scriptExecutor,
+            IGameUiStuckRecoveryExecutor? recoveryExecutor)
         {
             Navigation = new TestNavigationObservationService();
             _worker = new ScriptTaskFlowWorker(
@@ -935,6 +956,7 @@ public sealed class AutoTaskSkeletonTests
                 NavigationObservation = Navigation,
                 Navigator = GameUiNavigator.Instance,
                 UiActionExecutor = actionExecutor,
+                StuckRecoveryExecutor = recoveryExecutor,
                 ScriptResolver = scriptResolver,
                 ScriptExecutor = scriptExecutor,
                 ScriptWorker = _worker
@@ -945,10 +967,23 @@ public sealed class AutoTaskSkeletonTests
 
         public AutoTaskRuntimeServices Services { get; }
 
+        public ScriptWorkerState WorkerState => _worker.State;
+
         public async ValueTask DisposeAsync()
         {
             await Navigation.StopAsync();
             await _worker.StopAsync();
+        }
+    }
+
+    private sealed class SuccessfulRecoveryExecutor : IGameUiStuckRecoveryExecutor
+    {
+        public Task<GameUiActionExecutionResult> ClickAsync(
+            GameUiRecoveryPoint point,
+            CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(new GameUiActionExecutionResult { Succeeded = true });
         }
     }
 

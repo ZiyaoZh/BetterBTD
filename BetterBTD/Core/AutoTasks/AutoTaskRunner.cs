@@ -71,6 +71,14 @@ public sealed class AutoTaskRunner
                 nameof(options),
                 "Worker acknowledgement timeout must be positive.");
         }
+        if (options.ScriptOffLevelGracePeriod < TimeSpan.Zero ||
+            options.ScriptRecoveryTimeout <= TimeSpan.Zero ||
+            options.ScriptRecoveryClickInterval < TimeSpan.Zero)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(options),
+                "Script recovery timings must be non-negative and the recovery timeout must be positive.");
+        }
 
         var runtimeServices = options.RuntimeServices ?? _defaultRuntimeServices;
         var result = await ExecuteCoreAsync(request, options, runtimeServices, cancellationToken)
@@ -328,15 +336,17 @@ public sealed class AutoTaskRunner
                             if (runtimeServices.NavigationObservation is { } navigationObservation &&
                                 runtimeServices.ScriptWorker is { } scriptWorker)
                             {
-                                scriptResult = await ExecuteScriptViaNavigationControllerAsync(
+                                var controllerResult = await ExecuteScriptViaNavigationControllerAsync(
                                         navigationObservation,
                                         scriptWorker,
+                                        runtimeServices.StuckRecoveryExecutor,
                                         scriptResolution.FilePath,
                                         scriptExecutionOptions,
                                         options,
                                         cancellationToken)
                                     .ConfigureAwait(false);
-                                scriptInterruptedSnapshot = null;
+                                scriptResult = controllerResult.ScriptResult;
+                                scriptInterruptedSnapshot = controllerResult.HandoffSnapshot;
                             }
                             else
                             {
@@ -451,9 +461,10 @@ public sealed class AutoTaskRunner
         return delayMs > 0 ? delayMs : options.DefaultDecisionDelayMs;
     }
 
-    private static async Task<ScriptExecutionResult> ExecuteScriptViaNavigationControllerAsync(
+    private static async Task<AutoTaskNavigationControllerResult> ExecuteScriptViaNavigationControllerAsync(
         INavigationObservationService observations,
         IScriptTaskFlowWorker worker,
+        IGameUiStuckRecoveryExecutor? recoveryExecutor,
         string scriptFilePath,
         ScriptExecutionOptions scriptOptions,
         AutoTaskExecutionOptions executionOptions,
@@ -462,34 +473,13 @@ public sealed class AutoTaskRunner
         var controller = new AutoTaskNavigationController(
             observations,
             worker,
-            acknowledgementTimeout: executionOptions.WorkerAcknowledgementTimeout);
-        await controller.RunAsync(scriptFilePath, scriptOptions, cancellationToken).ConfigureAwait(false);
-
-        return controller.State switch
-        {
-            StageChallengeState.Completed => new ScriptExecutionResult
-            {
-                Status = ScriptExecutionStatus.Completed,
-                ExecutedStepCount = 0,
-                LastCompletedStepIndex = -1
-            },
-            StageChallengeState.Cancelled => new ScriptExecutionResult
-            {
-                Status = ScriptExecutionStatus.Cancelled,
-                ExecutedStepCount = 0,
-                LastCompletedStepIndex = -1
-            },
-            _ => new ScriptExecutionResult
-            {
-                Status = ScriptExecutionStatus.Failed,
-                ExecutedStepCount = 0,
-                LastCompletedStepIndex = -1,
-                Failure = new ScriptExecutionFailureDetails
-                {
-                    Message = controller.Transitions.LastOrDefault()?.Reason ?? "Navigation controller failed."
-                }
-            }
-        };
+            recoveryExecutor,
+            acknowledgementTimeout: executionOptions.WorkerAcknowledgementTimeout,
+            offLevelGracePeriod: executionOptions.ScriptOffLevelGracePeriod,
+            recoveryTimeout: executionOptions.ScriptRecoveryTimeout,
+            recoveryClickInterval: executionOptions.ScriptRecoveryClickInterval,
+            recoveryPoint: executionOptions.ScriptRecoveryPoint);
+        return await controller.RunAsync(scriptFilePath, scriptOptions, cancellationToken).ConfigureAwait(false);
     }
 
     private static bool ShouldUseStuckUiRecovery(AutoTaskKind kind)

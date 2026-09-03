@@ -54,11 +54,11 @@
 - 未完成：`AutoTaskRunner`、运行页面和导航控制器尚未切换为消费 Worker/导航观察流；导航胜负、弹窗处理和输入仲裁仍由旧流程负责，Worker 尚未管理导航主租约；事件 ACK 超时策略和连续任务级异常处置留待后续阶段。
 - 验证：新增 Worker 生命周期、暂停/恢复确认、取消等待、同步完成顺序、过期命令忽略和脚本观察重试/降级测试；定向测试通过（9/9）；`dotnet restore BetterBTD.slnx`、`dotnet build BetterBTD.slnx -c Release /p:Platform=x64`（0 错误，现有工程警告保持不变）和 `dotnet test BetterBTD.slnx -c Release --no-build /p:Platform=x64`（365/365）通过；`git diff --check` 通过；源码索引更新并通过技能校验。
 - 兼容性/真实环境：保留旧 `ExecuteAsync`、自动任务脚本适配器和 Runner 行为，现有调用路径未切换；未控制游戏输入，未进行 BTD6 实机验证。脚本观察默认降级可能返回空/未知值，后续导航控制器需结合任务上下文决定是否继续。
-- 下一阶段：阶段 4，实现 `AutoTaskNavigationController`，让导航持续消费单一观察流并管理 Worker 生命周期；先覆盖脚本运行中导航不中断、脚本完成后等待胜负结果、胜负取消和普通弹窗暂停/恢复。
+- 下一阶段：此记录中的等待结果口径已由阶段 7 修订，以阶段 7 的持续导航和离关恢复语义为准。
 
 ### 阶段 4：导航控制器（稳定运行口径）
 
-- 完成：新增 `AutoTaskNavigationController`，以单一 `INavigationObservationService` 观察流驱动挑战状态；脚本在 `InLevel` 快照后通过 Worker 启动，Worker 完成仅进入等待结果状态；胜负/结算快照会先取消仍在运行的 Worker；普通弹窗会请求暂停，弹窗消失后恢复。控制器忽略 `Unknown` 快照并继续观察。
+- 完成：该阶段的初版控制器已在阶段 7 重构；当前不再等待结果，也不按胜负页面直接终止脚本。
 - 未完成：`AutoTaskRunner`、运行页面尚未切换到该控制器；弹窗具体点击动作和输入仲裁仍由旧流程负责。
 - 验证：`dotnet build BetterBTD.slnx -c Release /p:Platform=x64 --no-restore` 通过，0 错误；尚未完成全量测试和真实 BTD6 场景验证。
 - 兼容性/真实环境：默认运行路径未改变；新增控制器未引入 Stage 5 输入仲裁，真实弹窗和胜负结算仍未验证。
@@ -79,7 +79,7 @@
 ```
 
 ### Stage 6: Runner session convergence (current)
-- Completed: `AutoTaskRunner` now routes single-stage task scripts through one `AutoTaskNavigationController` session whenever the runtime exposes the navigation observation and script Worker. The controller owns observation, Worker lifecycle, popup pause/resume, and terminal result waiting; ACK timeout is exposed as `AutoTaskExecutionOptions.WorkerAcknowledgementTimeout`. Multi-stage/freeplay lifecycles remain on the existing strategy loop. Added validation for non-positive timeout configuration and preserved the legacy monitoring path for injected runtimes without the new services.
+- Completed: `AutoTaskRunner` routes stage scripts through `AutoTaskNavigationController`; stage 7 supersedes the original terminal-result-waiting behavior with continuous page observation and off-level recovery.
 - Incomplete: runtime page and input/UI handlers still have compatibility entry points; multi-stage/freeplay tasks are not yet migrated to controller sessions.
 - Verification: focused build/test passed with 0 errors (existing warnings only); the full Release/x64 restore, build, test, diff check, and source-index refresh are recorded at stage closeout.
 - Compatibility / real environment: custom, collection, gold-balloon, black-border, and race tasks use the controller only with the default runtime services; LoopStage/Odyssey and test doubles without Worker services retain prior behavior. No real BTD6 popup, victory/defeat, or key-release scenario was run.
@@ -93,3 +93,10 @@
 - 验证：新增 `GameInputArbiterTests` 4 项，覆盖子租约边界、抢占确认与释放、确认超时和释放失败毒化；定向 `dotnet test BetterBTD.Tests/BetterBTD.Tests.csproj -c Release --filter FullyQualifiedName~GameInputArbiterTests --no-restore` 通过（4/4）。
 - 兼容性/真实环境：旧 `GameControlLeaseCoordinator`、Runner 和现有输入路径保持不变；未在真实 BTD6 弹窗、胜负和按键卡住场景验证。
 - 下一阶段：阶段 6，收敛 `AutoTaskRunner` 为会话协调器，将导航控制器、Worker 和输入仲裁接入统一运行路径，并补充 ACK 超时与回归测试。
+
+### 阶段 7：导航与脚本状态语义修订（当前）
+
+- 完成：移除控制器中的等待结算、结果检测和胜负处理状态；以 `Navigating`、`InLevel`、`OffLevelGrace`、`PausingForRecovery`、`Recovering`、`Resuming`、`NavigationFallback` 建模协调过程。脚本完成且仍在 `InLevel` 时控制器持续观察且不输入，离开关卡后把最新页面交回 Runner 的普通策略循环。
+- 完成：活跃脚本连续 5 秒未确认 `InLevel` 后请求安全暂停，收到关联 ACK 后点击 `(960, 540)` 并重新观察；恢复则继续脚本，超时则取消并等待 Worker 真正终止。不同非关卡页面和 `Unknown` 不会错误重置离关计时。
+- 完成：Worker 的 Start 和 Cancel 也具备关联确认；Start 入队时捕获自动任务的游戏控制与输入仲裁上下文，并在实际执行线程恢复，避免预创建 Worker 丢失 `AsyncLocal` 租约导致脚本未启动。
+- 验证：覆盖脚本首次启动一次、完成后关卡内空操作、连续离关宽限、暂停后恢复、恢复超时取消、命令关联和租约上下文穿透。真实 BTD6 环境验证仍需单独进行。

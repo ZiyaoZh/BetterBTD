@@ -1,16 +1,24 @@
 # 导航线程与脚本 Worker 协同架构
 
-本文记录自动任务运行时从“`AutoTaskRunner` 包裹脚本监控”迁移到“导航线程拥有挑战状态机、脚本线程作为受控执行者”的目标架构。本文是后续代码改造的设计基线；现有实现与本文不一致的部分，应在阶段文档中明确迁移状态，不要通过继续扩展 `ExecuteScriptWithUiMonitoringAsync` 来掩盖边界问题。
+本文记录自动任务运行时从“`AutoTaskRunner` 包裹脚本监控”迁移到“导航持续观察页面、脚本线程作为受控执行者”的目标架构。导航不拥有关卡结算状态，也不存在等待结算环节。
+
+## 当前协调语义
+
+- 页面状态、脚本 Worker 生命周期和关卡尝试上下文彼此独立；胜负、结算、奖励和弹窗都只是导航策略的页面输入。
+- 同一关卡尝试只发送一次 `Start`。首次确认 `InLevel` 时启动；`Starting`、`Running` 或 `Completed` 与 `InLevel` 并存时均不执行导航输入。
+- 活跃脚本遇到明确的非 `InLevel` 页面后进入 5 秒宽限；不同非关卡页面不会重置计时，只有重新确认 `InLevel` 才会重置。`Unknown` 既不证明离开关卡，也不清除已经开始的计时。
+- 宽限到期后必须先等待 `PauseAcknowledged`，然后才能点击基准中心点 `(960, 540)` 并消费更新序号的观察。恢复 `InLevel` 后等待 `ResumeAcknowledged`；恢复超时则发送 `Cancel`，等待 Worker 终态和输入释放后把最新页面交回普通导航。
+- `Start`、`Pause`、`Resume`、`Cancel` 都按运行 ID 和请求序号关联；Worker 的 Start 命令显式携带自动任务的游戏控制与输入租约上下文。
 
 ## 目标与不变量
 
 - 导航观察者以固定间隔读取 `GameCaptureService` 的最新帧，生产带序号的不可变 `GameUiSnapshot`。
-- 导航控制器是界面状态、关卡挑战阶段、弹窗、胜负和结算的唯一权威。
+- 导航控制器持续读取当前页面并协调脚本恢复；具体页面动作和任务推进仍由导航策略负责。
 - 脚本 Worker 只执行脚本步骤，拥有独立的脚本状态、截图/OCR 管线和识别间隔；不得判断关卡成功或失败，也不得处理导航弹窗。
 - 运行页面、导航控制器和日志服务消费同一条导航观察快照流；运行页面不得自行开启第二个导航识别循环。
 - 导航观察和脚本观察可以共享最新帧缓存，但不得共享稳定化计数、当前 UI 状态或脚本等待结果等可变识别状态。
 - 单次捕获或识别异常默认视为可恢复：导航观察者发布带诊断的 `Unknown` 快照并继续观察，不因瞬时故障直接中断任务；是否在连续异常后失败由导航控制器按任务上下文决定。
-- 任意输入动作都必须经过输入仲裁。导航抢占脚本输入前，脚本必须确认暂停；胜负/结算时必须先取消并等待脚本退出、释放按键。
+- 任意输入动作都必须经过输入仲裁。恢复流程输入前，脚本必须确认暂停；取消后必须等待脚本退出和按键释放。
 
 ## 运行时分层
 
@@ -42,7 +50,7 @@ public sealed record NavigationObservation(
 
 ### 导航控制器
 
-建议新增 `AutoTaskNavigationController`（或等价的 `StageChallengeCoordinator`）。它持续消费导航观察结果，按优先级处理取消、捕获故障、胜负/结算、弹窗、普通导航以及脚本启动/等待，并向脚本 Worker 发送命令。
+`AutoTaskNavigationController` 持续消费导航观察结果，只协调脚本启动和离关恢复。脚本终态后的非关卡页面交回 `AutoTaskRunner`，由当前策略执行普通导航。
 
 ### 脚本 Worker 与脚本观察服务
 
@@ -55,9 +63,8 @@ public sealed record NavigationObservation(
 ```csharp
 public enum StageChallengeState
 {
-    Preparing, EnteringStage, InStageBeforeScript, ScriptRunning,
-    ScriptCompletedWaitingForResult, ResultDetected, HandlingPopup,
-    HandlingVictory, HandlingDefeat, Completed, Failed, Cancelled
+    Navigating, InLevel, OffLevelGrace, PausingForRecovery,
+    Recovering, Resuming, NavigationFallback, Failed, Cancelled
 }
 
 public enum ScriptWorkerState
@@ -67,22 +74,19 @@ public enum ScriptWorkerState
 }
 ```
 
-每次转换都应记录原因、时间戳和导航快照序号。下列组合是合法且必须可表达的：脚本完成但仍等待结果、处理弹窗时脚本已暂停、处理胜负时脚本正在取消。
+每次转换都应记录原因、时间戳和导航快照序号。协调状态不编码脚本结果；`InLevel` 可与 Worker 的运行中、暂停或完成状态独立组合。
 
 ## 快照后的决策优先级
 
 ```text
 外部取消
   -> 输入/捕获故障
-  -> 失败/胜利/结算
-  -> 必须处理的弹窗
-  -> 加载或不可操作状态
-  -> 是否启动脚本
-  -> 是否等待脚本完成
-  -> 普通导航
+  -> InLevel 与 Worker 状态决策
+  -> 活跃脚本离关宽限/恢复
+  -> Worker 终态后的普通导航交接
 ```
 
-弹窗出现时，导航控制器发送带请求序号和原因的 `Pause`，等待 `PauseAcknowledged` 后通过输入仲裁取得导航权限并处理弹窗，再重新观察界面决定恢复或终止。失败、胜利和结算界面不恢复脚本：发送 `Cancel`，等待 Worker 退出并确认输入释放后再执行结果处理。
+活跃脚本持续 5 秒未确认 `InLevel` 时，导航控制器发送带请求序号和原因的 `Pause`。等待 `PauseAcknowledged` 后才允许恢复点击；重新确认 `InLevel` 则恢复，否则超时取消并交回普通导航。
 
 ## 命令、事件与输入仲裁
 
@@ -103,11 +107,11 @@ Completed | Cancelled | Failed
 
 ## 关键生命周期
 
-1. `InStageBeforeScript`：导航持续观察，确认关卡已进入且无阻塞弹窗后启动 Worker。
-2. `ScriptRunning`：导航继续识别和发布快照；脚本观察服务按自己的间隔执行 OCR 和步骤所需识别。
-3. `ScriptCompletedWaitingForResult`：Worker 已完成，但导航继续等待 Victory/Defeat/Settlement，脚本完成不等于挑战完成。
-4. 运行中发现胜负：导航取消 Worker，等待真正退出和按键释放，再进入结果处理。
-5. 运行中发现普通弹窗：导航暂停 Worker，处理弹窗并重新观察，确认安全后再恢复或改变阶段。
+1. 首次确认 `InLevel`：发送一次 Start 并等待关联的 Started；同一尝试不重复启动。
+2. Worker 活跃且仍为 `InLevel`：导航继续观察，不执行输入。
+3. Worker 完成且仍为 `InLevel`：继续观察且不输入；之后的非关卡页面直接交回普通导航。
+4. Worker 活跃且持续 5 秒未确认 `InLevel`：安全暂停并反复点击恢复坐标，每次点击后等待新观察。
+5. 恢复成功：确认 `InLevel` 后恢复 Worker；恢复失败：取消并等待终态，再交回最新页面。
 
 ## 对现有组件的迁移约束
 
@@ -118,6 +122,6 @@ Completed | Cancelled | Failed
 
 ## 验收测试范围
 
-至少覆盖：脚本启动前导航、脚本等待不阻塞导航、脚本完成后等待结果、运行中胜负取消、普通弹窗暂停/恢复、导航或脚本观察异常、外部取消、暂停/取消确认超时、输入释放失败、多个快照消费者共享同一序号，以及导航/脚本识别间隔互不影响。真实 BTD6 弹窗、胜负和缩放场景仍需在集成环境中单独记录已验证与未验证范围。
+至少覆盖：首次进入仅启动一次、运行中和完成后的 `InLevel` 空操作、跨非关卡页面累计 5 秒、`Unknown` 不重置计时、暂停确认前禁止点击、点击后消费新观察、恢复后继续、超时取消并等待终态、租约上下文穿透，以及普通导航接管。真实 BTD6 弹窗、胜负和缩放场景仍需在集成环境中单独记录已验证与未验证范围。
 
 返回 [自动任务架构](auto-task-architecture.md) · [阶段实施提示](../navigation-script-refactor-stages.md)

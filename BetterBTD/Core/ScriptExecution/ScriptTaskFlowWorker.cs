@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Diagnostics;
 using System.Threading.Channels;
+using BetterBTD.Core.GameControl;
 using BetterBTD.Core.ScriptExecution.Runtime;
 using BetterBTD.Models.ScriptExecution;
 
@@ -14,7 +15,7 @@ public sealed class ScriptTaskFlowWorker : IScriptTaskFlowWorker
     private readonly object _syncRoot = new();
     private readonly IScriptTaskFlowExecutionEngine _executionEngine;
     private readonly TimeProvider _timeProvider;
-    private readonly Channel<ScriptWorkerCommand> _commands;
+    private readonly Channel<QueuedScriptWorkerCommand> _commands;
     private readonly Dictionary<long, Channel<ScriptWorkerEvent>> _subscribers = [];
     private readonly CancellationTokenSource _lifetimeCancellationSource = new();
     private readonly Task _commandLoopTask;
@@ -27,6 +28,8 @@ public sealed class ScriptTaskFlowWorker : IScriptTaskFlowWorker
     private long _nextSubscriberId;
     private CancellationTokenSource? _runCancellationSource;
     private Task? _executionTask;
+    private ScriptExecutionResult? _lastResult;
+    private long? _pendingCancelRequestSequence;
 
     private ScriptTaskFlowWorker()
         : this(ScriptTaskFlowExecutor.Instance, TimeProvider.System)
@@ -39,7 +42,7 @@ public sealed class ScriptTaskFlowWorker : IScriptTaskFlowWorker
     {
         _executionEngine = executionEngine ?? throw new ArgumentNullException(nameof(executionEngine));
         _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
-        _commands = Channel.CreateUnbounded<ScriptWorkerCommand>(new UnboundedChannelOptions
+        _commands = Channel.CreateUnbounded<QueuedScriptWorkerCommand>(new UnboundedChannelOptions
         {
             SingleReader = true,
             SingleWriter = false,
@@ -75,10 +78,25 @@ public sealed class ScriptTaskFlowWorker : IScriptTaskFlowWorker
         }
     }
 
+    public ScriptExecutionResult? LastResult
+    {
+        get
+        {
+            lock (_syncRoot)
+            {
+                return _lastResult;
+            }
+        }
+    }
+
     public bool TryPostCommand(ScriptWorkerCommand command)
     {
         ArgumentNullException.ThrowIfNull(command);
-        return !_lifetimeCancellationSource.IsCancellationRequested && _commands.Writer.TryWrite(command);
+        var queuedCommand = new QueuedScriptWorkerCommand(
+            command,
+            GameControlLeaseContext.CurrentOwnerId,
+            GameInputArbiterContext.Current);
+        return !_lifetimeCancellationSource.IsCancellationRequested && _commands.Writer.TryWrite(queuedCommand);
     }
 
     public async IAsyncEnumerable<ScriptWorkerEvent> SubscribeAsync(
@@ -152,11 +170,12 @@ public sealed class ScriptTaskFlowWorker : IScriptTaskFlowWorker
     {
         try
         {
-            await foreach (var command in _commands.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false))
+            await foreach (var queuedCommand in _commands.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false))
             {
+                var command = queuedCommand.Command;
                 try
                 {
-                    HandleCommand(command);
+                    HandleCommand(queuedCommand);
                 }
                 catch (Exception ex)
                 {
@@ -169,8 +188,9 @@ public sealed class ScriptTaskFlowWorker : IScriptTaskFlowWorker
         }
     }
 
-    private void HandleCommand(ScriptWorkerCommand command)
+    private void HandleCommand(QueuedScriptWorkerCommand queuedCommand)
     {
+        var command = queuedCommand.Command;
         if (command.CancellationToken.IsCancellationRequested && command.Kind != ScriptWorkerCommandKind.Cancel)
         {
             return;
@@ -179,7 +199,7 @@ public sealed class ScriptTaskFlowWorker : IScriptTaskFlowWorker
         switch (command.Kind)
         {
             case ScriptWorkerCommandKind.Start:
-                HandleStart(command);
+                HandleStart(queuedCommand);
                 break;
             case ScriptWorkerCommandKind.Pause:
                 HandlePause(command);
@@ -193,8 +213,9 @@ public sealed class ScriptTaskFlowWorker : IScriptTaskFlowWorker
         }
     }
 
-    private void HandleStart(ScriptWorkerCommand command)
+    private void HandleStart(QueuedScriptWorkerCommand queuedCommand)
     {
+        var command = queuedCommand.Command;
         ScriptWorkerStartRequest startRequest = command.StartRequest!;
         CancellationToken runCancellationToken;
         lock (_syncRoot)
@@ -212,6 +233,8 @@ public sealed class ScriptTaskFlowWorker : IScriptTaskFlowWorker
             _lastRequestSequence = command.RequestSequence;
             _pendingPauseRequestSequence = null;
             _pendingResumeRequestSequence = null;
+            _pendingCancelRequestSequence = null;
+            _lastResult = null;
             _state = ScriptWorkerState.NotStarted;
             TransitionTo(ScriptWorkerState.Starting);
             TransitionTo(ScriptWorkerState.Running);
@@ -221,9 +244,15 @@ public sealed class ScriptTaskFlowWorker : IScriptTaskFlowWorker
                 command.RunId,
                 ScriptWorkerState.Running,
                 _timeProvider.GetUtcNow(),
+                requestSequence: command.RequestSequence,
                 currentStepIndex: -1,
                 lastCompletedStepIndex: -1));
-            _executionTask = RunExecutionAsync(command.RunId, startRequest, runCancellationToken);
+            _executionTask = RunExecutionAsync(
+                command.RunId,
+                startRequest,
+                queuedCommand.GameControlOwnerId,
+                queuedCommand.InputContext,
+                runCancellationToken);
         }
     }
 
@@ -276,6 +305,7 @@ public sealed class ScriptTaskFlowWorker : IScriptTaskFlowWorker
             _lastRequestSequence = command.RequestSequence;
             _pendingPauseRequestSequence = null;
             _pendingResumeRequestSequence = null;
+            _pendingCancelRequestSequence = command.RequestSequence;
             TransitionTo(ScriptWorkerState.CancellationRequested);
             runCancellationSource = _runCancellationSource;
         }
@@ -294,11 +324,19 @@ public sealed class ScriptTaskFlowWorker : IScriptTaskFlowWorker
     private async Task RunExecutionAsync(
         Guid runId,
         ScriptWorkerStartRequest startRequest,
+        string? gameControlOwnerId,
+        InputArbiterContextState? inputContext,
         CancellationToken cancellationToken)
     {
         ScriptExecutionResult result;
         try
         {
+            using var gameControlScope = gameControlOwnerId is null
+                ? null
+                : GameControlLeaseContext.Push(gameControlOwnerId);
+            using var inputScope = inputContext is null
+                ? null
+                : GameInputArbiterContext.Push(inputContext);
             result = await _executionEngine
                 .ExecuteAsync(startRequest.FilePath, startRequest.Options, cancellationToken)
                 .ConfigureAwait(false);
@@ -352,6 +390,7 @@ public sealed class ScriptTaskFlowWorker : IScriptTaskFlowWorker
             }
 
             TransitionTo(terminalState);
+            _lastResult = result;
             var error = eventKind == ScriptWorkerEventKind.Failed
                 ? result.Exception ?? new InvalidOperationException(
                     result.Failure?.Message ?? "Script execution failed.")
@@ -361,6 +400,7 @@ public sealed class ScriptTaskFlowWorker : IScriptTaskFlowWorker
                 runId,
                 terminalState,
                 _timeProvider.GetUtcNow(),
+                requestSequence: _pendingCancelRequestSequence,
                 currentStepIndex: currentStepIndex,
                 lastCompletedStepIndex: lastCompletedStepIndex,
                 error: error,
@@ -369,6 +409,11 @@ public sealed class ScriptTaskFlowWorker : IScriptTaskFlowWorker
 
         Publish(terminalEvent);
     }
+
+    private sealed record QueuedScriptWorkerCommand(
+        ScriptWorkerCommand Command,
+        string? GameControlOwnerId,
+        InputArbiterContextState? InputContext);
 
     private void OnExecutionProgressChanged(object? sender, ScriptExecutionProgressSnapshot snapshot)
     {

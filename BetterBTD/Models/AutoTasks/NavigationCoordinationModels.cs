@@ -2,16 +2,13 @@ namespace BetterBTD.Models.AutoTasks;
 
 public enum StageChallengeState
 {
-    Preparing,
-    EnteringStage,
-    InStageBeforeScript,
-    ScriptRunning,
-    ScriptCompletedWaitingForResult,
-    ResultDetected,
-    HandlingPopup,
-    HandlingVictory,
-    HandlingDefeat,
-    Completed,
+    Navigating,
+    InLevel,
+    OffLevelGrace,
+    PausingForRecovery,
+    Recovering,
+    Resuming,
+    NavigationFallback,
     Failed,
     Cancelled
 }

@@ -7,51 +7,35 @@ public static class StageChallengeStateTransitions
     private static readonly IReadOnlyDictionary<StageChallengeState, IReadOnlySet<StageChallengeState>> Allowed =
         new Dictionary<StageChallengeState, IReadOnlySet<StageChallengeState>>
         {
-            [StageChallengeState.Preparing] = States(
-                StageChallengeState.EnteringStage,
+            [StageChallengeState.Navigating] = States(
+                StageChallengeState.InLevel,
                 StageChallengeState.Failed,
                 StageChallengeState.Cancelled),
-            [StageChallengeState.EnteringStage] = States(
-                StageChallengeState.InStageBeforeScript,
-                StageChallengeState.HandlingPopup,
+            [StageChallengeState.InLevel] = States(
+                StageChallengeState.OffLevelGrace,
+                StageChallengeState.NavigationFallback,
                 StageChallengeState.Failed,
                 StageChallengeState.Cancelled),
-            [StageChallengeState.InStageBeforeScript] = States(
-                StageChallengeState.ScriptRunning,
-                StageChallengeState.ResultDetected,
-                StageChallengeState.HandlingPopup,
+            [StageChallengeState.OffLevelGrace] = States(
+                StageChallengeState.InLevel,
+                StageChallengeState.PausingForRecovery,
+                StageChallengeState.NavigationFallback,
                 StageChallengeState.Failed,
                 StageChallengeState.Cancelled),
-            [StageChallengeState.ScriptRunning] = States(
-                StageChallengeState.ScriptCompletedWaitingForResult,
-                StageChallengeState.ResultDetected,
-                StageChallengeState.HandlingPopup,
+            [StageChallengeState.PausingForRecovery] = States(
+                StageChallengeState.InLevel,
+                StageChallengeState.Recovering,
+                StageChallengeState.NavigationFallback,
                 StageChallengeState.Failed,
                 StageChallengeState.Cancelled),
-            [StageChallengeState.ScriptCompletedWaitingForResult] = States(
-                StageChallengeState.ResultDetected,
-                StageChallengeState.HandlingPopup,
+            [StageChallengeState.Recovering] = States(
+                StageChallengeState.InLevel,
+                StageChallengeState.Resuming,
+                StageChallengeState.NavigationFallback,
                 StageChallengeState.Failed,
                 StageChallengeState.Cancelled),
-            [StageChallengeState.ResultDetected] = States(
-                StageChallengeState.HandlingVictory,
-                StageChallengeState.HandlingDefeat,
-                StageChallengeState.Failed,
-                StageChallengeState.Cancelled),
-            [StageChallengeState.HandlingPopup] = States(
-                StageChallengeState.EnteringStage,
-                StageChallengeState.InStageBeforeScript,
-                StageChallengeState.ScriptRunning,
-                StageChallengeState.ScriptCompletedWaitingForResult,
-                StageChallengeState.ResultDetected,
-                StageChallengeState.Failed,
-                StageChallengeState.Cancelled),
-            [StageChallengeState.HandlingVictory] = States(
-                StageChallengeState.Completed,
-                StageChallengeState.Failed,
-                StageChallengeState.Cancelled),
-            [StageChallengeState.HandlingDefeat] = States(
-                StageChallengeState.Completed,
+            [StageChallengeState.Resuming] = States(
+                StageChallengeState.InLevel,
                 StageChallengeState.Failed,
                 StageChallengeState.Cancelled)
         };

@@ -42,7 +42,7 @@ Paths are relative to the repository root. Open the linked file and verify curre
 | --- | --- |
 | [AutoTaskCoordinator.cs](../../../../../BetterBTD/Core/AutoTasks/AutoTaskCoordinator.cs) | Automatic-task coordination, sessions, and registry; primary symbols: AutoTaskCoordinator |
 | [AutoTaskExecutionSession.cs](../../../../../BetterBTD/Core/AutoTasks/AutoTaskExecutionSession.cs) | Automatic-task coordination, sessions, and registry; primary symbols: AutoTaskExecutionSession |
-| [AutoTaskNavigationController.cs](../../../../../BetterBTD/Core/AutoTasks/AutoTaskNavigationController.cs) | Automatic-task coordination, sessions, and registry; primary symbols: AutoTaskNavigationController |
+| [AutoTaskNavigationController.cs](../../../../../BetterBTD/Core/AutoTasks/AutoTaskNavigationController.cs) | Automatic-task coordination, sessions, and registry; primary symbols: AutoTaskNavigationControllerResult, AutoTaskNavigationController |
 | [AutoTaskRunner.cs](../../../../../BetterBTD/Core/AutoTasks/AutoTaskRunner.cs) | Automatic-task coordination, sessions, and registry; primary symbols: AutoTaskRunner |
 | [AutoTaskStrategyRegistry.cs](../../../../../BetterBTD/Core/AutoTasks/AutoTaskStrategyRegistry.cs) | Automatic-task coordination, sessions, and registry; primary symbols: AutoTaskStrategyRegistry |
 | [AutoTaskStuckUiTracker.cs](../../../../../BetterBTD/Core/AutoTasks/AutoTaskStuckUiTracker.cs) | Automatic-task coordination, sessions, and registry; primary symbols: AutoTaskStuckUiTracker, struct |
@@ -79,7 +79,7 @@ Paths are relative to the repository root. Open the linked file and verify curre
 | File | Description |
 | --- | --- |
 | [GameControlLeaseCoordinator.cs](../../../../../BetterBTD/Core/GameControl/GameControlLeaseCoordinator.cs) | Shared game-control lease and input ownership; primary symbols: GameControlOwnerKind, GameControlLeaseCoordinator, GameControlLease, GameControlExecutionScope, GameControlLeaseContext |
-| [GameInputArbiter.cs](../../../../../BetterBTD/Core/GameControl/GameInputArbiter.cs) | Shared game-control lease and input ownership; primary symbols: GameInputPriority, GameInputArbiter, InputArbiterLease |
+| [GameInputArbiter.cs](../../../../../BetterBTD/Core/GameControl/GameInputArbiter.cs) | Shared game-control lease and input ownership; primary symbols: GameInputPriority, GameInputArbiter, GameInputArbiterContext, RestoreScope, InputArbiterContextState |
 
 ### `BetterBTD/Core/RobotControl`
 
@@ -100,7 +100,7 @@ Paths are relative to the repository root. Open the linked file and verify curre
 | [ScriptKeyBindingPreflightValidator.cs](../../../../../BetterBTD/Core/ScriptExecution/ScriptKeyBindingPreflightValidator.cs) | UI-independent script execution, sessions, and scheduling; primary symbols: ScriptKeyBindingPreflightIssue, ScriptKeyBindingPreflightValidator, Requirement |
 | [ScriptTaskFlowExecutor.cs](../../../../../BetterBTD/Core/ScriptExecution/ScriptTaskFlowExecutor.cs) | UI-independent script execution, sessions, and scheduling; primary symbols: ScriptTaskFlowExecutor |
 | [ScriptTaskFlowService.cs](../../../../../BetterBTD/Core/ScriptExecution/ScriptTaskFlowService.cs) | UI-independent script execution, sessions, and scheduling; primary symbols: ScriptTaskFlowService |
-| [ScriptTaskFlowWorker.cs](../../../../../BetterBTD/Core/ScriptExecution/ScriptTaskFlowWorker.cs) | UI-independent script execution, sessions, and scheduling; primary symbols: ScriptTaskFlowWorker |
+| [ScriptTaskFlowWorker.cs](../../../../../BetterBTD/Core/ScriptExecution/ScriptTaskFlowWorker.cs) | UI-independent script execution, sessions, and scheduling; primary symbols: ScriptTaskFlowWorker, QueuedScriptWorkerCommand |
 | [ScriptWorkerStateTransitions.cs](../../../../../BetterBTD/Core/ScriptExecution/ScriptWorkerStateTransitions.cs) | UI-independent script execution, sessions, and scheduling; primary symbols: ScriptWorkerStateTransitions |
 
 ### `BetterBTD/Core/ScriptExecution/Handlers`

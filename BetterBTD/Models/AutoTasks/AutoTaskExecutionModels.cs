@@ -458,6 +458,14 @@ public sealed class AutoTaskExecutionOptions
     /// </summary>
     public TimeSpan WorkerAcknowledgementTimeout { get; init; } = TimeSpan.FromSeconds(5);
 
+    public TimeSpan ScriptOffLevelGracePeriod { get; init; } = TimeSpan.FromSeconds(5);
+
+    public TimeSpan ScriptRecoveryTimeout { get; init; } = TimeSpan.FromSeconds(5);
+
+    public TimeSpan ScriptRecoveryClickInterval { get; init; } = TimeSpan.FromMilliseconds(800);
+
+    public GameUiRecoveryPoint ScriptRecoveryPoint { get; init; } = new(960, 540);
+
     public static List<GameUiRecoveryPoint> CreateDefaultStuckRecoveryPoints()
     {
         return

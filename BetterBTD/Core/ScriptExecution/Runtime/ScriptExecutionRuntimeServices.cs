@@ -115,6 +115,8 @@ public interface IScriptTaskFlowWorker
 
     Guid? CurrentRunId { get; }
 
+    ScriptExecutionResult? LastResult { get; }
+
     bool TryPostCommand(ScriptWorkerCommand command);
 
     IAsyncEnumerable<ScriptWorkerEvent> SubscribeAsync(
