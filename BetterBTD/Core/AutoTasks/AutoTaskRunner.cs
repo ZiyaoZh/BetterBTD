@@ -10,8 +10,6 @@ namespace BetterBTD.Core.AutoTasks;
 
 public sealed class AutoTaskRunner
 {
-    private const int StageScriptUiMonitorIntervalMs = 250;
-
     private readonly IAutoTaskStrategyRegistry _strategyRegistry;
     private readonly AutoTaskRuntimeServices _defaultRuntimeServices;
     private readonly AutoTaskRuntimeScriptPreviewService _scriptPreviewService;
@@ -327,8 +325,7 @@ public sealed class AutoTaskRunner
                         GameUiSnapshot? scriptInterruptedSnapshot;
                         try
                         {
-                            if (CanUseNavigationController(request.Kind) &&
-                                runtimeServices.NavigationObservation is { } navigationObservation &&
+                            if (runtimeServices.NavigationObservation is { } navigationObservation &&
                                 runtimeServices.ScriptWorker is { } scriptWorker)
                             {
                                 scriptResult = await ExecuteScriptViaNavigationControllerAsync(
@@ -343,15 +340,11 @@ public sealed class AutoTaskRunner
                             }
                             else
                             {
-                                (scriptResult, scriptInterruptedSnapshot) = await ExecuteScriptWithUiMonitoringAsync(
-                                        request,
-                                        state,
-                                        session,
-                                        runtimeServices,
-                                        scriptResolution.FilePath,
-                                        scriptExecutionOptions,
-                                        cancellationToken)
-                                    .ConfigureAwait(false);
+                                return BuildFailedResult(
+                                    session,
+                                    state,
+                                    "NavigationController",
+                                    "Auto-task runtime is missing the navigation observation service or script worker.");
                             }
                         }
                         finally
@@ -499,13 +492,6 @@ public sealed class AutoTaskRunner
         };
     }
 
-    private static bool CanUseNavigationController(AutoTaskKind kind)
-    {
-        // LoopStage and Odyssey have multi-stage/freeplay lifecycles that remain
-        // coordinated by the runner until their dedicated strategies converge.
-        return kind is not (AutoTaskKind.LoopStage or AutoTaskKind.Odyssey);
-    }
-
     private static bool ShouldUseStuckUiRecovery(AutoTaskKind kind)
     {
         return kind is AutoTaskKind.Collection
@@ -590,98 +576,6 @@ public sealed class AutoTaskRunner
                 state.CompletedStageCount,
                 $"Recorded completed stage from result UI '{snapshot.State}'.");
         }
-    }
-
-    private static async Task<(ScriptExecutionResult Result, GameUiSnapshot? InterruptedSnapshot)> ExecuteScriptWithUiMonitoringAsync(
-        AutoTaskRequest request,
-        AutoTaskRuntimeState state,
-        AutoTaskExecutionSession session,
-        AutoTaskRuntimeServices runtimeServices,
-        string scriptFilePath,
-        ScriptExecutionOptions scriptExecutionOptions,
-        CancellationToken cancellationToken)
-    {
-        ArgumentNullException.ThrowIfNull(request);
-        ArgumentNullException.ThrowIfNull(state);
-        ArgumentNullException.ThrowIfNull(session);
-        ArgumentNullException.ThrowIfNull(runtimeServices);
-        ArgumentException.ThrowIfNullOrWhiteSpace(scriptFilePath);
-        ArgumentNullException.ThrowIfNull(scriptExecutionOptions);
-
-        using var linkedScriptCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        var scriptTask = runtimeServices.ScriptExecutor.ExecuteAsync(
-            scriptFilePath,
-            scriptExecutionOptions,
-            linkedScriptCancellationSource.Token);
-
-        try
-        {
-            if (!ShouldMonitorStageScriptUi(request.Kind))
-            {
-                return (await scriptTask.ConfigureAwait(false), null);
-            }
-
-            GameUiSnapshot? interruptedSnapshot = null;
-            var lastPublishedUiSnapshot = state.LastUiSnapshot;
-            while (!scriptTask.IsCompleted)
-            {
-                var completedTask = await Task
-                    .WhenAny(scriptTask, Task.Delay(StageScriptUiMonitorIntervalMs, cancellationToken))
-                    .ConfigureAwait(false);
-
-                if (completedTask == scriptTask)
-                {
-                    break;
-                }
-
-                var snapshot = await runtimeServices.GameUiState
-                    .CaptureSnapshotAsync(cancellationToken)
-                    .ConfigureAwait(false);
-
-                ObserveFreeplayTargetRound(request, state, snapshot);
-
-                var shouldInterrupt = ShouldInterruptStageScript(request, state, snapshot.State);
-                state.RecordUiSnapshot(snapshot);
-
-                if (HasDisplayableUiStateChanged(lastPublishedUiSnapshot, snapshot) || shouldInterrupt)
-                {
-                    session.UpdateUiSnapshot(
-                        snapshot,
-                        shouldInterrupt
-                            ? $"Detected stage result UI '{snapshot.State}' while the script was running."
-                            : $"Updated UI state '{snapshot.State}' while the script was running.");
-                    lastPublishedUiSnapshot = snapshot;
-                }
-
-                if (!shouldInterrupt)
-                {
-                    continue;
-                }
-
-                interruptedSnapshot = snapshot;
-                linkedScriptCancellationSource.Cancel();
-                break;
-            }
-
-            return (await scriptTask.ConfigureAwait(false), interruptedSnapshot);
-        }
-        catch
-        {
-            linkedScriptCancellationSource.Cancel();
-            await ((Task)scriptTask)
-                .ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
-            throw;
-        }
-    }
-
-    private static bool ShouldMonitorStageScriptUi(AutoTaskKind kind)
-    {
-        return kind is AutoTaskKind.Collection
-            or AutoTaskKind.GoldBalloon
-            or AutoTaskKind.BlackBorder
-            or AutoTaskKind.LoopStage
-            or AutoTaskKind.Odyssey
-            or AutoTaskKind.Race;
     }
 
     private static bool ShouldInterruptStageScript(

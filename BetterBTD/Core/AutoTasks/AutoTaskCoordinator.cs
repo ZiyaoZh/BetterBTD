@@ -12,6 +12,7 @@ public sealed class AutoTaskCoordinator
     private readonly object _syncRoot = new();
     private readonly AutoTaskRunner _runner;
     private readonly GameControlLeaseCoordinator _gameControlLeaseCoordinator;
+    private readonly GameInputArbiter _gameInputArbiter;
     private readonly Action _releaseAllKeys;
 
     private bool _isRunning;
@@ -22,18 +23,21 @@ public sealed class AutoTaskCoordinator
         : this(
             new AutoTaskRunner(),
             GameControlLeaseCoordinator.Instance,
-            ScriptInputSimulationService.Instance.ReleaseAllKeys)
+            ScriptInputSimulationService.Instance.ReleaseAllKeys,
+            new GameInputArbiter())
     {
     }
 
     internal AutoTaskCoordinator(
         AutoTaskRunner runner,
         GameControlLeaseCoordinator? gameControlLeaseCoordinator = null,
-        Action? releaseAllKeys = null)
+        Action? releaseAllKeys = null,
+        GameInputArbiter? gameInputArbiter = null)
     {
         _runner = runner ?? throw new ArgumentNullException(nameof(runner));
         _gameControlLeaseCoordinator = gameControlLeaseCoordinator ?? GameControlLeaseCoordinator.Instance;
         _releaseAllKeys = releaseAllKeys ?? ScriptInputSimulationService.Instance.ReleaseAllKeys;
+        _gameInputArbiter = gameInputArbiter ?? new GameInputArbiter();
     }
 
     public static AutoTaskCoordinator Instance => InstanceHolder.Value;
@@ -95,6 +99,18 @@ public sealed class AutoTaskCoordinator
         ChildSessionRuntimeState.EnsurePrimaryCanControl();
 
         var leaseOwnerId = $"auto-task-{Guid.NewGuid():N}";
+        if (!_gameInputArbiter.TryAcquire(
+                leaseOwnerId,
+                GameInputPriority.Navigation,
+                out var inputLease))
+        {
+            throw new InvalidOperationException("Another auto task already owns game input.");
+        }
+
+        using var ownedInputLease = inputLease;
+        using var inputContext = GameInputArbiterContext.Push(
+            new InputArbiterContextState(_gameInputArbiter, inputLease));
+
         if (!_gameControlLeaseCoordinator.TryAcquire(
                 GameControlOwnerKind.AutoTask,
                 leaseOwnerId,

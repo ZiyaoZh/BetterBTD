@@ -118,6 +118,7 @@ public sealed class ScriptTaskFlowExecutor : IScriptTaskFlowExecutionEngine
         ChildSessionRuntimeState.EnsurePrimaryCanControl();
 
         using var gameControlScope = _gameControlLeaseCoordinator.AcquireOrJoinForScriptExecution();
+        using var inputArbiterLease = AcquireInputArbiterLease();
         using var linkedCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         cancellationToken = linkedCancellationSource.Token;
         options ??= new ScriptExecutionOptions();
@@ -291,6 +292,27 @@ public sealed class ScriptTaskFlowExecutor : IScriptTaskFlowExecutionEngine
                 ExitRunningState();
             }
         }
+    }
+
+    private static InputArbiterLease AcquireInputArbiterLease()
+    {
+        var context = GameInputArbiterContext.Current;
+        if (context is null)
+        {
+            return InputArbiterLease.None;
+        }
+
+        var ownerId = $"script-{Guid.NewGuid():N}";
+        if (context.Arbiter.TryAcquire(
+                ownerId,
+                GameInputPriority.Script,
+                out var lease,
+                context.NavigationLease.OwnerId))
+        {
+            return lease;
+        }
+
+        throw new InvalidOperationException("Unable to acquire the script input scope from the navigation controller.");
     }
 
     private static int ResolveInstructionInterval(ScriptTaskFlowStep step, ScriptExecutionOptions options)

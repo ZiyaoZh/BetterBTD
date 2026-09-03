@@ -7,6 +7,8 @@ using System.Windows.Threading;
 using BetterBTD.Models.AutoTasks;
 using BetterBTD.Models.GameElements;
 using BetterBTD.Models.ScriptExecution;
+using BetterBTD.Core.AutoTasks.Runtime;
+using BetterBTD.Services.Tasks.AutoTasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -61,6 +63,8 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
     private bool _isProgressFlushScheduled;
     private bool _acceptProgressSnapshots;
     private CancellationTokenSource? _preflightCancellationSource;
+    private readonly CancellationTokenSource _navigationObservationCancellationSource = new();
+    private Task? _navigationObservationTask;
 
     public TaskRuntimeWindowViewModel(
         LocalizationService localizationService,
@@ -279,6 +283,49 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
         UpdateActivityDisplay(snapshot);
     }
 
+    private async Task ObserveNavigationSnapshotsAsync(
+        INavigationObservationService observations,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await foreach (var observation in observations.SubscribeAsync(cancellationToken).ConfigureAwait(false))
+            {
+                if (_isDisposed)
+                {
+                    return;
+                }
+
+                void Apply()
+                {
+                    if (_isDisposed)
+                    {
+                        return;
+                    }
+
+                    StatusText = BuildUiInfoText(new AutoTaskProgressSnapshot
+                    {
+                        CurrentUiState = observation.Snapshot.State,
+                        LastUiSnapshot = observation.Snapshot,
+                        Message = $"Navigation observation #{observation.Sequence}."
+                    });
+                }
+
+                if (_dispatcher.CheckAccess())
+                {
+                    Apply();
+                }
+                else
+                {
+                    await _dispatcher.InvokeAsync(Apply, DispatcherPriority.DataBind);
+                }
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+    }
+
     public void ApplyResult(AutoTaskExecutionResult result)
     {
         ArgumentNullException.ThrowIfNull(result);
@@ -321,6 +368,7 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
     public void HandleWindowClosing()
     {
         _preflightCancellationSource?.Cancel();
+        _navigationObservationCancellationSource.Cancel();
         if (IsRunning)
         {
             StopExecution();
@@ -336,6 +384,7 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
 
         _isDisposed = true;
         _preflightCancellationSource?.Cancel();
+        _navigationObservationCancellationSource.Cancel();
         StopRuntimeDuration();
         _runtimeDurationTimer.Tick -= OnRuntimeDurationTimerTick;
     }
@@ -404,6 +453,9 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
         CompletedStageCountText = _localizationService.T("Tasks.Runtime.Metrics.NotStarted");
         BeginRuntimeDuration();
         SetSequencePlaceholder(_localizationService.T("Tasks.Runtime.ScriptPending"));
+        _navigationObservationTask = ObserveNavigationSnapshotsAsync(
+            NavigationObservationService.Instance,
+            _navigationObservationCancellationSource.Token);
         FocusedStep = Steps.FirstOrDefault();
         IsRunning = true;
         StatusText = BuildUiInfoText(new AutoTaskProgressSnapshot());

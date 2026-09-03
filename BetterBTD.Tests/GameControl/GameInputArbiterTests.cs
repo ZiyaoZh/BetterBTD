@@ -18,6 +18,24 @@ public sealed class GameInputArbiterTests
     }
 
     [Fact]
+    public void AmbientNavigationScope_AllowsScriptChildLeaseAndRestoresContext()
+    {
+        var arbiter = new GameInputArbiter();
+        Assert.True(arbiter.TryAcquire("navigation", GameInputPriority.Navigation, out var navigation));
+        Assert.Null(GameInputArbiterContext.Current);
+
+        using (GameInputArbiterContext.Push(new InputArbiterContextState(arbiter, navigation)))
+        {
+            Assert.Same(arbiter, GameInputArbiterContext.Current!.Arbiter);
+            Assert.True(arbiter.TryAcquire("script", GameInputPriority.Script, out var script, navigation.OwnerId));
+            script.Dispose();
+        }
+
+        Assert.Null(GameInputArbiterContext.Current);
+        navigation.Dispose();
+    }
+
+    [Fact]
     public async Task TemporaryPreemption_RequiresAcknowledgementAndRelease()
     {
         var arbiter = new GameInputArbiter();

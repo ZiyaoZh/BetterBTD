@@ -102,6 +102,37 @@ public sealed class GameInputArbiter
     private bool Owns(InputArbiterLease lease) => ReferenceEquals(_active, lease) || _active?.HasChild(lease) == true;
 }
 
+/// <summary>Ambient arbiter scope used to attach script input to its owning navigation session.</summary>
+internal static class GameInputArbiterContext
+{
+    private static readonly AsyncLocal<InputArbiterContextState?> CurrentHolder = new();
+
+    public static InputArbiterContextState? Current => CurrentHolder.Value;
+
+    public static IDisposable Push(InputArbiterContextState state)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        var previous = CurrentHolder.Value;
+        CurrentHolder.Value = state;
+        return new RestoreScope(previous);
+    }
+
+    private sealed class RestoreScope(InputArbiterContextState? previous) : IDisposable
+    {
+        private bool _disposed;
+        public void Dispose()
+        {
+            if (_disposed) return;
+            _disposed = true;
+            CurrentHolder.Value = previous;
+        }
+    }
+}
+
+internal sealed record InputArbiterContextState(
+    GameInputArbiter Arbiter,
+    InputArbiterLease NavigationLease);
+
 public sealed class InputArbiterLease : IDisposable
 {
     internal static InputArbiterLease None { get; } = new();
