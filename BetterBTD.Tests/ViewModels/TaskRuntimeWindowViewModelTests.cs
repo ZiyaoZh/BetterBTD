@@ -147,15 +147,13 @@ public sealed class TaskRuntimeWindowViewModelTests
     }
 
     [Fact]
-    public void ApplyProgressSnapshot_DisplaysOnlyRelevantInLevelInformation()
+    public void ApplyNavigationObservation_DisplaysOnlyRelevantInLevelInformation()
     {
         using var viewModel = CreateViewModel(new ManualTimeProvider(DateTimeOffset.UtcNow));
-        var snapshot = CreateProgressSnapshot(DateTimeOffset.UtcNow, completedStageCount: 0);
-        snapshot.CurrentCheckpoint = "CaptureUiState";
-        snapshot.ActiveScriptPath = @"C:\scripts\internal.json";
-        snapshot.Message = "Internal runner message";
-        snapshot.LastUiSnapshot = new GameUiSnapshot
+        var capturedAt = DateTimeOffset.UtcNow;
+        var snapshot = new GameUiSnapshot
         {
+            CapturedAt = capturedAt,
             State = GameUiStateId.InLevel,
             Confidence = 0.95,
             Summary = "Internal recognition summary",
@@ -179,27 +177,25 @@ public sealed class TaskRuntimeWindowViewModelTests
             }
         };
 
-        viewModel.ApplyProgressSnapshot(snapshot);
+        viewModel.ApplyNavigationObservation(new NavigationObservation(1, capturedAt, snapshot));
 
         Assert.Contains(LocalizationService.Instance.T("CaptureTest.GameUiState.InLevel"), viewModel.StatusText);
         Assert.Contains("1234", viewModel.StatusText);
         Assert.Contains("45", viewModel.StatusText);
         Assert.Contains(LocalizationService.Instance.T("Tasks.Runtime.Status.RightUpgrade"), viewModel.StatusText);
         Assert.DoesNotContain(LocalizationService.Instance.T("Tasks.Runtime.Status.LeftUpgrade"), viewModel.StatusText);
-        Assert.DoesNotContain("CaptureUiState", viewModel.StatusText);
-        Assert.DoesNotContain("internal.json", viewModel.StatusText, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("Internal runner message", viewModel.StatusText);
         Assert.DoesNotContain("Internal recognition summary", viewModel.StatusText);
         Assert.DoesNotContain("95%", viewModel.StatusText);
     }
 
     [Fact]
-    public void ApplyProgressSnapshot_MapSearchDisplaysOnlyConfirmedMap()
+    public void ApplyNavigationObservation_MapSearchDisplaysOnlyConfirmedMap()
     {
         using var viewModel = CreateViewModel(new ManualTimeProvider(DateTimeOffset.UtcNow));
-        var snapshot = CreateProgressSnapshot(DateTimeOffset.UtcNow, completedStageCount: 0);
-        snapshot.LastUiSnapshot = new GameUiSnapshot
+        var capturedAt = DateTimeOffset.UtcNow;
+        var snapshot = new GameUiSnapshot
         {
+            CapturedAt = capturedAt,
             State = GameUiStateId.MapSearch,
             Summary = "debug candidate score 99%",
             Facts = new Dictionary<string, object?>
@@ -209,11 +205,51 @@ public sealed class TaskRuntimeWindowViewModelTests
             }
         };
 
-        viewModel.ApplyProgressSnapshot(snapshot);
+        viewModel.ApplyNavigationObservation(new NavigationObservation(1, capturedAt, snapshot));
 
         Assert.Contains(GameElementCatalog.GetMapDisplayName(GameMapType.MonkeyMeadow), viewModel.StatusText);
         Assert.DoesNotContain("debug", viewModel.StatusText, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("99%", viewModel.StatusText);
+    }
+
+    [Fact]
+    public void ApplyProgressSnapshot_DoesNotReplaceNavigationInformation()
+    {
+        using var viewModel = CreateViewModel(new ManualTimeProvider(DateTimeOffset.UtcNow));
+        var capturedAt = DateTimeOffset.UtcNow;
+        var navigationSnapshot = new GameUiSnapshot
+        {
+            CapturedAt = capturedAt,
+            State = GameUiStateId.InLevel,
+            StageState = new GameStageStateSnapshot
+            {
+                IsInLevel = true,
+                Gold = 4321,
+                Round = 67
+            }
+        };
+        viewModel.ApplyNavigationObservation(
+            new NavigationObservation(1, capturedAt, navigationSnapshot));
+        var expectedStatus = viewModel.StatusText;
+
+        var scriptProgress = CreateProgressSnapshot(DateTimeOffset.UtcNow, completedStageCount: 0);
+        scriptProgress.LastUiSnapshot = new GameUiSnapshot
+        {
+            State = GameUiStateId.InLevel,
+            StageState = new GameStageStateSnapshot
+            {
+                IsInLevel = true,
+                Gold = 100,
+                Round = 1
+            }
+        };
+
+        viewModel.ApplyProgressSnapshot(scriptProgress);
+
+        Assert.Equal(expectedStatus, viewModel.StatusText);
+        Assert.Contains("4321", viewModel.StatusText);
+        Assert.Contains("67", viewModel.StatusText);
+        Assert.DoesNotContain("100", viewModel.StatusText);
     }
 
     [Fact]

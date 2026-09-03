@@ -63,8 +63,7 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
     private bool _isProgressFlushScheduled;
     private bool _acceptProgressSnapshots;
     private CancellationTokenSource? _preflightCancellationSource;
-    private readonly CancellationTokenSource _navigationObservationCancellationSource = new();
-    private Task? _navigationObservationTask;
+    private CancellationTokenSource? _navigationObservationCancellationSource;
 
     public TaskRuntimeWindowViewModel(
         LocalizationService localizationService,
@@ -90,7 +89,7 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
         _runtimeDurationTimer.Tick += OnRuntimeDurationTimerTick;
 
         UpdateTaskMetadata(taskDisplayName, taskSummaryText);
-        _statusText = BuildUiInfoText(new AutoTaskProgressSnapshot());
+        _statusText = BuildUiInfoText(null);
         _currentPhaseText = _localizationService.T("Tasks.Runtime.NotStarted");
         _currentActivityText = _localizationService.T("Tasks.Runtime.NotStarted");
         _activityStatusText = _localizationService.T("Tasks.Runtime.NotStarted");
@@ -279,7 +278,6 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
 
         EnsureSequence(snapshot);
         UpdateSequenceProgress(snapshot);
-        StatusText = BuildUiInfoText(snapshot);
         UpdateActivityDisplay(snapshot);
     }
 
@@ -291,24 +289,19 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
         {
             await foreach (var observation in observations.SubscribeAsync(cancellationToken).ConfigureAwait(false))
             {
-                if (_isDisposed)
+                if (_isDisposed || cancellationToken.IsCancellationRequested)
                 {
                     return;
                 }
 
                 void Apply()
                 {
-                    if (_isDisposed)
+                    if (_isDisposed || cancellationToken.IsCancellationRequested)
                     {
                         return;
                     }
 
-                    StatusText = BuildUiInfoText(new AutoTaskProgressSnapshot
-                    {
-                        CurrentUiState = observation.Snapshot.State,
-                        LastUiSnapshot = observation.Snapshot,
-                        Message = $"Navigation observation #{observation.Sequence}."
-                    });
+                    ApplyNavigationObservation(observation);
                 }
 
                 if (_dispatcher.CheckAccess())
@@ -326,11 +319,18 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
         }
     }
 
+    internal void ApplyNavigationObservation(NavigationObservation observation)
+    {
+        ArgumentNullException.ThrowIfNull(observation);
+        StatusText = BuildUiInfoText(observation.Snapshot);
+    }
+
     public void ApplyResult(AutoTaskExecutionResult result)
     {
         ArgumentNullException.ThrowIfNull(result);
 
         StopAcceptingProgressSnapshots();
+        StopObservingNavigationSnapshots();
         IsRunning = false;
         CompletedStageCountText = result.FinalProgress.CompletedStageCount.ToString(CultureInfo.InvariantCulture);
         StopRuntimeDuration();
@@ -347,7 +347,6 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
             _ => _localizationService.T("Tasks.Runtime.UnknownResult")
         };
 
-        StatusText = BuildUiInfoText(result.FinalProgress);
         CurrentPhaseText = LocalizeEnum("Tasks.Runtime.Phase", result.FinalProgress.Phase);
         CurrentActivityText = LocalizeEnum("Tasks.Runtime.Activity", result.FinalProgress.CurrentActivity);
         ActivityStatusText = finalText;
@@ -358,6 +357,7 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
         ArgumentNullException.ThrowIfNull(exception);
 
         StopAcceptingProgressSnapshots();
+        StopObservingNavigationSnapshots();
         IsRunning = false;
         StopRuntimeDuration();
         CurrentPhaseText = LocalizeEnum("Tasks.Runtime.Phase", AutoTaskPhase.Failed);
@@ -368,7 +368,7 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
     public void HandleWindowClosing()
     {
         _preflightCancellationSource?.Cancel();
-        _navigationObservationCancellationSource.Cancel();
+        StopObservingNavigationSnapshots();
         if (IsRunning)
         {
             StopExecution();
@@ -384,7 +384,7 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
 
         _isDisposed = true;
         _preflightCancellationSource?.Cancel();
-        _navigationObservationCancellationSource.Cancel();
+        StopObservingNavigationSnapshots();
         StopRuntimeDuration();
         _runtimeDurationTimer.Tick -= OnRuntimeDurationTimerTick;
     }
@@ -453,12 +453,14 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
         CompletedStageCountText = _localizationService.T("Tasks.Runtime.Metrics.NotStarted");
         BeginRuntimeDuration();
         SetSequencePlaceholder(_localizationService.T("Tasks.Runtime.ScriptPending"));
-        _navigationObservationTask = ObserveNavigationSnapshotsAsync(
+        StatusText = BuildUiInfoText(null);
+        StopObservingNavigationSnapshots();
+        _navigationObservationCancellationSource = new CancellationTokenSource();
+        _ = ObserveNavigationSnapshotsAsync(
             NavigationObservationService.Instance,
             _navigationObservationCancellationSource.Token);
         FocusedStep = Steps.FirstOrDefault();
         IsRunning = true;
-        StatusText = BuildUiInfoText(new AutoTaskProgressSnapshot());
         CurrentPhaseText = LocalizeEnum("Tasks.Runtime.Phase", AutoTaskPhase.PreparingStage);
         CurrentActivityText = LocalizeEnum("Tasks.Runtime.Activity", AutoTaskActivityKind.Preparing);
         ActivityStatusText = _localizationService.T("Tasks.Runtime.Starting");
@@ -482,6 +484,13 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
             _pendingProgressSnapshot = null;
             _isProgressFlushScheduled = false;
         }
+    }
+
+    private void StopObservingNavigationSnapshots()
+    {
+        _navigationObservationCancellationSource?.Cancel();
+        _navigationObservationCancellationSource?.Dispose();
+        _navigationObservationCancellationSource = null;
     }
 
     private void UpdateRuntimeMetrics(AutoTaskProgressSnapshot snapshot, bool isActiveRunState)
@@ -709,13 +718,10 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
             : progress.LastCompletedStepIndex);
     }
 
-    private string BuildUiInfoText(AutoTaskProgressSnapshot snapshot)
+    private string BuildUiInfoText(GameUiSnapshot? uiSnapshot)
     {
-        ArgumentNullException.ThrowIfNull(snapshot);
-
         var builder = new StringBuilder();
-        var uiSnapshot = snapshot.LastUiSnapshot;
-        var uiState = uiSnapshot?.State ?? snapshot.CurrentUiState;
+        var uiState = uiSnapshot?.State ?? GameUiStateId.Unknown;
         AppendStatusLine(
             builder,
             _localizationService.T("Tasks.Runtime.Status.UiState"),

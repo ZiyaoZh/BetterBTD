@@ -83,7 +83,7 @@ public sealed class NavigationObservationServiceTests
     }
 
     [Fact]
-    public async Task Start_IsIdempotentAndStopCompletesSubscribers()
+    public async Task Start_IsIdempotentAndSubscriberSurvivesRestart()
     {
         var source = new IncrementingGameUiStateService();
         var service = CreateService(source);
@@ -93,13 +93,16 @@ public sealed class NavigationObservationServiceTests
         service.Start(timeout.Token);
         service.Start(timeout.Token);
         Assert.True(await subscriber.MoveNextAsync());
+        var firstSequence = subscriber.Current.Sequence;
         await service.StopAsync();
 
-        while (await subscriber.MoveNextAsync())
-        {
-        }
+        service.Start(timeout.Token);
+        Assert.True(await subscriber.MoveNextAsync());
+        var secondSequence = subscriber.Current.Sequence;
+        await service.StopAsync();
 
         Assert.False(service.GetDiagnostics().IsRunning);
+        Assert.True(secondSequence > firstSequence);
         Assert.Equal(service.GetDiagnostics().PublishedCount, source.CaptureCount);
     }
 
@@ -119,7 +122,11 @@ public sealed class NavigationObservationServiceTests
 
         Assert.NotNull(latest);
         Assert.Same(latest, late.Current);
-        Assert.False(await late.MoveNextAsync());
+
+        service.Start(timeout.Token);
+        Assert.True(await late.MoveNextAsync());
+        Assert.True(late.Current.Sequence > latest.Sequence);
+        await service.StopAsync();
     }
 
     [Fact]

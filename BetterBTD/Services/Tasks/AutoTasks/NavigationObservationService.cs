@@ -116,10 +116,6 @@ public sealed class NavigationObservationService : INavigationObservationService
                 channel.Writer.TryWrite(_latestObservation);
             }
 
-            if (_loopTask is { IsCompleted: true })
-            {
-                channel.Writer.TryComplete();
-            }
         }
 
         try
@@ -288,12 +284,6 @@ public sealed class NavigationObservationService : INavigationObservationService
                 IsRunning = false,
                 LastMessage = "Navigation observation loop stopped."
             };
-            foreach (var subscriber in _subscribers.Values)
-            {
-                subscriber.Writer.TryComplete();
-            }
-
-            _subscribers.Clear();
         }
     }
 
