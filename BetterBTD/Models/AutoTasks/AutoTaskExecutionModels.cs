@@ -453,15 +453,17 @@ public sealed class AutoTaskDecision
 
 public sealed class AutoTaskExecutionOptions
 {
-    private static readonly IReadOnlyList<GameUiRecoveryPoint> DefaultStuckRecoveryPoints =
-        Array.AsReadOnly<GameUiRecoveryPoint>(
+    public static List<GameUiRecoveryPoint> CreateDefaultStuckRecoveryPoints()
+    {
+        return
         [
             new(960, 840),
             new(960, 760),
             new(1340, 850),
             new(850, 810),
             new(80, 55)
-        ]);
+        ];
+    }
 
     /// <summary>
     /// Maximum number of UI decision loops to execute. A null value means no limit.
@@ -474,9 +476,12 @@ public sealed class AutoTaskExecutionOptions
 
     public TimeSpan StuckUiTimeout { get; init; } = TimeSpan.FromSeconds(10);
 
+    public int VisualFingerprintDistanceTolerance { get; init; } = 6;
+
     public int StuckRecoveryDelayMs { get; init; } = 800;
 
-    public IReadOnlyList<GameUiRecoveryPoint> StuckRecoveryPoints { get; init; } = DefaultStuckRecoveryPoints;
+    public IReadOnlyList<GameUiRecoveryPoint> StuckRecoveryPoints { get; init; } =
+        CreateDefaultStuckRecoveryPoints().AsReadOnly();
 
     public AutoTaskRuntimeServices? RuntimeServices { get; init; }
 }

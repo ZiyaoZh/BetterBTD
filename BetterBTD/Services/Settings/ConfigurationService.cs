@@ -2,6 +2,7 @@
 using System.IO;
 using System.Text.Json;
 using BetterBTD.Models;
+using BetterBTD.Models.AutoTasks;
 using BetterBTD.Models.ScriptExecution;
 using BetterBTD.Services.ChildSession;
 
@@ -19,10 +20,18 @@ public sealed class ConfigurationService
     private readonly string _configFilePath;
 
     private ConfigurationService()
+        : this(Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "BetterBTD",
+            "appsettings.json"))
     {
-        var appDataDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BetterBTD");
-        Directory.CreateDirectory(appDataDirectory);
-        _configFilePath = Path.Combine(appDataDirectory, "appsettings.json");
+    }
+
+    internal ConfigurationService(string configFilePath)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(configFilePath);
+        _configFilePath = Path.GetFullPath(configFilePath);
+        Directory.CreateDirectory(Path.GetDirectoryName(_configFilePath)!);
 
         Current = Load();
     }
@@ -59,6 +68,16 @@ public sealed class ConfigurationService
             configuration.ScriptExecutionIntervalStrategyName);
         Current.ScriptExecutionCommonOperationIntervalMs = NormalizeScriptExecutionCommonOperationInterval(
             configuration.ScriptExecutionCommonOperationIntervalMs);
+        Current.AutoTaskMaxConsecutiveNavigationFailures = NormalizeAutoTaskNavigationFailureLimit(
+            configuration.AutoTaskMaxConsecutiveNavigationFailures);
+        Current.AutoTaskStuckUiTimeoutSeconds = NormalizeAutoTaskStuckTimeoutSeconds(
+            configuration.AutoTaskStuckUiTimeoutSeconds);
+        Current.AutoTaskVisualFingerprintDistanceTolerance = NormalizeAutoTaskVisualFingerprintDistanceTolerance(
+            configuration.AutoTaskVisualFingerprintDistanceTolerance);
+        Current.AutoTaskStuckRecoveryDelayMs = NormalizeAutoTaskRecoveryDelay(
+            configuration.AutoTaskStuckRecoveryDelayMs);
+        Current.AutoTaskStuckRecoveryPoints = NormalizeAutoTaskRecoveryPoints(
+            configuration.AutoTaskStuckRecoveryPoints);
         Current.KeyBindings = configuration.KeyBindings ?? Current.KeyBindings;
         Current.KeyBindings ??= new BetterBTD.Core.Config.KeyBindingsConfig();
 
@@ -87,6 +106,21 @@ public sealed class ConfigurationService
         Save(Current);
     }
 
+    public AutoTaskExecutionOptions GetAutoTaskExecutionOptions()
+    {
+        return new AutoTaskExecutionOptions
+        {
+            MaxConsecutiveNavigationFailures = NormalizeAutoTaskNavigationFailureLimit(
+                Current.AutoTaskMaxConsecutiveNavigationFailures),
+            StuckUiTimeout = TimeSpan.FromSeconds(NormalizeAutoTaskStuckTimeoutSeconds(
+                Current.AutoTaskStuckUiTimeoutSeconds)),
+            VisualFingerprintDistanceTolerance = NormalizeAutoTaskVisualFingerprintDistanceTolerance(
+                Current.AutoTaskVisualFingerprintDistanceTolerance),
+            StuckRecoveryDelayMs = NormalizeAutoTaskRecoveryDelay(Current.AutoTaskStuckRecoveryDelayMs),
+            StuckRecoveryPoints = NormalizeAutoTaskRecoveryPoints(Current.AutoTaskStuckRecoveryPoints).AsReadOnly()
+        };
+    }
+
     private AppConfiguration Load()
     {
         if (!File.Exists(_configFilePath))
@@ -110,6 +144,16 @@ public sealed class ConfigurationService
                 config.ScriptExecutionIntervalStrategyName);
             config.ScriptExecutionCommonOperationIntervalMs = NormalizeScriptExecutionCommonOperationInterval(
                 config.ScriptExecutionCommonOperationIntervalMs);
+            config.AutoTaskMaxConsecutiveNavigationFailures = NormalizeAutoTaskNavigationFailureLimit(
+                config.AutoTaskMaxConsecutiveNavigationFailures);
+            config.AutoTaskStuckUiTimeoutSeconds = NormalizeAutoTaskStuckTimeoutSeconds(
+                config.AutoTaskStuckUiTimeoutSeconds);
+            config.AutoTaskVisualFingerprintDistanceTolerance = NormalizeAutoTaskVisualFingerprintDistanceTolerance(
+                config.AutoTaskVisualFingerprintDistanceTolerance);
+            config.AutoTaskStuckRecoveryDelayMs = NormalizeAutoTaskRecoveryDelay(
+                config.AutoTaskStuckRecoveryDelayMs);
+            config.AutoTaskStuckRecoveryPoints = NormalizeAutoTaskRecoveryPoints(
+                config.AutoTaskStuckRecoveryPoints);
             return config;
         }
         catch (Exception ex) when (ex is IOException or JsonException)
@@ -138,6 +182,37 @@ public sealed class ConfigurationService
     private static int NormalizeScriptExecutionCommonOperationInterval(int intervalMs)
     {
         return Math.Clamp(intervalMs <= 0 ? 200 : intervalMs, 50, 1000);
+    }
+
+    internal static int NormalizeAutoTaskNavigationFailureLimit(int value)
+    {
+        return Math.Clamp(value <= 0 ? 5 : value, 1, 20);
+    }
+
+    internal static int NormalizeAutoTaskStuckTimeoutSeconds(int value)
+    {
+        return Math.Clamp(value <= 0 ? 10 : value, 1, 300);
+    }
+
+    internal static int NormalizeAutoTaskRecoveryDelay(int value)
+    {
+        return Math.Clamp(value, 0, 10000);
+    }
+
+    internal static int NormalizeAutoTaskVisualFingerprintDistanceTolerance(int value)
+    {
+        return Math.Clamp(value, 0, 64);
+    }
+
+    internal static List<GameUiRecoveryPoint> NormalizeAutoTaskRecoveryPoints(
+        IEnumerable<GameUiRecoveryPoint>? points)
+    {
+        return points?
+            .Select(point => new GameUiRecoveryPoint(
+                Math.Clamp(point.X, 0, 1919),
+                Math.Clamp(point.Y, 0, 1079)))
+            .Take(20)
+            .ToList() ?? AutoTaskExecutionOptions.CreateDefaultStuckRecoveryPoints();
     }
 
     private static string NormalizeGameInstallPath(string? installPath)

@@ -1434,7 +1434,8 @@ public sealed class AutoTasksPageViewModel : ObservableObject
             _autoTaskCoordinator.ProgressChanged += progressHandler;
             RunOnUiThread(() => SetRunningTask(task.Key));
 
-            var result = await _autoTaskCoordinator.ExecuteAsync(request).ConfigureAwait(false);
+            var options = _configurationService.GetAutoTaskExecutionOptions();
+            var result = await _autoTaskCoordinator.ExecuteAsync(request, options).ConfigureAwait(false);
             RunOnUiThread(() => runtimeViewModel.ApplyResult(result));
 
             if (result.Status == AutoTaskExecutionStatus.Failed)

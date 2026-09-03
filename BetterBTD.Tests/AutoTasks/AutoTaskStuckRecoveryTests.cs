@@ -1,14 +1,137 @@
+using System.Text.Json;
 using BetterBTD.Core.AutoTasks;
 using BetterBTD.Core.AutoTasks.Runtime;
+using BetterBTD.Models;
 using BetterBTD.Models.AutoTasks;
 using BetterBTD.Models.GameElements;
 using BetterBTD.Models.ScriptExecution;
 using BetterBTD.Services.Tasks.AutoTasks;
+using BetterBTD.Services.Settings;
 
 namespace BetterBTD.Tests.AutoTasks;
 
 public sealed class AutoTaskStuckRecoveryTests
 {
+    [Fact]
+    public void Configuration_JsonRoundTripPreservesRecoveryPointOrderAndDefaultsMissingFields()
+    {
+        var configured = new AppConfiguration
+        {
+            AutoTaskMaxConsecutiveNavigationFailures = 4,
+            AutoTaskStuckUiTimeoutSeconds = 25,
+            AutoTaskVisualFingerprintDistanceTolerance = 8,
+            AutoTaskStuckRecoveryDelayMs = 1500,
+            AutoTaskStuckRecoveryPoints = [new(12, 34), new(56, 78)]
+        };
+
+        var roundTripped = JsonSerializer.Deserialize<AppConfiguration>(JsonSerializer.Serialize(configured));
+        var defaults = JsonSerializer.Deserialize<AppConfiguration>("{}");
+
+        Assert.NotNull(roundTripped);
+        Assert.Equal(4, roundTripped.AutoTaskMaxConsecutiveNavigationFailures);
+        Assert.Equal(25, roundTripped.AutoTaskStuckUiTimeoutSeconds);
+        Assert.Equal(8, roundTripped.AutoTaskVisualFingerprintDistanceTolerance);
+        Assert.Equal(1500, roundTripped.AutoTaskStuckRecoveryDelayMs);
+        Assert.Equal([new GameUiRecoveryPoint(12, 34), new GameUiRecoveryPoint(56, 78)], roundTripped.AutoTaskStuckRecoveryPoints);
+        Assert.NotNull(defaults);
+        Assert.Equal(10, defaults.AutoTaskStuckUiTimeoutSeconds);
+        Assert.Equal(6, defaults.AutoTaskVisualFingerprintDistanceTolerance);
+        Assert.Equal(5, defaults.AutoTaskStuckRecoveryPoints.Count);
+    }
+
+    [Fact]
+    public void Configuration_SaveAndReloadPersistsRecoverySettingsIncludingEmptyPointList()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), $"BetterBTD.Tests.{Guid.NewGuid():N}");
+        var configPath = Path.Combine(directory, "appsettings.json");
+
+        try
+        {
+            var writer = new ConfigurationService(configPath);
+            writer.Save(new AppConfiguration
+            {
+                AutoTaskMaxConsecutiveNavigationFailures = 2,
+                AutoTaskStuckUiTimeoutSeconds = 31,
+                AutoTaskVisualFingerprintDistanceTolerance = 4,
+                AutoTaskStuckRecoveryDelayMs = 975,
+                AutoTaskStuckRecoveryPoints = []
+            });
+
+            var reloaded = new ConfigurationService(configPath).Current;
+
+            Assert.Equal(2, reloaded.AutoTaskMaxConsecutiveNavigationFailures);
+            Assert.Equal(31, reloaded.AutoTaskStuckUiTimeoutSeconds);
+            Assert.Equal(4, reloaded.AutoTaskVisualFingerprintDistanceTolerance);
+            Assert.Equal(975, reloaded.AutoTaskStuckRecoveryDelayMs);
+            Assert.Empty(reloaded.AutoTaskStuckRecoveryPoints);
+        }
+        finally
+        {
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void Configuration_NormalizesRecoveryValuesAndPreservesEmptyPointList()
+    {
+        Assert.Equal(5, ConfigurationService.NormalizeAutoTaskNavigationFailureLimit(0));
+        Assert.Equal(20, ConfigurationService.NormalizeAutoTaskNavigationFailureLimit(99));
+        Assert.Equal(10, ConfigurationService.NormalizeAutoTaskStuckTimeoutSeconds(0));
+        Assert.Equal(300, ConfigurationService.NormalizeAutoTaskStuckTimeoutSeconds(999));
+        Assert.Equal(0, ConfigurationService.NormalizeAutoTaskVisualFingerprintDistanceTolerance(-1));
+        Assert.Equal(64, ConfigurationService.NormalizeAutoTaskVisualFingerprintDistanceTolerance(99));
+        Assert.Equal(0, ConfigurationService.NormalizeAutoTaskRecoveryDelay(-1));
+        Assert.Equal(10000, ConfigurationService.NormalizeAutoTaskRecoveryDelay(20000));
+
+        Assert.Empty(ConfigurationService.NormalizeAutoTaskRecoveryPoints([]));
+        Assert.Equal(
+            [new GameUiRecoveryPoint(0, 1079), new GameUiRecoveryPoint(1919, 0)],
+            ConfigurationService.NormalizeAutoTaskRecoveryPoints([new(-10, 2000), new(3000, -5)]));
+        Assert.Equal(5, ConfigurationService.NormalizeAutoTaskRecoveryPoints(null).Count);
+    }
+
+    [Fact]
+    public void Configuration_MapsPersistedRecoverySettingsToExecutionSnapshot()
+    {
+        var configuration = ConfigurationService.Instance.Current;
+        var originalFailureLimit = configuration.AutoTaskMaxConsecutiveNavigationFailures;
+        var originalTimeout = configuration.AutoTaskStuckUiTimeoutSeconds;
+        var originalVisualTolerance = configuration.AutoTaskVisualFingerprintDistanceTolerance;
+        var originalDelay = configuration.AutoTaskStuckRecoveryDelayMs;
+        var originalPoints = configuration.AutoTaskStuckRecoveryPoints;
+
+        try
+        {
+            configuration.AutoTaskMaxConsecutiveNavigationFailures = 3;
+            configuration.AutoTaskStuckUiTimeoutSeconds = 17;
+            configuration.AutoTaskVisualFingerprintDistanceTolerance = 9;
+            configuration.AutoTaskStuckRecoveryDelayMs = 1250;
+            configuration.AutoTaskStuckRecoveryPoints = [new(100, 200), new(300, 400)];
+
+            var options = ConfigurationService.Instance.GetAutoTaskExecutionOptions();
+
+            Assert.Equal(3, options.MaxConsecutiveNavigationFailures);
+            Assert.Equal(TimeSpan.FromSeconds(17), options.StuckUiTimeout);
+            Assert.Equal(9, options.VisualFingerprintDistanceTolerance);
+            Assert.Equal(1250, options.StuckRecoveryDelayMs);
+            Assert.Equal([new GameUiRecoveryPoint(100, 200), new GameUiRecoveryPoint(300, 400)], options.StuckRecoveryPoints);
+
+            configuration.AutoTaskStuckRecoveryPoints[0] = new GameUiRecoveryPoint(900, 900);
+            Assert.Equal(new GameUiRecoveryPoint(100, 200), options.StuckRecoveryPoints[0]);
+        }
+        finally
+        {
+            configuration.AutoTaskMaxConsecutiveNavigationFailures = originalFailureLimit;
+            configuration.AutoTaskStuckUiTimeoutSeconds = originalTimeout;
+            configuration.AutoTaskVisualFingerprintDistanceTolerance = originalVisualTolerance;
+            configuration.AutoTaskStuckRecoveryDelayMs = originalDelay;
+            configuration.AutoTaskStuckRecoveryPoints = originalPoints;
+        }
+    }
+
     [Fact]
     public void Tracker_IncludesUnknownAndResetsWhenVisualInterfaceChanges()
     {
@@ -19,6 +142,21 @@ public sealed class AutoTaskStuckRecoveryTests
         Assert.False(tracker.Observe(CreateSnapshot(GameUiStateId.Unknown, startedAt.AddSeconds(9), 0x10), AutoTaskPhase.PreparingStage, 0));
         Assert.False(tracker.Observe(CreateSnapshot(GameUiStateId.Unknown, startedAt.AddSeconds(10), ulong.MaxValue), AutoTaskPhase.PreparingStage, 0));
         Assert.True(tracker.Observe(CreateSnapshot(GameUiStateId.Unknown, startedAt.AddSeconds(20), ulong.MaxValue), AutoTaskPhase.PreparingStage, 0));
+    }
+
+    [Fact]
+    public void Tracker_UsesConfiguredVisualFingerprintDistanceTolerance()
+    {
+        var startedAt = DateTimeOffset.UtcNow;
+        var sevenChangedBits = 0b111_1111UL;
+        var strictTracker = new AutoTaskStuckUiTracker(TimeSpan.FromSeconds(10), 6);
+        var tolerantTracker = new AutoTaskStuckUiTracker(TimeSpan.FromSeconds(10), 7);
+
+        Assert.False(strictTracker.Observe(CreateSnapshot(GameUiStateId.Unknown, startedAt, 0), AutoTaskPhase.PreparingStage, 0));
+        Assert.False(tolerantTracker.Observe(CreateSnapshot(GameUiStateId.Unknown, startedAt, 0), AutoTaskPhase.PreparingStage, 0));
+
+        Assert.False(strictTracker.Observe(CreateSnapshot(GameUiStateId.Unknown, startedAt.AddSeconds(10), sevenChangedBits), AutoTaskPhase.PreparingStage, 0));
+        Assert.True(tolerantTracker.Observe(CreateSnapshot(GameUiStateId.Unknown, startedAt.AddSeconds(10), sevenChangedBits), AutoTaskPhase.PreparingStage, 0));
     }
 
     [Fact]

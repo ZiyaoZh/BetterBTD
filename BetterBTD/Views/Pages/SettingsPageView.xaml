@@ -202,6 +202,132 @@
             </StackPanel>
         </ui:CardExpander>
 
+        <ui:TextBlock Margin="0,0,0,8" FontWeight="SemiBold" Text="{Binding AutoTaskSettingsTitle}" />
+
+        <ui:CardExpander Margin="0,0,0,12"
+                         ContentPadding="0"
+                         Icon="{ui:SymbolIcon ArrowSync24}"
+                         IsEnabled="{Binding CanEditSharedSettings}">
+            <ui:CardExpander.Header>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <ui:TextBlock Grid.Row="0" FontWeight="SemiBold" Text="{Binding AutoTaskRecoveryTitle}" TextWrapping="Wrap" />
+                    <ui:TextBlock Grid.Row="1"
+                                  Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}"
+                                  Text="{Binding AutoTaskRecoverySubtitle}"
+                                  TextWrapping="Wrap" />
+                </Grid>
+            </ui:CardExpander.Header>
+
+            <StackPanel>
+                <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
+                <Grid Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <ui:TextBlock Grid.Row="0" FontWeight="SemiBold" Text="{Binding AutoTaskNavigationFailureLimitTitle}" TextWrapping="Wrap" />
+                    <ui:TextBlock Grid.Row="1" Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}" Text="{Binding AutoTaskNavigationFailureLimitSubtitle}" TextWrapping="Wrap" />
+                    <ui:NumberBox Grid.Row="0" Grid.RowSpan="2" Grid.Column="1" Width="120" Margin="12,0,36,0"
+                                  Minimum="1" Maximum="20" SmallChange="1" MaxDecimalPlaces="0"
+                                  Value="{Binding AutoTaskMaxConsecutiveNavigationFailures, Mode=TwoWay}" />
+                </Grid>
+
+                <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
+                <Grid Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <ui:TextBlock Grid.Row="0" FontWeight="SemiBold" Text="{Binding AutoTaskStuckTimeoutTitle}" TextWrapping="Wrap" />
+                    <ui:TextBlock Grid.Row="1" Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}" Text="{Binding AutoTaskStuckTimeoutSubtitle}" TextWrapping="Wrap" />
+                    <ui:NumberBox Grid.Row="0" Grid.RowSpan="2" Grid.Column="1" Width="120" Margin="12,0,36,0"
+                                  Minimum="1" Maximum="300" SmallChange="1" MaxDecimalPlaces="0"
+                                  Value="{Binding AutoTaskStuckUiTimeoutSeconds, Mode=TwoWay}" />
+                </Grid>
+
+                <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
+                <Grid Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <ui:TextBlock Grid.Row="0" FontWeight="SemiBold" Text="{Binding AutoTaskVisualToleranceTitle}" TextWrapping="Wrap" />
+                    <ui:TextBlock Grid.Row="1" Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}" Text="{Binding AutoTaskVisualToleranceSubtitle}" TextWrapping="Wrap" />
+                    <ui:NumberBox Grid.Row="0" Grid.RowSpan="2" Grid.Column="1" Width="120" Margin="12,0,36,0"
+                                  Minimum="0" Maximum="64" SmallChange="1" MaxDecimalPlaces="0"
+                                  Value="{Binding AutoTaskVisualFingerprintDistanceTolerance, Mode=TwoWay}" />
+                </Grid>
+
+                <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
+                <Grid Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <ui:TextBlock Grid.Row="0" FontWeight="SemiBold" Text="{Binding AutoTaskRecoveryDelayTitle}" TextWrapping="Wrap" />
+                    <ui:TextBlock Grid.Row="1" Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}" Text="{Binding AutoTaskRecoveryDelaySubtitle}" TextWrapping="Wrap" />
+                    <ui:NumberBox Grid.Row="0" Grid.RowSpan="2" Grid.Column="1" Width="120" Margin="12,0,36,0"
+                                  Minimum="0" Maximum="10000" SmallChange="100" MaxDecimalPlaces="0"
+                                  Value="{Binding AutoTaskStuckRecoveryDelayMs, Mode=TwoWay}" />
+                </Grid>
+
+                <Separator Margin="-18,0" BorderThickness="0,1,0,0" />
+                <StackPanel Margin="16">
+                    <ui:TextBlock FontWeight="SemiBold" Text="{Binding AutoTaskRecoveryPointsTitle}" TextWrapping="Wrap" />
+                    <ui:TextBlock Margin="0,2,0,10" Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}" Text="{Binding AutoTaskRecoveryPointsSubtitle}" TextWrapping="Wrap" />
+                    <ItemsControl ItemsSource="{Binding AutoTaskStuckRecoveryPoints}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="120" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="120" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <ui:TextBlock VerticalAlignment="Center" Text="{Binding DataContext.AutoTaskRecoveryPointXLabel, RelativeSource={RelativeSource AncestorType=Page}}" />
+                                    <ui:NumberBox Grid.Column="1" Margin="8,0,16,0" Minimum="0" Maximum="1919" SmallChange="1" MaxDecimalPlaces="0" Value="{Binding X, Mode=TwoWay}" />
+                                    <ui:TextBlock Grid.Column="2" VerticalAlignment="Center" Text="{Binding DataContext.AutoTaskRecoveryPointYLabel, RelativeSource={RelativeSource AncestorType=Page}}" />
+                                    <ui:NumberBox Grid.Column="3" Margin="8,0,12,0" Minimum="0" Maximum="1079" SmallChange="1" MaxDecimalPlaces="0" Value="{Binding Y, Mode=TwoWay}" />
+                                    <ui:Button Grid.Column="4"
+                                               Command="{Binding DataContext.RemoveAutoTaskRecoveryPointCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                               CommandParameter="{Binding}"
+                                               Icon="{ui:SymbolIcon Delete24}"
+                                               ToolTip="{Binding DataContext.RemoveAutoTaskRecoveryPointText, RelativeSource={RelativeSource AncestorType=Page}}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <ui:Button HorizontalAlignment="Left"
+                               Appearance="Secondary"
+                               Command="{Binding AddAutoTaskRecoveryPointCommand}"
+                               Content="{Binding AddAutoTaskRecoveryPointText}"
+                               Icon="{ui:SymbolIcon Add24}" />
+                </StackPanel>
+            </StackPanel>
+        </ui:CardExpander>
+
         <ui:TextBlock Margin="0,0,0,8" FontWeight="SemiBold" Text="{Binding HelpTitle}" />
 
         <ui:CardExpander Margin="0,0,0,12" ContentPadding="0" Icon="{ui:SymbolIcon ArrowDownload24}">

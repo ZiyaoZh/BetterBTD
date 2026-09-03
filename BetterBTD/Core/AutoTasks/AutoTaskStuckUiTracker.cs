@@ -5,14 +5,14 @@ namespace BetterBTD.Core.AutoTasks;
 
 internal sealed class AutoTaskStuckUiTracker
 {
-    private const int VisualFingerprintDistanceTolerance = 6;
-
     private readonly TimeSpan _timeout;
+    private readonly int _visualFingerprintDistanceTolerance;
     private Observation? _baseline;
 
-    public AutoTaskStuckUiTracker(TimeSpan timeout)
+    public AutoTaskStuckUiTracker(TimeSpan timeout, int visualFingerprintDistanceTolerance = 6)
     {
         _timeout = timeout < TimeSpan.Zero ? TimeSpan.Zero : timeout;
+        _visualFingerprintDistanceTolerance = Math.Clamp(visualFingerprintDistanceTolerance, 0, 64);
     }
 
     public bool Observe(
@@ -50,27 +50,36 @@ internal sealed class AutoTaskStuckUiTracker
         _baseline = null;
     }
 
-    public static bool IsSameInterface(GameUiSnapshot baseline, GameUiSnapshot current)
+    public static bool IsSameInterface(
+        GameUiSnapshot baseline,
+        GameUiSnapshot current,
+        int visualFingerprintDistanceTolerance = 6)
     {
         ArgumentNullException.ThrowIfNull(baseline);
         ArgumentNullException.ThrowIfNull(current);
 
         return baseline.State == current.State &&
-               AreVisualFingerprintsEquivalent(baseline.VisualFingerprint, current.VisualFingerprint);
+               AreVisualFingerprintsEquivalent(
+                   baseline.VisualFingerprint,
+                   current.VisualFingerprint,
+                   Math.Clamp(visualFingerprintDistanceTolerance, 0, 64));
     }
 
-    private static bool IsSameInterface(Observation baseline, Observation current)
+    private bool IsSameInterface(Observation baseline, Observation current)
     {
         return baseline.State == current.State &&
                baseline.Phase == current.Phase &&
                baseline.CompletedStageCount == current.CompletedStageCount &&
-               AreVisualFingerprintsEquivalent(baseline.VisualFingerprint, current.VisualFingerprint);
+               AreVisualFingerprintsEquivalent(
+                   baseline.VisualFingerprint,
+                   current.VisualFingerprint,
+                   _visualFingerprintDistanceTolerance);
     }
 
-    private static bool AreVisualFingerprintsEquivalent(ulong? baseline, ulong? current)
+    private static bool AreVisualFingerprintsEquivalent(ulong? baseline, ulong? current, int tolerance)
     {
         return !baseline.HasValue || !current.HasValue ||
-               BitOperations.PopCount(baseline.Value ^ current.Value) <= VisualFingerprintDistanceTolerance;
+               BitOperations.PopCount(baseline.Value ^ current.Value) <= tolerance;
     }
 
     private readonly record struct Observation(

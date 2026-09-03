@@ -1,4 +1,5 @@
 using BetterBTD.Core.Config;
+using BetterBTD.Models.AutoTasks;
 using BetterBTD.Models.ScriptExecution;
 
 namespace BetterBTD.Models;
@@ -37,6 +38,17 @@ public sealed class AppConfiguration
         nameof(ScriptExecutionOperationIntervalStrategy.InstructionCustom);
 
     public int ScriptExecutionCommonOperationIntervalMs { get; set; } = 200;
+
+    public int AutoTaskMaxConsecutiveNavigationFailures { get; set; } = 5;
+
+    public int AutoTaskStuckUiTimeoutSeconds { get; set; } = 10;
+
+    public int AutoTaskVisualFingerprintDistanceTolerance { get; set; } = 6;
+
+    public int AutoTaskStuckRecoveryDelayMs { get; set; } = 800;
+
+    public List<GameUiRecoveryPoint> AutoTaskStuckRecoveryPoints { get; set; } =
+        AutoTaskExecutionOptions.CreateDefaultStuckRecoveryPoints();
 
     public KeyBindingsConfig KeyBindings { get; set; } = new();
 }

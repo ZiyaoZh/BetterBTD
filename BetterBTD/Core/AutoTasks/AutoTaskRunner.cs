@@ -99,7 +99,9 @@ public sealed class AutoTaskRunner
         var strategy = _strategyRegistry.GetRequiredStrategy(request.Kind);
         var state = new AutoTaskRuntimeState(request);
         var stuckUiTracker = ShouldUseStuckUiRecovery(request.Kind)
-            ? new AutoTaskStuckUiTracker(options.StuckUiTimeout)
+            ? new AutoTaskStuckUiTracker(
+                options.StuckUiTimeout,
+                options.VisualFingerprintDistanceTolerance)
             : null;
         var observedStuckTrackingGeneration = Volatile.Read(ref _stuckTrackingGeneration);
         var session = new AutoTaskExecutionSession(
@@ -487,7 +489,10 @@ public sealed class AutoTaskRunner
                 recoveredSnapshot,
                 $"Observed UI state '{recoveredSnapshot.State}' after stuck-recovery attempt {attempt}.");
 
-            if (!AutoTaskStuckUiTracker.IsSameInterface(stuckSnapshot, recoveredSnapshot))
+            if (!AutoTaskStuckUiTracker.IsSameInterface(
+                    stuckSnapshot,
+                    recoveredSnapshot,
+                    options.VisualFingerprintDistanceTolerance))
             {
                 return null;
             }

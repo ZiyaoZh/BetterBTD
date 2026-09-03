@@ -1,9 +1,11 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using BetterBTD.Models;
+using BetterBTD.Models.AutoTasks;
 using BetterBTD.Services;
 using BetterBTD.Services.ChildSession;
 using BetterBTD.Services.Updates;
@@ -28,6 +30,10 @@ public sealed class SettingsPageViewModel : ObservableObject
     private string _gameStartHotkey = string.Empty;
     private string _gameStopHotkey = string.Empty;
     private string _updateStatusText = string.Empty;
+    private int _autoTaskMaxConsecutiveNavigationFailures;
+    private int _autoTaskStuckUiTimeoutSeconds;
+    private int _autoTaskVisualFingerprintDistanceTolerance;
+    private int _autoTaskStuckRecoveryDelayMs;
 
     public SettingsPageViewModel()
     {
@@ -39,10 +45,13 @@ public sealed class SettingsPageViewModel : ObservableObject
         UiLanguageOptions = [];
         GameLanguageOptions = [];
         ThemeOptions = [];
+        AutoTaskStuckRecoveryPoints = [];
 
         OpenKeyBindingsWindowCommand = new RelayCommand(OpenKeyBindingsWindow);
         CheckUpdateCommand = new AsyncRelayCommand(CheckForUpdatesAsync);
         OpenAboutCommand = new RelayCommand(OpenAbout);
+        AddAutoTaskRecoveryPointCommand = new RelayCommand(AddAutoTaskRecoveryPoint, CanAddAutoTaskRecoveryPoint);
+        RemoveAutoTaskRecoveryPointCommand = new RelayCommand<AutoTaskRecoveryPointViewModel?>(RemoveAutoTaskRecoveryPoint);
 
         LoadFromConfiguration();
         RefreshOptionsAndSelections();
@@ -59,6 +68,10 @@ public sealed class SettingsPageViewModel : ObservableObject
     public ObservableCollection<LanguageOption> GameLanguageOptions { get; }
 
     public ObservableCollection<ThemeOption> ThemeOptions { get; }
+
+    public ObservableCollection<AutoTaskRecoveryPointViewModel> AutoTaskStuckRecoveryPoints { get; }
+
+    public bool CanEditSharedSettings => ChildSessionRuntimeState.CanPersistSharedData;
 
     public LanguageOption? SelectedUiLanguage
     {
@@ -193,9 +206,99 @@ public sealed class SettingsPageViewModel : ObservableObject
 
     public IRelayCommand OpenAboutCommand { get; }
 
+    public IRelayCommand AddAutoTaskRecoveryPointCommand { get; }
+
+    public IRelayCommand<AutoTaskRecoveryPointViewModel?> RemoveAutoTaskRecoveryPointCommand { get; }
+
     public string SoftwareSettingsTitle => _localizationService.T("Settings.Section.Software");
     public string GameSettingsTitle => _localizationService.T("Settings.Section.Game");
+    public string AutoTaskSettingsTitle => _localizationService.T("Settings.Section.AutoTasks");
     public string HelpTitle => _localizationService.T("Settings.Section.Help");
+
+    public string AutoTaskRecoveryTitle => _localizationService.T("Settings.AutoTasks.Recovery.Title");
+    public string AutoTaskRecoverySubtitle => _localizationService.T("Settings.AutoTasks.Recovery.Subtitle");
+    public string AutoTaskNavigationFailureLimitTitle => _localizationService.T("Settings.AutoTasks.NavigationFailureLimit.Title");
+    public string AutoTaskNavigationFailureLimitSubtitle => _localizationService.T("Settings.AutoTasks.NavigationFailureLimit.Subtitle");
+    public string AutoTaskStuckTimeoutTitle => _localizationService.T("Settings.AutoTasks.StuckTimeout.Title");
+    public string AutoTaskStuckTimeoutSubtitle => _localizationService.T("Settings.AutoTasks.StuckTimeout.Subtitle");
+    public string AutoTaskVisualToleranceTitle => _localizationService.T("Settings.AutoTasks.VisualTolerance.Title");
+    public string AutoTaskVisualToleranceSubtitle => _localizationService.T("Settings.AutoTasks.VisualTolerance.Subtitle");
+    public string AutoTaskRecoveryDelayTitle => _localizationService.T("Settings.AutoTasks.RecoveryDelay.Title");
+    public string AutoTaskRecoveryDelaySubtitle => _localizationService.T("Settings.AutoTasks.RecoveryDelay.Subtitle");
+    public string AutoTaskRecoveryPointsTitle => _localizationService.T("Settings.AutoTasks.RecoveryPoints.Title");
+    public string AutoTaskRecoveryPointsSubtitle => _localizationService.T("Settings.AutoTasks.RecoveryPoints.Subtitle");
+    public string AutoTaskRecoveryPointXLabel => _localizationService.T("Settings.AutoTasks.RecoveryPoints.X");
+    public string AutoTaskRecoveryPointYLabel => _localizationService.T("Settings.AutoTasks.RecoveryPoints.Y");
+    public string AddAutoTaskRecoveryPointText => _localizationService.T("Settings.AutoTasks.RecoveryPoints.Add");
+    public string RemoveAutoTaskRecoveryPointText => _localizationService.T("Settings.AutoTasks.RecoveryPoints.Remove");
+
+    public int AutoTaskMaxConsecutiveNavigationFailures
+    {
+        get => _autoTaskMaxConsecutiveNavigationFailures;
+        set
+        {
+            if (!ChildSessionRuntimeState.CanPersistSharedData)
+            {
+                return;
+            }
+
+            if (SetProperty(ref _autoTaskMaxConsecutiveNavigationFailures, value))
+            {
+                SaveCurrentConfiguration();
+            }
+        }
+    }
+
+    public int AutoTaskStuckUiTimeoutSeconds
+    {
+        get => _autoTaskStuckUiTimeoutSeconds;
+        set
+        {
+            if (!ChildSessionRuntimeState.CanPersistSharedData)
+            {
+                return;
+            }
+
+            if (SetProperty(ref _autoTaskStuckUiTimeoutSeconds, value))
+            {
+                SaveCurrentConfiguration();
+            }
+        }
+    }
+
+    public int AutoTaskStuckRecoveryDelayMs
+    {
+        get => _autoTaskStuckRecoveryDelayMs;
+        set
+        {
+            if (!ChildSessionRuntimeState.CanPersistSharedData)
+            {
+                return;
+            }
+
+            if (SetProperty(ref _autoTaskStuckRecoveryDelayMs, value))
+            {
+                SaveCurrentConfiguration();
+            }
+        }
+    }
+
+    public int AutoTaskVisualFingerprintDistanceTolerance
+    {
+        get => _autoTaskVisualFingerprintDistanceTolerance;
+        set
+        {
+            if (!ChildSessionRuntimeState.CanPersistSharedData)
+            {
+                return;
+            }
+
+            if (SetProperty(ref _autoTaskVisualFingerprintDistanceTolerance, value))
+            {
+                SaveCurrentConfiguration();
+            }
+        }
+    }
 
     public string UiLanguageTitle => _localizationService.T("Settings.UiLanguage.Title");
     public string UiLanguageSubtitle => _localizationService.T("Settings.UiLanguage.Subtitle");
@@ -312,6 +415,13 @@ public sealed class SettingsPageViewModel : ObservableObject
             GameStopHotkey = GameStopHotkey,
             ScriptExecutionIntervalStrategyName = current.ScriptExecutionIntervalStrategyName,
             ScriptExecutionCommonOperationIntervalMs = current.ScriptExecutionCommonOperationIntervalMs,
+            AutoTaskMaxConsecutiveNavigationFailures = AutoTaskMaxConsecutiveNavigationFailures,
+            AutoTaskStuckUiTimeoutSeconds = AutoTaskStuckUiTimeoutSeconds,
+            AutoTaskVisualFingerprintDistanceTolerance = AutoTaskVisualFingerprintDistanceTolerance,
+            AutoTaskStuckRecoveryDelayMs = AutoTaskStuckRecoveryDelayMs,
+            AutoTaskStuckRecoveryPoints = AutoTaskStuckRecoveryPoints
+                .Select(point => new GameUiRecoveryPoint(point.X, point.Y))
+                .ToList(),
             KeyBindings = current.KeyBindings
         });
     }
@@ -341,6 +451,15 @@ public sealed class SettingsPageViewModel : ObservableObject
         _stopHotkey = config.StopHotkey;
         _gameStartHotkey = config.GameStartHotkey;
         _gameStopHotkey = config.GameStopHotkey;
+        _autoTaskMaxConsecutiveNavigationFailures = config.AutoTaskMaxConsecutiveNavigationFailures;
+        _autoTaskStuckUiTimeoutSeconds = config.AutoTaskStuckUiTimeoutSeconds;
+        _autoTaskVisualFingerprintDistanceTolerance = config.AutoTaskVisualFingerprintDistanceTolerance;
+        _autoTaskStuckRecoveryDelayMs = config.AutoTaskStuckRecoveryDelayMs;
+
+        foreach (var point in config.AutoTaskStuckRecoveryPoints)
+        {
+            AddAutoTaskRecoveryPoint(new AutoTaskRecoveryPointViewModel(point.X, point.Y), save: false);
+        }
     }
 
     private void RefreshOptionsAndSelections()
@@ -383,7 +502,24 @@ public sealed class SettingsPageViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(SoftwareSettingsTitle));
         OnPropertyChanged(nameof(GameSettingsTitle));
+        OnPropertyChanged(nameof(AutoTaskSettingsTitle));
         OnPropertyChanged(nameof(HelpTitle));
+        OnPropertyChanged(nameof(AutoTaskRecoveryTitle));
+        OnPropertyChanged(nameof(AutoTaskRecoverySubtitle));
+        OnPropertyChanged(nameof(AutoTaskNavigationFailureLimitTitle));
+        OnPropertyChanged(nameof(AutoTaskNavigationFailureLimitSubtitle));
+        OnPropertyChanged(nameof(AutoTaskStuckTimeoutTitle));
+        OnPropertyChanged(nameof(AutoTaskStuckTimeoutSubtitle));
+        OnPropertyChanged(nameof(AutoTaskVisualToleranceTitle));
+        OnPropertyChanged(nameof(AutoTaskVisualToleranceSubtitle));
+        OnPropertyChanged(nameof(AutoTaskRecoveryDelayTitle));
+        OnPropertyChanged(nameof(AutoTaskRecoveryDelaySubtitle));
+        OnPropertyChanged(nameof(AutoTaskRecoveryPointsTitle));
+        OnPropertyChanged(nameof(AutoTaskRecoveryPointsSubtitle));
+        OnPropertyChanged(nameof(AutoTaskRecoveryPointXLabel));
+        OnPropertyChanged(nameof(AutoTaskRecoveryPointYLabel));
+        OnPropertyChanged(nameof(AddAutoTaskRecoveryPointText));
+        OnPropertyChanged(nameof(RemoveAutoTaskRecoveryPointText));
         OnPropertyChanged(nameof(UiLanguageTitle));
         OnPropertyChanged(nameof(UiLanguageSubtitle));
         OnPropertyChanged(nameof(ThemeTitle));
@@ -443,5 +579,69 @@ public sealed class SettingsPageViewModel : ObservableObject
                 _localizationService.T("Settings.InputSimulation.Hardware.Status.Unavailable"),
             _ => _localizationService.T("Settings.InputSimulation.Standard.Status")
         };
+    }
+
+    private bool CanAddAutoTaskRecoveryPoint()
+    {
+        return ChildSessionRuntimeState.CanPersistSharedData && AutoTaskStuckRecoveryPoints.Count < 20;
+    }
+
+    private void AddAutoTaskRecoveryPoint()
+    {
+        AddAutoTaskRecoveryPoint(new AutoTaskRecoveryPointViewModel(960, 540), save: true);
+    }
+
+    private void AddAutoTaskRecoveryPoint(AutoTaskRecoveryPointViewModel point, bool save)
+    {
+        point.PropertyChanged += OnAutoTaskRecoveryPointChanged;
+        AutoTaskStuckRecoveryPoints.Add(point);
+        AddAutoTaskRecoveryPointCommand.NotifyCanExecuteChanged();
+        if (save)
+        {
+            SaveCurrentConfiguration();
+        }
+    }
+
+    private void RemoveAutoTaskRecoveryPoint(AutoTaskRecoveryPointViewModel? point)
+    {
+        if (!ChildSessionRuntimeState.CanPersistSharedData ||
+            point is null ||
+            !AutoTaskStuckRecoveryPoints.Remove(point))
+        {
+            return;
+        }
+
+        point.PropertyChanged -= OnAutoTaskRecoveryPointChanged;
+        AddAutoTaskRecoveryPointCommand.NotifyCanExecuteChanged();
+        SaveCurrentConfiguration();
+    }
+
+    private void OnAutoTaskRecoveryPointChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        SaveCurrentConfiguration();
+    }
+}
+
+public sealed class AutoTaskRecoveryPointViewModel : ObservableObject
+{
+    private int _x;
+    private int _y;
+
+    public AutoTaskRecoveryPointViewModel(int x, int y)
+    {
+        _x = x;
+        _y = y;
+    }
+
+    public int X
+    {
+        get => _x;
+        set => SetProperty(ref _x, value);
+    }
+
+    public int Y
+    {
+        get => _y;
+        set => SetProperty(ref _y, value);
     }
 }
