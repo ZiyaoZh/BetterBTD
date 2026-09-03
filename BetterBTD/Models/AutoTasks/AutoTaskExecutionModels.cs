@@ -114,7 +114,8 @@ public enum GameUiStateId
     InstaMonkeyReward,
     RaceResult,
     BossResult,
-    Returnable
+    Returnable,
+    NetworkUnavailableDialog
 }
 
 public enum GameUiActionKind

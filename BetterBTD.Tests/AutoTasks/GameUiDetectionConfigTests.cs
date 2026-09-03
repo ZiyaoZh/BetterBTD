@@ -42,6 +42,19 @@ public sealed class GameUiDetectionConfigTests
             var freeplayPromptRule = Assert.Single(config.Rules, static rule => rule.State == GameUiStateId.FreeplayPrompt);
             var inLevelRule = Assert.Single(config.Rules, static rule => rule.State == GameUiStateId.InLevel);
             Assert.True(freeplayPromptRule.Priority > inLevelRule.Priority);
+            var networkUnavailableRule = Assert.Single(
+                config.Rules,
+                static rule => rule.State == GameUiStateId.NetworkUnavailableDialog);
+            Assert.Equal("network_unavailable_dialog", networkUnavailableRule.Key);
+            Assert.True(networkUnavailableRule.Priority > config.Rules
+                .Where(static rule => rule.State != GameUiStateId.NetworkUnavailableDialog)
+                .Max(static rule => rule.Priority));
+            Assert.Collection(
+                networkUnavailableRule.AllOf,
+                condition => AssertCondition(condition, 610, 405, "#71E800"),
+                condition => AssertCondition(condition, 1370, 405, "#71E800"),
+                condition => AssertCondition(condition, 690, 730, "#FFD600"),
+                condition => AssertCondition(condition, 1040, 730, "#69E500"));
 
             var json = File.ReadAllText(configFilePath);
             Assert.Contains("main_menu", json);
@@ -190,6 +203,34 @@ public sealed class GameUiDetectionConfigTests
             SetPixel(secondFrame, 820, 760, "#D2D2D2");
             SetPixel(secondFrame, 960, 760, "#FFFFFF");
             Assert.True(GameUiDetectionRuleEvaluator.IsMatch(secondFrame, config, rules[1]));
+        }
+        finally
+        {
+            Directory.Delete(tempDirectory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void DefaultNetworkUnavailableDialogRule_MatchesConfiguredPixels()
+    {
+        var tempDirectory = CreateTempDirectory();
+
+        try
+        {
+            var service = new GameUiDetectionConfigService(
+                Path.Combine(tempDirectory, "game_ui_detection_rules.json"));
+            var config = service.Current;
+            var rule = Assert.Single(
+                config.Rules,
+                static item => item.State == GameUiStateId.NetworkUnavailableDialog);
+
+            using var frame = new Mat(1080, 1920, MatType.CV_8UC3, Scalar.All(0));
+            SetPixel(frame, 610, 405, "#71E800");
+            SetPixel(frame, 1370, 405, "#71E800");
+            SetPixel(frame, 690, 730, "#FFD600");
+            SetPixel(frame, 1040, 730, "#69E500");
+
+            Assert.True(GameUiDetectionRuleEvaluator.IsMatch(frame, config, rule));
         }
         finally
         {
@@ -457,7 +498,7 @@ public sealed class GameUiDetectionConfigTests
             var service = new GameUiDetectionConfigService(configFilePath);
             var reloaded = service.Reload();
 
-            Assert.Equal(5, reloaded.Version);
+            Assert.Equal(6, reloaded.Version);
             Assert.DoesNotContain(reloaded.Rules, static rule => rule.Key == "map_search_results");
             Assert.DoesNotContain(reloaded.Rules, static rule => rule.Key == "retired_by_numeric_state");
             var customRule = Assert.Single(reloaded.Rules, static rule => rule.Key == "custom_map_grid");

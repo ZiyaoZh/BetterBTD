@@ -2,10 +2,17 @@ using BetterBTD.Core.AutoTasks;
 using BetterBTD.Core.AutoTasks.Runtime;
 using BetterBTD.Core.ScriptExecution;
 using BetterBTD.Core.ScriptExecution.Runtime;
+using BetterBTD.Core.Simulator;
+using BetterBTD.Helpers;
+using BetterBTD.Models;
 using BetterBTD.Models.AutoTasks;
 using BetterBTD.Models.GameElements;
 using BetterBTD.Models.ScriptExecution;
+using BetterBTD.Services.Start.Capture;
 using BetterBTD.Services.Tasks.AutoTasks;
+using BetterBTD.Services.Tasks.CaptureAnalysis;
+using BetterBTD.Services.Tasks.Input;
+using BetterBTD.Tests.TestDoubles;
 
 namespace BetterBTD.Tests.AutoTasks;
 
@@ -113,6 +120,7 @@ public sealed class AutoTaskSkeletonTests
     [InlineData(GameUiStateId.Loading, GameUiActionKind.Wait)]
     [InlineData(GameUiStateId.InLevel, GameUiActionKind.None)]
     [InlineData(GameUiStateId.Victory, GameUiActionKind.CollectReward)]
+    [InlineData(GameUiStateId.NetworkUnavailableDialog, GameUiActionKind.ConfirmDialog)]
     public void Navigator_ReturnsExpectedAction(GameUiStateId state, GameUiActionKind expectedAction)
     {
         var target = CreateTarget();
@@ -121,6 +129,44 @@ public sealed class AutoTaskSkeletonTests
         var step = GameUiNavigator.Instance.GetNextStep(target, snapshot);
 
         Assert.Equal(expectedAction, step.ActionKind);
+    }
+
+    [Fact]
+    public async Task ActionExecutor_DismissesNetworkUnavailableDialog_ForEveryAutoTaskKind()
+    {
+        foreach (var kind in Enum.GetValues<AutoTaskKind>())
+        {
+            var dispatcher = new RecordingInputSimulationCommandDispatcher();
+            var input = new ScriptInputSimulationService(
+                new FakeScriptInputSimulationEnvironment(new GameWindowInfo(
+                    (nint)123,
+                    "Test Window",
+                    new NativeWindowBounds(0, 0, 1920, 1080),
+                    new NativeWindowBounds(0, 0, 1920, 1080),
+                    1d)),
+                dispatcher);
+            var executor = new GameUiActionExecutor(
+                input,
+                UnimplementedGameUiElementLocator.Instance,
+                GameCaptureService.Instance,
+                GameUiNavigationOcrService.Instance);
+            var snapshot = new GameUiSnapshot { State = GameUiStateId.NetworkUnavailableDialog };
+            var step = GameUiNavigator.Instance.GetNextStep(CreateTarget(), snapshot);
+            var state = new AutoTaskRuntimeState(new AutoTaskRequest
+            {
+                Kind = kind,
+                StageTarget = CreateTarget()
+            });
+
+            var result = await executor.ExecuteAsync(step, state, snapshot);
+
+            Assert.True(result.Succeeded);
+            var move = Assert.Single(
+                dispatcher.Commands,
+                static command => command.Type == InputSimulationCommandType.MoveMouseToVirtualDesktop);
+            Assert.Equal(780, move.X);
+            Assert.Equal(730, move.Y);
+        }
     }
 
     [Fact]

@@ -3,6 +3,7 @@ using BetterBTD.Models.AutoTasks;
 using BetterBTD.Services.Start.Capture;
 using BetterBTD.Services.Tasks.CaptureAnalysis;
 using BetterBTD.Services.Tasks.Input;
+using WpfPoint = System.Windows.Point;
 
 namespace BetterBTD.Services.Tasks.AutoTasks;
 
@@ -62,6 +63,18 @@ public sealed class GameUiActionExecutor : IGameUiActionExecutor
         ArgumentNullException.ThrowIfNull(snapshot);
 
         cancellationToken.ThrowIfCancellationRequested();
+
+        if (snapshot.State == GameUiStateId.NetworkUnavailableDialog)
+        {
+            _inputSimulationService.PrepareTargetWindowForInput();
+            _inputSimulationService.ClickMouseAtScriptCoordinate(new WpfPoint(780, 730));
+            return new GameUiActionExecutionResult
+            {
+                Succeeded = true,
+                Message = "Dismissed the network unavailable dialog.",
+                RecommendedDelayMs = step.PostActionDelayMs
+            };
+        }
 
         if (_taskHandlers.TryGetValue(state.Request.Kind, out var handler))
         {

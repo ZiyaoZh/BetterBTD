@@ -205,6 +205,12 @@ public sealed class GameUiNavigator : IGameUiNavigator
                 Description = "Confirm the blocking dialog.",
                 ExpectedNextStates = [GameUiStateId.MainMenu, GameUiStateId.MapGrid, GameUiStateId.Loading]
             },
+            GameUiStateId.NetworkUnavailableDialog => new GameUiNavigationStep
+            {
+                ActionKind = GameUiActionKind.ConfirmDialog,
+                Description = "Dismiss the network unavailable dialog.",
+                ExpectedNextStates = [GameUiStateId.MainMenu, GameUiStateId.MapGrid, GameUiStateId.InLevel]
+            },
             GameUiStateId.ChestOpened or
             GameUiStateId.TwoChests or
             GameUiStateId.ThreeChests or

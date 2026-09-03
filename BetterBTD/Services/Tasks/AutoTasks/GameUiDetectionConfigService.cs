@@ -235,12 +235,14 @@ public sealed class GameUiDetectionConfigService
     {
         return new GameUiDetectionConfig
         {
-            Version = 5,
+            Version = 6,
             ReferenceWidth = 1920,
             ReferenceHeight = 1080,
             DefaultTolerance = 50,
             Rules =
             [
+                CreateRule("network_unavailable_dialog", "网络不可用弹窗界面", GameUiStateId.NetworkUnavailableDialog, 980,
+                    Eq(610, 405, "#71E800"), Eq(1370, 405, "#71E800"), Eq(690, 730, "#FFD600"), Eq(1040, 730, "#69E500")),
                 CreateRule("stage_challenge_with_hint_a", "带提示的关卡挑战界面", GameUiStateId.StageChallengeWithHint, 970,
                     Eq(780, 380, "#F34A12"), Eq(780, 760, "#5388D2"), Eq(900, 760, "#62E200")),
                 CreateRule("stage_challenge_with_hint_b", "带提示的关卡挑战界面", GameUiStateId.StageChallengeWithHint, 970,
