@@ -31,6 +31,20 @@ public interface IGameUiStateService
     void ResetStabilizationState();
 }
 
+public interface INavigationObservationService
+{
+    NavigationObservation? LatestObservation { get; }
+
+    NavigationObservationDiagnostics GetDiagnostics();
+
+    void Start(CancellationToken cancellationToken = default);
+
+    IAsyncEnumerable<NavigationObservation> SubscribeAsync(
+        CancellationToken cancellationToken = default);
+
+    Task StopAsync();
+}
+
 public interface IGameUiNavigator
 {
     GameUiNavigationStep GetNextStep(StageEntryTarget target, GameUiSnapshot snapshot);

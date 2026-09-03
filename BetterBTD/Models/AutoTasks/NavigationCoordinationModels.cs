@@ -44,6 +44,21 @@ public sealed record NavigationObservation
     public GameUiSnapshot Snapshot { get; }
 }
 
+public sealed record NavigationObservationDiagnostics
+{
+    public bool IsRunning { get; init; }
+
+    public long PublishedCount { get; init; }
+
+    public long FailureCount { get; init; }
+
+    public int ConsecutiveFailureCount { get; init; }
+
+    public DateTimeOffset? LastPublishedAt { get; init; }
+
+    public string LastMessage { get; init; } = string.Empty;
+}
+
 public sealed record StageChallengeStateTransition
 {
     public StageChallengeStateTransition(

@@ -15,7 +15,7 @@ xUnit behavior, compatibility, protocol, and test-double coverage.
 | Directory | Files |
 | --- | ---: |
 | `BetterBTD.Tests` | 4 |
-| `BetterBTD.Tests/AutoTasks` | 14 |
+| `BetterBTD.Tests/AutoTasks` | 15 |
 | `BetterBTD.Tests/Core/Simulator` | 1 |
 | `BetterBTD.Tests/GameControl` | 1 |
 | `BetterBTD.Tests/RobotControl` | 2 |
@@ -56,6 +56,7 @@ Paths are relative to the repository root. Open the linked file and verify curre
 | [ManagedAutoTaskScriptResolverTests.cs](../../../../../BetterBTD.Tests/AutoTasks/ManagedAutoTaskScriptResolverTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: ManagedAutoTaskScriptResolverTests |
 | [MapSearchFlowTests.cs](../../../../../BetterBTD.Tests/AutoTasks/MapSearchFlowTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: MapSearchFlowTests, StaticGameUiRecognizer |
 | [NavigationCoordinationContractTests.cs](../../../../../BetterBTD.Tests/AutoTasks/NavigationCoordinationContractTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: NavigationCoordinationContractTests |
+| [NavigationObservationServiceTests.cs](../../../../../BetterBTD.Tests/AutoTasks/NavigationObservationServiceTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: NavigationObservationServiceTests, IncrementingGameUiStateService, ThrowOnceGameUiStateService, StaticGameUiStateService |
 | [RaceAutoTaskStrategyTests.cs](../../../../../BetterBTD.Tests/AutoTasks/RaceAutoTaskStrategyTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: RaceAutoTaskStrategyTests |
 
 ### `BetterBTD.Tests/Core/Simulator`

@@ -32,13 +32,21 @@
 - 兼容性/真实环境：无运行时行为变化，未进行 BTD6 实机验证。
 - 下一阶段：阶段 1，先实现可独立测试的状态、观察快照、Worker 命令和事件契约。
 
-### 阶段 1：契约与状态（当前）
+### 阶段 1：契约与状态
 
 - 完成：新增独立的关卡挑战状态与脚本 Worker 状态；新增带严格序号和时间一致性约束的导航观察记录；新增可关联运行与请求的 Worker 命令/事件、启动参数和脚本识别诊断契约；新增记录原因、时间戳和导航快照序号的状态转换记录及纯转换规则。暂停/恢复确认事件必须回显请求序号，脚本完成不能直接完成关卡挑战。
 - 未完成：尚未建立导航观察循环、命令/事件通道或脚本 Worker，也未接入 `GameUiStateService`、`ScriptTaskFlowExecutor`、`AutoTaskRunner` 和输入租约；旧状态和旧运行路径保持不变。现有 `GameUiSnapshot.Facts` 仍是浅只读，阶段 2 发布快照时需保证其内容不再被修改。
 - 验证：新增关卡状态转换完整矩阵、脚本 Worker 状态转换完整矩阵、观察记录、命令/确认关联、启动参数、失败事件和双状态组合测试；定向 Release/x64 测试通过（13/13）；`dotnet restore BetterBTD.slnx`、`dotnet build BetterBTD.slnx -c Release /p:Platform=x64` 和 `dotnet test BetterBTD.slnx -c Release --no-build /p:Platform=x64` 通过（全量 353/353）；`git diff --check` 通过；源码索引更新并通过技能校验。
 - 兼容性/真实环境：未替换或重排现有 `AutoTaskPhase`、`AutoTaskRunState`、`ScriptExecutionRunState`，没有运行时行为变化；本阶段为纯契约，不需要且未进行 BTD6 实机验证。
 - 下一阶段：阶段 2，实现单一导航观察循环、严格递增序号、最新快照订阅和诊断；从 `GameUiSnapshot` 构造 `NavigationObservation` 时使用同一捕获时间，并确保发布后的 Facts 不可变。
+
+### 阶段 2：导航观察（当前）
+
+- 完成：新增单例 `NavigationObservationService` 和 `INavigationObservationService` 边界，建立可重复启动/停止的单一后台观察循环；所有订阅者接收同一观察对象及严格递增序号，后加入的订阅者立即取得最新观察；发布前复制关卡状态并将 `Facts` 冻结，观察与快照共用同一捕获时间；新增运行状态、发布数、失败数、连续失败数和最后消息诊断。按稳定运行口径，单次捕获/识别异常会发布带诊断事实的 `Unknown` 快照并继续重试，缺失捕获时间也会被归一化，不会终止循环。
+- 未完成：尚未由 `AutoTaskRunner`、运行页面或导航控制器启动和消费观察流，旧 `CaptureSnapshotAsync` 调用路径保持不变；脚本 Worker、输入仲裁及连续异常的任务级处置属于后续阶段。
+- 验证：新增多消费者同序列、严格递增序号、异常后继续、快照发布隔离、幂等启动/停止、晚订阅者读取最新观察和缺失时间归一化测试；阶段 1/2 定向 Release/x64 测试通过（11/11）；`dotnet restore BetterBTD.slnx`、`dotnet build BetterBTD.slnx -c Release /p:Platform=x64` 和 `dotnet test BetterBTD.slnx -c Release --no-build /p:Platform=x64` 通过（全量 359/359，构建 0 警告、0 错误）；源码索引更新并通过技能校验。
+- 兼容性/真实环境：现有自动任务和 Robot 运行路径未切换，运行时行为保持兼容；本阶段未控制游戏输入，未进行 BTD6 实机验证。
+- 下一阶段：阶段 3，将 `ScriptTaskFlowExecutor` 接入独立 Worker 命令/事件通道与脚本观察服务；Worker 对可恢复的步骤观察异常优先重试或发布诊断，不判断胜负、不处理导航弹窗。
 
 ### 后续记录模板
 

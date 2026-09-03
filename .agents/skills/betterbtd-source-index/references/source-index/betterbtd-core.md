@@ -51,7 +51,7 @@ Paths are relative to the repository root. Open the linked file and verify curre
 
 | File | Description |
 | --- | --- |
-| [AutoTaskRuntimeServices.cs](../../../../../BetterBTD/Core/AutoTasks/Runtime/AutoTaskRuntimeServices.cs) | Automatic-task coordination, sessions, and registry; primary symbols: GameUiRecognitionContext, IGameUiRecognizer, IGameUiStateService, IGameUiNavigator, IGameUiActionExecutor |
+| [AutoTaskRuntimeServices.cs](../../../../../BetterBTD/Core/AutoTasks/Runtime/AutoTaskRuntimeServices.cs) | Automatic-task coordination, sessions, and registry; primary symbols: GameUiRecognitionContext, IGameUiRecognizer, IGameUiStateService, INavigationObservationService, IGameUiNavigator |
 
 ### `BetterBTD/Core/AutoTasks/Strategies`
 
