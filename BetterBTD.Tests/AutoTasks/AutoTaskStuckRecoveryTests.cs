@@ -85,6 +85,73 @@ public sealed class AutoTaskStuckRecoveryTests
     }
 
     [Fact]
+    public void Configuration_LoadMigratesLegacyDefaultRecoveryPoints()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), $"BetterBTD.Tests.{Guid.NewGuid():N}");
+        var configPath = Path.Combine(directory, "appsettings.json");
+
+        try
+        {
+            Directory.CreateDirectory(directory);
+            File.WriteAllText(
+                configPath,
+                """
+                {
+                  "AutoTaskStuckRecoveryPoints": [
+                    { "X": 960, "Y": 840 },
+                    { "X": 960, "Y": 760 },
+                    { "X": 1340, "Y": 850 },
+                    { "X": 850, "Y": 810 },
+                    { "X": 80, "Y": 55 }
+                  ]
+                }
+                """);
+
+            var loaded = new ConfigurationService(configPath).Current;
+
+            Assert.Equal(
+                AutoTaskExecutionOptions.CreateDefaultStuckRecoveryPoints(),
+                loaded.AutoTaskStuckRecoveryPoints);
+        }
+        finally
+        {
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void Configuration_LoadPreservesCustomizedRecoveryPoints()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), $"BetterBTD.Tests.{Guid.NewGuid():N}");
+        var configPath = Path.Combine(directory, "appsettings.json");
+
+        try
+        {
+            var writer = new ConfigurationService(configPath);
+            writer.Save(new AppConfiguration
+            {
+                AutoTaskStuckRecoveryPoints = [new(960, 840), new(80, 55)]
+            });
+
+            var loaded = new ConfigurationService(configPath).Current;
+
+            Assert.Equal(
+                [new GameUiRecoveryPoint(960, 840), new GameUiRecoveryPoint(80, 55)],
+                loaded.AutoTaskStuckRecoveryPoints);
+        }
+        finally
+        {
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public void Configuration_NormalizesRecoveryValuesAndPreservesEmptyPointList()
     {
         Assert.Equal(5, ConfigurationService.NormalizeAutoTaskNavigationFailureLimit(0));

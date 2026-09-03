@@ -12,6 +12,15 @@ public sealed class ConfigurationService
 {
     private static readonly Lazy<ConfigurationService> InstanceHolder = new(() => new ConfigurationService());
 
+    private static readonly GameUiRecoveryPoint[] LegacyDefaultAutoTaskRecoveryPoints =
+    [
+        new(960, 840),
+        new(960, 760),
+        new(1340, 850),
+        new(850, 810),
+        new(80, 55)
+    ];
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true
@@ -152,7 +161,7 @@ public sealed class ConfigurationService
                 config.AutoTaskVisualFingerprintDistanceTolerance);
             config.AutoTaskStuckRecoveryDelayMs = NormalizeAutoTaskRecoveryDelay(
                 config.AutoTaskStuckRecoveryDelayMs);
-            config.AutoTaskStuckRecoveryPoints = NormalizeAutoTaskRecoveryPoints(
+            config.AutoTaskStuckRecoveryPoints = MigrateAutoTaskRecoveryPoints(
                 config.AutoTaskStuckRecoveryPoints);
             return config;
         }
@@ -213,6 +222,15 @@ public sealed class ConfigurationService
                 Math.Clamp(point.Y, 0, 1079)))
             .Take(20)
             .ToList() ?? AutoTaskExecutionOptions.CreateDefaultStuckRecoveryPoints();
+    }
+
+    private static List<GameUiRecoveryPoint> MigrateAutoTaskRecoveryPoints(
+        IEnumerable<GameUiRecoveryPoint>? points)
+    {
+        var normalized = NormalizeAutoTaskRecoveryPoints(points);
+        return normalized.SequenceEqual(LegacyDefaultAutoTaskRecoveryPoints)
+            ? AutoTaskExecutionOptions.CreateDefaultStuckRecoveryPoints()
+            : normalized;
     }
 
     private static string NormalizeGameInstallPath(string? installPath)
