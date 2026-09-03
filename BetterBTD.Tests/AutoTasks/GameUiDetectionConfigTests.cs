@@ -398,21 +398,7 @@ public sealed class GameUiDetectionConfigTests
 
             Assert.Contains(reloaded.Rules, static rule => rule.Key == "stage_settings");
             Assert.Contains(reloaded.Rules, static rule => rule.Key == "stage_settings_alt");
-            Assert.Contains(reloaded.Rules, static rule => rule.Key == "network_unavailable_dialog");
-            Assert.Equal(6, reloaded.Version);
             Assert.Single(reloaded.Rules, static rule => rule.Key == "custom_rule");
-
-            var persistedConfig = JsonSerializer.Deserialize<GameUiDetectionConfig>(
-                File.ReadAllText(configFilePath),
-                new JsonSerializerOptions
-                {
-                    Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
-                });
-            Assert.NotNull(persistedConfig);
-            Assert.Equal(6, persistedConfig.Version);
-            Assert.Contains(
-                persistedConfig.Rules,
-                static rule => rule.Key == "network_unavailable_dialog");
         }
         finally
         {

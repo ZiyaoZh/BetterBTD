@@ -62,7 +62,7 @@ PreparingStage
 - `Facts`：地图、英雄或任务处理器需要的附加事实。
 - `Summary`：运行窗口和日志使用的摘要。
 
-识别规则默认存放在 `User\AutoTasks\game_ui_detection_rules.json`。主实例启动时会加载并写回归一化结果，确保应用更新后已有配置同步新增或调整的内置规则。规则升级由 `GameUiDetectionConfigService` 归一化，内置模板和代码探测处理不适合纯坐标规则的场景。
+识别规则默认存放在 `User\AutoTasks\game_ui_detection_rules.json`。规则升级由 `GameUiDetectionConfigService` 归一化，内置模板和代码探测处理不适合纯坐标规则的场景。
 
 `GameUiNavigator` 只负责通用页面转移。收集、金气球、黑框、竞速和奥德赛的特殊页面由对应 `IGameUiTaskActionHandler` 扩展。
 
