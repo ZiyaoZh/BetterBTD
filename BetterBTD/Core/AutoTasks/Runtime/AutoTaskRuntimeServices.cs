@@ -127,7 +127,7 @@ public sealed class AutoTaskRuntimeServices
 {
     public required IGameUiStateService GameUiState { get; init; }
 
-    /// <summary>Shared navigation observation stream used by the stage controller.</summary>
+    /// <summary>Shared navigation observation stream owned by the task runner and consumed by navigation clients.</summary>
     public INavigationObservationService? NavigationObservation { get; init; }
 
     public required IGameUiNavigator Navigator { get; init; }

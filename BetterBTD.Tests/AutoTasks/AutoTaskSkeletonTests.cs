@@ -192,6 +192,9 @@ public sealed class AutoTaskSkeletonTests
         Assert.Equal("custom-stage.json", scriptExecutor.ExecutedFilePaths[0]);
         Assert.Empty(actionExecutor.ExecutedSteps);
         Assert.Equal(1, result.FinalProgress.CompletedStageCount);
+        Assert.Equal(0, uiStateService.CaptureCount);
+        Assert.Equal(1, runtime.Navigation.StartCount);
+        Assert.Equal(1, runtime.Navigation.StopCount);
     }
 
     [Fact]
@@ -228,6 +231,8 @@ public sealed class AutoTaskSkeletonTests
                 MaxLoopIterations = 10
             });
 
+        runtime.Navigation.Publish(GameUiStateId.MainMenu);
+        await WaitUntilAsync(() => actionExecutor.ExecutedSteps.Count == 1, TimeSpan.FromSeconds(2));
         runtime.Navigation.Publish(GameUiStateId.InLevel);
         await WaitUntilAsync(() => scriptExecutor.ExecutedFilePaths.Count == 1, TimeSpan.FromSeconds(2));
         runtime.Navigation.Publish(GameUiStateId.Victory);
@@ -237,6 +242,44 @@ public sealed class AutoTaskSkeletonTests
         Assert.Single(actionExecutor.ExecutedSteps);
         Assert.Equal(GameUiActionKind.OpenMapSelection, actionExecutor.ExecutedSteps[0].ActionKind);
         Assert.Single(scriptExecutor.ExecutedFilePaths);
+        Assert.Equal(0, uiStateService.CaptureCount);
+    }
+
+    [Fact]
+    public async Task Runner_IgnoresObservationPublishedBeforeExecution()
+    {
+        var uiStateService = new QueueGameUiStateService([]);
+        var scriptExecutor = new RecordingAutoTaskScriptExecutor(CreateSuccessfulScriptResult());
+        await using var runtime = CreateRuntimeServices(
+            uiStateService,
+            new RecordingGameUiActionExecutor(),
+            new RecordingAutoTaskScriptResolver("custom-stage.json"),
+            scriptExecutor);
+        runtime.Navigation.Publish(GameUiStateId.InLevel);
+
+        var runner = new AutoTaskRunner();
+        var executionTask = runner.ExecuteAsync(
+            new AutoTaskRequest
+            {
+                Kind = AutoTaskKind.Custom,
+                StageTarget = CreateTarget(),
+                PreferredScriptPath = "custom-stage.json"
+            },
+            new AutoTaskExecutionOptions
+            {
+                RuntimeServices = runtime.Services,
+                MaxLoopIterations = 10
+            });
+
+        await WaitUntilAsync(() => runtime.Navigation.StartCount == 1, TimeSpan.FromSeconds(2));
+        Assert.Empty(scriptExecutor.ExecutedFilePaths);
+
+        runtime.Navigation.Publish(GameUiStateId.InLevel);
+        await WaitUntilAsync(() => scriptExecutor.ExecutedFilePaths.Count == 1, TimeSpan.FromSeconds(2));
+        runtime.Navigation.Publish(GameUiStateId.Victory);
+
+        var result = await executionTask.WaitAsync(TimeSpan.FromSeconds(2));
+        Assert.Equal(AutoTaskExecutionStatus.Completed, result.Status);
     }
 
     [Fact]
@@ -670,6 +713,7 @@ public sealed class AutoTaskSkeletonTests
     {
         private readonly Queue<GameUiSnapshot> _snapshots;
         private GameUiSnapshot _lastSnapshot;
+        public int CaptureCount { get; private set; }
         public int ResetCount { get; private set; }
 
         public QueueGameUiStateService(IEnumerable<GameUiSnapshot> snapshots)
@@ -681,6 +725,7 @@ public sealed class AutoTaskSkeletonTests
         public Task<GameUiSnapshot> CaptureSnapshotAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            CaptureCount++;
 
             if (_snapshots.Count > 0)
             {
@@ -989,12 +1034,17 @@ public sealed class AutoTaskSkeletonTests
 
     private sealed class TestNavigationObservationService : INavigationObservationService
     {
-        private readonly System.Threading.Channels.Channel<NavigationObservation> _observations =
-            System.Threading.Channels.Channel.CreateUnbounded<NavigationObservation>();
+        private readonly object _syncRoot = new();
+        private readonly Dictionary<long, System.Threading.Channels.Channel<NavigationObservation>> _subscribers = [];
         private long _sequence;
+        private long _nextSubscriberId;
         private bool _isRunning;
 
         public NavigationObservation? LatestObservation { get; private set; }
+
+        public int StartCount { get; private set; }
+
+        public int StopCount { get; private set; }
 
         public NavigationObservationDiagnostics GetDiagnostics()
         {
@@ -1008,22 +1058,62 @@ public sealed class AutoTaskSkeletonTests
         public void Start(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            _isRunning = true;
+            lock (_syncRoot)
+            {
+                StartCount++;
+                _isRunning = true;
+            }
         }
 
         public async IAsyncEnumerable<NavigationObservation> SubscribeAsync(
             [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
-            await foreach (var observation in _observations.Reader.ReadAllAsync(cancellationToken))
+            var channel = System.Threading.Channels.Channel.CreateBounded<NavigationObservation>(
+                new System.Threading.Channels.BoundedChannelOptions(1)
+                {
+                    SingleReader = true,
+                    SingleWriter = false,
+                    AllowSynchronousContinuations = false,
+                    FullMode = System.Threading.Channels.BoundedChannelFullMode.DropOldest
+                });
+            long subscriberId;
+
+            lock (_syncRoot)
             {
-                yield return observation;
+                subscriberId = ++_nextSubscriberId;
+                _subscribers.Add(subscriberId, channel);
+                if (LatestObservation is not null)
+                {
+                    channel.Writer.TryWrite(LatestObservation);
+                }
+            }
+
+            try
+            {
+                await foreach (var observation in channel.Reader.ReadAllAsync(cancellationToken))
+                {
+                    yield return observation;
+                }
+            }
+            finally
+            {
+                lock (_syncRoot)
+                {
+                    _subscribers.Remove(subscriberId);
+                }
+
+                channel.Writer.TryComplete();
             }
         }
 
         public Task StopAsync()
         {
-            _isRunning = false;
-            _observations.Writer.TryComplete();
+            lock (_syncRoot)
+            {
+                StopCount++;
+                _isRunning = false;
+            }
+
             return Task.CompletedTask;
         }
 
@@ -1039,8 +1129,14 @@ public sealed class AutoTaskSkeletonTests
                 Interlocked.Increment(ref _sequence),
                 capturedAt,
                 snapshot);
-            LatestObservation = observation;
-            Assert.True(_observations.Writer.TryWrite(observation));
+            lock (_syncRoot)
+            {
+                LatestObservation = observation;
+                foreach (var subscriber in _subscribers.Values)
+                {
+                    Assert.True(subscriber.Writer.TryWrite(observation));
+                }
+            }
         }
     }
 

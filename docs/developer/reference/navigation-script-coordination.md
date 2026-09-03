@@ -5,6 +5,7 @@
 ## 当前协调语义
 
 - 页面状态、脚本 Worker 生命周期和关卡尝试上下文彼此独立；胜负、结算、奖励和弹窗都只是导航策略的页面输入。
+- `AutoTaskRunner` 在整次自动任务开始时启动唯一的导航观察生产循环，并在任务退出时停止；普通导航、关卡控制器和运行页面都是该流的独立消费者。
 - 同一关卡尝试只发送一次 `Start`。首次确认 `InLevel` 时启动；`Starting`、`Running` 或 `Completed` 与 `InLevel` 并存时均不执行导航输入。
 - Worker 状态只对匹配当前运行 ID 的关卡尝试有效；新尝试发送 Start 前必须忽略上一轮遗留的 `Completed`、`Cancelled` 或 `Failed`。
 - 活跃脚本遇到明确的非 `InLevel` 页面后进入 5 秒宽限；不同非关卡页面不会重置计时，只有重新确认 `InLevel` 才会重置。`Unknown` 既不证明离开关卡，也不清除已经开始的计时。
@@ -31,8 +32,10 @@ NavigationObservation      ScriptObservationService
 (固定间隔、完整 UI 快照)     (脚本专用间隔、金币/回合/OCR)
         |                         |
         v                         v
-AutoTaskNavigationController <-> ScriptTaskFlowExecutor (Worker)
+AutoTaskRunner (整次任务的生产循环生命周期)
         |
+        +--> 普通导航策略
+        +--> AutoTaskNavigationController <-> ScriptTaskFlowExecutor (Worker)
         +--> AutoTaskSession / 运行页面 / 日志
 ```
 
@@ -47,11 +50,11 @@ public sealed record NavigationObservation(
     GameUiSnapshot Snapshot);
 ```
 
-所有消费者只读快照；消费者不能推进识别稳定化状态，也不能再次截图代替导航观察者。观察生产循环可以随关卡脚本停止和重新启动，但消费者订阅必须保持有效，直到消费者自身取消，以保证多关卡和重复运行期间继续接收新的观察序列。
+所有消费者只读快照；消费者不能推进识别稳定化状态，也不能再次截图代替导航观察者。观察生产循环由 `AutoTaskRunner` 持有并覆盖整次任务，不能随单段关卡脚本或导航控制器停止；消费者订阅保持有效直到消费者自身取消，以保证普通导航、关卡内观察和多关卡运行使用同一连续序列。Runner 启动任务时记录已有最新序号，只接收更大的序号，避免把上一任务残留快照作为本次首帧。
 
 ### 导航控制器
 
-`AutoTaskNavigationController` 持续消费导航观察结果，只协调脚本启动和离关恢复。脚本终态后的非关卡页面交回 `AutoTaskRunner`，由当前策略执行普通导航。
+`AutoTaskNavigationController` 持续消费导航观察结果，只协调脚本启动和离关恢复，不启动或停止观察生产循环。脚本终态后的非关卡页面交回 `AutoTaskRunner`，由当前策略继续消费同一观察流并执行普通导航。
 
 ### 脚本 Worker 与脚本观察服务
 
@@ -116,7 +119,7 @@ Completed | Cancelled | Failed
 
 ## 对现有组件的迁移约束
 
-- `AutoTaskRunner` 最终只负责创建会话、启动导航控制器、等待最终结果和归档；删除 `ExecuteScriptWithUiMonitoringAsync`、`ShouldMonitorStageScriptUi`、`ShouldInterruptStageScript` 等脚本包装逻辑。
+- `AutoTaskRunner` 负责整次任务的导航观察生命周期、会话、普通导航策略、导航控制器交接和归档；删除 `ExecuteScriptWithUiMonitoringAsync`、`ShouldMonitorStageScriptUi`、`ShouldInterruptStageScript` 等脚本包装逻辑。
 - `GameUiStateService` 演化为导航观察实现，保留一次性 `CaptureSnapshotAsync` 作为底层 API，但业务层不再各自启动长期循环。
 - `GameStageStateService` 保留脚本专用识别能力，不共享导航稳定化状态，不判断挑战结果。
 - `GameControlLeaseCoordinator` 可作为底层租约实现；在其上增加 `GameInputArbiter`，表达导航主租约、脚本子租约和临时抢占。

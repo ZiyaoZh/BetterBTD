@@ -39,6 +39,8 @@ public sealed class AutoTaskNavigationControllerTests
         Assert.Equal(ScriptExecutionStatus.Completed, result.ScriptResult.Status);
         Assert.Equal(GameUiStateId.Victory, result.HandoffSnapshot?.State);
         Assert.Equal(StageChallengeState.NavigationFallback, controller.State);
+        Assert.Equal(0, observations.StartCount);
+        Assert.Equal(0, observations.StopCount);
         await worker.StopAsync();
     }
 
@@ -185,9 +187,17 @@ public sealed class AutoTaskNavigationControllerTests
 
         public NavigationObservation? LatestObservation { get; private set; }
 
+        public int StartCount { get; private set; }
+
+        public int StopCount { get; private set; }
+
         public NavigationObservationDiagnostics GetDiagnostics() => new();
 
-        public void Start(CancellationToken cancellationToken = default) => cancellationToken.ThrowIfCancellationRequested();
+        public void Start(CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            StartCount++;
+        }
 
         public async IAsyncEnumerable<NavigationObservation> SubscribeAsync(
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
@@ -198,6 +208,7 @@ public sealed class AutoTaskNavigationControllerTests
 
         public Task StopAsync()
         {
+            StopCount++;
             _channel.Writer.TryComplete();
             return Task.CompletedTask;
         }

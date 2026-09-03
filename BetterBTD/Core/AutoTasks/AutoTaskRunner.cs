@@ -120,6 +120,9 @@ public sealed class AutoTaskRunner
         var session = new AutoTaskExecutionSession(
             string.IsNullOrWhiteSpace(request.Key) ? request.Kind.ToKey() : request.Key,
             request.Kind);
+        var navigationObservation = runtimeServices.NavigationObservation;
+        IAsyncEnumerator<NavigationObservation>? navigationSnapshots = null;
+        var lastNavigationSequence = navigationObservation?.LatestObservation?.Sequence ?? 0;
 
         runtimeServices.GameUiState.ResetStabilizationState();
         _currentSession = session;
@@ -129,6 +132,38 @@ public sealed class AutoTaskRunner
 
         try
         {
+            if (navigationObservation is not null)
+            {
+                navigationObservation.Start(cancellationToken);
+                navigationSnapshots = navigationObservation
+                    .SubscribeAsync(cancellationToken)
+                    .GetAsyncEnumerator(cancellationToken);
+            }
+
+            async Task<GameUiSnapshot> ObserveNextUiSnapshotAsync(CancellationToken token)
+            {
+                if (navigationSnapshots is null)
+                {
+                    return await runtimeServices.GameUiState
+                        .CaptureSnapshotAsync(token)
+                        .ConfigureAwait(false);
+                }
+
+                while (await navigationSnapshots.MoveNextAsync().ConfigureAwait(false))
+                {
+                    var observation = navigationSnapshots.Current;
+                    if (observation.Sequence <= lastNavigationSequence)
+                    {
+                        continue;
+                    }
+
+                    lastNavigationSequence = observation.Sequence;
+                    return observation.Snapshot;
+                }
+
+                throw new InvalidOperationException("Navigation observation stream ended unexpectedly.");
+            }
+
             while (options.MaxLoopIterations is null || state.LoopIteration < options.MaxLoopIterations.Value)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -145,9 +180,7 @@ public sealed class AutoTaskRunner
                         cancellationToken)
                     .ConfigureAwait(false);
 
-                var snapshot = await runtimeServices.GameUiState
-                    .CaptureSnapshotAsync(cancellationToken)
-                    .ConfigureAwait(false);
+                var snapshot = await ObserveNextUiSnapshotAsync(cancellationToken).ConfigureAwait(false);
 
                 state.RecordUiSnapshot(snapshot);
                 session.UpdateUiSnapshot(snapshot, $"Detected UI state '{snapshot.State}'.");
@@ -177,6 +210,7 @@ public sealed class AutoTaskRunner
                             state,
                             snapshot,
                             options,
+                            ObserveNextUiSnapshotAsync,
                             cancellationToken)
                         .ConfigureAwait(false);
                     if (recoveryFailure is not null)
@@ -333,7 +367,7 @@ public sealed class AutoTaskRunner
                         GameUiSnapshot? scriptInterruptedSnapshot;
                         try
                         {
-                            if (runtimeServices.NavigationObservation is { } navigationObservation &&
+                            if (navigationObservation is not null &&
                                 runtimeServices.ScriptWorker is { } scriptWorker)
                             {
                                 var controllerResult = await ExecuteScriptViaNavigationControllerAsync(
@@ -450,6 +484,16 @@ public sealed class AutoTaskRunner
         }
         finally
         {
+            if (navigationSnapshots is not null)
+            {
+                await navigationSnapshots.DisposeAsync().ConfigureAwait(false);
+            }
+
+            if (navigationObservation is not null)
+            {
+                await navigationObservation.StopAsync().ConfigureAwait(false);
+            }
+
             runtimeServices.GameUiState.ResetStabilizationState();
             _currentScriptExecutor = null;
             _currentSession = null;
@@ -497,6 +541,7 @@ public sealed class AutoTaskRunner
         AutoTaskRuntimeState state,
         GameUiSnapshot stuckSnapshot,
         AutoTaskExecutionOptions options,
+        Func<CancellationToken, Task<GameUiSnapshot>> observeNextUiSnapshotAsync,
         CancellationToken cancellationToken)
     {
         if (runtimeServices.StuckRecoveryExecutor is null)
@@ -529,9 +574,7 @@ public sealed class AutoTaskRunner
                 .DelayAsync(Math.Max(0, options.StuckRecoveryDelayMs), cancellationToken)
                 .ConfigureAwait(false);
 
-            var recoveredSnapshot = await runtimeServices.GameUiState
-                .CaptureSnapshotAsync(cancellationToken)
-                .ConfigureAwait(false);
+            var recoveredSnapshot = await observeNextUiSnapshotAsync(cancellationToken).ConfigureAwait(false);
             state.RecordUiSnapshot(recoveredSnapshot);
             session.UpdateUiSnapshot(
                 recoveredSnapshot,

@@ -88,7 +88,6 @@ public sealed class AutoTaskNavigationController
         ResetAttempt();
 
         using var lifetime = new CancellationTokenSource();
-        _observations.Start(lifetime.Token);
         var workerEventsTask = ObserveWorkerEventsAsync(lifetime.Token);
         try
         {
@@ -131,7 +130,6 @@ public sealed class AutoTaskNavigationController
             catch (OperationCanceledException)
             {
             }
-            await _observations.StopAsync().ConfigureAwait(false);
         }
     }
 
