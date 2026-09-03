@@ -79,3 +79,10 @@
 ```
 
 返回 [开发者文档](README.md) · [架构设计](reference/navigation-script-coordination.md)
+
+### 阶段 5：输入仲裁与弹窗
+- 完成：新增 `GameInputArbiter`，支持导航主租约、脚本子租约和按优先级的临时弹窗抢占；抢占必须等待当前持有者确认，释放失败可标记仲裁器为 poisoned 并阻止后续输入。新增租约幂等释放、取消令牌和超时处理。
+- 未完成：`AutoTaskRunner`、运行页面和导航控制器尚未全面切换到仲裁器；实际弹窗点击仍由现有 UI action handler 执行。
+- 验证：新增 `GameInputArbiterTests` 4 项，覆盖子租约边界、抢占确认与释放、确认超时和释放失败毒化；定向 `dotnet test BetterBTD.Tests/BetterBTD.Tests.csproj -c Release --filter FullyQualifiedName~GameInputArbiterTests --no-restore` 通过（4/4）。
+- 兼容性/真实环境：旧 `GameControlLeaseCoordinator`、Runner 和现有输入路径保持不变；未在真实 BTD6 弹窗、胜负和按键卡住场景验证。
+- 下一阶段：阶段 6，收敛 `AutoTaskRunner` 为会话协调器，将导航控制器、Worker 和输入仲裁接入统一运行路径，并补充 ACK 超时与回归测试。

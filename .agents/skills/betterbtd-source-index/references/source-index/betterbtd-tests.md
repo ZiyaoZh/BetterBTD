@@ -17,7 +17,7 @@ xUnit behavior, compatibility, protocol, and test-double coverage.
 | `BetterBTD.Tests` | 4 |
 | `BetterBTD.Tests/AutoTasks` | 15 |
 | `BetterBTD.Tests/Core/Simulator` | 1 |
-| `BetterBTD.Tests/GameControl` | 1 |
+| `BetterBTD.Tests/GameControl` | 2 |
 | `BetterBTD.Tests/RobotControl` | 2 |
 | `BetterBTD.Tests/ScriptExecution` | 6 |
 | `BetterBTD.Tests/ScriptExecution/Handlers` | 6 |
@@ -70,6 +70,7 @@ Paths are relative to the repository root. Open the linked file and verify curre
 | File | Description |
 | --- | --- |
 | [GameControlLeaseCoordinatorTests.cs](../../../../../BetterBTD.Tests/GameControl/GameControlLeaseCoordinatorTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: GameControlLeaseCoordinatorTests |
+| [GameInputArbiterTests.cs](../../../../../BetterBTD.Tests/GameControl/GameInputArbiterTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: GameInputArbiterTests |
 
 ### `BetterBTD.Tests/RobotControl`
 

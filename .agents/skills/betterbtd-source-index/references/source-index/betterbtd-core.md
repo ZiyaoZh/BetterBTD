@@ -18,7 +18,7 @@ UI-independent execution, automatic tasks, simulation, control leases, and helpe
 | `BetterBTD/Core/AutoTasks/Runtime` | 1 |
 | `BetterBTD/Core/AutoTasks/Strategies` | 8 |
 | `BetterBTD/Core/Config` | 2 |
-| `BetterBTD/Core/GameControl` | 1 |
+| `BetterBTD/Core/GameControl` | 2 |
 | `BetterBTD/Core/RobotControl` | 2 |
 | `BetterBTD/Core/ScriptExecution` | 10 |
 | `BetterBTD/Core/ScriptExecution/Handlers` | 16 |
@@ -79,6 +79,7 @@ Paths are relative to the repository root. Open the linked file and verify curre
 | File | Description |
 | --- | --- |
 | [GameControlLeaseCoordinator.cs](../../../../../BetterBTD/Core/GameControl/GameControlLeaseCoordinator.cs) | Shared game-control lease and input ownership; primary symbols: GameControlOwnerKind, GameControlLeaseCoordinator, GameControlLease, GameControlExecutionScope, GameControlLeaseContext |
+| [GameInputArbiter.cs](../../../../../BetterBTD/Core/GameControl/GameInputArbiter.cs) | Shared game-control lease and input ownership; primary symbols: GameInputPriority, GameInputArbiter, InputArbiterLease |
 
 ### `BetterBTD/Core/RobotControl`
 
