@@ -28,7 +28,7 @@ Capture, recognition, persistence, settings, editor, task adapters, and protocol
 | `BetterBTD/Services/Tasks/CaptureAnalysis` | 5 |
 | `BetterBTD/Services/Tasks/Input` | 3 |
 | `BetterBTD/Services/Tasks/RobotControl` | 2 |
-| `BetterBTD/Services/Tasks/ScriptExecution` | 1 |
+| `BetterBTD/Services/Tasks/ScriptExecution` | 2 |
 | `BetterBTD/Services/Tasks/TestApi` | 4 |
 | `BetterBTD/Services/Tools` | 8 |
 | `BetterBTD/Services/Updates` | 1 |
@@ -185,6 +185,7 @@ Paths are relative to the repository root. Open the linked file and verify curre
 | File | Description |
 | --- | --- |
 | [ScriptExecutionRuntimeAdapters.cs](../../../../../BetterBTD/Services/Tasks/ScriptExecution/ScriptExecutionRuntimeAdapters.cs) | Services adapted for the core script executor; primary symbols: ScriptExecutionRuntimeServiceFactory, ScriptCaptureServiceAdapter, ScriptInputServiceAdapter |
+| [ScriptObservationService.cs](../../../../../BetterBTD/Services/Tasks/ScriptExecution/ScriptObservationService.cs) | Services adapted for the core script executor; primary symbols: ScriptObservationService |
 
 ### `BetterBTD/Services/Tasks/TestApi`
 

@@ -40,13 +40,21 @@
 - 兼容性/真实环境：未替换或重排现有 `AutoTaskPhase`、`AutoTaskRunState`、`ScriptExecutionRunState`，没有运行时行为变化；本阶段为纯契约，不需要且未进行 BTD6 实机验证。
 - 下一阶段：阶段 2，实现单一导航观察循环、严格递增序号、最新快照订阅和诊断；从 `GameUiSnapshot` 构造 `NavigationObservation` 时使用同一捕获时间，并确保发布后的 Facts 不可变。
 
-### 阶段 2：导航观察（当前）
+### 阶段 2：导航观察
 
 - 完成：新增单例 `NavigationObservationService` 和 `INavigationObservationService` 边界，建立可重复启动/停止的单一后台观察循环；所有订阅者接收同一观察对象及严格递增序号，后加入的订阅者立即取得最新观察；发布前复制关卡状态并将 `Facts` 冻结，观察与快照共用同一捕获时间；新增运行状态、发布数、失败数、连续失败数和最后消息诊断。按稳定运行口径，单次捕获/识别异常会发布带诊断事实的 `Unknown` 快照并继续重试，缺失捕获时间也会被归一化，不会终止循环。
 - 未完成：尚未由 `AutoTaskRunner`、运行页面或导航控制器启动和消费观察流，旧 `CaptureSnapshotAsync` 调用路径保持不变；脚本 Worker、输入仲裁及连续异常的任务级处置属于后续阶段。
 - 验证：新增多消费者同序列、严格递增序号、异常后继续、快照发布隔离、幂等启动/停止、晚订阅者读取最新观察和缺失时间归一化测试；阶段 1/2 定向 Release/x64 测试通过（11/11）；`dotnet restore BetterBTD.slnx`、`dotnet build BetterBTD.slnx -c Release /p:Platform=x64` 和 `dotnet test BetterBTD.slnx -c Release --no-build /p:Platform=x64` 通过（全量 359/359，构建 0 警告、0 错误）；源码索引更新并通过技能校验。
 - 兼容性/真实环境：现有自动任务和 Robot 运行路径未切换，运行时行为保持兼容；本阶段未控制游戏输入，未进行 BTD6 实机验证。
 - 下一阶段：阶段 3，将 `ScriptTaskFlowExecutor` 接入独立 Worker 命令/事件通道与脚本观察服务；Worker 对可恢复的步骤观察异常优先重试或发布诊断，不判断胜负、不处理导航弹窗。
+
+### 阶段 3：脚本 Worker（当前）
+
+- 完成：新增 `ScriptTaskFlowWorker`，以串行命令通道处理 `Start`、`Pause`、`Resume`、`Cancel`，按运行 ID 和请求序号关联生命周期事件；暂停确认只在脚本实际进入安全暂停点后发布，取消等待底层执行任务真正退出；重复、过期或错误关联命令安全忽略并记录诊断。新增 `ScriptObservationService`，对脚本专用识别进行有限重试，瞬时异常或空结果使用安全降级值并保留诊断；默认脚本运行时改用该服务。输入释放失败会标记租约异常并记录日志，但不覆盖脚本原有完成/取消结果。默认自动任务服务已暴露可选 Worker，旧 `IAutoTaskScriptExecutor` 和 Runner 监控路径保持兼容。
+- 未完成：`AutoTaskRunner`、运行页面和导航控制器尚未切换为消费 Worker/导航观察流；导航胜负、弹窗处理和输入仲裁仍由旧流程负责，Worker 尚未管理导航主租约；事件 ACK 超时策略和连续任务级异常处置留待后续阶段。
+- 验证：新增 Worker 生命周期、暂停/恢复确认、取消等待、同步完成顺序、过期命令忽略和脚本观察重试/降级测试；定向测试通过（9/9）；`dotnet restore BetterBTD.slnx`、`dotnet build BetterBTD.slnx -c Release /p:Platform=x64`（0 错误，现有工程警告保持不变）和 `dotnet test BetterBTD.slnx -c Release --no-build /p:Platform=x64`（365/365）通过；`git diff --check` 通过；源码索引更新并通过技能校验。
+- 兼容性/真实环境：保留旧 `ExecuteAsync`、自动任务脚本适配器和 Runner 行为，现有调用路径未切换；未控制游戏输入，未进行 BTD6 实机验证。脚本观察默认降级可能返回空/未知值，后续导航控制器需结合任务上下文决定是否继续。
+- 下一阶段：阶段 4，实现 `AutoTaskNavigationController`，让导航持续消费单一观察流并管理 Worker 生命周期；先覆盖脚本运行中导航不中断、脚本完成后等待胜负结果、胜负取消和普通弹窗暂停/恢复。
 
 ### 后续记录模板
 

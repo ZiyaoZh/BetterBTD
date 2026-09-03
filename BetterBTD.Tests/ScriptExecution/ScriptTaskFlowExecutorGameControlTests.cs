@@ -64,7 +64,7 @@ public sealed class ScriptTaskFlowExecutorGameControlTests
     }
 
     [Fact]
-    public async Task InputReleaseFailure_PoisonsLeaseAfterExecutorCleanup()
+    public async Task InputReleaseFailure_PoisonsLeaseWithoutOverridingExecutionResult()
     {
         var leaseCoordinator = new GameControlLeaseCoordinator();
         var input = new RecordingScriptInputService
@@ -91,10 +91,9 @@ public sealed class ScriptTaskFlowExecutorGameControlTests
             }
         };
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            executor.ExecuteAsync(taskFlow, options));
+        var result = await executor.ExecuteAsync(taskFlow, options);
 
-        Assert.Equal("release failed", exception.Message);
+        Assert.Equal(ScriptExecutionStatus.Completed, result.Status);
         Assert.Equal(1, input.ReleaseAllKeysCallCount);
         Assert.True(leaseCoordinator.IsPoisoned);
         Assert.False(leaseCoordinator.HasActiveLease);

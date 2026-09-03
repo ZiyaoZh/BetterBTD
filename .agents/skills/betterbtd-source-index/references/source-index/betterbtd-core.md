@@ -20,7 +20,7 @@ UI-independent execution, automatic tasks, simulation, control leases, and helpe
 | `BetterBTD/Core/Config` | 2 |
 | `BetterBTD/Core/GameControl` | 1 |
 | `BetterBTD/Core/RobotControl` | 2 |
-| `BetterBTD/Core/ScriptExecution` | 9 |
+| `BetterBTD/Core/ScriptExecution` | 10 |
 | `BetterBTD/Core/ScriptExecution/Handlers` | 16 |
 | `BetterBTD/Core/ScriptExecution/Handlers/Support` | 2 |
 | `BetterBTD/Core/ScriptExecution/Runtime` | 1 |
@@ -98,6 +98,7 @@ Paths are relative to the repository root. Open the linked file and verify curre
 | [ScriptKeyBindingPreflightValidator.cs](../../../../../BetterBTD/Core/ScriptExecution/ScriptKeyBindingPreflightValidator.cs) | UI-independent script execution, sessions, and scheduling; primary symbols: ScriptKeyBindingPreflightIssue, ScriptKeyBindingPreflightValidator, Requirement |
 | [ScriptTaskFlowExecutor.cs](../../../../../BetterBTD/Core/ScriptExecution/ScriptTaskFlowExecutor.cs) | UI-independent script execution, sessions, and scheduling; primary symbols: ScriptTaskFlowExecutor |
 | [ScriptTaskFlowService.cs](../../../../../BetterBTD/Core/ScriptExecution/ScriptTaskFlowService.cs) | UI-independent script execution, sessions, and scheduling; primary symbols: ScriptTaskFlowService |
+| [ScriptTaskFlowWorker.cs](../../../../../BetterBTD/Core/ScriptExecution/ScriptTaskFlowWorker.cs) | UI-independent script execution, sessions, and scheduling; primary symbols: ScriptTaskFlowWorker |
 | [ScriptWorkerStateTransitions.cs](../../../../../BetterBTD/Core/ScriptExecution/ScriptWorkerStateTransitions.cs) | UI-independent script execution, sessions, and scheduling; primary symbols: ScriptWorkerStateTransitions |
 
 ### `BetterBTD/Core/ScriptExecution/Handlers`
@@ -132,7 +133,7 @@ Paths are relative to the repository root. Open the linked file and verify curre
 
 | File | Description |
 | --- | --- |
-| [ScriptExecutionRuntimeServices.cs](../../../../../BetterBTD/Core/ScriptExecution/Runtime/ScriptExecutionRuntimeServices.cs) | UI-independent script execution, sessions, and scheduling; primary symbols: IScriptCaptureService, IScriptInputService, IGameStageStateService, ScriptExecutionRuntimeServices |
+| [ScriptExecutionRuntimeServices.cs](../../../../../BetterBTD/Core/ScriptExecution/Runtime/ScriptExecutionRuntimeServices.cs) | UI-independent script execution, sessions, and scheduling; primary symbols: IScriptCaptureService, IScriptInputService, IGameStageStateService, IScriptObservationService, IScriptTaskFlowExecutionEngine |
 
 ### `BetterBTD/Core/Simulator`
 

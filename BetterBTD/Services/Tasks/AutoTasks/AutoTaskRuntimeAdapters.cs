@@ -176,7 +176,8 @@ public static class AutoTaskRuntimeServiceFactory
             StuckRecoveryExecutor = GameUiStuckRecoveryExecutor.Instance,
             FailureArtifactWriter = AutoTaskFailureArtifactService.Instance,
             ScriptResolver = ManagedAutoTaskScriptResolver.Instance,
-            ScriptExecutor = ScriptTaskFlowAutoTaskScriptExecutorAdapter.Instance
+            ScriptExecutor = ScriptTaskFlowAutoTaskScriptExecutorAdapter.Instance,
+            ScriptWorker = ScriptTaskFlowWorker.Instance
         };
     }
 }

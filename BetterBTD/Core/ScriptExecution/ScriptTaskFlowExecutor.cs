@@ -4,11 +4,12 @@ using BetterBTD.Services.Tasks.ScriptExecution;
 using BetterBTD.Core.ScriptExecution.Handlers;
 using BetterBTD.Core.GameControl;
 using BetterBTD.Services.ChildSession;
+using System.Diagnostics;
 using System.Linq;
 
 namespace BetterBTD.Core.ScriptExecution;
 
-public sealed class ScriptTaskFlowExecutor
+public sealed class ScriptTaskFlowExecutor : IScriptTaskFlowExecutionEngine
 {
     private static readonly Lazy<ScriptTaskFlowExecutor> InstanceHolder = new(() => new ScriptTaskFlowExecutor());
 
@@ -276,10 +277,13 @@ public sealed class ScriptTaskFlowExecutor
                 runtimeServices.Input.ReleaseAllKeys();
                 gameControlScope.ConfirmInputReleased();
             }
-            catch
+            catch (Exception ex)
             {
                 gameControlScope.MarkPoisoned();
-                throw;
+                Debug.WriteLine($"Script input release failed; the control lease was poisoned: {ex}");
+                ScriptExecutionRuntimeDiagnostics.Error(
+                    ScriptExecutionRuntimeLogCategory.Action,
+                    $"Input release failed during script cleanup: {ex.GetBaseException().Message}");
             }
             finally
             {

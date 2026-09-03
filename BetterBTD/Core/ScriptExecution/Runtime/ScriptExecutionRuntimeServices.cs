@@ -84,6 +84,45 @@ public interface IGameStageStateService
     Task<GameStageStateSnapshot?> CaptureSnapshotAsync(CancellationToken cancellationToken = default);
 }
 
+public interface IScriptObservationService : IGameStageStateService
+{
+    ScriptObservationDiagnostics GetDiagnostics();
+
+    void ResetDiagnostics();
+}
+
+public interface IScriptTaskFlowExecutionEngine
+{
+    bool IsRunning { get; }
+
+    event EventHandler<ScriptExecutionProgressSnapshot>? ProgressChanged;
+
+    bool RequestPause();
+
+    bool Resume();
+
+    bool RequestStop();
+
+    Task<ScriptExecutionResult> ExecuteAsync(
+        string filePath,
+        ScriptExecutionOptions? options = null,
+        CancellationToken cancellationToken = default);
+}
+
+public interface IScriptTaskFlowWorker
+{
+    ScriptWorkerState State { get; }
+
+    Guid? CurrentRunId { get; }
+
+    bool TryPostCommand(ScriptWorkerCommand command);
+
+    IAsyncEnumerable<ScriptWorkerEvent> SubscribeAsync(
+        CancellationToken cancellationToken = default);
+
+    Task StopAsync();
+}
+
 public sealed class ScriptExecutionRuntimeServices
 {
     public required IScriptCaptureService Capture { get; init; }

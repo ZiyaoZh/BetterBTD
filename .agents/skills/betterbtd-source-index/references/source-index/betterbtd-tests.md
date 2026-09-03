@@ -19,7 +19,7 @@ xUnit behavior, compatibility, protocol, and test-double coverage.
 | `BetterBTD.Tests/Core/Simulator` | 1 |
 | `BetterBTD.Tests/GameControl` | 1 |
 | `BetterBTD.Tests/RobotControl` | 2 |
-| `BetterBTD.Tests/ScriptExecution` | 4 |
+| `BetterBTD.Tests/ScriptExecution` | 6 |
 | `BetterBTD.Tests/ScriptExecution/Handlers` | 6 |
 | `BetterBTD.Tests/Services` | 18 |
 | `BetterBTD.Tests/TestApi` | 4 |
@@ -84,7 +84,9 @@ Paths are relative to the repository root. Open the linked file and verify curre
 | --- | --- |
 | [ScriptExecutionIntervalStrategyTests.cs](../../../../../BetterBTD.Tests/ScriptExecution/ScriptExecutionIntervalStrategyTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: ScriptExecutionIntervalStrategyTests |
 | [ScriptKeyBindingPreflightValidatorTests.cs](../../../../../BetterBTD.Tests/ScriptExecution/ScriptKeyBindingPreflightValidatorTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: ScriptKeyBindingPreflightValidatorTests |
+| [ScriptObservationServiceTests.cs](../../../../../BetterBTD.Tests/ScriptExecution/ScriptObservationServiceTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: ScriptObservationServiceTests, FlakyStageStateService |
 | [ScriptTaskFlowExecutorGameControlTests.cs](../../../../../BetterBTD.Tests/ScriptExecution/ScriptTaskFlowExecutorGameControlTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: ScriptTaskFlowExecutorGameControlTests |
+| [ScriptTaskFlowWorkerTests.cs](../../../../../BetterBTD.Tests/ScriptExecution/ScriptTaskFlowWorkerTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: ScriptTaskFlowWorkerTests, ControllableExecutionEngine |
 | [ScriptWorkerContractTests.cs](../../../../../BetterBTD.Tests/ScriptExecution/ScriptWorkerContractTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: ScriptWorkerContractTests |
 
 ### `BetterBTD.Tests/ScriptExecution/Handlers`

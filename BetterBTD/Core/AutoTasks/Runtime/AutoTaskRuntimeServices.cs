@@ -1,6 +1,7 @@
 using BetterBTD.Models;
 using BetterBTD.Models.AutoTasks;
 using BetterBTD.Models.ScriptExecution;
+using BetterBTD.Core.ScriptExecution.Runtime;
 using OpenCvSharp;
 using WpfPoint = System.Windows.Point;
 
@@ -137,4 +138,6 @@ public sealed class AutoTaskRuntimeServices
     public required IAutoTaskScriptResolver ScriptResolver { get; init; }
 
     public required IAutoTaskScriptExecutor ScriptExecutor { get; init; }
+
+    public IScriptTaskFlowWorker? ScriptWorker { get; init; }
 }
