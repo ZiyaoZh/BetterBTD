@@ -15,6 +15,7 @@ public sealed class AutoTaskNavigationController
     private readonly INavigationObservationService _observations;
     private readonly IScriptTaskFlowWorker _worker;
     private readonly TimeProvider _timeProvider;
+    private readonly TimeSpan _acknowledgementTimeout;
     private readonly object _syncRoot = new();
     private readonly List<StageChallengeStateTransition> _transitions = [];
     private long _requestSequence;
@@ -22,15 +23,20 @@ public sealed class AutoTaskNavigationController
     private bool _pauseRequested;
     private bool _scriptStarted;
     private bool _scriptCompleted;
+    private readonly Dictionary<long, TaskCompletionSource<ScriptWorkerEvent>> _pendingAcknowledgements = [];
 
     public AutoTaskNavigationController(
         INavigationObservationService observations,
         IScriptTaskFlowWorker worker,
-        TimeProvider? timeProvider = null)
+        TimeProvider? timeProvider = null,
+        TimeSpan? acknowledgementTimeout = null)
     {
         _observations = observations ?? throw new ArgumentNullException(nameof(observations));
         _worker = worker ?? throw new ArgumentNullException(nameof(worker));
         _timeProvider = timeProvider ?? TimeProvider.System;
+        _acknowledgementTimeout = acknowledgementTimeout ?? TimeSpan.FromSeconds(5);
+        if (_acknowledgementTimeout <= TimeSpan.Zero)
+            throw new ArgumentOutOfRangeException(nameof(acknowledgementTimeout));
         State = StageChallengeState.Preparing;
     }
 
@@ -85,6 +91,12 @@ public sealed class AutoTaskNavigationController
         finally
         {
             linked.Cancel();
+            lock (_syncRoot)
+            {
+                foreach (var acknowledgement in _pendingAcknowledgements.Values)
+                    acknowledgement.TrySetCanceled();
+                _pendingAcknowledgements.Clear();
+            }
             try { await workerEventsTask.ConfigureAwait(false); }
             catch (OperationCanceledException) { }
             await _observations.StopAsync().ConfigureAwait(false);
@@ -99,6 +111,13 @@ public sealed class AutoTaskNavigationController
             {
                 if (workerEvent.RunId != _runId)
                     continue;
+
+                if (workerEvent.RequestSequence is long requestSequence &&
+                    workerEvent.Kind is ScriptWorkerEventKind.PauseAcknowledged or ScriptWorkerEventKind.ResumeAcknowledged &&
+                    TryTakeAcknowledgement(requestSequence, out var acknowledgement))
+                {
+                    acknowledgement.TrySetResult(workerEvent);
+                }
 
                 if (workerEvent.Kind == ScriptWorkerEventKind.Completed)
                     _scriptCompleted = true;
@@ -141,7 +160,7 @@ public sealed class AutoTaskNavigationController
         {
             if (_scriptStarted && !_pauseRequested && _worker.State == ScriptWorkerState.Running)
             {
-                _pauseRequested = Post(ScriptWorkerCommandKind.Pause, "Popup detected", true, scriptOptions);
+                _pauseRequested = await PostAsync(ScriptWorkerCommandKind.Pause, "Popup detected", true, scriptOptions).ConfigureAwait(false);
             }
             TransitionIfAllowed(StageChallengeState.HandlingPopup, "Popup requires temporary pause.", observation.Sequence);
             return;
@@ -149,7 +168,7 @@ public sealed class AutoTaskNavigationController
 
         if (_pauseRequested && _worker.State == ScriptWorkerState.Paused)
         {
-            Post(ScriptWorkerCommandKind.Resume, "Popup cleared", true, scriptOptions);
+            await PostAsync(ScriptWorkerCommandKind.Resume, "Popup cleared", true, scriptOptions).ConfigureAwait(false);
             _pauseRequested = false;
             TransitionIfAllowed(_scriptCompleted ? StageChallengeState.ScriptCompletedWaitingForResult : StageChallengeState.ScriptRunning,
                 "Resumed after popup.", observation.Sequence);
@@ -159,7 +178,7 @@ public sealed class AutoTaskNavigationController
         {
             if (!_scriptStarted)
             {
-                _scriptStarted = Post(ScriptWorkerCommandKind.Start, "Stage loaded; starting script.", false, scriptOptions, scriptFilePath);
+                _scriptStarted = await PostAsync(ScriptWorkerCommandKind.Start, "Stage loaded; starting script.", false, scriptOptions, scriptFilePath).ConfigureAwait(false);
                 if (_scriptStarted)
                     TransitionIfAllowed(StageChallengeState.ScriptRunning, "Script worker started.", observation.Sequence);
             }
@@ -170,18 +189,65 @@ public sealed class AutoTaskNavigationController
         }
     }
 
-    private bool Post(ScriptWorkerCommandKind kind, string reason, bool wait, ScriptExecutionOptions options, string? filePath = null)
+    private async Task<bool> PostAsync(ScriptWorkerCommandKind kind, string reason, bool wait, ScriptExecutionOptions options, string? filePath = null)
     {
-        var command = new ScriptWorkerCommand(kind, _runId, ++_requestSequence, reason, CancellationToken.None, wait,
+        var requestSequence = ++_requestSequence;
+        TaskCompletionSource<ScriptWorkerEvent>? acknowledgement = null;
+        if (wait && kind is not (ScriptWorkerCommandKind.Start or ScriptWorkerCommandKind.Cancel))
+        {
+            acknowledgement = new TaskCompletionSource<ScriptWorkerEvent>(TaskCreationOptions.RunContinuationsAsynchronously);
+            lock (_syncRoot)
+                _pendingAcknowledgements[requestSequence] = acknowledgement;
+        }
+
+        var command = new ScriptWorkerCommand(kind, _runId, requestSequence, reason, CancellationToken.None, wait,
             kind == ScriptWorkerCommandKind.Start ? new ScriptWorkerStartRequest(filePath!, options) : null);
-        return _worker.TryPostCommand(command);
+        if (!_worker.TryPostCommand(command))
+        {
+            if (acknowledgement is not null)
+            {
+                lock (_syncRoot)
+                    _pendingAcknowledgements.Remove(requestSequence);
+            }
+            return false;
+        }
+        if (!wait || kind is ScriptWorkerCommandKind.Start or ScriptWorkerCommandKind.Cancel)
+            return true;
+
+        try
+        {
+            await acknowledgement!.Task.WaitAsync(_acknowledgementTimeout).ConfigureAwait(false);
+            return true;
+        }
+        catch (TimeoutException)
+        {
+            lock (_syncRoot)
+                _pendingAcknowledgements.Remove(requestSequence);
+            TransitionIfAllowed(StageChallengeState.Failed, $"Worker acknowledgement timed out for command '{kind}'.", _observations.LatestObservation?.Sequence ?? 0);
+            return false;
+        }
+    }
+
+    private bool TryTakeAcknowledgement(long requestSequence, out TaskCompletionSource<ScriptWorkerEvent> acknowledgement)
+    {
+        lock (_syncRoot)
+        {
+            if (_pendingAcknowledgements.Remove(requestSequence, out var value))
+            {
+                acknowledgement = value;
+                return true;
+            }
+        }
+
+        acknowledgement = null!;
+        return false;
     }
 
     private async Task CancelWorkerAsync(string reason)
     {
         if (!_scriptStarted || _worker.CurrentRunId != _runId || _worker.State is ScriptWorkerState.Completed or ScriptWorkerState.Cancelled or ScriptWorkerState.Failed)
             return;
-        Post(ScriptWorkerCommandKind.Cancel, reason, true, new ScriptExecutionOptions());
+        await PostAsync(ScriptWorkerCommandKind.Cancel, reason, true, new ScriptExecutionOptions()).ConfigureAwait(false);
         await Task.CompletedTask.ConfigureAwait(false);
     }
 

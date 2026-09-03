@@ -78,6 +78,13 @@
 - 下一阶段：
 ```
 
+### Stage 6: Runner session convergence (current)
+- Completed: `AutoTaskNavigationController` now tracks pending Pause/Resume acknowledgements by request sequence and waits for the matching worker event. A configurable five-second ACK timeout transitions the controller to `Failed` and removes the pending request. Start/Cancel retain fire-and-observe semantics while all worker commands remain correlated to the active run.
+- Incomplete: `AutoTaskRunner`, the runtime page, and input/UI handlers still use the compatibility execution path; full session ownership transfer and removal of the legacy monitoring wrapper remain for the next increment.
+- Verification: `dotnet build BetterBTD.slnx -c Release --no-restore /p:Platform=x64` passed with 0 errors (existing warnings only). Focused ScriptTaskFlowWorker tests passed. `git diff --check` is part of final review.
+- Compatibility / real environment: existing runner and coordinator behavior is unchanged by default. No real BTD6 popup, victory/defeat, or key-release scenario was run.
+- Next stage: route `AutoTaskRunner` through a single controller session, expose ACK timeout policy through execution options, and add controller-level regression coverage for timeout and terminal cleanup.
+
 返回 [开发者文档](README.md) · [架构设计](reference/navigation-script-coordination.md)
 
 ### 阶段 5：输入仲裁与弹窗
