@@ -13,6 +13,7 @@ using System.ComponentModel;
 using System.Globalization;
 using BetterBTD.Services.Start;
 using BetterBTD.Models;
+using BetterBTD.Services.Tasks.AutoTasks;
 
 namespace BetterBTD
 {
@@ -36,6 +37,11 @@ namespace BetterBTD
             ShutdownMode = ShutdownMode.OnMainWindowClose;
 
             var config = ConfigurationService.Instance.Current;
+            if (launchOptions.IsPrimary)
+            {
+                _ = GameUiDetectionConfigService.Instance.Current;
+            }
+
             if (config.AutoFixWin11BitBlt && OsVersionHelper.IsWindows11_OrGreater)
             {
                 BitBltRegistryHelper.SetDirectXUserGlobalSettings();
