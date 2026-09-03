@@ -209,7 +209,7 @@ public sealed class AutoTaskNavigationController
         if (!_startRequested)
             return null;
 
-        if (IsTerminal(_worker.State))
+        if (_worker.CurrentRunId == _runId && IsTerminal(_worker.State))
             return HandoffToNavigation(observation);
 
         _offLevelSince ??= observation.CapturedAt;
@@ -261,13 +261,30 @@ public sealed class AutoTaskNavigationController
         _recoveryStartedAt = null;
         _lastRecoveryClickAt = null;
 
-        if (_worker.State == ScriptWorkerState.Completed)
+        TransitionIfAllowed(StageChallengeState.InLevel, "In-level UI confirmed.", observation.Sequence);
+        if (!_startRequested)
+        {
+            _startRequested = true;
+            if (!await PostAndWaitAsync(
+                    ScriptWorkerCommandKind.Start,
+                    "First in-level observation; start script.",
+                    scriptOptions,
+                    scriptFilePath).ConfigureAwait(false))
+            {
+                TransitionIfAllowed(StageChallengeState.Failed, "Script start was not acknowledged.", observation.Sequence);
+                return new AutoTaskNavigationControllerResult(ResolveScriptResult(ScriptExecutionStatus.Failed), null);
+            }
+            return null;
+        }
+
+        if (_worker.CurrentRunId == _runId && _worker.State == ScriptWorkerState.Completed)
         {
             _pausedForRecovery = false;
             TransitionIfAllowed(StageChallengeState.InLevel, "Script completed while the level remained active.", observation.Sequence);
             return null;
         }
-        if (_worker.State is ScriptWorkerState.Cancelled or ScriptWorkerState.Failed)
+        if (_worker.CurrentRunId == _runId &&
+            _worker.State is (ScriptWorkerState.Cancelled or ScriptWorkerState.Failed))
         {
             TransitionIfAllowed(StageChallengeState.Failed, "Script became terminal unexpectedly while still in-level.", observation.Sequence);
             return new AutoTaskNavigationControllerResult(
@@ -290,21 +307,6 @@ public sealed class AutoTaskNavigationController
                 return new AutoTaskNavigationControllerResult(ResolveScriptResult(ScriptExecutionStatus.Failed), null);
             }
             _pausedForRecovery = false;
-        }
-
-        TransitionIfAllowed(StageChallengeState.InLevel, "In-level UI confirmed.", observation.Sequence);
-        if (!_startRequested)
-        {
-            _startRequested = true;
-            if (!await PostAndWaitAsync(
-                    ScriptWorkerCommandKind.Start,
-                    "First in-level observation; start script.",
-                    scriptOptions,
-                    scriptFilePath).ConfigureAwait(false))
-            {
-                TransitionIfAllowed(StageChallengeState.Failed, "Script start was not acknowledged.", observation.Sequence);
-                return new AutoTaskNavigationControllerResult(ResolveScriptResult(ScriptExecutionStatus.Failed), null);
-            }
         }
 
         return null;

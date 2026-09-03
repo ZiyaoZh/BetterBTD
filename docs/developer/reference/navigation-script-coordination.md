@@ -6,6 +6,7 @@
 
 - 页面状态、脚本 Worker 生命周期和关卡尝试上下文彼此独立；胜负、结算、奖励和弹窗都只是导航策略的页面输入。
 - 同一关卡尝试只发送一次 `Start`。首次确认 `InLevel` 时启动；`Starting`、`Running` 或 `Completed` 与 `InLevel` 并存时均不执行导航输入。
+- Worker 状态只对匹配当前运行 ID 的关卡尝试有效；新尝试发送 Start 前必须忽略上一轮遗留的 `Completed`、`Cancelled` 或 `Failed`。
 - 活跃脚本遇到明确的非 `InLevel` 页面后进入 5 秒宽限；不同非关卡页面不会重置计时，只有重新确认 `InLevel` 才会重置。`Unknown` 既不证明离开关卡，也不清除已经开始的计时。
 - 宽限到期后必须先等待 `PauseAcknowledged`，然后才能点击基准中心点 `(960, 540)` 并消费更新序号的观察。恢复 `InLevel` 后等待 `ResumeAcknowledged`；恢复超时则发送 `Cancel`，等待 Worker 终态和输入释放后把最新页面交回普通导航。
 - `Start`、`Pause`、`Resume`、`Cancel` 都按运行 ID 和请求序号关联；Worker 的 Start 命令显式携带自动任务的游戏控制与输入租约上下文。

@@ -107,6 +107,41 @@ public sealed class AutoTaskNavigationControllerTests
         await worker.StopAsync();
     }
 
+    [Fact]
+    public async Task ReusedWorker_StartsScriptForEachNewControllerAttempt()
+    {
+        var engine = new ControllableEngine();
+        var worker = new ScriptTaskFlowWorker(engine, TimeProvider.System);
+        var startedAt = DateTimeOffset.UtcNow;
+
+        var firstObservations = new TestObservationService();
+        var firstController = CreateController(firstObservations, worker);
+        var firstRun = firstController.RunAsync("first.json", CreateOptions());
+        firstObservations.Publish(GameUiStateId.InLevel, startedAt);
+        await WaitUntilAsync(() => engine.ExecuteCallCount == 1);
+        engine.Complete(ScriptExecutionStatus.Completed);
+        await WaitUntilAsync(() => worker.State == ScriptWorkerState.Completed);
+        firstObservations.Publish(GameUiStateId.Victory, startedAt.AddSeconds(1));
+        _ = await firstRun.WaitAsync(TimeSpan.FromSeconds(2));
+
+        var secondObservations = new TestObservationService();
+        var secondController = CreateController(secondObservations, worker);
+        var secondRun = secondController.RunAsync("second.json", CreateOptions());
+        secondObservations.Publish(GameUiStateId.InLevel, startedAt.AddSeconds(2));
+        await WaitUntilAsync(() => engine.ExecuteCallCount == 2);
+
+        Assert.False(secondRun.IsCompleted);
+        Assert.Equal(ScriptWorkerState.Running, worker.State);
+
+        engine.Complete(ScriptExecutionStatus.Completed);
+        await WaitUntilAsync(() => worker.State == ScriptWorkerState.Completed);
+        secondObservations.Publish(GameUiStateId.Victory, startedAt.AddSeconds(3));
+        var result = await secondRun.WaitAsync(TimeSpan.FromSeconds(2));
+
+        Assert.Equal(ScriptExecutionStatus.Completed, result.ScriptResult.Status);
+        await worker.StopAsync();
+    }
+
     private static AutoTaskNavigationController CreateController(
         TestObservationService observations,
         ScriptTaskFlowWorker worker,
