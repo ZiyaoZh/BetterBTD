@@ -15,6 +15,17 @@ public sealed class AutoTaskSkeletonTests
         var options = new AutoTaskExecutionOptions();
 
         Assert.Null(options.MaxLoopIterations);
+        Assert.Equal(TimeSpan.FromSeconds(5), options.WorkerAcknowledgementTimeout);
+    }
+
+    [Fact]
+    public async Task Runner_RejectsNonPositiveWorkerAcknowledgementTimeout()
+    {
+        var runner = new AutoTaskRunner();
+
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => runner.ExecuteAsync(
+            new AutoTaskRequest { Kind = AutoTaskKind.Custom, StageTarget = CreateTarget() },
+            new AutoTaskExecutionOptions { WorkerAcknowledgementTimeout = TimeSpan.Zero }));
     }
 
     [Fact]

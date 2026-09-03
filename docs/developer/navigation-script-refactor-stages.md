@@ -79,11 +79,11 @@
 ```
 
 ### Stage 6: Runner session convergence (current)
-- Completed: `AutoTaskNavigationController` now tracks pending Pause/Resume acknowledgements by request sequence and waits for the matching worker event. A configurable five-second ACK timeout transitions the controller to `Failed` and removes the pending request. Start/Cancel retain fire-and-observe semantics while all worker commands remain correlated to the active run.
-- Incomplete: `AutoTaskRunner`, the runtime page, and input/UI handlers still use the compatibility execution path; full session ownership transfer and removal of the legacy monitoring wrapper remain for the next increment.
-- Verification: `dotnet build BetterBTD.slnx -c Release --no-restore /p:Platform=x64` passed with 0 errors (existing warnings only). Focused ScriptTaskFlowWorker tests passed. `git diff --check` is part of final review.
-- Compatibility / real environment: existing runner and coordinator behavior is unchanged by default. No real BTD6 popup, victory/defeat, or key-release scenario was run.
-- Next stage: route `AutoTaskRunner` through a single controller session, expose ACK timeout policy through execution options, and add controller-level regression coverage for timeout and terminal cleanup.
+- Completed: `AutoTaskRunner` now routes single-stage task scripts through one `AutoTaskNavigationController` session whenever the runtime exposes the navigation observation and script Worker. The controller owns observation, Worker lifecycle, popup pause/resume, and terminal result waiting; ACK timeout is exposed as `AutoTaskExecutionOptions.WorkerAcknowledgementTimeout`. Multi-stage/freeplay lifecycles remain on the existing strategy loop. Added validation for non-positive timeout configuration and preserved the legacy monitoring path for injected runtimes without the new services.
+- Incomplete: runtime page and input/UI handlers still have compatibility entry points; multi-stage/freeplay tasks are not yet migrated to controller sessions.
+- Verification: focused build/test passed with 0 errors (existing warnings only); the full Release/x64 restore, build, test, diff check, and source-index refresh are recorded at stage closeout.
+- Compatibility / real environment: custom, collection, gold-balloon, black-border, and race tasks use the controller only with the default runtime services; LoopStage/Odyssey and test doubles without Worker services retain prior behavior. No real BTD6 popup, victory/defeat, or key-release scenario was run.
+- Next stage: migrate the runtime page and input handlers, then cover controller timeout and terminal cleanup with dedicated controller-level tests before removing the compatibility monitoring wrapper.
 
 返回 [开发者文档](README.md) · [架构设计](reference/navigation-script-coordination.md)
 

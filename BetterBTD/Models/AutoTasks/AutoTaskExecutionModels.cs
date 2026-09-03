@@ -453,6 +453,11 @@ public sealed class AutoTaskDecision
 
 public sealed class AutoTaskExecutionOptions
 {
+    /// <summary>
+    /// Maximum time to wait for a script worker pause or resume acknowledgement.
+    /// </summary>
+    public TimeSpan WorkerAcknowledgementTimeout { get; init; } = TimeSpan.FromSeconds(5);
+
     public static List<GameUiRecoveryPoint> CreateDefaultStuckRecoveryPoints()
     {
         return

@@ -2,6 +2,8 @@
 
 本文描述当前自动任务运行时的职责边界。用户配置方法见 [自动任务指南](../../user/auto-tasks.md)。
 
+> 迁移说明：本文保留现有实现的背景和兼容约束。导航线程持续拥有界面状态机、脚本 Worker 独立受控运行的目标设计，以及后续分阶段实施要求，统一以[导航线程与脚本 Worker 协同架构](navigation-script-coordination.md)和[阶段实施提示](../navigation-script-refactor-stages.md)为准。
+
 ## 设计目标
 
 - 将画面识别、通用导航、任务策略和脚本执行分开。

@@ -3,6 +3,7 @@ using BetterBTD.Core.AutoTasks.Runtime;
 using BetterBTD.Models.AutoTasks;
 using BetterBTD.Models.GameElements;
 using BetterBTD.Models.ScriptExecution;
+using BetterBTD.Core.ScriptExecution.Runtime;
 using BetterBTD.Services.Tasks.AutoTasks;
 
 namespace BetterBTD.Core.AutoTasks;
@@ -66,6 +67,12 @@ public sealed class AutoTaskRunner
         ArgumentNullException.ThrowIfNull(request);
 
         options ??= new AutoTaskExecutionOptions();
+        if (options.WorkerAcknowledgementTimeout <= TimeSpan.Zero)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(options),
+                "Worker acknowledgement timeout must be positive.");
+        }
 
         var runtimeServices = options.RuntimeServices ?? _defaultRuntimeServices;
         var result = await ExecuteCoreAsync(request, options, runtimeServices, cancellationToken)
@@ -320,15 +327,32 @@ public sealed class AutoTaskRunner
                         GameUiSnapshot? scriptInterruptedSnapshot;
                         try
                         {
-                            (scriptResult, scriptInterruptedSnapshot) = await ExecuteScriptWithUiMonitoringAsync(
-                                    request,
-                                    state,
-                                    session,
-                                    runtimeServices,
-                                    scriptResolution.FilePath,
-                                    scriptExecutionOptions,
-                                    cancellationToken)
-                                .ConfigureAwait(false);
+                            if (CanUseNavigationController(request.Kind) &&
+                                runtimeServices.NavigationObservation is { } navigationObservation &&
+                                runtimeServices.ScriptWorker is { } scriptWorker)
+                            {
+                                scriptResult = await ExecuteScriptViaNavigationControllerAsync(
+                                        navigationObservation,
+                                        scriptWorker,
+                                        scriptResolution.FilePath,
+                                        scriptExecutionOptions,
+                                        options,
+                                        cancellationToken)
+                                    .ConfigureAwait(false);
+                                scriptInterruptedSnapshot = null;
+                            }
+                            else
+                            {
+                                (scriptResult, scriptInterruptedSnapshot) = await ExecuteScriptWithUiMonitoringAsync(
+                                        request,
+                                        state,
+                                        session,
+                                        runtimeServices,
+                                        scriptResolution.FilePath,
+                                        scriptExecutionOptions,
+                                        cancellationToken)
+                                    .ConfigureAwait(false);
+                            }
                         }
                         finally
                         {
@@ -432,6 +456,54 @@ public sealed class AutoTaskRunner
     private static int ResolveDelay(int delayMs, AutoTaskExecutionOptions options)
     {
         return delayMs > 0 ? delayMs : options.DefaultDecisionDelayMs;
+    }
+
+    private static async Task<ScriptExecutionResult> ExecuteScriptViaNavigationControllerAsync(
+        INavigationObservationService observations,
+        IScriptTaskFlowWorker worker,
+        string scriptFilePath,
+        ScriptExecutionOptions scriptOptions,
+        AutoTaskExecutionOptions executionOptions,
+        CancellationToken cancellationToken)
+    {
+        var controller = new AutoTaskNavigationController(
+            observations,
+            worker,
+            acknowledgementTimeout: executionOptions.WorkerAcknowledgementTimeout);
+        await controller.RunAsync(scriptFilePath, scriptOptions, cancellationToken).ConfigureAwait(false);
+
+        return controller.State switch
+        {
+            StageChallengeState.Completed => new ScriptExecutionResult
+            {
+                Status = ScriptExecutionStatus.Completed,
+                ExecutedStepCount = 0,
+                LastCompletedStepIndex = -1
+            },
+            StageChallengeState.Cancelled => new ScriptExecutionResult
+            {
+                Status = ScriptExecutionStatus.Cancelled,
+                ExecutedStepCount = 0,
+                LastCompletedStepIndex = -1
+            },
+            _ => new ScriptExecutionResult
+            {
+                Status = ScriptExecutionStatus.Failed,
+                ExecutedStepCount = 0,
+                LastCompletedStepIndex = -1,
+                Failure = new ScriptExecutionFailureDetails
+                {
+                    Message = controller.Transitions.LastOrDefault()?.Reason ?? "Navigation controller failed."
+                }
+            }
+        };
+    }
+
+    private static bool CanUseNavigationController(AutoTaskKind kind)
+    {
+        // LoopStage and Odyssey have multi-stage/freeplay lifecycles that remain
+        // coordinated by the runner until their dedicated strategies converge.
+        return kind is not (AutoTaskKind.LoopStage or AutoTaskKind.Odyssey);
     }
 
     private static bool ShouldUseStuckUiRecovery(AutoTaskKind kind)

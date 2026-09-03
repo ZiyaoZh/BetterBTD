@@ -16,6 +16,7 @@
 - [页面导航目录](page-navigation.md)
 - [脚本测试场景协议](script-test-scenario.md)
 - [新增地图维护流程](map-update-workflow.md)
+- [导航与脚本职责改造阶段提示](navigation-script-refactor-stages.md)
 
 ## Agent Skills
 
@@ -28,6 +29,7 @@
 以下文档记录自动化模块的设计约束和基于 `1920 × 1080` 的识别参数，主要用于维护现有实现：
 
 - [自动任务架构](reference/auto-task-architecture.md)
+- [导航线程与脚本 Worker 协同架构](reference/navigation-script-coordination.md)
 - [脚本库设计](reference/script-library-design.md)
 - [脚本执行引擎](reference/script-engine.md)
 - [收集活动 UI 策略](reference/collection-ui-strategy.md)

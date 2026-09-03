@@ -42,6 +42,8 @@ public sealed class AutoTaskNavigationController
 
     public StageChallengeState State { get; private set; }
 
+    public ScriptWorkerState WorkerState => _worker.State;
+
     public IReadOnlyList<StageChallengeStateTransition> Transitions
     {
         get { lock (_syncRoot) return [.. _transitions]; }
@@ -176,6 +178,10 @@ public sealed class AutoTaskNavigationController
 
         if (snapshot.State == GameUiStateId.InLevel)
         {
+            TransitionIfAllowed(
+                StageChallengeState.InStageBeforeScript,
+                "Stage is ready for script execution.",
+                observation.Sequence);
             if (!_scriptStarted)
             {
                 _scriptStarted = await PostAsync(ScriptWorkerCommandKind.Start, "Stage loaded; starting script.", false, scriptOptions, scriptFilePath).ConfigureAwait(false);
