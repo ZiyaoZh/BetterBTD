@@ -15,11 +15,11 @@ xUnit behavior, compatibility, protocol, and test-double coverage.
 | Directory | Files |
 | --- | ---: |
 | `BetterBTD.Tests` | 4 |
-| `BetterBTD.Tests/AutoTasks` | 13 |
+| `BetterBTD.Tests/AutoTasks` | 14 |
 | `BetterBTD.Tests/Core/Simulator` | 1 |
 | `BetterBTD.Tests/GameControl` | 1 |
 | `BetterBTD.Tests/RobotControl` | 2 |
-| `BetterBTD.Tests/ScriptExecution` | 3 |
+| `BetterBTD.Tests/ScriptExecution` | 4 |
 | `BetterBTD.Tests/ScriptExecution/Handlers` | 6 |
 | `BetterBTD.Tests/Services` | 18 |
 | `BetterBTD.Tests/TestApi` | 4 |
@@ -55,6 +55,7 @@ Paths are relative to the repository root. Open the linked file and verify curre
 | [LoopStageAutoTaskStrategyTests.cs](../../../../../BetterBTD.Tests/AutoTasks/LoopStageAutoTaskStrategyTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: LoopStageAutoTaskStrategyTests |
 | [ManagedAutoTaskScriptResolverTests.cs](../../../../../BetterBTD.Tests/AutoTasks/ManagedAutoTaskScriptResolverTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: ManagedAutoTaskScriptResolverTests |
 | [MapSearchFlowTests.cs](../../../../../BetterBTD.Tests/AutoTasks/MapSearchFlowTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: MapSearchFlowTests, StaticGameUiRecognizer |
+| [NavigationCoordinationContractTests.cs](../../../../../BetterBTD.Tests/AutoTasks/NavigationCoordinationContractTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: NavigationCoordinationContractTests |
 | [RaceAutoTaskStrategyTests.cs](../../../../../BetterBTD.Tests/AutoTasks/RaceAutoTaskStrategyTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: RaceAutoTaskStrategyTests |
 
 ### `BetterBTD.Tests/Core/Simulator`
@@ -83,6 +84,7 @@ Paths are relative to the repository root. Open the linked file and verify curre
 | [ScriptExecutionIntervalStrategyTests.cs](../../../../../BetterBTD.Tests/ScriptExecution/ScriptExecutionIntervalStrategyTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: ScriptExecutionIntervalStrategyTests |
 | [ScriptKeyBindingPreflightValidatorTests.cs](../../../../../BetterBTD.Tests/ScriptExecution/ScriptKeyBindingPreflightValidatorTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: ScriptKeyBindingPreflightValidatorTests |
 | [ScriptTaskFlowExecutorGameControlTests.cs](../../../../../BetterBTD.Tests/ScriptExecution/ScriptTaskFlowExecutorGameControlTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: ScriptTaskFlowExecutorGameControlTests |
+| [ScriptWorkerContractTests.cs](../../../../../BetterBTD.Tests/ScriptExecution/ScriptWorkerContractTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: ScriptWorkerContractTests |
 
 ### `BetterBTD.Tests/ScriptExecution/Handlers`
 

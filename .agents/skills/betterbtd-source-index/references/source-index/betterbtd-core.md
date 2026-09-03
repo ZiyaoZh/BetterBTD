@@ -14,13 +14,13 @@ UI-independent execution, automatic tasks, simulation, control leases, and helpe
 
 | Directory | Files |
 | --- | ---: |
-| `BetterBTD/Core/AutoTasks` | 5 |
+| `BetterBTD/Core/AutoTasks` | 6 |
 | `BetterBTD/Core/AutoTasks/Runtime` | 1 |
 | `BetterBTD/Core/AutoTasks/Strategies` | 8 |
 | `BetterBTD/Core/Config` | 2 |
 | `BetterBTD/Core/GameControl` | 1 |
 | `BetterBTD/Core/RobotControl` | 2 |
-| `BetterBTD/Core/ScriptExecution` | 8 |
+| `BetterBTD/Core/ScriptExecution` | 9 |
 | `BetterBTD/Core/ScriptExecution/Handlers` | 16 |
 | `BetterBTD/Core/ScriptExecution/Handlers/Support` | 2 |
 | `BetterBTD/Core/ScriptExecution/Runtime` | 1 |
@@ -45,6 +45,7 @@ Paths are relative to the repository root. Open the linked file and verify curre
 | [AutoTaskRunner.cs](../../../../../BetterBTD/Core/AutoTasks/AutoTaskRunner.cs) | Automatic-task coordination, sessions, and registry; primary symbols: AutoTaskRunner |
 | [AutoTaskStrategyRegistry.cs](../../../../../BetterBTD/Core/AutoTasks/AutoTaskStrategyRegistry.cs) | Automatic-task coordination, sessions, and registry; primary symbols: AutoTaskStrategyRegistry |
 | [AutoTaskStuckUiTracker.cs](../../../../../BetterBTD/Core/AutoTasks/AutoTaskStuckUiTracker.cs) | Automatic-task coordination, sessions, and registry; primary symbols: AutoTaskStuckUiTracker, struct |
+| [StageChallengeStateTransitions.cs](../../../../../BetterBTD/Core/AutoTasks/StageChallengeStateTransitions.cs) | Automatic-task coordination, sessions, and registry; primary symbols: StageChallengeStateTransitions |
 
 ### `BetterBTD/Core/AutoTasks/Runtime`
 
@@ -97,6 +98,7 @@ Paths are relative to the repository root. Open the linked file and verify curre
 | [ScriptKeyBindingPreflightValidator.cs](../../../../../BetterBTD/Core/ScriptExecution/ScriptKeyBindingPreflightValidator.cs) | UI-independent script execution, sessions, and scheduling; primary symbols: ScriptKeyBindingPreflightIssue, ScriptKeyBindingPreflightValidator, Requirement |
 | [ScriptTaskFlowExecutor.cs](../../../../../BetterBTD/Core/ScriptExecution/ScriptTaskFlowExecutor.cs) | UI-independent script execution, sessions, and scheduling; primary symbols: ScriptTaskFlowExecutor |
 | [ScriptTaskFlowService.cs](../../../../../BetterBTD/Core/ScriptExecution/ScriptTaskFlowService.cs) | UI-independent script execution, sessions, and scheduling; primary symbols: ScriptTaskFlowService |
+| [ScriptWorkerStateTransitions.cs](../../../../../BetterBTD/Core/ScriptExecution/ScriptWorkerStateTransitions.cs) | UI-independent script execution, sessions, and scheduling; primary symbols: ScriptWorkerStateTransitions |
 
 ### `BetterBTD/Core/ScriptExecution/Handlers`
 

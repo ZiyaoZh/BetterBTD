@@ -15,13 +15,13 @@ Configuration, game elements, scripts, task contracts, and runtime DTOs.
 | Directory | Files |
 | --- | ---: |
 | `BetterBTD/Models` | 18 |
-| `BetterBTD/Models/AutoTasks` | 8 |
+| `BetterBTD/Models/AutoTasks` | 9 |
 | `BetterBTD/Models/GameElements` | 6 |
 | `BetterBTD/Models/MyScripts` | 5 |
 | `BetterBTD/Models/RobotControl` | 1 |
 | `BetterBTD/Models/Rounds` | 1 |
 | `BetterBTD/Models/ScriptEditor` | 5 |
-| `BetterBTD/Models/ScriptExecution` | 1 |
+| `BetterBTD/Models/ScriptExecution` | 2 |
 | `BetterBTD/Models/TestApi` | 1 |
 | `BetterBTD/Models/Tools` | 3 |
 
@@ -62,6 +62,7 @@ Paths are relative to the repository root. Open the linked file and verify curre
 | [GameUiDetectionModels.cs](../../../../../BetterBTD/Models/AutoTasks/GameUiDetectionModels.cs) | Automatic-task configuration and runtime models; primary symbols: GameUiColorComparisonOperator, GameUiDetectionConfig, GameUiDetectionRule, GameUiColorCondition |
 | [GoldBalloonAutoTaskModels.cs](../../../../../BetterBTD/Models/AutoTasks/GoldBalloonAutoTaskModels.cs) | Automatic-task configuration and runtime models; primary symbols: GoldBalloonAutoTaskScriptRunState, GoldBalloonAutoTaskScriptContext, GoldBalloonAutoTaskStateKeys |
 | [LoopStageAutoTaskModels.cs](../../../../../BetterBTD/Models/AutoTasks/LoopStageAutoTaskModels.cs) | Automatic-task configuration and runtime models; primary symbols: LoopStageScriptRunState, LoopStageAutoTaskScriptContext, LoopStageAutoTaskStateKeys, LoopStageRoundProgressTracker |
+| [NavigationCoordinationModels.cs](../../../../../BetterBTD/Models/AutoTasks/NavigationCoordinationModels.cs) | Automatic-task configuration and runtime models; primary symbols: StageChallengeState, NavigationObservation, StageChallengeStateTransition |
 | [OdysseyAutoTaskModels.cs](../../../../../BetterBTD/Models/AutoTasks/OdysseyAutoTaskModels.cs) | Automatic-task configuration and runtime models; primary symbols: OdysseyAutoTaskScriptRunState, OdysseyAutoTaskStateKeys |
 | [RaceAutoTaskModels.cs](../../../../../BetterBTD/Models/AutoTasks/RaceAutoTaskModels.cs) | Automatic-task configuration and runtime models; primary symbols: RaceAutoTaskScriptRunState, RaceAutoTaskStateKeys |
 
@@ -113,6 +114,7 @@ Paths are relative to the repository root. Open the linked file and verify curre
 | File | Description |
 | --- | --- |
 | [ScriptExecutionModels.cs](../../../../../BetterBTD/Models/ScriptExecution/ScriptExecutionModels.cs) | Script instruction, log, and session models; primary symbols: ScriptExecutionStatus, ScriptExecutionRunState, ScriptExecutionOperationIntervalStrategy, ScriptExecutionWindowSettings, ScriptExecutionOptions |
+| [ScriptWorkerModels.cs](../../../../../BetterBTD/Models/ScriptExecution/ScriptWorkerModels.cs) | Script instruction, log, and session models; primary symbols: ScriptWorkerState, ScriptWorkerCommandKind, ScriptWorkerEventKind, ScriptWorkerStartRequest, ScriptWorkerCommand |
 
 ### `BetterBTD/Models/TestApi`
 
