@@ -474,6 +474,8 @@ public sealed class AutoTaskExecutionOptions
             new(960, 760),
             new(1340, 850),
             new(850, 810),
+            new(780, 730),
+            new(1140, 730),
             new(80, 55)
         ];
     }

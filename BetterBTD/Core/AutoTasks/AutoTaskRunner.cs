@@ -580,7 +580,7 @@ public sealed class AutoTaskRunner
                 recoveredSnapshot,
                 $"Observed UI state '{recoveredSnapshot.State}' after stuck-recovery attempt {attempt}.");
 
-            if (!AutoTaskStuckUiTracker.IsSameInterface(
+            if (AutoTaskStuckUiTracker.HasVisualFingerprintChanged(
                     stuckSnapshot,
                     recoveredSnapshot,
                     options.VisualFingerprintDistanceTolerance))
@@ -589,7 +589,7 @@ public sealed class AutoTaskRunner
             }
         }
 
-        return $"UI state '{stuckSnapshot.State}' did not change for {options.StuckUiTimeout.TotalSeconds:F1} seconds and remained unchanged after {options.StuckRecoveryPoints.Count} recovery clicks.";
+        return $"UI state '{stuckSnapshot.State}' did not change for {options.StuckUiTimeout.TotalSeconds:F1} seconds and its visual fingerprint remained unchanged after {options.StuckRecoveryPoints.Count} recovery clicks.";
     }
 
     private static void UpdateStageCompletion(
