@@ -8,6 +8,7 @@ namespace BetterBTD.Views.Controls.ScriptEditor;
 public partial class ScriptEditorWorkspace : UserControl
 {
     private const double DragAutoScrollBoundary = 64d;
+    private const double DragAutoScrollStep = 16d;
     private static readonly TimeSpan DragAutoScrollInterval = TimeSpan.FromMilliseconds(150);
 
     private readonly DispatcherTimer _instructionSequenceAutoScrollTimer;
@@ -166,10 +167,12 @@ public partial class ScriptEditorWorkspace : UserControl
         switch (_instructionSequenceAutoScrollDirection)
         {
             case DragAutoScrollDirection.Up:
-                _instructionSequenceScrollViewer.LineUp();
+                _instructionSequenceScrollViewer.ScrollToVerticalOffset(
+                    Math.Max(0d, previousOffset - DragAutoScrollStep));
                 break;
             case DragAutoScrollDirection.Down:
-                _instructionSequenceScrollViewer.LineDown();
+                _instructionSequenceScrollViewer.ScrollToVerticalOffset(
+                    Math.Min(_instructionSequenceScrollViewer.ScrollableHeight, previousOffset + DragAutoScrollStep));
                 break;
             default:
                 StopInstructionSequenceAutoScroll();

@@ -80,7 +80,11 @@
                      SelectedItem="{Binding SelectedLibraryInstruction}"
                      dd:DragDrop.IsDragSource="True"
                      dd:DragDrop.UseDefaultDragAdorner="True"
-                     ScrollViewer.VerticalScrollBarVisibility="Auto">
+                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     ScrollViewer.CanContentScroll="True"
+                     VirtualizingPanel.IsVirtualizing="True"
+                     VirtualizingPanel.VirtualizationMode="Recycling"
+                     VirtualizingPanel.ScrollUnit="Pixel">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <Border Margin="0,0,0,8"
@@ -132,7 +136,8 @@
                          ScrollViewer.VerticalScrollBarVisibility="Auto"
                          ScrollViewer.CanContentScroll="True"
                          VirtualizingPanel.IsVirtualizing="True"
-                         VirtualizingPanel.VirtualizationMode="Recycling">
+                         VirtualizingPanel.VirtualizationMode="Recycling"
+                         VirtualizingPanel.ScrollUnit="Pixel">
                     <ListBox.InputBindings>
                         <KeyBinding Key="X"
                                     Modifiers="Control"
