@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 
@@ -52,6 +53,14 @@ public partial class ScriptEditorWorkspace : UserControl
     {
         if (sender is not ListBox listBox)
         {
+            return;
+        }
+
+        // Pointer-selected items are already inside the viewport. Scrolling them into view
+        // can shift a pixel-scrolled list while Ctrl-selecting partially visible items.
+        if (Mouse.LeftButton == MouseButtonState.Pressed)
+        {
+            _restoreInstructionSequenceKeyboardFocus = false;
             return;
         }
 
