@@ -46,6 +46,7 @@ public sealed class MyScriptsPageViewModel : ObservableObject
     private string _selectedScriptDifficulty = string.Empty;
     private string _selectedScriptMode = string.Empty;
     private string _selectedScriptTags = string.Empty;
+    private string _selectedScriptUpdatedAt = string.Empty;
     private string _selectedScriptState = string.Empty;
 
     public MyScriptsPageViewModel(LocalizationService localizationService)
@@ -283,6 +284,8 @@ public sealed class MyScriptsPageViewModel : ObservableObject
 
     public string PropertyTagsText => _localizationService.T("Library.Property.Tags");
 
+    public string PropertyUpdatedAtText => _localizationService.T("Library.Property.UpdatedAt");
+
     public string PropertyStateText => _localizationService.T("Library.Property.State");
 
     public string CopyScriptIdText => _localizationService.T("Library.Action.CopyScriptId");
@@ -423,6 +426,12 @@ public sealed class MyScriptsPageViewModel : ObservableObject
     {
         get => _selectedScriptTags;
         private set => SetProperty(ref _selectedScriptTags, value);
+    }
+
+    public string SelectedScriptUpdatedAt
+    {
+        get => _selectedScriptUpdatedAt;
+        private set => SetProperty(ref _selectedScriptUpdatedAt, value);
     }
 
     public string SelectedScriptState
@@ -965,6 +974,7 @@ public sealed class MyScriptsPageViewModel : ObservableObject
             SelectedScriptDifficulty = string.Empty;
             SelectedScriptMode = string.Empty;
             SelectedScriptTags = string.Empty;
+            SelectedScriptUpdatedAt = string.Empty;
             SelectedScriptState = string.Empty;
             return;
         }
@@ -977,6 +987,7 @@ public sealed class MyScriptsPageViewModel : ObservableObject
         SelectedScriptDifficulty = FormatDetailValue(SelectedScript.DifficultyDisplayName);
         SelectedScriptMode = FormatDetailValue(SelectedScript.ModeDisplayName);
         SelectedScriptTags = FormatDetailValue(SelectedScript.TagsText);
+        SelectedScriptUpdatedAt = FormatDetailValue(SelectedScript.UpdatedAtText);
         SelectedScriptState = FormatDetailValue(SelectedScript.StateText);
     }
 
@@ -1020,6 +1031,7 @@ public sealed class MyScriptsPageViewModel : ObservableObject
         OnPropertyChanged(nameof(PropertyDifficultyText));
         OnPropertyChanged(nameof(PropertyModeText));
         OnPropertyChanged(nameof(PropertyTagsText));
+        OnPropertyChanged(nameof(PropertyUpdatedAtText));
         OnPropertyChanged(nameof(PropertyStateText));
         OnPropertyChanged(nameof(CopyScriptIdText));
     }

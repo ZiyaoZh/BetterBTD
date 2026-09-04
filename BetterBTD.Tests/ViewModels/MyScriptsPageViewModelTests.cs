@@ -30,6 +30,9 @@ public sealed class MyScriptsPageViewModelTests
                 ScriptDocumentService.Instance,
                 ManagedScriptSlotCatalogService.Instance);
             libraryService.ImportScript(sourceFilePath);
+            var expectedUpdatedAtUtc = new DateTime(2025, 1, 2, 3, 4, 0, DateTimeKind.Utc);
+            var storedFilePath = Assert.Single(libraryService.GetSnapshot().Scripts).StoredFilePath;
+            File.SetLastWriteTimeUtc(storedFilePath, expectedUpdatedAtUtc);
 
             var viewModel = new MyScriptsPageViewModel(LocalizationService.Instance, libraryService);
 
@@ -43,6 +46,11 @@ public sealed class MyScriptsPageViewModelTests
             Assert.True(viewModel.HasScripts);
             Assert.False(viewModel.IsLoadingScripts);
             Assert.Equal("async-load-script", script.DisplayName);
+            Assert.Equal(script.UpdatedAtText, viewModel.SelectedScriptUpdatedAt);
+            Assert.Equal(expectedUpdatedAtUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm"), viewModel.SelectedScriptUpdatedAt);
+            Assert.Equal(
+                LocalizationService.Instance.T("Library.Property.UpdatedAt"),
+                viewModel.PropertyUpdatedAtText);
             Assert.True(viewModel.LoadingProgressMaximum >= 1d);
             Assert.True(viewModel.LoadingProgressValue >= 0d);
         }
