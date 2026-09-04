@@ -17,6 +17,7 @@ public partial class ScriptEditorWorkspace : UserControl
     private DragAutoScrollDirection _instructionSequenceAutoScrollDirection;
     private bool _isInstructionSequenceDragActive;
     private bool _restoreInstructionSequenceKeyboardFocus;
+    private int _instructionSequenceSelectionVersion;
 
     public ScriptEditorWorkspace()
     {
@@ -28,6 +29,10 @@ public partial class ScriptEditorWorkspace : UserControl
         };
         _instructionSequenceAutoScrollTimer.Tick += InstructionSequenceAutoScrollTimer_Tick;
 
+        InstructionSequenceListBox.AddHandler(
+            Mouse.PreviewMouseDownEvent,
+            new MouseButtonEventHandler(InstructionSequenceListBox_PreviewMouseDown),
+            handledEventsToo: true);
         InstructionSequenceListBox.AddHandler(
             DragDrop.PreviewDragOverEvent,
             new DragEventHandler(InstructionSequenceListBox_PreviewDragOver),
@@ -56,9 +61,9 @@ public partial class ScriptEditorWorkspace : UserControl
             return;
         }
 
-        // Pointer-selected items are already inside the viewport. Scrolling them into view
-        // can shift a pixel-scrolled list while Ctrl-selecting partially visible items.
-        if (Mouse.LeftButton == MouseButtonState.Pressed)
+        var selectionVersion = ++_instructionSequenceSelectionVersion;
+        if (Mouse.LeftButton == MouseButtonState.Pressed ||
+            Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
         {
             _restoreInstructionSequenceKeyboardFocus = false;
             return;
@@ -67,6 +72,13 @@ public partial class ScriptEditorWorkspace : UserControl
         _restoreInstructionSequenceKeyboardFocus |= listBox.IsKeyboardFocusWithin;
         _ = Dispatcher.BeginInvoke(() =>
         {
+            if (selectionVersion != _instructionSequenceSelectionVersion ||
+                Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+            {
+                _restoreInstructionSequenceKeyboardFocus = false;
+                return;
+            }
+
             var selectedItem = listBox.SelectedItem;
             if (selectedItem is null)
             {
@@ -87,6 +99,17 @@ public partial class ScriptEditorWorkspace : UserControl
         }, DispatcherPriority.Background);
     }
 
+    private void InstructionSequenceListBox_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ChangedButton != MouseButton.Left)
+        {
+            return;
+        }
+
+        _restoreInstructionSequenceKeyboardFocus = false;
+        _instructionSequenceSelectionVersion++;
+    }
+
     private void ScriptEditorWorkspace_Loaded(object sender, RoutedEventArgs e)
     {
         _instructionSequenceScrollViewer = FindDescendant<ScrollViewer>(InstructionSequenceListBox);
@@ -95,6 +118,7 @@ public partial class ScriptEditorWorkspace : UserControl
     private void ScriptEditorWorkspace_Unloaded(object sender, RoutedEventArgs e)
     {
         _isInstructionSequenceDragActive = false;
+        _instructionSequenceSelectionVersion++;
         StopInstructionSequenceAutoScroll();
         _instructionSequenceScrollViewer = null;
     }
