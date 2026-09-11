@@ -235,13 +235,13 @@ public sealed class GameUiDetectionConfigService
     {
         return new GameUiDetectionConfig
         {
-            Version = 6,
+            Version = 7,
             ReferenceWidth = 1920,
             ReferenceHeight = 1080,
             DefaultTolerance = 50,
             Rules =
             [
-                CreateRule("network_unavailable_dialog", "网络不可用弹窗界面", GameUiStateId.NetworkUnavailableDialog, 980,
+                CreateRule("network_unavailable_dialog", "网络不可用弹窗界面", GameUiStateId.NetworkUnavailableDialog, 927,
                     Eq(610, 405, "#71E800"), Eq(1370, 405, "#71E800"), Eq(690, 730, "#FFD600"), Eq(1040, 730, "#69E500")),
                 CreateRule("stage_challenge_with_hint_a", "带提示的关卡挑战界面", GameUiStateId.StageChallengeWithHint, 970,
                     Eq(780, 380, "#F34A12"), Eq(780, 760, "#5388D2"), Eq(900, 760, "#62E200")),
@@ -263,7 +263,9 @@ public sealed class GameUiDetectionConfigService
                     Eq(1910, 40, "#B1814A"), Eq(13, 40, "#B1814A"),
                     Eq(910, 203, "#009FDD"), Eq(1036, 758, "#5ED900"), Eq(743, 384, "#F34F13")),
                 CreateRule("stage_hint", "关卡提示界面", GameUiStateId.StageHint, 928,
-                    Eq(1080, 400, "#71E800"), Eq(1080, 500, "#6095D7"), Eq(1080, 725, "#65DC00")),
+                    Eq(610, 405, "#71E800"), Eq(1370, 405, "#71E800"), Eq(690, 730, "#FFD600"),
+                    Eq(1040, 730, "#69E500"), Eq(70, 50, "#7F7F7F"), Eq(800, 50, "#402512"),
+                    Eq(1200, 40, "#402512")),
                 CreateRule("stage_level_up", "关卡升级界面", GameUiStateId.LevelUp, 927,
                     Eq(1910, 40, "#543E2A"), Eq(13, 40, "#543E2A")),
                 CreateRule("main_menu", "游戏主界面", GameUiStateId.MainMenu, 700,

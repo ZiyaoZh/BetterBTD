@@ -46,15 +46,26 @@ public sealed class GameUiDetectionConfigTests
                 config.Rules,
                 static rule => rule.State == GameUiStateId.NetworkUnavailableDialog);
             Assert.Equal("network_unavailable_dialog", networkUnavailableRule.Key);
-            Assert.True(networkUnavailableRule.Priority > config.Rules
-                .Where(static rule => rule.State != GameUiStateId.NetworkUnavailableDialog)
-                .Max(static rule => rule.Priority));
+            Assert.Equal(927, networkUnavailableRule.Priority);
             Assert.Collection(
                 networkUnavailableRule.AllOf,
                 condition => AssertCondition(condition, 610, 405, "#71E800"),
                 condition => AssertCondition(condition, 1370, 405, "#71E800"),
                 condition => AssertCondition(condition, 690, 730, "#FFD600"),
                 condition => AssertCondition(condition, 1040, 730, "#69E500"));
+
+            var stageHintRule = Assert.Single(config.Rules, static rule => rule.State == GameUiStateId.StageHint);
+            Assert.Equal(928, stageHintRule.Priority);
+            Assert.True(stageHintRule.Priority > networkUnavailableRule.Priority);
+            Assert.Collection(
+                stageHintRule.AllOf,
+                condition => AssertCondition(condition, 610, 405, "#71E800"),
+                condition => AssertCondition(condition, 1370, 405, "#71E800"),
+                condition => AssertCondition(condition, 690, 730, "#FFD600"),
+                condition => AssertCondition(condition, 1040, 730, "#69E500"),
+                condition => AssertCondition(condition, 70, 50, "#7F7F7F"),
+                condition => AssertCondition(condition, 800, 50, "#402512"),
+                condition => AssertCondition(condition, 1200, 40, "#402512"));
 
             var json = File.ReadAllText(configFilePath);
             Assert.Contains("main_menu", json);
@@ -229,6 +240,35 @@ public sealed class GameUiDetectionConfigTests
             SetPixel(frame, 1370, 405, "#71E800");
             SetPixel(frame, 690, 730, "#FFD600");
             SetPixel(frame, 1040, 730, "#69E500");
+
+            Assert.True(GameUiDetectionRuleEvaluator.IsMatch(frame, config, rule));
+        }
+        finally
+        {
+            Directory.Delete(tempDirectory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void DefaultStageHintRule_MatchesConfiguredPixels()
+    {
+        var tempDirectory = CreateTempDirectory();
+
+        try
+        {
+            var service = new GameUiDetectionConfigService(
+                Path.Combine(tempDirectory, "game_ui_detection_rules.json"));
+            var config = service.Current;
+            var rule = Assert.Single(config.Rules, static item => item.State == GameUiStateId.StageHint);
+
+            using var frame = new Mat(1080, 1920, MatType.CV_8UC3, Scalar.All(0));
+            SetPixel(frame, 610, 405, "#71E800");
+            SetPixel(frame, 1370, 405, "#71E800");
+            SetPixel(frame, 690, 730, "#FFD600");
+            SetPixel(frame, 1040, 730, "#69E500");
+            SetPixel(frame, 70, 50, "#7F7F7F");
+            SetPixel(frame, 800, 50, "#402512");
+            SetPixel(frame, 1200, 40, "#402512");
 
             Assert.True(GameUiDetectionRuleEvaluator.IsMatch(frame, config, rule));
         }
@@ -498,7 +538,7 @@ public sealed class GameUiDetectionConfigTests
             var service = new GameUiDetectionConfigService(configFilePath);
             var reloaded = service.Reload();
 
-            Assert.Equal(6, reloaded.Version);
+            Assert.Equal(7, reloaded.Version);
             Assert.DoesNotContain(reloaded.Rules, static rule => rule.Key == "map_search_results");
             Assert.DoesNotContain(reloaded.Rules, static rule => rule.Key == "retired_by_numeric_state");
             var customRule = Assert.Single(reloaded.Rules, static rule => rule.Key == "custom_map_grid");
