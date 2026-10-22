@@ -262,6 +262,7 @@ public static class GameElementCatalog
         new(GameMapType.AncientPortal, MapDifficultyTier.Intermediate, "GameElements.Map.AncientPortal"),
 
         // Advanced
+        new(GameMapType.ShipCapture, MapDifficultyTier.Advanced, "GameElements.Map.ShipCapture"),
         new(GameMapType.Ascent, MapDifficultyTier.Advanced, "GameElements.Map.Ascent"),
         new(GameMapType.CastleRevenge, MapDifficultyTier.Advanced, "GameElements.Map.CastleRevenge"),
         new(GameMapType.DarkPath, MapDifficultyTier.Advanced, "GameElements.Map.DarkPath"),

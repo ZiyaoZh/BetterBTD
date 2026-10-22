@@ -20,6 +20,7 @@
 - 地图中文显示名，例如 `骷髅改`。
 - 地图难度分组：`Beginner`、`Intermediate`、`Advanced` 或 `Expert`。
 - 1080p OCR 模板图片，通常来自游戏地图卡片截图裁剪。
+- 游戏客户区以 `1920 x 1080` 为截图基准，地图模板统一为 `50 x 50` 像素 PNG。按原始像素裁剪卡片预览图中有辨识度的区域，避开文字、边框、奖章和活动标记，不缩放图片。现有 51 x 51 模板保留左上角 50 x 50，裁去最右列和最下行。
 - 是否需要兼容旧 `.btd6` 数字地图 ID。默认不需要。
 
 ## 修改文件
@@ -145,6 +146,7 @@ rg -n "GameMapType|GameElementCatalog\.Maps|MapDifficultyTier|CreateGoldBalloonS
 - `GameElementCascadingItems` 的地图选择项来自 `GameElementCatalog.Maps`。
 - `IconTemplateRepository.LoadMapTemplates` 按 `GameMapType` 和模板文件名自动加载。
 - 测试中没有写死旧的地图数量。
+- `tools/BetterBTD.ScriptTest/game-state-catalog.json` 的地图列表同步新增稳定枚举名。
 
 如果新地图是专家图，还要确认收集任务候选和订阅槽位是否符合预期。
 

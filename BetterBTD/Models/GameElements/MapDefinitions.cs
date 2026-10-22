@@ -99,7 +99,8 @@ public enum GameMapType
     Ouch,
     TrickyTracks,
     SkullTweak,
-    Ascent
+    Ascent,
+    ShipCapture
 }
 
 public enum StageDifficulty

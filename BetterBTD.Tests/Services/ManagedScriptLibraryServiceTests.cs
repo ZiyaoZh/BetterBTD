@@ -1375,6 +1375,15 @@ public sealed class ManagedScriptLibraryServiceTests
         Assert.Contains(slots, x => x.SlotId == ManagedScriptSlotIdFactory.CreateGoldBalloonSlotId(GameMapType.SkullTweak));
 
         Assert.Contains(GameElementCatalog.Maps, x => x.Type == GameMapType.Ascent && x.Tier == MapDifficultyTier.Advanced);
+        Assert.Contains(GameElementCatalog.Maps, x => x.Type == GameMapType.ShipCapture && x.Tier == MapDifficultyTier.Advanced);
+        foreach (var difficulty in BlackBorderTaskCatalog.Difficulties)
+        {
+            foreach (var mode in BlackBorderTaskCatalog.GetModesForDifficulty(difficulty))
+            {
+                Assert.Contains(slots, x => x.SlotId == ManagedScriptSlotIdFactory.CreateBlackBorderSlotId(
+                    GameMapType.ShipCapture, difficulty, mode));
+            }
+        }
         Assert.Contains(slots, x => x.SlotId == ManagedScriptSlotIdFactory.CreateBlackBorderSlotId(
             GameMapType.Ascent,
             StageDifficulty.Easy,
@@ -1384,6 +1393,22 @@ public sealed class ManagedScriptLibraryServiceTests
             GameMapType.MonkeyMeadow,
             StageDifficulty.Easy,
             StageMode.Standard));
+    }
+
+    [Fact]
+    public void MapTemplates_AllSuppliedTemplatesAre50PixelsAndIncludeShipCapture()
+    {
+        var templateRoot = Path.Combine(AppContext.BaseDirectory, "Assets", "OcrIcons", "Maps", "1080p");
+        Assert.True(File.Exists(Path.Combine(templateRoot, "ShipCapture.png")));
+        foreach (var path in Directory.EnumerateFiles(templateRoot, "*.png"))
+        {
+            Assert.True(Enum.TryParse<GameMapType>(Path.GetFileNameWithoutExtension(path), out var map));
+            Assert.Single(GameElementCatalog.Maps, entry => entry.Type == map);
+            using var image = OpenCvSharp.Cv2.ImRead(path, OpenCvSharp.ImreadModes.Unchanged);
+            Assert.False(image.Empty());
+            Assert.Equal(50, image.Width);
+            Assert.Equal(50, image.Height);
+        }
     }
 
     private static ScriptDocument CreateDocument(
