@@ -13,6 +13,81 @@ namespace BetterBTD.Tests.AutoTasks;
 public sealed class AutoTaskStuckRecoveryTests
 {
     [Fact]
+    public void Configuration_MapSearchButtonPositionsDefaultForLegacyConfigurationAndPersistIndependently()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), $"BetterBTD.Tests.{Guid.NewGuid():N}");
+        var configPath = Path.Combine(directory, "appsettings.json");
+
+        try
+        {
+            Directory.CreateDirectory(directory);
+            File.WriteAllText(configPath, "{}");
+            var writer = new ConfigurationService(configPath);
+            Assert.Equal(nameof(MapSearchModeButtonPosition.Second), writer.Current.CollectionMapSearchModeButtonPositionName);
+            Assert.Equal(nameof(MapSearchModeButtonPosition.Second), writer.Current.GoldBalloonMapSearchModeButtonPositionName);
+
+            writer.Current.CollectionMapSearchModeButtonPositionName = "first";
+            writer.Current.GoldBalloonMapSearchModeButtonPositionName = "third";
+            writer.Save(writer.Current);
+
+            var reloaded = new ConfigurationService(configPath).Current;
+            Assert.Equal(nameof(MapSearchModeButtonPosition.First), reloaded.CollectionMapSearchModeButtonPositionName);
+            Assert.Equal(nameof(MapSearchModeButtonPosition.Third), reloaded.GoldBalloonMapSearchModeButtonPositionName);
+        }
+        finally
+        {
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory, recursive: true);
+            }
+        }
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("invalid")]
+    [InlineData("99")]
+    public void Configuration_MapSearchButtonPositionsNormalizeInvalidNamesOnLoadAndSave(string? positionName)
+    {
+        var directory = Path.Combine(Path.GetTempPath(), $"BetterBTD.Tests.{Guid.NewGuid():N}");
+        var configPath = Path.Combine(directory, "appsettings.json");
+
+        try
+        {
+            Directory.CreateDirectory(directory);
+            File.WriteAllText(configPath, JsonSerializer.Serialize(new
+            {
+                CollectionMapSearchModeButtonPositionName = positionName,
+                GoldBalloonMapSearchModeButtonPositionName = positionName
+            }));
+            var writer = new ConfigurationService(configPath);
+            Assert.Equal(nameof(MapSearchModeButtonPosition.Second), writer.Current.CollectionMapSearchModeButtonPositionName);
+            Assert.Equal(nameof(MapSearchModeButtonPosition.Second), writer.Current.GoldBalloonMapSearchModeButtonPositionName);
+
+            writer.Save(new AppConfiguration
+            {
+                CollectionMapSearchModeButtonPositionName = positionName ?? string.Empty,
+                GoldBalloonMapSearchModeButtonPositionName = positionName ?? string.Empty
+            });
+
+            Assert.Equal(nameof(MapSearchModeButtonPosition.Second), writer.Current.CollectionMapSearchModeButtonPositionName);
+            Assert.Equal(nameof(MapSearchModeButtonPosition.Second), writer.Current.GoldBalloonMapSearchModeButtonPositionName);
+            var saved = JsonSerializer.Deserialize<AppConfiguration>(File.ReadAllText(configPath));
+            Assert.NotNull(saved);
+            Assert.Equal(nameof(MapSearchModeButtonPosition.Second), saved.CollectionMapSearchModeButtonPositionName);
+            Assert.Equal(nameof(MapSearchModeButtonPosition.Second), saved.GoldBalloonMapSearchModeButtonPositionName);
+        }
+        finally
+        {
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public void Configuration_JsonRoundTripPreservesRecoveryPointOrderAndDefaultsMissingFields()
     {
         var configured = new AppConfiguration

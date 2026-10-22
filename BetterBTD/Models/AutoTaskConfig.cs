@@ -34,6 +34,15 @@ public partial class AutoTaskConfig : ObservableObject
     private bool _showCollectionVariantConfiguration;
 
     [ObservableProperty]
+    private bool _showMapSearchModeButtonConfiguration;
+
+    [ObservableProperty]
+    private ObservableCollection<LanguageOption> _mapSearchModeButtonOptions = [];
+
+    [ObservableProperty]
+    private LanguageOption? _selectedMapSearchModeButtonOption;
+
+    [ObservableProperty]
     private bool _showBlackBorderVariantConfiguration;
 
     [ObservableProperty]

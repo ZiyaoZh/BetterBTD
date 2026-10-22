@@ -120,9 +120,7 @@ internal sealed class GoldBalloonGameUiActionHandler : AutoTaskGameUiActionHandl
         var attempts = state.TryGetProperty<int>(GoldBalloonAutoTaskStateKeys.MapSearchAttempts, out var currentAttempts)
             ? currentAttempts
             : 0;
-        var searchButtonPoint = attempts >= 3
-            ? new WpfPoint(1275, 45)
-            : new WpfPoint(1350, 45);
+        var searchButtonPoint = GetMapSearchModeButtonPoint(state.Request.MapSearchModeButtonPosition);
 
         MapSearchFlowState.CapturePixelBaseline(
             state,

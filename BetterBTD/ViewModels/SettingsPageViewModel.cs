@@ -416,6 +416,8 @@ public sealed class SettingsPageViewModel : ObservableObject
             ScriptExecutionIntervalStrategyName = current.ScriptExecutionIntervalStrategyName,
             ScriptExecutionCommonOperationIntervalMs = current.ScriptExecutionCommonOperationIntervalMs,
             AutoTaskMaxConsecutiveNavigationFailures = AutoTaskMaxConsecutiveNavigationFailures,
+            CollectionMapSearchModeButtonPositionName = current.CollectionMapSearchModeButtonPositionName,
+            GoldBalloonMapSearchModeButtonPositionName = current.GoldBalloonMapSearchModeButtonPositionName,
             AutoTaskStuckUiTimeoutSeconds = AutoTaskStuckUiTimeoutSeconds,
             AutoTaskVisualFingerprintDistanceTolerance = AutoTaskVisualFingerprintDistanceTolerance,
             AutoTaskStuckRecoveryDelayMs = AutoTaskStuckRecoveryDelayMs,

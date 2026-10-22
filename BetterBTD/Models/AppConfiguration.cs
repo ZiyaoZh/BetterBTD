@@ -41,6 +41,10 @@ public sealed class AppConfiguration
 
     public int AutoTaskMaxConsecutiveNavigationFailures { get; set; } = 5;
 
+    public string CollectionMapSearchModeButtonPositionName { get; set; } = nameof(MapSearchModeButtonPosition.Second);
+
+    public string GoldBalloonMapSearchModeButtonPositionName { get; set; } = nameof(MapSearchModeButtonPosition.Second);
+
     public int AutoTaskStuckUiTimeoutSeconds { get; set; } = 10;
 
     public int AutoTaskVisualFingerprintDistanceTolerance { get; set; } = 6;

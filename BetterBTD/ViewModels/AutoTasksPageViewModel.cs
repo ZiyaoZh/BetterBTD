@@ -10,6 +10,7 @@ using BetterBTD.Models.AutoTasks;
 using BetterBTD.Models.GameElements;
 using BetterBTD.Models.MyScripts;
 using BetterBTD.Services;
+using BetterBTD.Services.ChildSession;
 using BetterBTD.Services.Shared;
 using BetterBTD.Services.Tasks.AutoTasks;
 using BetterBTD.Services.Tasks.RobotControl;
@@ -75,6 +76,7 @@ public sealed class AutoTasksPageViewModel : ObservableObject
     private readonly Dictionary<string, TextFileEditorWindow> _textEditorWindowsByKey = new(StringComparer.OrdinalIgnoreCase);
     private CollectionScriptBindingWindow? _collectionScriptBindingWindow;
     private bool _isImportingAssets;
+    private bool _isRefreshingModeButtonOptions;
 
     private string _runningTaskKey = string.Empty;
 
@@ -188,6 +190,10 @@ public sealed class AutoTasksPageViewModel : ObservableObject
 
     public string CollectionOptionDescription => _localizationService.T("Tasks.CollectionOptionDescription");
 
+    public string MapSearchModeButtonLabel => _localizationService.T("Tasks.MapSearchModeButtonLabel");
+
+    public string MapSearchModeButtonDescription => _localizationService.T("Tasks.MapSearchModeButtonDescription");
+
     public string BlackBorderCategoryLabel => _localizationService.T("Tasks.BlackBorderCategoryLabel");
 
     public string BlackBorderCategoryDescription => _localizationService.T("Tasks.BlackBorderCategoryDescription");
@@ -245,6 +251,7 @@ public sealed class AutoTasksPageViewModel : ObservableObject
         return new AutoTaskConfig
         {
             Key = AutoTaskKind.Collection.ToKey(),
+            ShowMapSearchModeButtonConfiguration = true,
             ShowStageTargetConfiguration = false,
             ShowCollectionVariantConfiguration = true,
             ShowScriptConfiguration = true,
@@ -257,6 +264,7 @@ public sealed class AutoTasksPageViewModel : ObservableObject
         return new AutoTaskConfig
         {
             Key = AutoTaskKind.GoldBalloon.ToKey(),
+            ShowMapSearchModeButtonConfiguration = true,
             ShowStageTargetConfiguration = false,
             ShowScriptConfiguration = true,
             ShowCollectionSubscriptionActions = true
@@ -474,6 +482,7 @@ public sealed class AutoTasksPageViewModel : ObservableObject
         {
             Kind = AutoTaskKind.Collection,
             StageTarget = CollectionPlaceholderStageTarget,
+            MapSearchModeButtonPosition = GetMapSearchModeButtonPosition(task),
             VariantKey = selectedVariantKey,
             RequiredScriptSlotIds = GameElementCatalog.Maps
                 .Where(map => map.Tier == MapDifficultyTier.Expert)
@@ -490,6 +499,7 @@ public sealed class AutoTasksPageViewModel : ObservableObject
         {
             Kind = AutoTaskKind.GoldBalloon,
             StageTarget = GoldBalloonPlaceholderStageTarget,
+            MapSearchModeButtonPosition = GetMapSearchModeButtonPosition(task),
             RequiredScriptSlotIds = GameElementCatalog.Maps
                 .Where(map => map.Tier == MapDifficultyTier.Beginner)
                 .Select(map => ManagedScriptSlotIdFactory.CreateGoldBalloonSlotId(map.Type))
@@ -669,6 +679,30 @@ public sealed class AutoTasksPageViewModel : ObservableObject
             task.SubscriptionLabel = ResolveSubscriptionLabel(task.Key);
             task.SubscriptionDescription = ResolveSubscriptionDescription(task.Key);
 
+            if (task.ShowMapSearchModeButtonConfiguration)
+            {
+                var previousPositionCode = task.SelectedMapSearchModeButtonOption?.Code
+                    ?? (task.Key == AutoTaskKind.Collection.ToKey()
+                        ? _configurationService.Current.CollectionMapSearchModeButtonPositionName
+                        : _configurationService.Current.GoldBalloonMapSearchModeButtonPositionName);
+                _isRefreshingModeButtonOptions = true;
+                try
+                {
+                    task.MapSearchModeButtonOptions = new ObservableCollection<LanguageOption>(
+                        Enum.GetValues<MapSearchModeButtonPosition>().Select(position => new LanguageOption
+                        {
+                            Code = position.ToString(),
+                            DisplayName = _localizationService.T($"Tasks.MapSearchModeButton.{position}")
+                        }));
+                    task.SelectedMapSearchModeButtonOption = SelectOption(task.MapSearchModeButtonOptions, previousPositionCode)
+                        ?? SelectOption(task.MapSearchModeButtonOptions, nameof(MapSearchModeButtonPosition.Second));
+                }
+                finally
+                {
+                    _isRefreshingModeButtonOptions = false;
+                }
+            }
+
             if (string.Equals(task.Key, AutoTaskKind.Collection.ToKey(), StringComparison.OrdinalIgnoreCase))
             {
                 var previousVariantCode = task.SelectedVariantOption?.Code;
@@ -722,6 +756,8 @@ public sealed class AutoTasksPageViewModel : ObservableObject
         OnPropertyChanged(nameof(OperationIntervalDescription));
         OnPropertyChanged(nameof(CollectionOptionLabel));
         OnPropertyChanged(nameof(CollectionOptionDescription));
+        OnPropertyChanged(nameof(MapSearchModeButtonLabel));
+        OnPropertyChanged(nameof(MapSearchModeButtonDescription));
         OnPropertyChanged(nameof(BlackBorderCategoryLabel));
         OnPropertyChanged(nameof(BlackBorderCategoryDescription));
         OnPropertyChanged(nameof(MapLabel));
@@ -753,6 +789,34 @@ public sealed class AutoTasksPageViewModel : ObservableObject
         if (sender is not AutoTaskConfig task)
         {
             return;
+        }
+
+        if (task.ShowMapSearchModeButtonConfiguration &&
+            !_isRefreshingModeButtonOptions &&
+            task.SelectedMapSearchModeButtonOption is not null &&
+            e.PropertyName == nameof(AutoTaskConfig.SelectedMapSearchModeButtonOption))
+        {
+            var positionName = GetMapSearchModeButtonPosition(task).ToString();
+            var configuration = _configurationService.Current;
+            var isCollection = task.Key == AutoTaskKind.Collection.ToKey();
+            var previousPositionName = isCollection
+                ? configuration.CollectionMapSearchModeButtonPositionName
+                : configuration.GoldBalloonMapSearchModeButtonPositionName;
+            if (previousPositionName != positionName && ChildSessionRuntimeState.CanPersistSharedData)
+            {
+                if (isCollection)
+                {
+                    configuration.CollectionMapSearchModeButtonPositionName = positionName;
+                }
+                else
+                {
+                    configuration.GoldBalloonMapSearchModeButtonPositionName = positionName;
+                }
+
+                _configurationService.Save(configuration);
+            }
+
+            UpdateRuntimeSummary(task);
         }
 
         if (string.Equals(task.Key, AutoTaskKind.BlackBorder.ToKey(), StringComparison.OrdinalIgnoreCase))
@@ -792,6 +856,14 @@ public sealed class AutoTasksPageViewModel : ObservableObject
         {
             UpdateRuntimeSummary(task);
         }
+    }
+
+    private static MapSearchModeButtonPosition GetMapSearchModeButtonPosition(AutoTaskConfig task)
+    {
+        return Enum.TryParse<MapSearchModeButtonPosition>(task.SelectedMapSearchModeButtonOption?.Code, out var position) &&
+               Enum.IsDefined(position)
+            ? position
+            : MapSearchModeButtonPosition.Second;
     }
 
     private IReadOnlyList<LanguageOption> BuildCollectionVariantOptions()
@@ -1557,6 +1629,11 @@ public sealed class AutoTasksPageViewModel : ObservableObject
         if (task.ShowCollectionVariantConfiguration && !string.IsNullOrWhiteSpace(task.SelectedVariantOption?.DisplayName))
         {
             parts.Add($"{CollectionOptionLabel}: {task.SelectedVariantOption!.DisplayName}");
+        }
+
+        if (task.ShowMapSearchModeButtonConfiguration && task.SelectedMapSearchModeButtonOption is { } modeButtonOption)
+        {
+            parts.Add($"{MapSearchModeButtonLabel}: {modeButtonOption.DisplayName}");
         }
 
         if (task.ShowBlackBorderVariantConfiguration)

@@ -66,6 +66,8 @@ PreparingStage
 
 `GameUiNavigator` 只负责通用页面转移。收集、金气球、黑框、竞速和奥德赛的特殊页面由对应 `IGameUiTaskActionHandler` 扩展。
 
+收集和金气球的地图搜索模式按钮由用户配置位置，不进行按钮识别或重试换位。`AutoTaskRequest.MapSearchModeButtonPosition` 使用 `First`、`Second`、`Third`（默认 `Second`），对应 1920 × 1080 基准坐标 `(1275,45)`、`(1350,45)`、`(1425,45)`。应用配置分别以 `CollectionMapSearchModeButtonPositionName` 和 `GoldBalloonMapSearchModeButtonPositionName` 保存稳定枚举名；旧配置缺少字段或值无效时回退第二个按钮，启动时复制到请求，本次运行不随页面选择改变。
+
 ## 策略
 
 当前策略包括：

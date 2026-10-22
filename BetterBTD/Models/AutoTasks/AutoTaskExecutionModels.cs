@@ -142,6 +142,13 @@ public sealed class StageEntryTarget
     public required StageMode Mode { get; init; }
 }
 
+public enum MapSearchModeButtonPosition
+{
+    First,
+    Second,
+    Third
+}
+
 public sealed class AutoTaskRequest
 {
     public required AutoTaskKind Kind { get; init; }
@@ -149,6 +156,8 @@ public sealed class AutoTaskRequest
     public required StageEntryTarget StageTarget { get; init; }
 
     public string VariantKey { get; init; } = string.Empty;
+
+    public MapSearchModeButtonPosition MapSearchModeButtonPosition { get; init; } = MapSearchModeButtonPosition.Second;
 
     public int OperationIntervalMs { get; init; } = 200;
 

@@ -79,6 +79,10 @@ public sealed class ConfigurationService
             configuration.ScriptExecutionCommonOperationIntervalMs);
         Current.AutoTaskMaxConsecutiveNavigationFailures = NormalizeAutoTaskNavigationFailureLimit(
             configuration.AutoTaskMaxConsecutiveNavigationFailures);
+        Current.CollectionMapSearchModeButtonPositionName = NormalizeMapSearchModeButtonPositionName(
+            configuration.CollectionMapSearchModeButtonPositionName);
+        Current.GoldBalloonMapSearchModeButtonPositionName = NormalizeMapSearchModeButtonPositionName(
+            configuration.GoldBalloonMapSearchModeButtonPositionName);
         Current.AutoTaskStuckUiTimeoutSeconds = NormalizeAutoTaskStuckTimeoutSeconds(
             configuration.AutoTaskStuckUiTimeoutSeconds);
         Current.AutoTaskVisualFingerprintDistanceTolerance = NormalizeAutoTaskVisualFingerprintDistanceTolerance(
@@ -155,6 +159,10 @@ public sealed class ConfigurationService
                 config.ScriptExecutionCommonOperationIntervalMs);
             config.AutoTaskMaxConsecutiveNavigationFailures = NormalizeAutoTaskNavigationFailureLimit(
                 config.AutoTaskMaxConsecutiveNavigationFailures);
+            config.CollectionMapSearchModeButtonPositionName = NormalizeMapSearchModeButtonPositionName(
+                config.CollectionMapSearchModeButtonPositionName);
+            config.GoldBalloonMapSearchModeButtonPositionName = NormalizeMapSearchModeButtonPositionName(
+                config.GoldBalloonMapSearchModeButtonPositionName);
             config.AutoTaskStuckUiTimeoutSeconds = NormalizeAutoTaskStuckTimeoutSeconds(
                 config.AutoTaskStuckUiTimeoutSeconds);
             config.AutoTaskVisualFingerprintDistanceTolerance = NormalizeAutoTaskVisualFingerprintDistanceTolerance(
@@ -191,6 +199,14 @@ public sealed class ConfigurationService
     private static int NormalizeScriptExecutionCommonOperationInterval(int intervalMs)
     {
         return Math.Clamp(intervalMs <= 0 ? 200 : intervalMs, 50, 1000);
+    }
+
+    private static string NormalizeMapSearchModeButtonPositionName(string? positionName)
+    {
+        return Enum.TryParse<MapSearchModeButtonPosition>(positionName, ignoreCase: true, out var position) &&
+            Enum.IsDefined(position)
+                ? position.ToString()
+                : nameof(MapSearchModeButtonPosition.Second);
     }
 
     internal static int NormalizeAutoTaskNavigationFailureLimit(int value)

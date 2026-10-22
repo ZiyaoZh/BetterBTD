@@ -38,6 +38,16 @@ internal abstract class AutoTaskGameUiActionHandlerBase : IGameUiTaskActionHandl
         GameUiSnapshot snapshot,
         CancellationToken cancellationToken = default);
 
+    protected static WpfPoint GetMapSearchModeButtonPoint(MapSearchModeButtonPosition position)
+    {
+        return position switch
+        {
+            MapSearchModeButtonPosition.First => new WpfPoint(1275, 45),
+            MapSearchModeButtonPosition.Third => new WpfPoint(1425, 45),
+            _ => new WpfPoint(1350, 45)
+        };
+    }
+
     protected GameUiActionExecutionResult Click(
         GameUiNavigationStep step,
         WpfPoint scriptPoint,

@@ -22,6 +22,17 @@ public sealed class MapSearchFlowTests
     private static readonly GameUiPixelSample LegacyResultPixel = new(0x40, 0x9F, 0xFF, 50);
 
     [Fact]
+    public void Request_DefaultsToSecondModeButton()
+    {
+        var request = new AutoTaskRequest
+        {
+            Kind = AutoTaskKind.Collection,
+            StageTarget = CreateTarget()
+        };
+        Assert.Equal(MapSearchModeButtonPosition.Second, request.MapSearchModeButtonPosition);
+    }
+
+    [Fact]
     public void PixelSample_UsesPerChannelTolerance()
     {
         Assert.False(new GameUiPixelSample(70, 90, 110, 50).HasChangedFrom(InitialPixel));
@@ -384,14 +395,21 @@ public sealed class MapSearchFlowTests
     }
 
     [Theory]
-    [InlineData(AutoTaskKind.Collection)]
-    [InlineData(AutoTaskKind.GoldBalloon)]
-    public async Task Handler_PreservesSearchClickFallback_AndEntersRecognizedResult(AutoTaskKind kind)
+    [InlineData(AutoTaskKind.Collection, MapSearchModeButtonPosition.First, 1275d)]
+    [InlineData(AutoTaskKind.Collection, MapSearchModeButtonPosition.Second, 1350d)]
+    [InlineData(AutoTaskKind.Collection, MapSearchModeButtonPosition.Third, 1425d)]
+    [InlineData(AutoTaskKind.GoldBalloon, MapSearchModeButtonPosition.First, 1275d)]
+    [InlineData(AutoTaskKind.GoldBalloon, MapSearchModeButtonPosition.Second, 1350d)]
+    [InlineData(AutoTaskKind.GoldBalloon, MapSearchModeButtonPosition.Third, 1425d)]
+    public async Task Handler_RepeatsConfiguredSearchButton_AndEntersRecognizedResult(
+        AutoTaskKind kind,
+        MapSearchModeButtonPosition position,
+        double expectedX)
     {
         var dispatcher = new RecordingInputSimulationCommandDispatcher();
         var inputService = new ScriptInputSimulationService(CreateInputEnvironment(), dispatcher);
         var handler = CreateHandler(kind, inputService);
-        var state = CreateState(kind);
+        var state = CreateState(kind, position);
         var initialSnapshot = CreateMapSearchSnapshot(InitialPixel);
         var initialStep = GameUiNavigator.Instance.GetNextStep(CreateTarget(), initialSnapshot);
 
@@ -422,7 +440,7 @@ public sealed class MapSearchFlowTests
             .Select(static command => (command.X, command.Y))
             .ToArray();
         Assert.Equal(
-            [(1350d, 45d), (1350d, 45d), (1350d, 45d), (1275d, 45d), (540d, 650d)],
+            [(expectedX, 45d), (expectedX, 45d), (expectedX, 45d), (expectedX, 45d), (540d, 650d)],
             clickPoints);
 
         var attemptsKey = kind == AutoTaskKind.Collection
@@ -497,11 +515,14 @@ public sealed class MapSearchFlowTests
         };
     }
 
-    private static AutoTaskRuntimeState CreateState(AutoTaskKind kind)
+    private static AutoTaskRuntimeState CreateState(
+        AutoTaskKind kind,
+        MapSearchModeButtonPosition position = MapSearchModeButtonPosition.Second)
     {
         return new AutoTaskRuntimeState(new AutoTaskRequest
         {
             Kind = kind,
+            MapSearchModeButtonPosition = position,
             StageTarget = CreateTarget()
         });
     }
