@@ -12,7 +12,6 @@
                  MinWidth="920"
                  MinHeight="560"
                  ExtendsContentIntoTitleBar="True"
-                 WindowBackdropType="Mica"
                  WindowCornerPreference="Round"
                  WindowStartupLocation="CenterOwner">
     <Grid>

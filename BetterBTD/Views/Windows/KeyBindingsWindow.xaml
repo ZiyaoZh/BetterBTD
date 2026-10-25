@@ -12,7 +12,6 @@
                  MinWidth="760"
                  MinHeight="520"
                  ExtendsContentIntoTitleBar="True"
-                 WindowBackdropType="Mica"
                  WindowCornerPreference="Round"
                  WindowStartupLocation="CenterOwner">
     <Grid>
@@ -44,7 +43,7 @@
 
             <ui:TextBlock Grid.Row="1"
                           Margin="0,0,0,8"
-                          Foreground="{DynamicResource TextSecondaryBrush}"
+                          Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                           Text="{Binding PageSubtitle}"
                           TextWrapping="Wrap" />
 
@@ -56,7 +55,7 @@
 
                 <StackPanel Grid.Column="0">
                     <ui:TextBlock FontWeight="SemiBold" Text="{Binding ResetDefaultTitle}" />
-                    <ui:TextBlock Foreground="{DynamicResource TextSecondaryBrush}"
+                    <ui:TextBlock Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                   Text="{Binding ResetDefaultSubtitle}"
                                   TextWrapping="Wrap" />
                 </StackPanel>
@@ -83,36 +82,36 @@
 
                     <ui:TreeListView x:Name="KeyBindingsTree"
                                      BorderThickness="0"
-                                     Foreground="{DynamicResource TextPrimaryBrush}"
+                                     Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                      ItemsSource="{Binding KeyBindingSettingModels}">
                         <ui:TreeListView.Columns>
                             <GridViewColumnCollection>
                                 <ui:GridViewColumn Width="{Binding ActualWidth, ElementName=TreeColumnStar}" Header="{Binding ActionHeaderText}">
                                     <ui:GridViewColumn.HeaderTemplate>
                                         <DataTemplate>
-                                            <ui:TextBlock Foreground="{DynamicResource TextPrimaryBrush}"
+                                            <ui:TextBlock Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                                           Text="{Binding}" />
                                         </DataTemplate>
                                     </ui:GridViewColumn.HeaderTemplate>
                                     <ui:GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <ui:TreeRowExpander Content="{Binding ActionName}"
-                                                                Foreground="{DynamicResource TextPrimaryBrush}" />
+                                                                Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
                                         </DataTemplate>
                                     </ui:GridViewColumn.CellTemplate>
                                 </ui:GridViewColumn>
                                 <ui:GridViewColumn Width="170" Header="{Binding KeyBindingHeaderText}">
                                     <ui:GridViewColumn.HeaderTemplate>
                                         <DataTemplate>
-                                            <ui:TextBlock Foreground="{DynamicResource TextPrimaryBrush}"
+                                            <ui:TextBlock Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                                           Text="{Binding}" />
                                         </DataTemplate>
                                     </ui:GridViewColumn.HeaderTemplate>
                                     <ui:GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <kb:KeyBindingTextBox Padding="16,6,16,6"
-                                                                  Background="{DynamicResource SubtleSurfaceBrush}"
-                                                                  Foreground="{DynamicResource TextPrimaryBrush}"
+                                                                  Background="{DynamicResource SubtleFillColorSecondaryBrush}"
+                                                                  Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                                                   VerticalAlignment="Center"
                                                                   KeyBinding="{Binding KeyValue, Mode=TwoWay}"
                                                                   Style="{StaticResource DefaultTextBoxStyle}"

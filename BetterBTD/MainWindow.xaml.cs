@@ -25,8 +25,6 @@ namespace BetterBTD
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             Loaded -= MainWindow_Loaded;
-            // Resources are selected before construction; the native backdrop needs a loaded window.
-            ThemeService.Instance.ApplyTheme(ThemeService.Instance.CurrentTheme);
             RootNavigation.Navigate(typeof(Views.Pages.StartPageView));
         }
 

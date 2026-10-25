@@ -11,7 +11,6 @@
                  MinWidth="760"
                  MinHeight="520"
                  ExtendsContentIntoTitleBar="True"
-                 WindowBackdropType="Mica"
                  WindowCornerPreference="Round"
                  WindowStartupLocation="CenterOwner">
     <Grid>
@@ -30,7 +29,7 @@
 
         <ui:TextBlock Grid.Row="1"
                       Margin="32,12,32,12"
-                      Foreground="{DynamicResource TextSecondaryBrush}"
+                      Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                       Text="{Binding PageDescription}"
                       TextWrapping="Wrap" />
 
@@ -52,7 +51,7 @@
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
                         <TextBlock Margin="4,0,0,8"
-                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                    Text="{Binding ConfiguredCountText}" />
                         <Grid Grid.Row="1" Margin="0,0,0,4">
                             <Grid.ColumnDefinitions>
@@ -61,12 +60,12 @@
                             </Grid.ColumnDefinitions>
                             <TextBlock Margin="12,4"
                                        FontWeight="SemiBold"
-                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                        Text="{Binding DataContext.MapHeader, RelativeSource={RelativeSource AncestorType=ui:FluentWindow}}" />
                             <TextBlock Grid.Column="1"
                                        Margin="12,4"
                                        FontWeight="SemiBold"
-                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                        Text="{Binding DataContext.ScriptHeader, RelativeSource={RelativeSource AncestorType=ui:FluentWindow}}" />
                         </Grid>
                         <DataGrid Grid.Row="2"
@@ -78,22 +77,22 @@
                                   HeadersVisibility="None"
                                   ItemsSource="{Binding Rows}"
                                   RowHeaderWidth="0"
-                                  Background="{DynamicResource CardBrush}"
-                                  Foreground="{DynamicResource TextPrimaryBrush}"
+                                  Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                                  Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                   SelectionMode="Single"
                                   SelectionUnit="FullRow">
                             <DataGrid.Resources>
                                 <Style TargetType="DataGridRow">
-                                    <Setter Property="Background" Value="{DynamicResource CardBrush}" />
-                                    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                                    <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
+                                    <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
                                 </Style>
                                 <Style TargetType="DataGridCell">
-                                    <Setter Property="Background" Value="{DynamicResource CardBrush}" />
-                                    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                                    <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
+                                    <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
                                 </Style>
                                 <Style TargetType="ComboBoxItem">
-                                    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-                                    <Setter Property="Background" Value="{DynamicResource SubtleSurfaceBrush}" />
+                                    <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                                    <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
                                 </Style>
                             </DataGrid.Resources>
                             <DataGrid.Columns>
@@ -102,7 +101,7 @@
                                                     IsReadOnly="True">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
-                                            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                                            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
                                             <Setter Property="VerticalAlignment" Value="Center" />
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
@@ -111,8 +110,8 @@
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <ComboBox Margin="8,4"
-                                                      Background="{DynamicResource SubtleSurfaceBrush}"
-                                                      Foreground="{DynamicResource TextPrimaryBrush}"
+                                                      Background="{DynamicResource SubtleFillColorSecondaryBrush}"
+                                                      Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                                       DisplayMemberPath="DisplayText"
                                                       IsEnabled="{Binding DataContext.CanEdit, RelativeSource={RelativeSource AncestorType=ui:FluentWindow}}"
                                                       IsTextSearchEnabled="True"
@@ -146,9 +145,9 @@
                        Text="{Binding CopyFromLabel}" />
             <ComboBox Grid.Column="1"
                       Margin="0,0,8,0"
-                      Background="{DynamicResource SubtleSurfaceBrush}"
+                      Background="{DynamicResource SubtleFillColorSecondaryBrush}"
                       DisplayMemberPath="DisplayName"
-                      Foreground="{DynamicResource TextPrimaryBrush}"
+                      Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                       IsEnabled="{Binding CanEdit}"
                       ItemsSource="{Binding CopySourceModes}"
                       SelectedItem="{Binding CopySourceMode, Mode=TwoWay}" />
@@ -167,7 +166,7 @@
             <TextBlock Grid.Column="4"
                        Margin="16,0"
                        VerticalAlignment="Center"
-                       Foreground="{DynamicResource TextSecondaryBrush}"
+                       Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                        Text="{Binding StatusText}"
                        TextTrimming="CharacterEllipsis" />
 

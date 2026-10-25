@@ -12,7 +12,6 @@
                  MinHeight="360"
                  ShowInTaskbar="False"
                  ExtendsContentIntoTitleBar="True"
-                 WindowBackdropType="Mica"
                  WindowCornerPreference="Round"
                  WindowStartupLocation="CenterOwner"
                  PreviewKeyDown="OnPreviewKeyDown">

@@ -12,7 +12,6 @@
                  ResizeMode="NoResize"
                  ShowInTaskbar="False"
                  ExtendsContentIntoTitleBar="True"
-                 WindowBackdropType="Mica"
                  WindowCornerPreference="Round"
                  WindowStartupLocation="CenterOwner">
     <Grid>

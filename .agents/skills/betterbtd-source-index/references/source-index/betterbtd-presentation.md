@@ -29,6 +29,7 @@ WPF pages, windows, controls, ViewModels, and presentation support.
 | `BetterBTD/Views/Controls/WpfUi` | 1 |
 | `BetterBTD/Views/Converters` | 11 |
 | `BetterBTD/Views/Pages` | 12 |
+| `BetterBTD/Views/Theming` | 1 |
 | `BetterBTD/Views/Windows` | 26 |
 | `BetterBTD/Views/Windows/Overlay` | 6 |
 
@@ -185,6 +186,12 @@ Paths are relative to the repository root. Open the linked file and verify curre
 | [StartPageView.xaml.cs](../../../../../BetterBTD/Views/Pages/StartPageView.xaml.cs) | WPF pages and page-level code-behind; primary symbols: StartPageView |
 | [ToolsPageView.xaml](../../../../../BetterBTD/Views/Pages/ToolsPageView.xaml) | WPF pages and page-level code-behind; primary symbols: BetterBTD.Views.Pages.ToolsPageView, Page |
 | [ToolsPageView.xaml.cs](../../../../../BetterBTD/Views/Pages/ToolsPageView.xaml.cs) | WPF pages and page-level code-behind; primary symbols: ToolsPageView |
+
+### `BetterBTD/Views/Theming`
+
+| File | Description |
+| --- | --- |
+| [ApplicationStyles.xaml](../../../../../BetterBTD/Views/Theming/ApplicationStyles.xaml) | WPF views and interface components; primary symbols: ResourceDictionary |
 
 ### `BetterBTD/Views/Windows`
 
