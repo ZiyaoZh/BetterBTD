@@ -4,6 +4,7 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:editorControls="clr-namespace:BetterBTD.Views.Controls.ScriptEditor"
+      Style="{StaticResource {x:Type Page}}"
       mc:Ignorable="d">
     <Grid x:Name="EditorRoot" Margin="42,16,42,12">
         <Grid.RowDefinitions>

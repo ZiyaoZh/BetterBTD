@@ -35,8 +35,38 @@ public sealed class ThemeServiceTests
                 var surface = new Border();
                 surface.SetResourceReference(Border.BackgroundProperty, "ApplicationBackgroundBrush");
                 var text = new TextBlock();
-                text.SetResourceReference(TextBlock.ForegroundProperty, "TextFillColorPrimaryBrush");
-                surface.Child = text;
+                var bannerTitle = new Wpf.Ui.Controls.TextBlock { Text = "BetterBTD", FontSize = 30 };
+                var bannerSubtitle = new Wpf.Ui.Controls.TextBlock { Text = "Subtitle", Opacity = 0.85 };
+                var categoryTitle = new Wpf.Ui.Controls.TextBlock { Text = "Settings", FontWeight = FontWeights.SemiBold };
+                var propertyValue = new TextBlock { Text = "Script description", TextWrapping = TextWrapping.Wrap };
+                var cardTitle = new TextBlock { Text = "Properties", Style = (Style)application.FindResource("CardTitleTextStyle") };
+                var description = new TextBlock { Text = "Description", Style = (Style)application.FindResource("CardDescriptionTextStyle") };
+                var accentText = new TextBlock { Text = "Ready" };
+                accentText.SetResourceReference(TextBlock.ForegroundProperty, "AccentTextFillColorPrimaryBrush");
+                var cardContent = new System.Windows.Controls.StackPanel();
+                cardContent.Children.Add(propertyValue);
+                cardContent.Children.Add(cardTitle);
+                cardContent.Children.Add(description);
+                cardContent.Children.Add(accentText);
+                var content = new System.Windows.Controls.StackPanel();
+                content.Children.Add(text);
+                content.Children.Add(bannerTitle);
+                content.Children.Add(bannerSubtitle);
+                content.Children.Add(categoryTitle);
+                var primaryButton = new Wpf.Ui.Controls.Button { Content = "Run", Appearance = ControlAppearance.Primary };
+                content.Children.Add(primaryButton);
+                content.Children.Add(new CardControl
+                {
+                    Style = (Style)application.FindResource("AppCardControlStyle"), Content = cardContent
+                });
+                var page = new ThemeTestPage
+                {
+                    Style = (Style)application.FindResource(typeof(System.Windows.Controls.Page)), Content = content
+                };
+                surface.Child = new System.Windows.Controls.Frame
+                {
+                    NavigationUIVisibility = System.Windows.Navigation.NavigationUIVisibility.Hidden, Content = page
+                };
                 var mainWindow = new FluentWindow
                 {
                     Content = surface, Width = 920, Height = 591,
@@ -54,8 +84,16 @@ public sealed class ThemeServiceTests
                     Assert.Equal(theme, ApplicationThemeManager.GetAppTheme().ToString());
                     Assert.Equal(theme == "Light" ? Color.FromRgb(250, 250, 250) : Color.FromRgb(32, 32, 32),
                         ((SolidColorBrush)surface.Background).Color);
-                    Assert.Equal(((SolidColorBrush)application.FindResource("TextFillColorPrimaryBrush")).Color,
-                        ((SolidColorBrush)text.Foreground).Color);
+                    foreach (var primaryText in new TextBlock[] { text, bannerTitle, bannerSubtitle, categoryTitle, propertyValue, cardTitle })
+                    {
+                        Assert.Equal(((SolidColorBrush)application.FindResource("TextFillColorPrimaryBrush")).Color,
+                            ((SolidColorBrush)primaryText.Foreground).Color);
+                    }
+                    Assert.Equal(((SolidColorBrush)application.FindResource("TextFillColorTertiaryBrush")).Color,
+                        ((SolidColorBrush)description.Foreground).Color);
+                    Assert.Equal(((SolidColorBrush)application.FindResource("AccentTextFillColorPrimaryBrush")).Color,
+                        ((SolidColorBrush)accentText.Foreground).Color);
+                    VerifyButtonText(primaryButton, ((SolidColorBrush)primaryButton.Foreground).Color);
                     Assert.Equal(((SolidColorBrush)application.FindResource("ApplicationBackgroundBrush")).Color,
                         ((SolidColorBrush)mainWindow.Background).Color);
                     Assert.Equal(byte.MaxValue, ((SolidColorBrush)mainWindow.Background).Color.A);
@@ -144,4 +182,19 @@ public sealed class ThemeServiceTests
 
     private static void PumpDispatcher() =>
         Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.ApplicationIdle);
+
+    private sealed class ThemeTestPage : System.Windows.Controls.Page;
+
+    private static void VerifyButtonText(DependencyObject parent, Color foreground)
+    {
+        if (parent is TextBlock text)
+        {
+            Assert.Equal(foreground, ((SolidColorBrush)text.Foreground).Color);
+        }
+
+        for (var index = 0; index < VisualTreeHelper.GetChildrenCount(parent); index++)
+        {
+            VerifyButtonText(VisualTreeHelper.GetChild(parent, index), foreground);
+        }
+    }
 }

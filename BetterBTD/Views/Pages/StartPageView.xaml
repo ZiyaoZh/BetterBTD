@@ -5,6 +5,7 @@
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
       xmlns:controls="clr-namespace:BetterBTD.Views.Controls"
+      Style="{StaticResource {x:Type Page}}"
       mc:Ignorable="d">
     <StackPanel Margin="42,16,42,12">
         <Border Height="220" CornerRadius="8">

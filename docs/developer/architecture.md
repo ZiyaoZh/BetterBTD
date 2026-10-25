@@ -53,6 +53,8 @@ Windows 与游戏窗口
 
 `App.xaml` 在应用级只加载一份 WPF UI 主题字典及核心、Violeta 控件字典，应用布局样式统一位于 `Views/Theming/ApplicationStyles.xaml`。所有窗口和弹窗使用标准主题资源键，通过 `DynamicResource` 复用当前配色，不另建调色板或在弹窗打开、窗口激活时重新应用全局主题。控件库字典保留在 `Application.Resources` 根部，避免扩展控件的延迟模板丢失静态资源作用域。
 
+具体页面是 `Page` 的派生类，必须在 XAML 根元素显式引用 `Style="{StaticResource {x:Type Page}}"`，以应用公共字体、透明背景和动态主题前景色；仅声明 `TargetType="Page"` 的隐式样式不会自动匹配这些派生类。
+
 `ThemeService` 只在启动或用户切换深浅色时更新主题；重复设置相同主题不替换字典。所有普通窗口共用不透明的 `ApplicationBackgroundBrush`，不使用会随窗口失活改变底色的 Mica/Auto 材质。窗口加载时只同步原生窗口外观，保持全局资源不变。
 
 ## 共享资源约束
