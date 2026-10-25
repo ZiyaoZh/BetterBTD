@@ -126,6 +126,6 @@
 - 持久化模型位于 `BetterBTD/Models/ScriptEditor/ScriptDocumentModels.cs`
 - JSON 读写位于 `BetterBTD/Services/MyScripts/ScriptDocumentService.cs`
 - 编辑器状态和脚本文档互转位于 `BetterBTD/ViewModels/ScriptEditorPageViewModel.cs`
-- “我的脚本”受管资源库位于应用安装目录下的 `User/MyScripts`
+- “我的脚本”受管资源库默认位于应用安装目录下的 `User/MyScripts`；安装目录不可写时使用 `%LocalAppData%/BetterBTD/User/MyScripts`
 
 返回 [开发者文档](README.md) · [脚本库设计](reference/script-library-design.md)

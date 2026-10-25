@@ -6,7 +6,7 @@ BetterBTD 使用托管脚本库保存脚本文件、显示信息和自动任务�
 
 | 概念 | 说明 |
 | --- | --- |
-| 托管脚本库 | BetterBTD 在安装目录 `User\MyScripts\` 中维护的脚本仓库 |
+| 托管脚本库 | BetterBTD 在 `User\MyScripts\` 中维护的脚本仓库；安装目录不可写时位于 `%LocalAppData%\BetterBTD\User\MyScripts\` |
 | 脚本 ID | 每个托管脚本的唯一标识，自动任务通过它定位脚本 |
 | 脚本元数据 | 地图、难度、模式、英雄、说明和标签 |
 | 任务绑定 | 自动任务槽位与脚本 ID 之间的映射 |

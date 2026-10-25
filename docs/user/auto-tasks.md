@@ -44,7 +44,7 @@
 - 金气球和黑框使用槽位绑定文件。
 - 循环刷关、竞速和奥德赛直接填写脚本 ID。
 
-绑定文件默认位于：
+绑定文件默认位于以下路径；安装目录不可写时，将 `<安装目录>\User\` 替换为 `%LocalAppData%\BetterBTD\User\`：
 
 ```text
 <安装目录>\User\MyScripts\Bindings\collection.json

@@ -16,6 +16,6 @@
 - 16:9 游戏窗口，推荐 `1920 × 1080`
 - BetterBTD 与游戏一致的语言和热键设置
 
-遇到问题时，先回到 [快速上手的排错章节](getting-started.md#常见问题)，并查看安装目录下的 `User\Logs\`。
+遇到问题时，先回到 [快速上手的排错章节](getting-started.md#常见问题)，并查看实际用户数据目录下的 `User\Logs\`。安装目录不可写时，该路径为 `%LocalAppData%\BetterBTD\User\Logs\`。
 
 返回 [项目首页](../../README.md) · [全部文档](../README.md)

@@ -20,7 +20,7 @@ MyScripts\
 - `Assets` 保存受管脚本文件。
 - `Bindings` 保存需要独立编辑和订阅导入导出的任务绑定。
 
-所有路径由 `UserDataPathHelper` 和 `ManagedScriptLibraryService` 创建。文档和代码不应再假设脚本库存放在 `%LocalAppData%`。
+所有路径由 `UserDataPathHelper` 和 `ManagedScriptLibraryService` 创建。安装目录不可写时，用户数据根目录统一回退到 `%LocalAppData%\BetterBTD\User\`；首次回退会复制原有数据，已有备用目录不会被覆盖。代码不应自行拼接安装目录或 `%LocalAppData%` 来定位脚本库。
 
 ## 数据边界
 
