@@ -107,10 +107,19 @@ internal sealed class GoldBalloonGameUiActionHandler : AutoTaskGameUiActionHandl
                 state,
                 snapshot,
                 GoldBalloonAutoTaskStateKeys.MapSearchPixelBaseline,
-                GoldBalloonAutoTaskStateKeys.MapSearchPixelChangedSince) &&
-            snapshot.Facts.TryGetValue(MapSearchFlowState.GoldBalloonMapFact, out var rawMap) &&
-            rawMap is GameMapType recognizedMap)
+                GoldBalloonAutoTaskStateKeys.MapSearchConfirmed))
         {
+            if (!state.TryGetProperty<GameMapType>(GoldBalloonAutoTaskStateKeys.RecognizedMap, out var recognizedMap))
+            {
+                if (!snapshot.Facts.TryGetValue(MapSearchFlowState.GoldBalloonMapFact, out var rawMap) ||
+                    rawMap is not GameMapType map)
+                {
+                    return Success(step, "Gold balloon map search mode is selected. Waiting for map recognition.", 500);
+                }
+
+                recognizedMap = map;
+            }
+
             state.SetProperty(GoldBalloonAutoTaskStateKeys.RecognizedMap, recognizedMap);
             state.SetProperty(GoldBalloonAutoTaskStateKeys.MapSearchAttempts, 0);
             state.SetProperty(GoldBalloonAutoTaskStateKeys.HeroSelected, false);

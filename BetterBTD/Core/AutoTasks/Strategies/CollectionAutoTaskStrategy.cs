@@ -42,7 +42,8 @@ public sealed class CollectionAutoTaskStrategy : IAutoTaskStrategy
         if (snapshot.State is not (GameUiStateId.Unknown or GameUiStateId.MapSearch))
         {
             state.RemoveProperty(CollectionAutoTaskStateKeys.MapSearchPixelBaseline);
-            state.RemoveProperty(CollectionAutoTaskStateKeys.MapSearchPixelChangedSince);
+            state.RemoveProperty(CollectionAutoTaskStateKeys.MapSearchConfirmed);
+            state.RemoveProperty(CollectionAutoTaskStateKeys.RecognizedMap);
         }
 
         ResetScriptLifecycleForNextStageIfNeeded(state, snapshot);
@@ -59,17 +60,6 @@ public sealed class CollectionAutoTaskStrategy : IAutoTaskStrategy
             {
                 return preloadDecision;
             }
-        }
-        else if (snapshot.State == GameUiStateId.MapSearch &&
-                 MapSearchFlowState.IsResultConfirmationInProgress(
-                     state,
-                     snapshot,
-                     CollectionAutoTaskStateKeys.MapSearchPixelBaseline))
-        {
-            return AutoTaskDecision.Wait(
-                "Waiting for collection map search results to remain stable.",
-                DefaultWaitDelayMs,
-                AutoTaskPhase.NavigatingToStage);
         }
 
         return snapshot.State switch
@@ -128,13 +118,16 @@ public sealed class CollectionAutoTaskStrategy : IAutoTaskStrategy
         GameUiSnapshot snapshot,
         CancellationToken cancellationToken)
     {
-        if (!TryGetRecognizedCollectionMap(snapshot, out var map))
+        if (!state.TryGetProperty<GameMapType>(CollectionAutoTaskStateKeys.RecognizedMap, out var map) &&
+            !TryGetRecognizedCollectionMap(snapshot, out map))
         {
             return AutoTaskDecision.Wait(
                 "Waiting for collection map OCR to recognize the active expert map.",
                 DefaultWaitDelayMs,
                 AutoTaskPhase.NavigatingToStage);
         }
+
+        state.SetProperty(CollectionAutoTaskStateKeys.RecognizedMap, map);
 
         if (state.TryGetProperty<CollectionAutoTaskScriptContext>(CollectionAutoTaskStateKeys.ResolvedScriptContext, out var existingContext) &&
             existingContext.Map == map)
@@ -164,7 +157,6 @@ public sealed class CollectionAutoTaskStrategy : IAutoTaskStrategy
 
         state.RecordScriptResolution(resolution);
         state.SetProperty(CollectionAutoTaskStateKeys.ResolvedScriptContext, context);
-        state.SetProperty(CollectionAutoTaskStateKeys.RecognizedMap, map);
         state.SetProperty(CollectionAutoTaskStateKeys.HeroSelected, false);
         state.SetProperty(CollectionAutoTaskStateKeys.MapSearchAttempts, 0);
         SetScriptRunState(state, CollectionAutoTaskScriptRunState.NotStarted);
@@ -239,7 +231,7 @@ public sealed class CollectionAutoTaskStrategy : IAutoTaskStrategy
             state,
             snapshot,
             CollectionAutoTaskStateKeys.MapSearchPixelBaseline,
-            CollectionAutoTaskStateKeys.MapSearchPixelChangedSince);
+            CollectionAutoTaskStateKeys.MapSearchConfirmed);
     }
 
     private static TEnum ParseEnum<TEnum>(string? value, TEnum fallback)

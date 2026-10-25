@@ -68,6 +68,8 @@ PreparingStage
 
 收集和金气球的地图搜索模式按钮由用户配置位置，不进行按钮识别或重试换位。`AutoTaskRequest.MapSearchModeButtonPosition` 使用 `First`、`Second`、`Third`（默认 `Second`），对应 1920 × 1080 基准坐标 `(1275,45)`、`(1350,45)`、`(1425,45)`。应用配置分别以 `CollectionMapSearchModeButtonPositionName` 和 `GoldBalloonMapSearchModeButtonPositionName` 保存稳定枚举名；旧配置缺少字段或值无效时回退第二个按钮，启动时复制到请求，本次运行不随页面选择改变。
 
+收集和金气球以 `(962,837)` 的像素相对点击前的变化确认模式按钮已生效，无额外地图稳定等待。确认状态保持到明确离开搜索页；未识别地图时等待，不重复点击模式按钮。首次接受的地图用于本次搜索的脚本解析和选图重试，后续帧不得替换该地图；`Unknown` 不清除状态，明确离开搜索页后重置，为下一次搜索重新识别。
+
 ## 策略
 
 当前策略包括：

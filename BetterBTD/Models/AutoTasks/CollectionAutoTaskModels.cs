@@ -29,6 +29,6 @@ public static class CollectionAutoTaskStateKeys
     public const string HeroSelected = "Collection.HeroSelected";
     public const string MapSearchAttempts = "Collection.MapSearchAttempts";
     public const string MapSearchPixelBaseline = "Collection.MapSearchPixelBaseline";
-    public const string MapSearchPixelChangedSince = "Collection.MapSearchPixelChangedSince";
+    public const string MapSearchConfirmed = "Collection.MapSearchConfirmed";
     public const string ScriptRunState = "Collection.ScriptRunState";
 }

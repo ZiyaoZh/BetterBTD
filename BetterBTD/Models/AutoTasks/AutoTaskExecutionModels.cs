@@ -206,7 +206,6 @@ public readonly record struct GameUiPixelSample(int Red, int Green, int Blue, in
 
 public static class MapSearchFlowState
 {
-    private static readonly TimeSpan ResultConfirmationWindow = TimeSpan.FromMilliseconds(1000);
     private const int LegacyResultPixelRed = 0x40;
     private const int LegacyResultPixelGreen = 0x9F;
     private const int LegacyResultPixelBlue = 0xFF;
@@ -266,34 +265,33 @@ public static class MapSearchFlowState
         AutoTaskRuntimeState state,
         GameUiSnapshot snapshot,
         string baselineStateKey,
-        string changedSinceStateKey)
+        string confirmedStateKey)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(snapshot);
         ArgumentException.ThrowIfNullOrWhiteSpace(baselineStateKey);
-        ArgumentException.ThrowIfNullOrWhiteSpace(changedSinceStateKey);
+        ArgumentException.ThrowIfNullOrWhiteSpace(confirmedStateKey);
 
-        if (!IsResultConfirmationInProgress(state, snapshot, baselineStateKey))
+        if (snapshot.State != GameUiStateId.MapSearch)
         {
-            state.RemoveProperty(changedSinceStateKey);
             return false;
         }
 
-        return HasRemainedChangedForConfirmationWindow(state, snapshot, changedSinceStateKey);
-    }
+        if (state.TryGetProperty<bool>(confirmedStateKey, out var confirmed) && confirmed)
+        {
+            return true;
+        }
 
-    public static bool IsResultConfirmationInProgress(
-        AutoTaskRuntimeState state,
-        GameUiSnapshot snapshot,
-        string baselineStateKey)
-    {
-        ArgumentNullException.ThrowIfNull(state);
-        ArgumentNullException.ThrowIfNull(snapshot);
-        ArgumentException.ThrowIfNullOrWhiteSpace(baselineStateKey);
-
-        return state.TryGetProperty<GameUiPixelSample>(baselineStateKey, out _)
+        var modeSelected = state.TryGetProperty<GameUiPixelSample>(baselineStateKey, out _)
             ? HasPixelChanged(state, snapshot, baselineStateKey)
             : IsLegacyResultPixel(snapshot);
+        if (modeSelected)
+        {
+            // This pixel acknowledges the mode-button click; it is not a map stability check.
+            state.SetProperty(confirmedStateKey, true);
+        }
+
+        return modeSelected;
     }
 
     private static bool IsLegacyResultPixel(GameUiSnapshot snapshot)
@@ -306,20 +304,6 @@ public static class MapSearchFlowState
         return Math.Abs(sample.Red - LegacyResultPixelRed) <= sample.Tolerance &&
                Math.Abs(sample.Green - LegacyResultPixelGreen) <= sample.Tolerance &&
                Math.Abs(sample.Blue - LegacyResultPixelBlue) <= sample.Tolerance;
-    }
-
-    private static bool HasRemainedChangedForConfirmationWindow(
-        AutoTaskRuntimeState state,
-        GameUiSnapshot snapshot,
-        string changedSinceStateKey)
-    {
-        if (!state.TryGetProperty<DateTimeOffset>(changedSinceStateKey, out var changedSince))
-        {
-            state.SetProperty(changedSinceStateKey, snapshot.CapturedAt);
-            return false;
-        }
-
-        return snapshot.CapturedAt - changedSince >= ResultConfirmationWindow;
     }
 
     public static bool HasRecognizedMap(GameUiSnapshot snapshot)

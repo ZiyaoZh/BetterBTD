@@ -42,7 +42,8 @@ public sealed class GoldBalloonAutoTaskStrategy : IAutoTaskStrategy
         if (snapshot.State is not (GameUiStateId.Unknown or GameUiStateId.MapSearch))
         {
             state.RemoveProperty(GoldBalloonAutoTaskStateKeys.MapSearchPixelBaseline);
-            state.RemoveProperty(GoldBalloonAutoTaskStateKeys.MapSearchPixelChangedSince);
+            state.RemoveProperty(GoldBalloonAutoTaskStateKeys.MapSearchConfirmed);
+            state.RemoveProperty(GoldBalloonAutoTaskStateKeys.RecognizedMap);
         }
 
         ResetScriptLifecycleForNextStageIfNeeded(state, snapshot);
@@ -59,17 +60,6 @@ public sealed class GoldBalloonAutoTaskStrategy : IAutoTaskStrategy
             {
                 return preloadDecision;
             }
-        }
-        else if (snapshot.State == GameUiStateId.MapSearch &&
-                 MapSearchFlowState.IsResultConfirmationInProgress(
-                     state,
-                     snapshot,
-                     GoldBalloonAutoTaskStateKeys.MapSearchPixelBaseline))
-        {
-            return AutoTaskDecision.Wait(
-                "Waiting for gold balloon map search results to remain stable.",
-                DefaultWaitDelayMs,
-                AutoTaskPhase.NavigatingToStage);
         }
 
         return snapshot.State switch
@@ -128,13 +118,16 @@ public sealed class GoldBalloonAutoTaskStrategy : IAutoTaskStrategy
         GameUiSnapshot snapshot,
         CancellationToken cancellationToken)
     {
-        if (!TryGetRecognizedGoldBalloonMap(snapshot, out var map))
+        if (!state.TryGetProperty<GameMapType>(GoldBalloonAutoTaskStateKeys.RecognizedMap, out var map) &&
+            !TryGetRecognizedGoldBalloonMap(snapshot, out map))
         {
             return AutoTaskDecision.Wait(
                 "Waiting for gold balloon map OCR to recognize the active beginner map.",
                 DefaultWaitDelayMs,
                 AutoTaskPhase.NavigatingToStage);
         }
+
+        state.SetProperty(GoldBalloonAutoTaskStateKeys.RecognizedMap, map);
 
         if (state.TryGetProperty<GoldBalloonAutoTaskScriptContext>(GoldBalloonAutoTaskStateKeys.ResolvedScriptContext, out var existingContext) &&
             existingContext.Map == map)
@@ -163,7 +156,6 @@ public sealed class GoldBalloonAutoTaskStrategy : IAutoTaskStrategy
 
         state.RecordScriptResolution(resolution);
         state.SetProperty(GoldBalloonAutoTaskStateKeys.ResolvedScriptContext, context);
-        state.SetProperty(GoldBalloonAutoTaskStateKeys.RecognizedMap, map);
         state.SetProperty(GoldBalloonAutoTaskStateKeys.HeroSelected, false);
         state.SetProperty(GoldBalloonAutoTaskStateKeys.MapSearchAttempts, 0);
         SetScriptRunState(state, GoldBalloonAutoTaskScriptRunState.NotStarted);
@@ -225,7 +217,7 @@ public sealed class GoldBalloonAutoTaskStrategy : IAutoTaskStrategy
             state,
             snapshot,
             GoldBalloonAutoTaskStateKeys.MapSearchPixelBaseline,
-            GoldBalloonAutoTaskStateKeys.MapSearchPixelChangedSince);
+            GoldBalloonAutoTaskStateKeys.MapSearchConfirmed);
     }
 
     private static TEnum ParseEnum<TEnum>(string? value, TEnum fallback)

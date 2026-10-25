@@ -109,10 +109,19 @@ internal sealed class CollectionGameUiActionHandler : AutoTaskGameUiActionHandle
                 state,
                 snapshot,
                 CollectionAutoTaskStateKeys.MapSearchPixelBaseline,
-                CollectionAutoTaskStateKeys.MapSearchPixelChangedSince) &&
-            snapshot.Facts.TryGetValue(MapSearchFlowState.CollectionMapFact, out var rawMap) &&
-            rawMap is GameMapType recognizedMap)
+                CollectionAutoTaskStateKeys.MapSearchConfirmed))
         {
+            if (!state.TryGetProperty<GameMapType>(CollectionAutoTaskStateKeys.RecognizedMap, out var recognizedMap))
+            {
+                if (!snapshot.Facts.TryGetValue(MapSearchFlowState.CollectionMapFact, out var rawMap) ||
+                    rawMap is not GameMapType map)
+                {
+                    return Success(step, "Collection map search mode is selected. Waiting for map recognition.", 500);
+                }
+
+                recognizedMap = map;
+            }
+
             state.SetProperty(CollectionAutoTaskStateKeys.RecognizedMap, recognizedMap);
             state.SetProperty(CollectionAutoTaskStateKeys.MapSearchAttempts, 0);
             state.SetProperty(CollectionAutoTaskStateKeys.HeroSelected, false);

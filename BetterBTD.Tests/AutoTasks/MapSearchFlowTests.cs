@@ -40,30 +40,28 @@ public sealed class MapSearchFlowTests
     }
 
     [Fact]
-    public void ResultReadiness_RequiresStablePixelChange_AndResetsWhenPixelReturns()
+    public void ResultReadiness_ConfirmsImmediately_AndKeepsConfirmationWhenPixelReturns()
     {
         var state = CreateState(AutoTaskKind.Collection);
         state.SetProperty(CollectionAutoTaskStateKeys.MapSearchPixelBaseline, InitialPixel);
-        var changedAt = DateTimeOffset.UtcNow;
 
-        Assert.False(MapSearchFlowState.IsResultReady(
-            state,
-            CreateMapSearchSnapshot(ChangedPixel, capturedAt: changedAt),
-            CollectionAutoTaskStateKeys.MapSearchPixelBaseline,
-            CollectionAutoTaskStateKeys.MapSearchPixelChangedSince));
         Assert.True(MapSearchFlowState.IsResultReady(
             state,
-            CreateMapSearchSnapshot(ChangedPixel, capturedAt: changedAt + TimeSpan.FromSeconds(1)),
+            CreateMapSearchSnapshot(ChangedPixel),
             CollectionAutoTaskStateKeys.MapSearchPixelBaseline,
-            CollectionAutoTaskStateKeys.MapSearchPixelChangedSince));
+            CollectionAutoTaskStateKeys.MapSearchConfirmed));
+        Assert.True(MapSearchFlowState.IsResultReady(
+            state,
+            CreateMapSearchSnapshot(InitialPixel),
+            CollectionAutoTaskStateKeys.MapSearchPixelBaseline,
+            CollectionAutoTaskStateKeys.MapSearchConfirmed));
+        Assert.True(state.TryGetProperty<bool>(CollectionAutoTaskStateKeys.MapSearchConfirmed, out var confirmed));
+        Assert.True(confirmed);
         Assert.False(MapSearchFlowState.IsResultReady(
             state,
-            CreateMapSearchSnapshot(InitialPixel, capturedAt: changedAt + TimeSpan.FromSeconds(2)),
+            new GameUiSnapshot { State = GameUiStateId.Unknown },
             CollectionAutoTaskStateKeys.MapSearchPixelBaseline,
-            CollectionAutoTaskStateKeys.MapSearchPixelChangedSince));
-        Assert.False(state.TryGetProperty<DateTimeOffset>(
-            CollectionAutoTaskStateKeys.MapSearchPixelChangedSince,
-            out _));
+            CollectionAutoTaskStateKeys.MapSearchConfirmed));
     }
 
     [Fact]
@@ -80,7 +78,7 @@ public sealed class MapSearchFlowTests
                 GameMapType.DarkCastle,
                 firstCapture),
             CollectionAutoTaskStateKeys.MapSearchPixelBaseline,
-            CollectionAutoTaskStateKeys.MapSearchPixelChangedSince));
+            CollectionAutoTaskStateKeys.MapSearchConfirmed));
         Assert.False(MapSearchFlowState.IsResultReady(
             state,
             CreateMapSearchSnapshot(
@@ -89,16 +87,16 @@ public sealed class MapSearchFlowTests
                 GameMapType.DarkCastle,
                 firstCapture + TimeSpan.FromSeconds(1)),
             CollectionAutoTaskStateKeys.MapSearchPixelBaseline,
-            CollectionAutoTaskStateKeys.MapSearchPixelChangedSince));
+            CollectionAutoTaskStateKeys.MapSearchConfirmed));
     }
 
     [Fact]
-    public void ResultReadiness_AcceptsStableLegacyResultPixel_WhenStartingWithoutBaseline()
+    public void ResultReadiness_AcceptsLegacyResultPixelImmediately_WhenStartingWithoutBaseline()
     {
         var state = CreateState(AutoTaskKind.Collection);
         var firstCapture = DateTimeOffset.UtcNow;
 
-        Assert.False(MapSearchFlowState.IsResultReady(
+        Assert.True(MapSearchFlowState.IsResultReady(
             state,
             CreateMapSearchSnapshot(
                 LegacyResultPixel,
@@ -106,7 +104,7 @@ public sealed class MapSearchFlowTests
                 GameMapType.DarkCastle,
                 firstCapture),
             CollectionAutoTaskStateKeys.MapSearchPixelBaseline,
-            CollectionAutoTaskStateKeys.MapSearchPixelChangedSince));
+            CollectionAutoTaskStateKeys.MapSearchConfirmed));
         Assert.True(MapSearchFlowState.IsResultReady(
             state,
             CreateMapSearchSnapshot(
@@ -115,7 +113,7 @@ public sealed class MapSearchFlowTests
                 GameMapType.DarkCastle,
                 firstCapture + TimeSpan.FromSeconds(1)),
             CollectionAutoTaskStateKeys.MapSearchPixelBaseline,
-            CollectionAutoTaskStateKeys.MapSearchPixelChangedSince));
+            CollectionAutoTaskStateKeys.MapSearchConfirmed));
     }
 
     [Fact]
@@ -213,12 +211,13 @@ public sealed class MapSearchFlowTests
             CreateMapSearchSnapshot(InitialPixel, mapFact, recognizedMap));
 
         Assert.Equal(AutoTaskDecisionKind.Navigate, decision.Kind);
+        Assert.False(state.TryGetProperty<GameMapType>(GetRecognizedMapKey(kind), out _));
     }
 
     [Theory]
     [InlineData(AutoTaskKind.Collection)]
     [InlineData(AutoTaskKind.GoldBalloon)]
-    public async Task Strategy_Waits_WhenStartingOnLegacyResultPixelWithoutBaseline(AutoTaskKind kind)
+    public async Task Strategy_UsesRecognizedMapImmediately_WhenStartingOnLegacyResultPixelWithoutBaseline(AutoTaskKind kind)
     {
         var state = CreateState(kind);
         var mapFact = kind == AutoTaskKind.Collection
@@ -228,11 +227,13 @@ public sealed class MapSearchFlowTests
             ? GameMapType.DarkCastle
             : GameMapType.MonkeyMeadow;
 
+        SetScriptContext(state, kind, recognizedMap);
+
         var decision = await CreateStrategy(kind).DecideNextAsync(
             state,
             CreateMapSearchSnapshot(LegacyResultPixel, mapFact, recognizedMap));
 
-        Assert.Equal(AutoTaskDecisionKind.Wait, decision.Kind);
+        Assert.Equal(AutoTaskDecisionKind.Navigate, decision.Kind);
         Assert.False(state.TryGetProperty<GameUiPixelSample>(GetBaselineKey(kind), out _));
     }
 
@@ -365,18 +366,18 @@ public sealed class MapSearchFlowTests
     [Theory]
     [InlineData(AutoTaskKind.Collection)]
     [InlineData(AutoTaskKind.GoldBalloon)]
-    public async Task Strategy_WaitsAfterStablePixelChange_WhenOnlyMapCandidatesExist(AutoTaskKind kind)
+    public async Task Strategy_WaitsAfterConfirmedPixelChange_WhenOnlyMapCandidatesExist(AutoTaskKind kind)
     {
         var state = CreateState(kind);
         var baselineKey = GetBaselineKey(kind);
-        var changedSinceKey = kind == AutoTaskKind.Collection
-            ? CollectionAutoTaskStateKeys.MapSearchPixelChangedSince
-            : GoldBalloonAutoTaskStateKeys.MapSearchPixelChangedSince;
+        var confirmedKey = kind == AutoTaskKind.Collection
+            ? CollectionAutoTaskStateKeys.MapSearchConfirmed
+            : GoldBalloonAutoTaskStateKeys.MapSearchConfirmed;
         var matchesFact = kind == AutoTaskKind.Collection
             ? MapSearchFlowState.CollectionMapMatchesFact
             : MapSearchFlowState.GoldBalloonMapMatchesFact;
         state.SetProperty(baselineKey, InitialPixel);
-        state.SetProperty(changedSinceKey, DateTimeOffset.UtcNow - TimeSpan.FromSeconds(2));
+        state.SetProperty(confirmedKey, true);
         var snapshot = CreateMapSearchSnapshot(ChangedPixel);
         var facts = new Dictionary<string, object?>(snapshot.Facts, StringComparer.OrdinalIgnoreCase)
         {
@@ -425,11 +426,6 @@ public sealed class MapSearchFlowTests
         var recognizedMap = kind == AutoTaskKind.Collection
             ? GameMapType.DarkCastle
             : GameMapType.MonkeyMeadow;
-        state.SetProperty(
-            kind == AutoTaskKind.Collection
-                ? CollectionAutoTaskStateKeys.MapSearchPixelChangedSince
-                : GoldBalloonAutoTaskStateKeys.MapSearchPixelChangedSince,
-            DateTimeOffset.UtcNow - TimeSpan.FromSeconds(2));
         var resultSnapshot = CreateMapSearchSnapshot(ChangedPixel, mapFact, recognizedMap);
         var resultStep = GameUiNavigator.Instance.GetNextStep(CreateTarget(), resultSnapshot);
         var mapResult = await handler.ExecuteAsync(resultStep, state, resultSnapshot);
@@ -458,15 +454,12 @@ public sealed class MapSearchFlowTests
     [Theory]
     [InlineData(AutoTaskKind.Collection)]
     [InlineData(AutoTaskKind.GoldBalloon)]
-    public async Task Handler_EntersStableLegacyResult_WhenStartingWithoutBaseline(AutoTaskKind kind)
+    public async Task Handler_EntersLegacyResultImmediately_WhenStartingWithoutBaseline(AutoTaskKind kind)
     {
         var dispatcher = new RecordingInputSimulationCommandDispatcher();
         var inputService = new ScriptInputSimulationService(CreateInputEnvironment(), dispatcher);
         var handler = CreateHandler(kind, inputService);
         var state = CreateState(kind);
-        var changedSinceKey = kind == AutoTaskKind.Collection
-            ? CollectionAutoTaskStateKeys.MapSearchPixelChangedSince
-            : GoldBalloonAutoTaskStateKeys.MapSearchPixelChangedSince;
         var mapFact = kind == AutoTaskKind.Collection
             ? MapSearchFlowState.CollectionMapFact
             : MapSearchFlowState.GoldBalloonMapFact;
@@ -474,7 +467,6 @@ public sealed class MapSearchFlowTests
             ? GameMapType.DarkCastle
             : GameMapType.MonkeyMeadow;
         var snapshot = CreateMapSearchSnapshot(LegacyResultPixel, mapFact, recognizedMap);
-        state.SetProperty(changedSinceKey, snapshot.CapturedAt - TimeSpan.FromSeconds(1));
         var step = GameUiNavigator.Instance.GetNextStep(CreateTarget(), snapshot);
 
         var result = await handler.ExecuteAsync(step, state, snapshot);
@@ -485,6 +477,156 @@ public sealed class MapSearchFlowTests
             static command => command.Type == InputSimulationCommandType.MoveMouseToVirtualDesktop);
         Assert.Equal((540d, 650d), (clickPoint.X, clickPoint.Y));
         Assert.False(state.TryGetProperty<GameUiPixelSample>(GetBaselineKey(kind), out _));
+    }
+
+    [Theory]
+    [InlineData(AutoTaskKind.Collection)]
+    [InlineData(AutoTaskKind.GoldBalloon)]
+    public async Task Handler_WaitsForMapAfterConfirmation_WithoutRepeatingModeButton(AutoTaskKind kind)
+    {
+        var dispatcher = new RecordingInputSimulationCommandDispatcher();
+        var handler = CreateHandler(kind, new ScriptInputSimulationService(CreateInputEnvironment(), dispatcher));
+        var state = CreateState(kind);
+        var initialSnapshot = CreateMapSearchSnapshot(InitialPixel);
+        var step = GameUiNavigator.Instance.GetNextStep(CreateTarget(), initialSnapshot);
+
+        await handler.ExecuteAsync(step, state, initialSnapshot);
+        await handler.ExecuteAsync(step, state, CreateMapSearchSnapshot(ChangedPixel));
+        await handler.ExecuteAsync(step, state, CreateMapSearchSnapshot(InitialPixel));
+
+        var modeClick = Assert.Single(dispatcher.Commands,
+            static command => command.Type == InputSimulationCommandType.MoveMouseToVirtualDesktop);
+        Assert.Equal((1350d, 45d), (modeClick.X, modeClick.Y));
+        Assert.False(state.TryGetProperty<GameMapType>(GetRecognizedMapKey(kind), out _));
+
+        var recognizedMap = GetInitialMap(kind);
+        var recognizedSnapshot = CreateMapSearchSnapshot(InitialPixel, GetMapFact(kind), recognizedMap);
+        await handler.ExecuteAsync(step, state, recognizedSnapshot);
+        var clicks = dispatcher.Commands
+            .Where(static command => command.Type == InputSimulationCommandType.MoveMouseToVirtualDesktop)
+            .Select(static command => (command.X, command.Y))
+            .ToArray();
+        Assert.Equal([(1350d, 45d), (540d, 650d)], clicks);
+        Assert.True(state.TryGetProperty<GameMapType>(GetRecognizedMapKey(kind), out var storedMap));
+        Assert.Equal(recognizedMap, storedMap);
+    }
+
+    [Theory]
+    [InlineData(AutoTaskKind.Collection)]
+    [InlineData(AutoTaskKind.GoldBalloon)]
+    public async Task Search_KeepsAcceptedMapAndScript_WhenLaterFramesChangeOrLoseRecognition(AutoTaskKind kind)
+    {
+        var state = CreateState(kind);
+        state.SetProperty(GetBaselineKey(kind), InitialPixel);
+        var recognizedMap = GetInitialMap(kind);
+        SetScriptContext(state, kind, recognizedMap);
+        var strategy = CreateStrategy(kind);
+        var dispatcher = new RecordingInputSimulationCommandDispatcher();
+        var handler = CreateHandler(kind, new ScriptInputSimulationService(CreateInputEnvironment(), dispatcher));
+        var firstSnapshot = CreateMapSearchSnapshot(ChangedPixel, GetMapFact(kind), recognizedMap);
+
+        var firstDecision = await strategy.DecideNextAsync(state, firstSnapshot);
+        Assert.Equal(AutoTaskDecisionKind.Navigate, firstDecision.Kind);
+        await handler.ExecuteAsync(GameUiNavigator.Instance.GetNextStep(CreateTarget(), firstSnapshot), state, firstSnapshot);
+
+        await strategy.DecideNextAsync(state, new GameUiSnapshot { State = GameUiStateId.Unknown });
+        foreach (var laterSnapshot in new[]
+                 {
+                     CreateMapSearchSnapshot(InitialPixel, GetMapFact(kind), GameMapType.DarkDungeon),
+                     CreateMapSearchSnapshot(InitialPixel)
+                 })
+        {
+            var decision = await strategy.DecideNextAsync(state, laterSnapshot);
+            Assert.Equal(AutoTaskDecisionKind.Navigate, decision.Kind);
+            await handler.ExecuteAsync(GameUiNavigator.Instance.GetNextStep(CreateTarget(), laterSnapshot), state, laterSnapshot);
+            Assert.True(state.TryGetProperty<GameMapType>(GetRecognizedMapKey(kind), out var storedMap));
+            Assert.Equal(recognizedMap, storedMap);
+            Assert.Equal(recognizedMap, GetScriptContextMap(state, kind));
+        }
+
+        var clicks = dispatcher.Commands
+            .Where(static command => command.Type == InputSimulationCommandType.MoveMouseToVirtualDesktop)
+            .Select(static command => (command.X, command.Y))
+            .ToArray();
+        Assert.Equal([(540d, 650d), (540d, 650d), (540d, 650d)], clicks);
+    }
+
+    [Theory]
+    [InlineData(AutoTaskKind.Collection)]
+    [InlineData(AutoTaskKind.GoldBalloon)]
+    public async Task Strategy_ClearsSearchConfirmationAndMapOnExit_AndAcceptsNextSearch(AutoTaskKind kind)
+    {
+        var state = CreateState(kind);
+        state.SetProperty(GetBaselineKey(kind), InitialPixel);
+        var strategy = CreateStrategy(kind);
+        var initialMap = GetInitialMap(kind);
+        SetScriptContext(state, kind, initialMap);
+        await strategy.DecideNextAsync(state, CreateMapSearchSnapshot(ChangedPixel, GetMapFact(kind), initialMap));
+
+        await strategy.DecideNextAsync(state, new GameUiSnapshot { State = GameUiStateId.DifficultySelect });
+
+        Assert.False(state.TryGetProperty<GameUiPixelSample>(GetBaselineKey(kind), out _));
+        Assert.False(state.TryGetProperty<bool>(GetConfirmedKey(kind), out _));
+        Assert.False(state.TryGetProperty<GameMapType>(GetRecognizedMapKey(kind), out _));
+        var nextMap = kind == AutoTaskKind.Collection ? GameMapType.Infernal : GameMapType.Logs;
+        SetScriptContext(state, kind, nextMap);
+        var decision = await strategy.DecideNextAsync(
+            state, CreateMapSearchSnapshot(LegacyResultPixel, GetMapFact(kind), nextMap));
+
+        Assert.Equal(AutoTaskDecisionKind.Navigate, decision.Kind);
+        Assert.True(state.TryGetProperty<GameMapType>(GetRecognizedMapKey(kind), out var storedMap));
+        Assert.Equal(nextMap, storedMap);
+        Assert.Equal(nextMap, GetScriptContextMap(state, kind));
+    }
+
+    private static GameMapType GetInitialMap(AutoTaskKind kind) =>
+        kind == AutoTaskKind.Collection ? GameMapType.DarkCastle : GameMapType.MonkeyMeadow;
+
+    private static string GetMapFact(AutoTaskKind kind) =>
+        kind == AutoTaskKind.Collection ? MapSearchFlowState.CollectionMapFact : MapSearchFlowState.GoldBalloonMapFact;
+
+    private static string GetRecognizedMapKey(AutoTaskKind kind) =>
+        kind == AutoTaskKind.Collection ? CollectionAutoTaskStateKeys.RecognizedMap : GoldBalloonAutoTaskStateKeys.RecognizedMap;
+
+    private static string GetConfirmedKey(AutoTaskKind kind) =>
+        kind == AutoTaskKind.Collection ? CollectionAutoTaskStateKeys.MapSearchConfirmed : GoldBalloonAutoTaskStateKeys.MapSearchConfirmed;
+
+    private static void SetScriptContext(AutoTaskRuntimeState state, AutoTaskKind kind, GameMapType map)
+    {
+        if (kind == AutoTaskKind.Collection)
+        {
+            state.SetProperty(CollectionAutoTaskStateKeys.ResolvedScriptContext, new CollectionAutoTaskScriptContext
+            {
+                Map = map,
+                Difficulty = StageDifficulty.Hard,
+                Mode = StageMode.Standard,
+                Hero = HeroType.Quincy,
+                FilePath = "collection.json"
+            });
+        }
+        else
+        {
+            state.SetProperty(GoldBalloonAutoTaskStateKeys.ResolvedScriptContext, new GoldBalloonAutoTaskScriptContext
+            {
+                Map = map,
+                Difficulty = StageDifficulty.Hard,
+                Mode = StageMode.Standard,
+                Hero = HeroType.Quincy,
+                FilePath = "gold-balloon.json"
+            });
+        }
+    }
+
+    private static GameMapType GetScriptContextMap(AutoTaskRuntimeState state, AutoTaskKind kind)
+    {
+        if (kind == AutoTaskKind.Collection)
+        {
+            Assert.True(state.TryGetProperty<CollectionAutoTaskScriptContext>(CollectionAutoTaskStateKeys.ResolvedScriptContext, out var context));
+            return context.Map;
+        }
+
+        Assert.True(state.TryGetProperty<GoldBalloonAutoTaskScriptContext>(GoldBalloonAutoTaskStateKeys.ResolvedScriptContext, out var goldBalloonContext));
+        return goldBalloonContext.Map;
     }
 
     private static IAutoTaskStrategy CreateStrategy(AutoTaskKind kind)
