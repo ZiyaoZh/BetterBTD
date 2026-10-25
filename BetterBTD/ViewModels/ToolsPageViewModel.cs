@@ -31,7 +31,6 @@ public sealed class ToolsPageViewModel : ObservableObject, IDisposable
     private double _paragonCashSpent;
     private double _paragonSliderCashInvestment;
     private int _paragonTierFiveCount = 3;
-    private int _paragonUpgradeCount;
     private int _paragonTotemCount;
     private double _paragonSliderMaximum;
     private int _paragonStatsDegree = 1;
@@ -238,10 +237,6 @@ public sealed class ToolsPageViewModel : ObservableObject, IDisposable
     public string ParagonTierFiveCountLabel => _localizationService.T("Tools.Paragon.TierFiveCount");
 
     public string ParagonTierFiveCountDescription => _localizationService.T("Tools.Paragon.TierFiveCountDescription");
-
-    public string ParagonUpgradeCountLabel => _localizationService.T("Tools.Paragon.UpgradeCount");
-
-    public string ParagonUpgradeCountDescription => _localizationService.T("Tools.Paragon.UpgradeCountDescription");
 
     public string ParagonTotemCountLabel => _localizationService.T("Tools.Paragon.TotemCount");
 
@@ -456,19 +451,6 @@ public sealed class ToolsPageViewModel : ObservableObject, IDisposable
         }
     }
 
-    public int ParagonUpgradeCount
-    {
-        get => _paragonUpgradeCount;
-        set
-        {
-            var normalized = Math.Clamp(value, 0, 100);
-            if (SetProperty(ref _paragonUpgradeCount, normalized))
-            {
-                UpdateParagonResult();
-            }
-        }
-    }
-
     public int ParagonTotemCount
     {
         get => _paragonTotemCount;
@@ -673,8 +655,6 @@ public sealed class ToolsPageViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(ParagonSliderCashInvestmentDescription));
         OnPropertyChanged(nameof(ParagonTierFiveCountLabel));
         OnPropertyChanged(nameof(ParagonTierFiveCountDescription));
-        OnPropertyChanged(nameof(ParagonUpgradeCountLabel));
-        OnPropertyChanged(nameof(ParagonUpgradeCountDescription));
         OnPropertyChanged(nameof(ParagonTotemCountLabel));
         OnPropertyChanged(nameof(ParagonTotemCountDescription));
         OnPropertyChanged(nameof(ParagonStatsCardTitle));
@@ -839,7 +819,6 @@ public sealed class ToolsPageViewModel : ObservableObject, IDisposable
             CashSpent = ParagonCashSpent,
             SliderCashInvestment = ParagonSliderCashInvestment,
             TierFiveCount = ParagonTierFiveCount,
-            UpgradeCount = ParagonUpgradeCount,
             TotemCount = ParagonTotemCount
         });
     }

@@ -6,6 +6,7 @@ namespace BetterBTD.Services.Tools;
 public sealed class ParagonToolService
 {
     private static readonly Lazy<ParagonToolService> InstanceHolder = new(() => new ParagonToolService(LocalizationService.Instance));
+    // PC v57.0 rules: https://www.bloonswiki.com/Paragon#Paragon_power (checked 2026-10-25).
     private static readonly double[] DegreeRequirements = BuildDegreeRequirements();
 
     private readonly LocalizationService _localizationService;
@@ -27,7 +28,7 @@ public sealed class ParagonToolService
     public int GetSliderMaximum(string? monkeyCode, string? difficultyCode)
     {
         var actualCost = GetActualCost(monkeyCode, difficultyCode);
-        return (int)Math.Floor(actualCost * 3.15d) + 1;
+        return (int)Math.Floor(actualCost * 4.2d);
     }
 
     public ParagonDegreeToolResult Calculate(ParagonToolRequest request)
@@ -41,20 +42,18 @@ public sealed class ParagonToolService
         var cashSpent = ClampNonNegative(request.CashSpent);
         var sliderInvestment = Math.Clamp(request.SliderCashInvestment, 0d, sliderMaximum);
         var tierFiveCount = Math.Clamp(request.TierFiveCount, 3, 12);
-        var upgradeCount = Math.Clamp(request.UpgradeCount, 0, 100);
         var totemCount = Math.Clamp(request.TotemCount, 0, 100);
 
-        var popEnergy = Math.Min(90000d, (totalPops + generatedCash * 4d) / 180d);
+        var popEnergy = Math.Min(125000d, (totalPops + generatedCash * 4d) / 180d);
         var directSpentEnergy = cashSpent / (actualCost / 20000d);
         var sliderSpentEnergy = Math.Ceiling(sliderInvestment / (actualCost * 1.05d / 20000d));
-        var cashEnergy = Math.Min(60000d, directSpentEnergy + sliderSpentEnergy);
+        var cashEnergy = Math.Min(80000d, directSpentEnergy + sliderSpentEnergy);
         var tierFiveEnergy = Math.Min(50000d, (tierFiveCount - 3) * 6000d);
-        var upgradeEnergy = upgradeCount * 100d;
         var totemEnergy = totemCount * 2000d;
-        var totalPower = Math.Min(200000d, popEnergy + cashEnergy + tierFiveEnergy + upgradeEnergy + totemEnergy);
+        var totalPower = Math.Min(200000d, popEnergy + cashEnergy + tierFiveEnergy + totemEnergy);
         var degree = ResolveDegree(totalPower);
         double? nextDegreePower = degree < 100
-            ? DegreeRequirements[degree] - DegreeRequirements[degree - 1]
+            ? DegreeRequirements[degree] - totalPower
             : null;
 
         return new ParagonDegreeToolResult
@@ -66,7 +65,6 @@ public sealed class ParagonToolService
             DirectSpentEnergy = directSpentEnergy,
             SliderSpentEnergy = sliderSpentEnergy,
             TierFiveEnergy = tierFiveEnergy,
-            UpgradeEnergy = upgradeEnergy,
             TotemEnergy = totemEnergy,
             TotalPower = totalPower,
             Degree = degree,
@@ -100,9 +98,6 @@ public sealed class ParagonToolService
                     _localizationService.T("Tools.Paragon.Result.TierFiveEnergy"),
                     FormatFixed(result.TierFiveEnergy, 2)),
                 string.Format(
-                    _localizationService.T("Tools.Paragon.Result.UpgradeEnergy"),
-                    FormatFixed(result.UpgradeEnergy, 2)),
-                string.Format(
                     _localizationService.T("Tools.Paragon.Result.TotemEnergy"),
                     FormatFixed(result.TotemEnergy, 2)),
                 string.Format(
@@ -115,7 +110,7 @@ public sealed class ParagonToolService
                     ? _localizationService.T("Tools.Paragon.Result.NextDegreeUnavailable")
                     : string.Format(
                         _localizationService.T("Tools.Paragon.Result.NextDegreePower"),
-                        FormatFixed(result.NextDegreePower.Value, 0))
+                        FormatFixed(Math.Ceiling(result.NextDegreePower.Value), 0))
             ]);
     }
 
@@ -192,8 +187,6 @@ public sealed class ParagonDegreeToolResult
     public required double SliderSpentEnergy { get; init; }
 
     public required double TierFiveEnergy { get; init; }
-
-    public required double UpgradeEnergy { get; init; }
 
     public required double TotemEnergy { get; init; }
 

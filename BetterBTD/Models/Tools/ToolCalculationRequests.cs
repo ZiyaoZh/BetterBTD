@@ -36,8 +36,6 @@ public sealed class ParagonToolRequest
 
     public required int TierFiveCount { get; init; }
 
-    public required int UpgradeCount { get; init; }
-
     public required int TotemCount { get; init; }
 }
 
