@@ -12,7 +12,7 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace BetterBTD.ViewModels;
 
-public class KeyBindingsSettingsPageViewModel : ObservableObject
+public class KeyBindingsSettingsPageViewModel : ObservableObject, IDisposable
 {
     private readonly ConfigurationService _configurationService;
     private readonly LocalizationService _localizationService;
@@ -56,6 +56,13 @@ public class KeyBindingsSettingsPageViewModel : ObservableObject
 
     public IRelayCommand ResetDefaultKeyBindingsCommand { get; }
 
+    public void Dispose()
+    {
+        _localizationService.LanguageChanged -= OnLanguageChanged;
+        _config.PropertyChanged -= OnConfigPropertyChanged;
+        UnsubscribeFromLeafNodes();
+    }
+
     public KeyBindingSettingItem? FindItem(string configPropertyPath)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(configPropertyPath);
@@ -69,6 +76,7 @@ public class KeyBindingsSettingsPageViewModel : ObservableObject
 
     private void BuildKeyBindingsList()
     {
+        UnsubscribeFromLeafNodes();
         KeyBindingSettingModels.Clear();
         KeyBindingSettingModels.Add(CreateTowerPlacementGroup());
         KeyBindingSettingModels.Add(CreateAbilityGroup());
@@ -218,6 +226,17 @@ public class KeyBindingsSettingsPageViewModel : ObservableObject
             {
                 item.PropertyChanged -= OnBindingItemPropertyChanged;
                 item.PropertyChanged += OnBindingItemPropertyChanged;
+            }
+        }
+    }
+
+    private void UnsubscribeFromLeafNodes()
+    {
+        foreach (var item in KeyBindingSettingModels.SelectMany(EnumerateItems))
+        {
+            if (!item.IsDirectory)
+            {
+                item.PropertyChanged -= OnBindingItemPropertyChanged;
             }
         }
     }

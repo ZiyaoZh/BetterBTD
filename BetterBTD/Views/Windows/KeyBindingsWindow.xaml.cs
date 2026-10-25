@@ -18,6 +18,17 @@ public partial class KeyBindingsWindow : FluentWindow
         InitializeComponent();
         DataContext = new KeyBindingsSettingsPageViewModel();
         Loaded += OnLoaded;
+        Closed += OnClosed;
+    }
+
+    private void OnClosed(object? sender, EventArgs e)
+    {
+        Loaded -= OnLoaded;
+        Closed -= OnClosed;
+        if (DataContext is KeyBindingsSettingsPageViewModel viewModel)
+        {
+            viewModel.Dispose();
+        }
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)

@@ -116,6 +116,13 @@ public sealed class ThemeServiceTests
                     }
                 }
 
+                // Closed dialogs must not receive later language changes from another test/thread.
+                Task.Run(() =>
+                {
+                    LocalizationService.Instance.SetLanguage("zh-CN");
+                    LocalizationService.Instance.SetLanguage("en-US");
+                }).GetAwaiter().GetResult();
+
                 void VerifyPopup(Func<FluentWindow> createPopup, double width)
                 {
                     Assert.NotNull(application.TryFindResource("TreeViewItemChevronSize"));
