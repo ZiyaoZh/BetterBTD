@@ -39,7 +39,11 @@ public sealed class ScriptTaskFlowService
             var instruction = document.Instructions[index];
             if (!Enum.TryParse<ScriptCommandType>(instruction.CommandType, true, out var commandType))
             {
-                throw new InvalidDataException($"Unsupported script command type '{instruction.CommandType}' at index {index}.");
+                throw ScriptExecutionException.WithLocalization(
+                    new InvalidDataException($"Unsupported script command type '{instruction.CommandType}' at index {index}."),
+                    "Editor.Runtime.Error.UnsupportedCommand",
+                    instruction.CommandType,
+                    index + 1);
             }
 
             steps.Add(new ScriptTaskFlowStep

@@ -17,7 +17,9 @@ public sealed class ActivateAbilityInstructionHandler : ScriptInstructionHandler
             throw ScriptInstructionHandlerSupport.CreateExecutionException(
                 context,
                 "ActivateAbilityType",
-                $"Unsupported activated ability '{instruction.SelectedActivatedAbility}'.");
+                $"Unsupported activated ability '{instruction.SelectedActivatedAbility}'.",
+                messageKey: "Editor.Runtime.Error.UnsupportedActivatedAbility",
+                messageArguments: [instruction.SelectedActivatedAbility]);
         }
 
         var abilityHotkey = ScriptExecutionKeyBindingResolver.ResolveActivatedAbilityHotkey(abilityType);

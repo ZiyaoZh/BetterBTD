@@ -48,12 +48,16 @@ public static class ScriptExecutionKeyBindingResolver
                     MonkeyTowerType.MonkeyVillage => keyBindings.TowerPlacement.MonkeyVillage,
                     MonkeyTowerType.EngineerMonkey => keyBindings.TowerPlacement.EngineerMonkey,
                     MonkeyTowerType.BeastHandler => keyBindings.TowerPlacement.BeastHandler,
-                    _ => throw new InvalidOperationException($"Unsupported tower placement selection '{towerType}'.")
+                    _ => throw ScriptExecutionException.WithLocalization(
+                        new InvalidOperationException($"Unsupported tower placement selection '{towerType}'."),
+                        "Editor.Runtime.Error.UnsupportedTowerPlacement", towerType)
                 },
                 $"placement hotkey for '{towerType}'");
         }
 
-        throw new InvalidOperationException($"Unsupported placement selection code '{selectionCode}'.");
+        throw ScriptExecutionException.WithLocalization(
+            new InvalidOperationException($"Unsupported placement selection code '{selectionCode}'."),
+            "Editor.Runtime.Error.UnsupportedPlacementSelection", selectionCode);
     }
 
     public static HotkeyBinding ResolveUpgradeHotkey(UpgradePathType upgradePath)
@@ -66,7 +70,9 @@ public static class ScriptExecutionKeyBindingResolver
                 UpgradePathType.Top => generalBindings.UpgradePath1,
                 UpgradePathType.Middle => generalBindings.UpgradePath2,
                 UpgradePathType.Bottom => generalBindings.UpgradePath3,
-                _ => throw new InvalidOperationException($"Unsupported upgrade path '{upgradePath}'.")
+                _ => throw ScriptExecutionException.WithLocalization(
+                    new InvalidOperationException($"Unsupported upgrade path '{upgradePath}'."),
+                    "Editor.Runtime.Error.UnsupportedUpgradePath", upgradePath)
             },
             $"upgrade hotkey for '{upgradePath}'");
     }
@@ -80,7 +86,9 @@ public static class ScriptExecutionKeyBindingResolver
             {
                 SwitchDirectionType.Right => generalBindings.ChangeTargeting,
                 SwitchDirectionType.Left => generalBindings.ReverseChangeTargeting,
-                _ => throw new InvalidOperationException($"Unsupported switch direction '{switchDirection}'.")
+                _ => throw ScriptExecutionException.WithLocalization(
+                    new InvalidOperationException($"Unsupported switch direction '{switchDirection}'."),
+                    "Editor.Runtime.Error.UnsupportedSwitchDirection", switchDirection)
             },
             $"target switching hotkey for '{switchDirection}'");
     }
@@ -94,7 +102,9 @@ public static class ScriptExecutionKeyBindingResolver
             {
                 MonkeyAbilityType.Ability1 => generalBindings.MonkeySpecial,
                 MonkeyAbilityType.Ability2 => generalBindings.MonkeySpecial2,
-                _ => throw new InvalidOperationException($"Unsupported monkey ability '{abilityType}'.")
+                _ => throw ScriptExecutionException.WithLocalization(
+                    new InvalidOperationException($"Unsupported monkey ability '{abilityType}'."),
+                    "Editor.Runtime.Error.UnsupportedMonkeyAbility", abilityType)
             },
             $"monkey ability hotkey for '{abilityType}'");
     }
@@ -136,7 +146,9 @@ public static class ScriptExecutionKeyBindingResolver
                 InventoryType.Inventory14 => inventoryBindings.Inventory14,
                 InventoryType.Inventory15 => inventoryBindings.Inventory15,
                 InventoryType.Inventory16 => inventoryBindings.Inventory16,
-                _ => throw new InvalidOperationException($"Unsupported hero inventory '{inventoryType}'.")
+                _ => throw ScriptExecutionException.WithLocalization(
+                    new InvalidOperationException($"Unsupported hero inventory '{inventoryType}'."),
+                    "Editor.Runtime.Error.UnsupportedHeroInventory", inventoryType)
             },
             $"hero inventory hotkey for '{inventoryType}'");
     }
@@ -160,7 +172,9 @@ public static class ScriptExecutionKeyBindingResolver
                 ActivatedAbilityType.ActivatedAbility10 => abilityBindings.ActivatedAbility10,
                 ActivatedAbilityType.ActivatedAbility11 => abilityBindings.ActivatedAbility11,
                 ActivatedAbilityType.ActivatedAbility12 => abilityBindings.ActivatedAbility12,
-                _ => throw new InvalidOperationException($"Unsupported activated ability '{abilityType}'.")
+                _ => throw ScriptExecutionException.WithLocalization(
+                    new InvalidOperationException($"Unsupported activated ability '{abilityType}'."),
+                    "Editor.Runtime.Error.UnsupportedActivatedAbility", abilityType)
             },
             $"activated ability hotkey for '{abilityType}'");
     }
@@ -174,7 +188,9 @@ public static class ScriptExecutionKeyBindingResolver
             {
                 "PlayFastForward" => generalBindings.PlayFastForward,
                 "SendNextRound" => generalBindings.SendNextRound,
-                _ => throw new InvalidOperationException($"Unsupported next round action '{nextRoundAction}'.")
+                _ => throw ScriptExecutionException.WithLocalization(
+                    new InvalidOperationException($"Unsupported next round action '{nextRoundAction}'."),
+                    "Editor.Runtime.Error.UnsupportedNextRound", nextRoundAction)
             },
             $"next round hotkey for '{nextRoundAction}'");
     }
@@ -185,7 +201,9 @@ public static class ScriptExecutionKeyBindingResolver
 
         if (hotkeyBinding.Key is KeyId.None or KeyId.Unknown)
         {
-            throw new InvalidOperationException($"The {description} is not configured.");
+            throw ScriptExecutionException.WithLocalization(
+                new InvalidOperationException($"The {description} is not configured."),
+                "Editor.Runtime.Error.KeyBindingNotConfigured");
         }
 
         return hotkeyBinding;

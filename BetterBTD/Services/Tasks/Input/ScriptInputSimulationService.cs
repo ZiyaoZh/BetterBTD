@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Input;
 using BetterBTD.Core.Config;
+using BetterBTD.Core.ScriptExecution;
 using BetterBTD.Core.Simulator;
 using BetterBTD.Helpers;
 using BetterBTD.Models;
@@ -282,8 +283,10 @@ public sealed class ScriptInputSimulationService
             return windowInfo;
         }
 
-        throw new InvalidOperationException(
-            $"Target game window '{_environment.TargetWindowTitle}' was not found or is not available.");
+        throw ScriptExecutionException.WithLocalization(
+            new InvalidOperationException($"Target game window '{_environment.TargetWindowTitle}' was not found or is not available."),
+            "Editor.Runtime.Error.TargetWindowUnavailable",
+            _environment.TargetWindowTitle);
     }
 }
 

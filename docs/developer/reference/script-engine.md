@@ -20,6 +20,10 @@ Capture / StageState / Input / Delay / Log
 
 `ScriptTaskFlowExecutor` 保证单实例运行，校验截图器和目标窗口，遍历步骤并生成 `ScriptExecutionResult`。失败信息包含步骤索引、指令类型、检查点、尝试次数和消息。
 
+脚本失败的用户提示由 `LocalizationService.FormatScriptFailure` / `FormatScriptError` 按当前软件语言生成。已知指令错误携带稳定的 `MessageKey` 和 `MessageArguments`；必须保留原始 `Message` 供日志及 Test API 诊断使用。需要保持原异常类型的启动、构建和快捷键错误通过 `ScriptExecutionException.WithLocalization` 在 `Exception.Data` 中附加同样的信息。新增错误时应同步添加中英文资源，不能将英文异常消息直接用作用户提示。
+
+本地化元数据和自动任务保留的底层 `ScriptFailure` 仅供进程内 UI 使用，带有 `JsonIgnore`，不更改 Test API 的失败消息与响应结构。未知异常显示本地化兜底提示，原始异常仍写入运行日志。当前提示文案见[中英对照审核表](script-error-messages-review.md)。
+
 ## 运行时服务
 
 `ScriptExecutionRuntimeServices` 封装：

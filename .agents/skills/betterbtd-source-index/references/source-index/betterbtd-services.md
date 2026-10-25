@@ -21,7 +21,7 @@ Capture, recognition, persistence, settings, editor, task adapters, and protocol
 | `BetterBTD/Services/MyScripts` | 9 |
 | `BetterBTD/Services/Settings` | 3 |
 | `BetterBTD/Services/Shared` | 3 |
-| `BetterBTD/Services/Shell/Localization` | 14 |
+| `BetterBTD/Services/Shell/Localization` | 16 |
 | `BetterBTD/Services/Start` | 1 |
 | `BetterBTD/Services/Start/Capture` | 4 |
 | `BetterBTD/Services/Tasks/AutoTasks` | 22 |
@@ -106,11 +106,13 @@ Paths are relative to the repository root. Open the linked file and verify curre
 | [LocalizationService.Resources.Editor.PlaceMonkey.cs](../../../../../BetterBTD/Services/Shell/Localization/LocalizationService.Resources.Editor.PlaceMonkey.cs) | Localization resources and display text; primary symbols: LocalizationService |
 | [LocalizationService.Resources.GameElements.cs](../../../../../BetterBTD/Services/Shell/Localization/LocalizationService.Resources.GameElements.cs) | Localization resources and display text; primary symbols: LocalizationService |
 | [LocalizationService.Resources.Library.cs](../../../../../BetterBTD/Services/Shell/Localization/LocalizationService.Resources.Library.cs) | Localization resources and display text; primary symbols: LocalizationService |
+| [LocalizationService.Resources.ScriptRuntime.cs](../../../../../BetterBTD/Services/Shell/Localization/LocalizationService.Resources.ScriptRuntime.cs) | Localization resources and display text; primary symbols: LocalizationService |
 | [LocalizationService.Resources.Shell.cs](../../../../../BetterBTD/Services/Shell/Localization/LocalizationService.Resources.Shell.cs) | Localization resources and display text; primary symbols: LocalizationService |
 | [LocalizationService.Resources.Start.cs](../../../../../BetterBTD/Services/Shell/Localization/LocalizationService.Resources.Start.cs) | Localization resources and display text; primary symbols: LocalizationService |
 | [LocalizationService.Resources.Tasks.cs](../../../../../BetterBTD/Services/Shell/Localization/LocalizationService.Resources.Tasks.cs) | Localization resources and display text; primary symbols: LocalizationService |
 | [LocalizationService.Resources.TextEditor.cs](../../../../../BetterBTD/Services/Shell/Localization/LocalizationService.Resources.TextEditor.cs) | Localization resources and display text; primary symbols: LocalizationService |
 | [LocalizationService.Resources.Tools.cs](../../../../../BetterBTD/Services/Shell/Localization/LocalizationService.Resources.Tools.cs) | Localization resources and display text; primary symbols: LocalizationService, targets |
+| [LocalizationService.ScriptExecution.cs](../../../../../BetterBTD/Services/Shell/Localization/LocalizationService.ScriptExecution.cs) | Localization resources and display text; primary symbols: LocalizationService |
 | [LocalizationService.Settings.cs](../../../../../BetterBTD/Services/Shell/Localization/LocalizationService.Settings.cs) | Localization resources and display text; primary symbols: LocalizationService, language |
 
 ### `BetterBTD/Services/Start`

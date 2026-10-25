@@ -71,7 +71,9 @@ public sealed class NextRoundInstructionHandler : ScriptInstructionHandlerBase
                 throw ScriptInstructionHandlerSupport.CreateExecutionException(
                     context,
                     "NextRoundAction",
-                    $"Unsupported next round action '{instruction.NextRoundAction}'.");
+                    $"Unsupported next round action '{instruction.NextRoundAction}'.",
+                    messageKey: "Editor.Runtime.Error.UnsupportedNextRound",
+                    messageArguments: [instruction.NextRoundAction]);
         }
     }
 }

@@ -352,4 +352,10 @@ public sealed class ScriptExecutionFailureDetails
     public int Attempt { get; init; }
 
     public string Message { get; init; } = string.Empty;
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string MessageKey { get; init; } = string.Empty;
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public object?[] MessageArguments { get; init; } = [];
 }

@@ -17,7 +17,9 @@ public sealed class PlaceHeroInventoryInstructionHandler : ScriptInstructionHand
             throw ScriptInstructionHandlerSupport.CreateExecutionException(
                 context,
                 "PlaceHeroInventoryType",
-                $"Unsupported hero inventory '{instruction.SelectedInventoryItem}'.");
+                $"Unsupported hero inventory '{instruction.SelectedInventoryItem}'.",
+                messageKey: "Editor.Runtime.Error.UnsupportedHeroInventory",
+                messageArguments: [instruction.SelectedInventoryItem]);
         }
 
         var heroHotkey = ScriptExecutionKeyBindingResolver.ResolveHeroHotkey();

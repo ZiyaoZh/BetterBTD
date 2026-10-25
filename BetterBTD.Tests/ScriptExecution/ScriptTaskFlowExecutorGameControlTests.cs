@@ -149,6 +149,78 @@ public sealed class ScriptTaskFlowExecutorGameControlTests
         Assert.False(leaseCoordinator.HasActiveLease);
     }
 
+    [Fact]
+    public async Task InstructionFailure_PreservesDiagnosticMessageAndPropagatesLocalizationMetadata()
+    {
+        var instruction = new ScriptInstructionDocument
+        {
+            CommandType = ScriptCommandType.Wait.ToString(),
+            WaitMode = WaitModeType.CoordinateColor.ToString(),
+            WaitColorHex = "invalid-color"
+        };
+
+        var result = await ExecuteSingleInstructionAsync(instruction, new NullScriptCaptureService());
+
+        Assert.Equal(ScriptExecutionStatus.Failed, result.Status);
+        var failure = Assert.IsType<ScriptExecutionFailureDetails>(result.Failure);
+        Assert.Equal(0, failure.StepIndex);
+        Assert.Equal("WaitColorHex", failure.Checkpoint);
+        Assert.Equal("Unsupported wait color 'invalid-color'. Expected format '#RRGGBB'.", failure.Message);
+        Assert.Equal("Editor.Runtime.Error.InvalidWaitColor", failure.MessageKey);
+        Assert.Equal(new object?[] { "invalid-color" }, failure.MessageArguments);
+        var exception = Assert.IsType<ScriptExecutionException>(result.Exception);
+        Assert.Equal(exception.Message, failure.Message);
+        Assert.Equal(exception.MessageKey, failure.MessageKey);
+        Assert.Equal(exception.MessageArguments, failure.MessageArguments);
+    }
+
+    [Fact]
+    public async Task RuntimeFailureWithoutLocalizationMetadata_PreservesOriginalExceptionAndMessage()
+    {
+        var expectedException = new InvalidOperationException("Capture backend failed.");
+        var instruction = new ScriptInstructionDocument { CommandType = ScriptCommandType.Comment.ToString() };
+
+        var result = await ExecuteSingleInstructionAsync(instruction, new FailingCaptureService(expectedException));
+
+        Assert.Equal(ScriptExecutionStatus.Failed, result.Status);
+        Assert.Same(expectedException, result.Exception);
+        var failure = Assert.IsType<ScriptExecutionFailureDetails>(result.Failure);
+        Assert.Equal(expectedException.Message, failure.Message);
+        Assert.Empty(failure.MessageKey);
+        Assert.Empty(failure.MessageArguments);
+    }
+
+    private static Task<ScriptExecutionResult> ExecuteSingleInstructionAsync(
+        ScriptInstructionDocument instruction,
+        IScriptCaptureService capture)
+    {
+        var taskFlow = ScriptTaskFlowService.Instance.Build(new ScriptDocument { Instructions = [instruction] });
+        return new ScriptTaskFlowExecutor(new GameControlLeaseCoordinator()).ExecuteAsync(
+            taskFlow,
+            new ScriptExecutionOptions
+            {
+                RequireCaptureService = true,
+                RequireTargetWindow = false,
+                RuntimeServices = new ScriptExecutionRuntimeServices
+                {
+                    Capture = capture,
+                    Input = new RecordingScriptInputService(),
+                    GameStageState = new QueueGameStageStateService([])
+                }
+            });
+    }
+
+    private sealed class FailingCaptureService(Exception exception) : IScriptCaptureService
+    {
+        public bool IsRunning => throw exception;
+
+        public bool TryGetCurrentWindowInfo(out BetterBTD.Models.GameWindowInfo windowInfo)
+            => throw new NotSupportedException();
+
+        public bool TryCaptureFrame(out BetterBTD.Models.GameWindowInfo windowInfo, out OpenCvSharp.Mat frame)
+            => throw new NotSupportedException();
+    }
+
     private static async Task WaitUntilAsync(Func<bool> predicate)
     {
         using var cancellationSource = new CancellationTokenSource(TimeSpan.FromSeconds(2));

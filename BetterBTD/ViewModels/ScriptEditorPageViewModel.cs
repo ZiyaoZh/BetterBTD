@@ -1172,9 +1172,7 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         {
             ShowMessageDialog(
                 _localizationService.T("Editor.Debug.Run"),
-                _localizationService.LanguageCode.Equals("en-US", StringComparison.OrdinalIgnoreCase)
-                    ? "Another script task is already running. A new execution cannot be started right now."
-                    : "已有脚本任务正在运行，当前不能启动新的执行。");
+                _localizationService.T("Editor.Runtime.Error.AlreadyRunning"));
             return;
         }
 
@@ -1185,11 +1183,10 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         }
         catch (Exception ex)
         {
+            PostStartupDiagnostic(runtimeWindowViewModel, ex);
             ShowMessageDialog(
                 _localizationService.T("Editor.Debug.Run"),
-                _localizationService.LanguageCode.Equals("en-US", StringComparison.OrdinalIgnoreCase)
-                    ? $"Failed to build the execution task.\n\n{ex.Message}"
-                    : $"构建执行任务失败。\n\n{ex.Message}");
+                string.Format(_localizationService.T("Editor.Runtime.BuildFailed"), _localizationService.FormatScriptError(ex)));
             return;
         }
 
@@ -1210,9 +1207,10 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
         }
         catch (Exception ex)
         {
+            PostStartupDiagnostic(runtimeWindowViewModel, ex);
             ShowMessageDialog(
                 _localizationService.T("Editor.Debug.Run"),
-                string.Format(_localizationService.T("Editor.Runtime.StartFailed"), ex.Message));
+                string.Format(_localizationService.T("Editor.Runtime.StartFailed"), _localizationService.FormatScriptError(ex)));
             return;
         }
 
@@ -1276,7 +1274,12 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
 
         if (!_gameCaptureService.TryStart(captureOptions, out _))
         {
-            throw new InvalidOperationException(BuildCaptureStartupFailureMessage());
+            throw ScriptExecutionException.WithLocalization(
+                new InvalidOperationException(BuildCaptureStartupFailureMessage()),
+                string.IsNullOrWhiteSpace(_gameCaptureService.TargetWindowTitle)
+                    ? "Editor.Runtime.Error.CaptureWindowNotFound"
+                    : "Editor.Runtime.Error.CaptureNamedWindowNotFound",
+                _gameCaptureService.TargetWindowTitle);
         }
 
         _maskWindowService.Start();
@@ -1340,8 +1343,18 @@ public sealed class ScriptEditorPageViewModel : ObservableObject, IDropTarget
     {
         var windowTitle = _gameCaptureService.TargetWindowTitle;
         return string.IsNullOrWhiteSpace(windowTitle)
-            ? "未找到目标窗口。请先启动游戏，或在开始页面手动选择捕获窗口。"
-            : $"未找到目标窗口“{windowTitle}”。请先启动游戏，或在开始页面手动选择捕获窗口。";
+            ? _localizationService.T("Editor.Runtime.Error.CaptureWindowNotFound")
+            : string.Format(_localizationService.T("Editor.Runtime.Error.CaptureNamedWindowNotFound"), windowTitle);
+    }
+
+    private static void PostStartupDiagnostic(ScriptExecutionWindowViewModel viewModel, Exception exception)
+    {
+        viewModel.PostRuntimeLogEntry(new ScriptExecutionRuntimeLogEntry
+        {
+            Level = ScriptExecutionRuntimeLogLevel.Error,
+            Category = ScriptExecutionRuntimeLogCategory.Session,
+            Message = exception.ToString()
+        });
     }
 
     private void OnScriptExecutionWindowClosed(object? sender, EventArgs e)

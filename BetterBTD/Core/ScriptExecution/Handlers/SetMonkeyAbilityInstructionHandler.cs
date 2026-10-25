@@ -19,7 +19,8 @@ public sealed class SetMonkeyAbilityInstructionHandler : ScriptInstructionHandle
             throw ScriptInstructionHandlerSupport.CreateExecutionException(
                 context,
                 "SetMonkeyAbilityTarget",
-                "Set monkey ability instruction is missing the target monkey binding ID.");
+                "Set monkey ability instruction is missing the target monkey binding ID.",
+                messageKey: "Editor.Runtime.Error.MissingAbilityTarget");
         }
 
         if (!context.State.TryGetMonkeyState(instruction.TargetMonkeyBindingId, out var monkeyState))
@@ -27,7 +28,9 @@ public sealed class SetMonkeyAbilityInstructionHandler : ScriptInstructionHandle
             throw ScriptInstructionHandlerSupport.CreateExecutionException(
                 context,
                 "SetMonkeyAbilityTarget",
-                $"Target monkey binding '{instruction.TargetMonkeyBindingId}' does not exist in runtime state.");
+                $"Target monkey binding '{instruction.TargetMonkeyBindingId}' does not exist in runtime state.",
+                messageKey: "Editor.Runtime.Error.TargetNotFound",
+                messageArguments: [instruction.TargetMonkeyBindingId]);
         }
 
         if (monkeyState.LastKnownCoordinate is null)
@@ -35,7 +38,9 @@ public sealed class SetMonkeyAbilityInstructionHandler : ScriptInstructionHandle
             throw ScriptInstructionHandlerSupport.CreateExecutionException(
                 context,
                 "SetMonkeyAbilityCoordinate",
-                $"Target monkey '{monkeyState.ObjectId}' does not have a known runtime coordinate.");
+                $"Target monkey '{monkeyState.ObjectId}' does not have a known runtime coordinate.",
+                messageKey: "Editor.Runtime.Error.TargetCoordinateUnknown",
+                messageArguments: [monkeyState.ObjectId]);
         }
 
         if (!Enum.TryParse<MonkeyAbilityType>(instruction.SelectedAbility, true, out var abilityType))
@@ -43,7 +48,9 @@ public sealed class SetMonkeyAbilityInstructionHandler : ScriptInstructionHandle
             throw ScriptInstructionHandlerSupport.CreateExecutionException(
                 context,
                 "SetMonkeyAbilityType",
-                $"Unsupported monkey ability '{instruction.SelectedAbility}'.");
+                $"Unsupported monkey ability '{instruction.SelectedAbility}'.",
+                messageKey: "Editor.Runtime.Error.UnsupportedMonkeyAbility",
+                messageArguments: [instruction.SelectedAbility]);
         }
 
         var targetCoordinate = monkeyState.LastKnownCoordinate.Value;

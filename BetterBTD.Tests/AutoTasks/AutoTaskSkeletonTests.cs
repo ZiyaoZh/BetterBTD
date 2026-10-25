@@ -1,3 +1,4 @@
+using System.Text.Json;
 using BetterBTD.Core.AutoTasks;
 using BetterBTD.Core.AutoTasks.Runtime;
 using BetterBTD.Core.ScriptExecution;
@@ -18,6 +19,59 @@ namespace BetterBTD.Tests.AutoTasks;
 
 public sealed class AutoTaskSkeletonTests
 {
+    [Fact]
+    public async Task Runner_PreservesScriptFailureForLocalization_WithoutChangingSerializedFailure()
+    {
+        var scriptResult = new ScriptExecutionResult
+        {
+            Status = ScriptExecutionStatus.Failed,
+            ExecutedStepCount = 2,
+            LastCompletedStepIndex = 1,
+            Failure = new ScriptExecutionFailureDetails
+            {
+                StepIndex = 2,
+                CommandType = "UpgradeMonkey",
+                Checkpoint = "UpgradeMonkeyPanel",
+                Message = "Failed to detect the upgrade panel for the selected monkey.",
+                MessageKey = "Editor.Runtime.Error.UpgradeMonkeyPanel",
+                MessageArguments = []
+            }
+        };
+        await using var runtime = CreateRuntimeServices(
+            new QueueGameUiStateService([new GameUiSnapshot { State = GameUiStateId.InLevel }]),
+            new RecordingGameUiActionExecutor(),
+            new RecordingAutoTaskScriptResolver("failure.btd"),
+            new RecordingAutoTaskScriptExecutor(scriptResult));
+        var runner = new AutoTaskRunner();
+        var resultTask = runner.ExecuteAsync(
+            new AutoTaskRequest
+            {
+                Kind = AutoTaskKind.Custom,
+                StageTarget = CreateTarget(),
+                PreferredScriptPath = "failure.btd"
+            },
+            new AutoTaskExecutionOptions { RuntimeServices = runtime.Services });
+
+        runtime.Navigation.Publish(GameUiStateId.InLevel);
+        await WaitUntilAsync(() => runtime.WorkerState == ScriptWorkerState.Failed, TimeSpan.FromSeconds(2));
+        runtime.Navigation.Publish(GameUiStateId.InLevel);
+        var result = await resultTask.WaitAsync(TimeSpan.FromSeconds(2));
+
+        Assert.Equal(AutoTaskExecutionStatus.Failed, result.Status);
+        Assert.NotNull(result.Failure);
+        Assert.Same(scriptResult, result.Failure.ScriptFailure);
+        Assert.Equal(scriptResult.Failure.Message, result.Failure.Message);
+        var legacyFailure = new AutoTaskFailureDetails
+        {
+            Phase = result.Failure.Phase,
+            UiState = result.Failure.UiState,
+            Checkpoint = result.Failure.Checkpoint,
+            Attempt = result.Failure.Attempt,
+            Message = result.Failure.Message
+        };
+        Assert.Equal(JsonSerializer.Serialize(legacyFailure), JsonSerializer.Serialize(result.Failure));
+    }
+
     [Fact]
     public void AutoTaskExecutionOptions_HasNoDefaultLoopLimit()
     {

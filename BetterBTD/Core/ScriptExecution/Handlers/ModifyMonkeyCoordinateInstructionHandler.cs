@@ -16,7 +16,8 @@ public sealed class ModifyMonkeyCoordinateInstructionHandler : ScriptInstruction
             throw ScriptInstructionHandlerSupport.CreateExecutionException(
                 context,
                 "ModifyMonkeyCoordinateTarget",
-                "Modify coordinate instruction is missing the target monkey binding ID.");
+                "Modify coordinate instruction is missing the target monkey binding ID.",
+                messageKey: "Editor.Runtime.Error.MissingCoordinateTarget");
         }
 
         if (!context.State.TryGetMonkeyState(instruction.TargetMonkeyBindingId, out var monkeyState))
@@ -24,7 +25,9 @@ public sealed class ModifyMonkeyCoordinateInstructionHandler : ScriptInstruction
             throw ScriptInstructionHandlerSupport.CreateExecutionException(
                 context,
                 "ModifyMonkeyCoordinateTarget",
-                $"Target monkey binding '{instruction.TargetMonkeyBindingId}' does not exist in runtime state.");
+                $"Target monkey binding '{instruction.TargetMonkeyBindingId}' does not exist in runtime state.",
+                messageKey: "Editor.Runtime.Error.TargetNotFound",
+                messageArguments: [instruction.TargetMonkeyBindingId]);
         }
 
         var updatedCoordinate = new WpfPoint(instruction.PositionX, instruction.PositionY);

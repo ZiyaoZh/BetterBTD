@@ -176,7 +176,9 @@ internal static class ScriptInstructionHandlerSupport
         string checkpoint,
         string message,
         int attempt = 0,
-        Exception? innerException = null)
+        Exception? innerException = null,
+        string messageKey = "",
+        object?[]? messageArguments = null)
     {
         ArgumentNullException.ThrowIfNull(context);
         ArgumentException.ThrowIfNullOrWhiteSpace(checkpoint);
@@ -187,7 +189,9 @@ internal static class ScriptInstructionHandlerSupport
             context.Step.CommandType.ToString(),
             checkpoint,
             attempt,
-            innerException);
+            innerException,
+            messageKey,
+            messageArguments);
     }
 
     public static async Task CancelPlacementModeIfActiveAsync(
@@ -295,7 +299,9 @@ internal static class ScriptInstructionHandlerSupport
                     context,
                     "UpgradeMonkeySelect",
                     $"Failed to open the upgrade panel near {FormatPoint(targetCoordinate)}.",
-                    attempt);
+                    attempt,
+                    messageKey: "Editor.Runtime.Error.UpgradePanelOpenFailed",
+                    messageArguments: [FormatPoint(targetCoordinate)]);
             },
             snapshot => ResolveVisibleUpgradePanelSide(snapshot).HasValue,
             cancellationToken).ConfigureAwait(false);
@@ -433,7 +439,9 @@ internal static class ScriptInstructionHandlerSupport
                 throw CreateExecutionException(
                     context,
                     "UpgradeMonkeyPanel",
-                    $"Failed to detect the upgrade panel near {FormatPoint(targetCoordinate)}.");
+                    $"Failed to detect the upgrade panel near {FormatPoint(targetCoordinate)}.",
+                    messageKey: "Editor.Runtime.Error.UpgradePanelNotDetectedAtCoordinate",
+                    messageArguments: [FormatPoint(targetCoordinate)]);
             }
 
             selectionAttempt++;

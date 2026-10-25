@@ -343,7 +343,9 @@ public sealed class TaskRuntimeWindowViewModel : ObservableObject, IDisposable
             AutoTaskExecutionStatus.Cancelled => _localizationService.T("Tasks.Runtime.Cancelled"),
             AutoTaskExecutionStatus.Failed => string.Format(
                 _localizationService.T("Tasks.Runtime.Failed"),
-                result.Failure?.Message ?? result.Exception?.Message ?? _localizationService.T("Tasks.Runtime.UnknownError")),
+                result.Failure?.ScriptFailure is { } scriptFailure
+                    ? _localizationService.FormatScriptFailure(scriptFailure)
+                    : result.Failure?.Message ?? result.Exception?.Message ?? _localizationService.T("Tasks.Runtime.UnknownError")),
             _ => _localizationService.T("Tasks.Runtime.UnknownResult")
         };
 

@@ -246,7 +246,9 @@ public sealed class ScriptTaskFlowExecutor : IScriptTaskFlowExecutionEngine
                     CommandType = ex.CommandType,
                     Checkpoint = ex.Checkpoint,
                     Attempt = ex.Attempt,
-                    Message = ex.Message
+                    Message = ex.Message,
+                    MessageKey = ex.MessageKey,
+                    MessageArguments = ex.MessageArguments
                 }
             };
         }
@@ -267,7 +269,9 @@ public sealed class ScriptTaskFlowExecutor : IScriptTaskFlowExecutionEngine
                     CommandType = currentProgress.CurrentCommandType,
                     Checkpoint = currentProgress.CurrentCheckpoint,
                     Attempt = currentProgress.CurrentAttempt,
-                    Message = ex.Message
+                    Message = ex.Message,
+                    MessageKey = ex.Data["LocalizationKey"] as string ?? string.Empty,
+                    MessageArguments = ex.Data["LocalizationArguments"] as object?[] ?? []
                 }
             };
         }
@@ -312,7 +316,9 @@ public sealed class ScriptTaskFlowExecutor : IScriptTaskFlowExecutionEngine
             return lease;
         }
 
-        throw new InvalidOperationException("Unable to acquire the script input scope from the navigation controller.");
+        throw ScriptExecutionException.WithLocalization(
+            new InvalidOperationException("Unable to acquire the script input scope from the navigation controller."),
+            "Editor.Runtime.Error.InputScopeUnavailable");
     }
 
     private static int ResolveInstructionInterval(ScriptTaskFlowStep step, ScriptExecutionOptions options)
@@ -329,12 +335,16 @@ public sealed class ScriptTaskFlowExecutor : IScriptTaskFlowExecutionEngine
 
         if (options.RequireCaptureService && !runtimeServices.Capture.IsRunning)
         {
-            throw new InvalidOperationException("Game capture service must be running before executing a script task flow.");
+            throw ScriptExecutionException.WithLocalization(
+                new InvalidOperationException("Game capture service must be running before executing a script task flow."),
+                "Editor.Runtime.Error.CaptureNotRunning");
         }
 
         if (options.RequireTargetWindow && !runtimeServices.Input.TryGetTargetWindowInfo(out _))
         {
-            throw new InvalidOperationException("Target game window is not available for script execution.");
+            throw ScriptExecutionException.WithLocalization(
+                new InvalidOperationException("Target game window is not available for script execution."),
+                "Editor.Runtime.Error.TargetWindowUnavailable");
         }
     }
 
@@ -349,7 +359,9 @@ public sealed class ScriptTaskFlowExecutor : IScriptTaskFlowExecutionEngine
         {
             if (_isRunning)
             {
-                throw new InvalidOperationException("Another script task flow is already running.");
+                throw ScriptExecutionException.WithLocalization(
+                    new InvalidOperationException("Another script task flow is already running."),
+                    "Editor.Runtime.Error.AlreadyRunning");
             }
 
             _isRunning = true;

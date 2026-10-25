@@ -19,7 +19,7 @@ xUnit behavior, compatibility, protocol, and test-double coverage.
 | `BetterBTD.Tests/Core/Simulator` | 1 |
 | `BetterBTD.Tests/GameControl` | 2 |
 | `BetterBTD.Tests/RobotControl` | 2 |
-| `BetterBTD.Tests/ScriptExecution` | 6 |
+| `BetterBTD.Tests/ScriptExecution` | 7 |
 | `BetterBTD.Tests/ScriptExecution/Handlers` | 6 |
 | `BetterBTD.Tests/Services` | 19 |
 | `BetterBTD.Tests/TestApi` | 4 |
@@ -85,9 +85,10 @@ Paths are relative to the repository root. Open the linked file and verify curre
 | File | Description |
 | --- | --- |
 | [ScriptExecutionIntervalStrategyTests.cs](../../../../../BetterBTD.Tests/ScriptExecution/ScriptExecutionIntervalStrategyTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: ScriptExecutionIntervalStrategyTests |
+| [ScriptFailureLocalizationTests.cs](../../../../../BetterBTD.Tests/ScriptExecution/ScriptFailureLocalizationTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: ScriptFailureLocalizationTests |
 | [ScriptKeyBindingPreflightValidatorTests.cs](../../../../../BetterBTD.Tests/ScriptExecution/ScriptKeyBindingPreflightValidatorTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: ScriptKeyBindingPreflightValidatorTests |
 | [ScriptObservationServiceTests.cs](../../../../../BetterBTD.Tests/ScriptExecution/ScriptObservationServiceTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: ScriptObservationServiceTests, FlakyStageStateService |
-| [ScriptTaskFlowExecutorGameControlTests.cs](../../../../../BetterBTD.Tests/ScriptExecution/ScriptTaskFlowExecutorGameControlTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: ScriptTaskFlowExecutorGameControlTests |
+| [ScriptTaskFlowExecutorGameControlTests.cs](../../../../../BetterBTD.Tests/ScriptExecution/ScriptTaskFlowExecutorGameControlTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: ScriptTaskFlowExecutorGameControlTests, FailingCaptureService |
 | [ScriptTaskFlowWorkerTests.cs](../../../../../BetterBTD.Tests/ScriptExecution/ScriptTaskFlowWorkerTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: ScriptTaskFlowWorkerTests, ControllableExecutionEngine |
 | [ScriptWorkerContractTests.cs](../../../../../BetterBTD.Tests/ScriptExecution/ScriptWorkerContractTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: ScriptWorkerContractTests |
 

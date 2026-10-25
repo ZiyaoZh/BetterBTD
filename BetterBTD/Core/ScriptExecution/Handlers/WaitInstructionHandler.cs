@@ -68,7 +68,9 @@ public sealed class WaitInstructionHandler : ScriptInstructionHandlerBase
                     throw ScriptInstructionHandlerSupport.CreateExecutionException(
                         context,
                         "WaitColorHex",
-                        $"Unsupported wait color '{instruction.WaitColorHex}'. Expected format '#RRGGBB'.");
+                        $"Unsupported wait color '{instruction.WaitColorHex}'. Expected format '#RRGGBB'.",
+                        messageKey: "Editor.Runtime.Error.InvalidWaitColor",
+                        messageArguments: [instruction.WaitColorHex]);
                 }
 
                 var targetCoordinate = new WpfPoint(instruction.WaitColorCoordinateX, instruction.WaitColorCoordinateY);
@@ -94,7 +96,9 @@ public sealed class WaitInstructionHandler : ScriptInstructionHandlerBase
                 throw ScriptInstructionHandlerSupport.CreateExecutionException(
                     context,
                     "WaitMode",
-                    $"Unsupported wait mode '{waitMode}'.");
+                    $"Unsupported wait mode '{waitMode}'.",
+                    messageKey: "Editor.Runtime.Error.UnsupportedWaitMode",
+                    messageArguments: [waitMode]);
         }
     }
 

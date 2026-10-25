@@ -585,6 +585,9 @@ public sealed class AutoTaskProgressSnapshot
 
 public sealed class AutoTaskFailureDetails
 {
+    [System.Text.Json.Serialization.JsonIgnore]
+    public ScriptExecutionResult? ScriptFailure { get; init; }
+
     public AutoTaskPhase Phase { get; init; } = AutoTaskPhase.Failed;
 
     public GameUiStateId UiState { get; init; } = GameUiStateId.Unknown;

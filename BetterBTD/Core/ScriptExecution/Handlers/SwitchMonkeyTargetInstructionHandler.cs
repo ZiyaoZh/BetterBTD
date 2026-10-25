@@ -17,7 +17,8 @@ public sealed class SwitchMonkeyTargetInstructionHandler : ScriptInstructionHand
             throw ScriptInstructionHandlerSupport.CreateExecutionException(
                 context,
                 "SwitchMonkeyTargetTarget",
-                "Switch target instruction is missing the target monkey binding ID.");
+                "Switch target instruction is missing the target monkey binding ID.",
+                messageKey: "Editor.Runtime.Error.MissingSwitchTarget");
         }
 
         if (!context.State.TryGetMonkeyState(instruction.TargetMonkeyBindingId, out var monkeyState))
@@ -25,7 +26,9 @@ public sealed class SwitchMonkeyTargetInstructionHandler : ScriptInstructionHand
             throw ScriptInstructionHandlerSupport.CreateExecutionException(
                 context,
                 "SwitchMonkeyTargetTarget",
-                $"Target monkey binding '{instruction.TargetMonkeyBindingId}' does not exist in runtime state.");
+                $"Target monkey binding '{instruction.TargetMonkeyBindingId}' does not exist in runtime state.",
+                messageKey: "Editor.Runtime.Error.TargetNotFound",
+                messageArguments: [instruction.TargetMonkeyBindingId]);
         }
 
         if (monkeyState.LastKnownCoordinate is null)
@@ -33,7 +36,9 @@ public sealed class SwitchMonkeyTargetInstructionHandler : ScriptInstructionHand
             throw ScriptInstructionHandlerSupport.CreateExecutionException(
                 context,
                 "SwitchMonkeyTargetCoordinate",
-                $"Target monkey '{monkeyState.ObjectId}' does not have a known runtime coordinate.");
+                $"Target monkey '{monkeyState.ObjectId}' does not have a known runtime coordinate.",
+                messageKey: "Editor.Runtime.Error.TargetCoordinateUnknown",
+                messageArguments: [monkeyState.ObjectId]);
         }
 
         if (!Enum.TryParse<SwitchDirectionType>(instruction.SwitchDirection, true, out var switchDirection))
@@ -41,7 +46,9 @@ public sealed class SwitchMonkeyTargetInstructionHandler : ScriptInstructionHand
             throw ScriptInstructionHandlerSupport.CreateExecutionException(
                 context,
                 "SwitchMonkeyTargetDirection",
-                $"Unsupported switch direction '{instruction.SwitchDirection}'.");
+                $"Unsupported switch direction '{instruction.SwitchDirection}'.",
+                messageKey: "Editor.Runtime.Error.UnsupportedSwitchDirection",
+                messageArguments: [instruction.SwitchDirection]);
         }
 
         var targetCoordinate = monkeyState.LastKnownCoordinate.Value;

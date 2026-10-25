@@ -20,7 +20,8 @@ public sealed class UpgradeMonkeyInstructionHandler : ScriptInstructionHandlerBa
             throw ScriptInstructionHandlerSupport.CreateExecutionException(
                 context,
                 "UpgradeMonkeyTarget",
-                "Upgrade instruction is missing the target monkey binding ID.");
+                "Upgrade instruction is missing the target monkey binding ID.",
+                messageKey: "Editor.Runtime.Error.MissingUpgradeTarget");
         }
 
         if (!context.State.TryGetMonkeyState(instruction.TargetMonkeyBindingId, out var monkeyState))
@@ -28,7 +29,9 @@ public sealed class UpgradeMonkeyInstructionHandler : ScriptInstructionHandlerBa
             throw ScriptInstructionHandlerSupport.CreateExecutionException(
                 context,
                 "UpgradeMonkeyTarget",
-                $"Target monkey binding '{instruction.TargetMonkeyBindingId}' does not exist in runtime state.");
+                $"Target monkey binding '{instruction.TargetMonkeyBindingId}' does not exist in runtime state.",
+                messageKey: "Editor.Runtime.Error.TargetNotFound",
+                messageArguments: [instruction.TargetMonkeyBindingId]);
         }
 
         var isHeroTarget = ScriptInstructionHandlerSupport.IsHeroObjectKey(monkeyState.ObjectId) ||
@@ -76,7 +79,9 @@ public sealed class UpgradeMonkeyInstructionHandler : ScriptInstructionHandlerBa
                 throw ScriptInstructionHandlerSupport.CreateExecutionException(
                     context,
                     "UpgradeMonkeyLevelCap",
-                    $"Cannot upgrade '{instruction.UpgradePath}' to target level {targetLevel} because level 5 is the maximum.");
+                    $"Cannot upgrade '{instruction.UpgradePath}' to target level {targetLevel} because level 5 is the maximum.",
+                    messageKey: "Editor.Runtime.Error.UpgradeLevelCap",
+                    messageArguments: [instruction.UpgradePath, targetLevel]);
             }
 
             if (monkeyState.LastKnownCoordinate is null)
@@ -84,7 +89,9 @@ public sealed class UpgradeMonkeyInstructionHandler : ScriptInstructionHandlerBa
                 throw ScriptInstructionHandlerSupport.CreateExecutionException(
                     context,
                     "UpgradeMonkeyCoordinate",
-                    $"Target monkey '{monkeyState.ObjectId}' does not have a known runtime coordinate.");
+                    $"Target monkey '{monkeyState.ObjectId}' does not have a known runtime coordinate.",
+                    messageKey: "Editor.Runtime.Error.TargetCoordinateUnknown",
+                    messageArguments: [monkeyState.ObjectId]);
             }
 
             await UpgradeTowerAsync(
@@ -128,7 +135,9 @@ public sealed class UpgradeMonkeyInstructionHandler : ScriptInstructionHandlerBa
         throw ScriptInstructionHandlerSupport.CreateExecutionException(
             context,
             "UpgradeMonkeyPath",
-            $"Unsupported upgrade path '{instruction.UpgradePath}'.");
+            $"Unsupported upgrade path '{instruction.UpgradePath}'.",
+            messageKey: "Editor.Runtime.Error.UnsupportedUpgradePath",
+            messageArguments: [instruction.UpgradePath]);
     }
 
     private static async Task UpgradeTowerAsync(
@@ -187,7 +196,8 @@ public sealed class UpgradeMonkeyInstructionHandler : ScriptInstructionHandlerBa
             ?? throw ScriptInstructionHandlerSupport.CreateExecutionException(
                 context,
                 "UpgradeMonkeyPanel",
-                "Failed to detect the upgrade panel for the selected monkey.");
+                "Failed to detect the upgrade panel for the selected monkey.",
+                messageKey: "Editor.Runtime.Error.UpgradePanelNotDetected");
 
         var currentLevel = GetRequiredUpgradeLevel(context, instruction, panelSnapshot, upgradePath);
         if (currentLevel >= targetLevel)
@@ -256,7 +266,8 @@ public sealed class UpgradeMonkeyInstructionHandler : ScriptInstructionHandlerBa
             throw ScriptInstructionHandlerSupport.CreateExecutionException(
                 context,
                 "UpgradeMonkeyPanel",
-                "Failed to detect the upgrade panel for the selected monkey.");
+                "Failed to detect the upgrade panel for the selected monkey.",
+                messageKey: "Editor.Runtime.Error.UpgradePanelNotDetected");
         }
 
         var level = ScriptInstructionHandlerSupport.GetUpgradeLevel(
@@ -268,7 +279,9 @@ public sealed class UpgradeMonkeyInstructionHandler : ScriptInstructionHandlerBa
             throw ScriptInstructionHandlerSupport.CreateExecutionException(
                 context,
                 "UpgradeMonkeyPanel",
-                $"Failed to read the current '{instruction.UpgradePath}' path level.");
+                $"Failed to read the current '{instruction.UpgradePath}' path level.",
+                messageKey: "Editor.Runtime.Error.UpgradeLevelUnreadable",
+                messageArguments: [instruction.UpgradePath]);
         }
 
         return level.Value;

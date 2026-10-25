@@ -428,7 +428,8 @@ public sealed class AutoTaskRunner
                                 state,
                                 "ExecuteScript",
                                 scriptResult.Failure?.Message ?? scriptResult.Exception?.Message ?? "Underlying script execution failed.",
-                                scriptResult.Exception);
+                                scriptResult.Exception,
+                                scriptFailure: scriptResult);
                         }
 
                         state.RecordScriptExecutionResult(scriptResult);
@@ -752,7 +753,8 @@ public sealed class AutoTaskRunner
         string checkpoint,
         string message,
         Exception? exception = null,
-        int? attempt = null)
+        int? attempt = null,
+        ScriptExecutionResult? scriptFailure = null)
     {
         session.MarkFailed(state.Phase, message);
 
@@ -767,7 +769,8 @@ public sealed class AutoTaskRunner
                 UiState = state.LastUiSnapshot?.State ?? GameUiStateId.Unknown,
                 Checkpoint = checkpoint,
                 Attempt = attempt ?? state.ConsecutiveNavigationFailures,
-                Message = message
+                Message = message,
+                ScriptFailure = scriptFailure
             }
         };
     }

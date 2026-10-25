@@ -33,13 +33,27 @@ public sealed class ScriptExecutionException : InvalidOperationException
         string commandType,
         string checkpoint,
         int attempt = 0,
-        Exception? innerException = null)
+        Exception? innerException = null,
+        string messageKey = "",
+        object?[]? messageArguments = null)
         : base(message, innerException)
     {
         StepIndex = stepIndex;
         CommandType = commandType;
         Checkpoint = checkpoint;
         Attempt = attempt;
+        MessageKey = messageKey;
+        MessageArguments = messageArguments ?? [];
+    }
+
+    public static T WithLocalization<T>(T exception, string key, params object?[] arguments)
+        where T : Exception
+    {
+        ArgumentNullException.ThrowIfNull(exception);
+        ArgumentException.ThrowIfNullOrWhiteSpace(key);
+        exception.Data["LocalizationKey"] = key;
+        exception.Data["LocalizationArguments"] = arguments;
+        return exception;
     }
 
     public int StepIndex { get; }
@@ -49,6 +63,10 @@ public sealed class ScriptExecutionException : InvalidOperationException
     public string Checkpoint { get; }
 
     public int Attempt { get; }
+
+    public string MessageKey { get; }
+
+    public object?[] MessageArguments { get; }
 }
 
 public static class ScriptExecutionOperations
@@ -248,7 +266,9 @@ public static class ScriptExecutionOperations
             context,
             "RetryFailed",
             $"{description}: exceeded {maxAttempts} attempts.",
-            maxAttempts);
+            maxAttempts,
+            messageKey: "Editor.Runtime.Error.RetryFailed",
+            messageArguments: [maxAttempts]);
     }
 
     public static async Task WaitUntilAsync(
@@ -329,7 +349,9 @@ public static class ScriptExecutionOperations
                     context,
                     "WaitTimedOut",
                     $"{description}: timeout after {timeoutMilliseconds} ms.",
-                    attempt);
+                    attempt,
+                    messageKey: "Editor.Runtime.Error.WaitTimedOut",
+                    messageArguments: [timeoutMilliseconds]);
             }
 
             await context.ExecutionSession.DelayAsync(pollIntervalMilliseconds, cancellationToken).ConfigureAwait(false);
@@ -355,7 +377,8 @@ public static class ScriptExecutionOperations
             ScriptExecutionRuntimeDiagnostics.Warning(
                 ScriptExecutionRuntimeLogCategory.Capture,
                 $"Stage snapshot capture failed at checkpoint '{checkpoint}'.");
-            throw CreateExecutionException(context, checkpoint, "Game stage snapshot is unavailable.");
+            throw CreateExecutionException(context, checkpoint, "Game stage snapshot is unavailable.",
+                messageKey: "Editor.Runtime.Error.SnapshotUnavailable");
         }
 
         ScriptExecutionRuntimeDiagnostics.Info(
@@ -369,7 +392,9 @@ public static class ScriptExecutionOperations
         string checkpoint,
         string message,
         int attempt = 0,
-        Exception? innerException = null)
+        Exception? innerException = null,
+        string messageKey = "",
+        object?[]? messageArguments = null)
     {
         ArgumentNullException.ThrowIfNull(context);
 
@@ -379,7 +404,9 @@ public static class ScriptExecutionOperations
             context.Step.CommandType.ToString(),
             checkpoint,
             attempt,
-            innerException);
+            innerException,
+            messageKey,
+            messageArguments);
     }
 
     private static async Task DelayCoreAsync(

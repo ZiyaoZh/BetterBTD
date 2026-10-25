@@ -165,7 +165,9 @@ public sealed class PlaceMonkeyInstructionHandler : ScriptInstructionHandlerBase
             context,
             "PlaceMonkeyClick",
             $"Hero placement at {ScriptInstructionHandlerSupport.FormatPoint(requestedCoordinate)} did not exit placement mode after the click.",
-            attempt);
+            attempt,
+            messageKey: "Editor.Runtime.Error.HeroPlacementNotConfirmed",
+            messageArguments: [ScriptInstructionHandlerSupport.FormatPoint(requestedCoordinate)]);
     }
 
     private static async Task<bool> PlaceMonkeyWithoutDetectionAsync(
@@ -259,7 +261,11 @@ public sealed class PlaceMonkeyInstructionHandler : ScriptInstructionHandlerBase
             placementFailureAdjustmentEnabled
                 ? $"Failed to place '{selectionCode}' near {ScriptInstructionHandlerSupport.FormatPoint(requestedCoordinate)} after offset search."
                 : $"Failed to place '{selectionCode}' at {ScriptInstructionHandlerSupport.FormatPoint(requestedCoordinate)} without failure adjustment.",
-            attempt);
+            attempt,
+            messageKey: placementFailureAdjustmentEnabled
+                ? "Editor.Runtime.Error.PlacementOffsetFailed"
+                : "Editor.Runtime.Error.PlacementFailed",
+            messageArguments: [selectionCode, ScriptInstructionHandlerSupport.FormatPoint(requestedCoordinate)]);
     }
 
     private static async Task<bool> WaitForPlacementModeExitAfterClickAsync(
@@ -316,7 +322,9 @@ public sealed class PlaceMonkeyInstructionHandler : ScriptInstructionHandlerBase
                     context,
                     "PlaceMonkeySelect",
                     $"Failed to activate hero placement mode for '{selectionCode}' within {PlacementModeActivationTimeoutMilliseconds} ms.",
-                    attempt);
+                    attempt,
+                    messageKey: "Editor.Runtime.Error.HeroPlacementActivationFailed",
+                    messageArguments: [selectionCode, PlacementModeActivationTimeoutMilliseconds]);
             }
 
             activationAttempt++;

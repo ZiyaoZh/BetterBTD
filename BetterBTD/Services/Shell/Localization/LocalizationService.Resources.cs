@@ -14,6 +14,7 @@ public sealed partial class LocalizationService
         BuildZhCnTextEditorResources(),
         BuildZhCnLibraryResources(),
         BuildZhCnEditorResources(),
+        BuildZhCnScriptRuntimeResources(),
         BuildZhCnEditorPlacementResources(),
         BuildZhCnGameElementsResources());
 
@@ -26,6 +27,7 @@ public sealed partial class LocalizationService
         BuildEnUsTextEditorResources(),
         BuildEnUsLibraryResources(),
         BuildEnUsEditorResources(),
+        BuildEnUsScriptRuntimeResources(),
         BuildEnUsEditorPlacementResources(),
         BuildEnUsGameElementsResources());
 

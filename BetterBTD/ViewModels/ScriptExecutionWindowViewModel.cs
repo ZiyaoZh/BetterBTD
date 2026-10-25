@@ -370,9 +370,10 @@ public sealed class ScriptExecutionWindowViewModel : ObservableObject
 
         StopAcceptingProgressSnapshots();
         IsRunning = false;
-        StatusText = string.Format(_localizationService.T("Editor.Runtime.UnexpectedError"), exception.Message);
+        StatusText = string.Format(_localizationService.T("Editor.Runtime.UnexpectedError"), _localizationService.FormatScriptError(exception));
         CurrentInstructionText = StatusText;
         AppendLog(StatusText);
+        AppendLog(exception.ToString());
     }
 
     public void HandleWindowClosing()
@@ -385,21 +386,7 @@ public sealed class ScriptExecutionWindowViewModel : ObservableObject
 
     private string BuildFailureText(ScriptExecutionResult result)
     {
-        var failure = result.Failure;
-        if (failure is null)
-        {
-            return string.Format(
-                _localizationService.T("Editor.Runtime.FailedSimple"),
-                result.Exception?.Message ?? _localizationService.T("Editor.Runtime.UnknownError"));
-        }
-
-        return string.Format(
-            _localizationService.T("Editor.Runtime.FailedDetailed"),
-            failure.StepIndex + 1,
-            failure.CommandType,
-            failure.Checkpoint,
-            failure.Attempt,
-            failure.Message);
+        return _localizationService.FormatScriptFailure(result);
     }
 
     private void PersistIntervalSettings()

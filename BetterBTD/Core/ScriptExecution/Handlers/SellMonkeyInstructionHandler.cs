@@ -18,7 +18,8 @@ public sealed class SellMonkeyInstructionHandler : ScriptInstructionHandlerBase
             throw ScriptInstructionHandlerSupport.CreateExecutionException(
                 context,
                 "SellMonkeyTarget",
-                "Sell monkey instruction is missing the target monkey binding ID.");
+                "Sell monkey instruction is missing the target monkey binding ID.",
+                messageKey: "Editor.Runtime.Error.MissingSellTarget");
         }
 
         if (!context.State.TryGetMonkeyState(instruction.TargetMonkeyBindingId, out var monkeyState))
@@ -26,7 +27,9 @@ public sealed class SellMonkeyInstructionHandler : ScriptInstructionHandlerBase
             throw ScriptInstructionHandlerSupport.CreateExecutionException(
                 context,
                 "SellMonkeyTarget",
-                $"Target monkey binding '{instruction.TargetMonkeyBindingId}' does not exist in runtime state.");
+                $"Target monkey binding '{instruction.TargetMonkeyBindingId}' does not exist in runtime state.",
+                messageKey: "Editor.Runtime.Error.TargetNotFound",
+                messageArguments: [instruction.TargetMonkeyBindingId]);
         }
 
         if (monkeyState.LastKnownCoordinate is null)
@@ -34,7 +37,9 @@ public sealed class SellMonkeyInstructionHandler : ScriptInstructionHandlerBase
             throw ScriptInstructionHandlerSupport.CreateExecutionException(
                 context,
                 "SellMonkeyCoordinate",
-                $"Target monkey '{monkeyState.ObjectId}' does not have a known runtime coordinate.");
+                $"Target monkey '{monkeyState.ObjectId}' does not have a known runtime coordinate.",
+                messageKey: "Editor.Runtime.Error.TargetCoordinateUnknown",
+                messageArguments: [monkeyState.ObjectId]);
         }
 
         var targetCoordinate = monkeyState.LastKnownCoordinate.Value;
