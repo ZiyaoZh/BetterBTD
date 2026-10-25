@@ -11,8 +11,10 @@ namespace BetterBTD.Tests.ScriptExecution.Handlers;
 
 public sealed class UpgradeMonkeyInstructionHandlerTests
 {
-    [Fact]
-    public async Task HandleAsync_HeroUpgrade_PressesHotkeyWithoutDetectionAndClosesPanel()
+    [Theory]
+    [InlineData("Hero:Geraldo")]
+    [InlineData("Hero:Geraldo:2")]
+    public async Task HandleAsync_HeroUpgrade_PressesHotkeyWithoutDetectionAndClosesPanel(string objectId)
     {
         var input = new RecordingScriptInputService();
         var runtimeServices = new ScriptExecutionRuntimeServices
@@ -26,7 +28,7 @@ public sealed class UpgradeMonkeyInstructionHandlerTests
         {
             CommandType = ScriptCommandType.UpgradeMonkey.ToString(),
             TargetMonkeyBindingId = "hero-bind",
-            TargetMonkeyObjectId = "Hero:Geraldo",
+            TargetMonkeyObjectId = objectId,
             UpgradeCount = 3,
             UpgradeOperationIntervalMilliseconds = 0
         };
@@ -36,7 +38,7 @@ public sealed class UpgradeMonkeyInstructionHandlerTests
             new ScriptMonkeyObjectDocument
             {
                 BindingId = "hero-bind",
-                ObjectId = "Hero:Geraldo",
+                ObjectId = objectId,
                 SelectionCode = "Hero:Geraldo",
                 PlacementOrder = 1
             }

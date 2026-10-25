@@ -42,14 +42,18 @@ public sealed class LegacyScriptConversionService
         private readonly List<ScriptInstructionDocument> _instructions = [];
         private readonly List<string> _warnings = [];
         private readonly HeroType _heroType;
-        private readonly string _heroObjectId;
+        private readonly string _heroSelectionCode;
+        private string _heroBindingId = HeroBindingId;
+        private string _heroObjectId;
+        private int _heroPlacementCount;
         private int _placementOrder;
 
         public LegacyConversionContext(LegacyScriptModel legacyScript)
         {
             _legacyScript = legacyScript;
             _heroType = ResolveHeroType(legacyScript.Metadata.SelectedHero, _warnings);
-            _heroObjectId = ScriptEditorInstructionService.BuildHeroObjectKey(_heroType);
+            _heroSelectionCode = ScriptEditorInstructionService.BuildHeroObjectKey(_heroType);
+            _heroObjectId = ScriptEditorInstructionService.BuildHeroObjectKey(_heroType, 1);
         }
 
         public ScriptDocument Document { get; private set; } = new();
@@ -249,20 +253,23 @@ public sealed class LegacyScriptConversionService
                 return;
             }
 
+            _heroPlacementCount++;
+            _heroBindingId = _heroPlacementCount == 1 ? HeroBindingId : $"{HeroBindingId}-{_heroPlacementCount}";
+            _heroObjectId = ScriptEditorInstructionService.BuildHeroObjectKey(_heroType, _heroPlacementCount);
             _placementOrder++;
             _monkeyObjects.Add(new ScriptMonkeyObjectDocument
             {
-                BindingId = HeroBindingId,
+                BindingId = _heroBindingId,
                 ObjectId = _heroObjectId,
-                SelectionCode = _heroObjectId,
+                SelectionCode = _heroSelectionCode,
                 PlacementOrder = _placementOrder
             });
 
             _instructions.Add(new ScriptInstructionDocument
             {
                 CommandType = ScriptCommandType.PlaceMonkey.ToString(),
-                SelectedMonkeyTower = _heroObjectId,
-                MonkeyBindingId = HeroBindingId,
+                SelectedMonkeyTower = _heroSelectionCode,
+                MonkeyBindingId = _heroBindingId,
                 MonkeyObjectId = _heroObjectId,
                 PositionX = instruction.CoordinateX,
                 PositionY = instruction.CoordinateY,
@@ -338,7 +345,7 @@ public sealed class LegacyScriptConversionService
             _instructions.Add(new ScriptInstructionDocument
             {
                 CommandType = ScriptCommandType.UpgradeMonkey.ToString(),
-                TargetMonkeyBindingId = HeroBindingId,
+                TargetMonkeyBindingId = _heroBindingId,
                 TargetMonkeyObjectId = _heroObjectId,
                 UpgradeCount = 1,
                 IntervalToNextInstructionMs = DefaultInstructionIntervalMilliseconds,
@@ -356,7 +363,7 @@ public sealed class LegacyScriptConversionService
                 return;
             }
 
-            var targetBindingId = isHeroTarget ? HeroBindingId : ResolveMonkeyBindingId(instruction.Argument1, instruction);
+            var targetBindingId = isHeroTarget ? _heroBindingId : ResolveMonkeyBindingId(instruction.Argument1, instruction);
             var targetObjectId = isHeroTarget ? _heroObjectId : ResolveMonkeyObjectId(instruction.Argument1);
             if (string.IsNullOrWhiteSpace(targetBindingId) || string.IsNullOrWhiteSpace(targetObjectId))
             {
@@ -393,7 +400,7 @@ public sealed class LegacyScriptConversionService
                 return;
             }
 
-            var targetBindingId = isHeroTarget ? HeroBindingId : ResolveMonkeyBindingId(instruction.Argument1, instruction);
+            var targetBindingId = isHeroTarget ? _heroBindingId : ResolveMonkeyBindingId(instruction.Argument1, instruction);
             var targetObjectId = isHeroTarget ? _heroObjectId : ResolveMonkeyObjectId(instruction.Argument1);
             if (string.IsNullOrWhiteSpace(targetBindingId) || string.IsNullOrWhiteSpace(targetObjectId))
             {
@@ -416,7 +423,7 @@ public sealed class LegacyScriptConversionService
 
         private void ConvertSellMonkey(LegacyScriptInstruction instruction, bool isHeroTarget)
         {
-            var targetBindingId = isHeroTarget ? HeroBindingId : ResolveMonkeyBindingId(instruction.Argument1, instruction);
+            var targetBindingId = isHeroTarget ? _heroBindingId : ResolveMonkeyBindingId(instruction.Argument1, instruction);
             var targetObjectId = isHeroTarget ? _heroObjectId : ResolveMonkeyObjectId(instruction.Argument1);
             if (string.IsNullOrWhiteSpace(targetBindingId) || string.IsNullOrWhiteSpace(targetObjectId))
             {

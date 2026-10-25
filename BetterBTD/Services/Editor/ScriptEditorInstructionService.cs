@@ -403,6 +403,27 @@ public sealed class ScriptEditorInstructionService
         return $"Hero:{heroType}";
     }
 
+    public static string BuildHeroObjectKey(HeroType heroType, int index)
+    {
+        return $"Hero:{heroType}:{index}";
+    }
+
+    public static bool TryParseHeroObjectKey(string? objectKey, out HeroType heroType, out int index)
+    {
+        heroType = default;
+        index = 0;
+        if (string.IsNullOrWhiteSpace(objectKey))
+        {
+            return false;
+        }
+
+        var separatorIndex = objectKey.LastIndexOf(':');
+        return separatorIndex > "Hero:".Length &&
+               TryParseHeroSelection(objectKey[..separatorIndex], out heroType) &&
+               int.TryParse(objectKey[(separatorIndex + 1)..], out index) &&
+               index > 0;
+    }
+
     public static string BuildTowerSelectionCode(MonkeyTowerType towerType)
     {
         return $"Tower:{towerType}";

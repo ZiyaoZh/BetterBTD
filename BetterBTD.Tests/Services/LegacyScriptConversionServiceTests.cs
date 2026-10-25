@@ -7,6 +7,53 @@ namespace BetterBTD.Tests.Services;
 public sealed class LegacyScriptConversionServiceTests
 {
     [Fact]
+    public void Convert_HeroSoldAndPlacedAgain_PreservesDistinctInstancesAndTargets()
+    {
+        var legacyDocument = new LegacyScriptModel
+        {
+            Metadata = new LegacyScriptMetadata { SelectedHero = (int)LegacyHeroType.Quincy },
+            InstructionsList =
+            [
+                [(int)LegacyActionType.PlaceHero, 0, 0, -1, -1, -1, -1, -1, 1000000, 2000000, 0, 0],
+                [(int)LegacyActionType.UpgradeHero, 0, 0, -1, -1, -1, -1, -1, -1, -1, 0, 0],
+                [(int)LegacyActionType.SellHero, 0, 0, -1, -1, -1, -1, -1, -1, -1, 0, 0],
+                [(int)LegacyActionType.PlaceHero, 0, 0, -1, -1, -1, -1, -1, 3000000, 4000000, 0, 0],
+                [(int)LegacyActionType.UpgradeHero, 0, 0, -1, -1, -1, -1, -1, -1, -1, 0, 0],
+                [(int)LegacyActionType.SwitchHeroTarget, 0, (int)LegacyTargetType.Right, -1, -1, -1, -1, -1, -1, -1, 0, 0],
+                [(int)LegacyActionType.SetHeroAbility, 0, (int)LegacyMonkeyFunctionType.Function1, -1, -1, -1, -1, -1, -1, -1, 0, 0],
+                [(int)LegacyActionType.SellHero, 0, 0, -1, -1, -1, -1, -1, -1, -1, 0, 0]
+            ]
+        };
+
+        var result = LegacyScriptConversionService.Instance.Convert(legacyDocument);
+        var objects = result.Document.MonkeyObjects;
+        var instructions = result.Document.Instructions;
+
+        Assert.Empty(result.Warnings);
+        Assert.Equal(2, objects.Count);
+        Assert.NotEqual(objects[0].BindingId, objects[1].BindingId);
+        Assert.Equal(["Hero:Quincy:1", "Hero:Quincy:2"], objects.Select(x => x.ObjectId).ToArray());
+        Assert.All(objects, x => Assert.Equal("Hero:Quincy", x.SelectionCode));
+        Assert.Equal(8, instructions.Count);
+        Assert.Equal(objects[0].BindingId, instructions[0].MonkeyBindingId);
+        Assert.Equal(objects[0].ObjectId, instructions[0].MonkeyObjectId);
+        Assert.Equal(objects[1].BindingId, instructions[3].MonkeyBindingId);
+        Assert.Equal(objects[1].ObjectId, instructions[3].MonkeyObjectId);
+        Assert.Equal("Hero:Quincy", instructions[0].SelectedMonkeyTower);
+        Assert.Equal("Hero:Quincy", instructions[3].SelectedMonkeyTower);
+        Assert.All(instructions.Skip(1).Take(2), instruction =>
+        {
+            Assert.Equal(objects[0].BindingId, instruction.TargetMonkeyBindingId);
+            Assert.Equal(objects[0].ObjectId, instruction.TargetMonkeyObjectId);
+        });
+        Assert.All(instructions.Skip(4), instruction =>
+        {
+            Assert.Equal(objects[1].BindingId, instruction.TargetMonkeyBindingId);
+            Assert.Equal(objects[1].ObjectId, instruction.TargetMonkeyObjectId);
+        });
+    }
+
+    [Fact]
     public void Convert_AbsoluteUpgradeLevel_SplitsIntoCurrentUpgradeInstructions()
     {
         var legacyDocument = new LegacyScriptModel

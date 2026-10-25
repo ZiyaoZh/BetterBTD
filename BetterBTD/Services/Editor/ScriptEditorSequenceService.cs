@@ -58,8 +58,16 @@ public sealed class ScriptEditorSequenceService
             .ToDictionary(x => x.Key, x => x.Count(), StringComparer.OrdinalIgnoreCase);
 
         var maxTowerIndexes = new Dictionary<MonkeyTowerType, int>();
+        var maxHeroIndexes = new Dictionary<HeroType, int>();
         foreach (var key in existingKeyCounts.Keys)
         {
+            if (ScriptEditorInstructionService.TryParseHeroObjectKey(key, out var heroType, out var heroIndex))
+            {
+                maxHeroIndexes.TryGetValue(heroType, out var currentMaxHeroIndex);
+                maxHeroIndexes[heroType] = Math.Max(currentMaxHeroIndex, heroIndex);
+                continue;
+            }
+
             if (!ScriptEditorInstructionService.TryParseMonkeyObjectKey(key, out var towerType, out var index))
             {
                 continue;
@@ -90,27 +98,31 @@ public sealed class ScriptEditorSequenceService
 
             if (ScriptEditorInstructionService.TryParseHeroSelection(selectionCode, out var heroType))
             {
-                var heroKey = ScriptEditorInstructionService.BuildHeroObjectKey(heroType);
-                if (objectKeyToBindingId.TryGetValue(heroKey, out var existingHeroBindingId))
+                var heroKey = originalKey;
+                if (!ScriptEditorInstructionService.TryParseHeroObjectKey(heroKey, out var currentHeroType, out _) ||
+                    currentHeroType != heroType || usedKeys.Contains(heroKey))
                 {
-                    instruction.MonkeyBindingId = existingHeroBindingId;
-                }
-                else
-                {
-                    objectKeyToBindingId[heroKey] = instruction.MonkeyBindingId;
+                    maxHeroIndexes.TryGetValue(heroType, out var currentMaxIndex);
+                    var nextIndex = currentMaxIndex + 1;
+                    maxHeroIndexes[heroType] = nextIndex;
+                    heroKey = ScriptEditorInstructionService.BuildHeroObjectKey(heroType, nextIndex);
                 }
 
                 instruction.MonkeyObjectId = heroKey;
                 bindingIdToObjectKey[instruction.MonkeyBindingId] = heroKey;
-
-                if (options.All(x => !string.Equals(x.Code, instruction.MonkeyBindingId, StringComparison.OrdinalIgnoreCase)))
+                objectKeyToBindingId.TryAdd(heroKey, instruction.MonkeyBindingId);
+                // Preserve object-only references when upgrading an unnumbered legacy hero key.
+                if (!string.IsNullOrWhiteSpace(originalKey))
                 {
-                    options.Add(new LanguageOption
-                    {
-                        Code = instruction.MonkeyBindingId,
-                        DisplayName = BuildHeroObjectDisplayName(heroType, localizationService)
-                    });
+                    objectKeyToBindingId.TryAdd(originalKey, instruction.MonkeyBindingId);
                 }
+                usedKeys.Add(heroKey);
+
+                options.Add(new LanguageOption
+                {
+                    Code = instruction.MonkeyBindingId,
+                    DisplayName = BuildMonkeyObjectDisplayName(heroKey, localizationService)
+                });
 
                 continue;
             }
@@ -520,7 +532,12 @@ public sealed class ScriptEditorSequenceService
             return BuildMonkeyObjectDisplayName(towerType, index, localizationService);
         }
 
-        if (ScriptEditorInstructionService.TryParseHeroSelection(objectKey, out var heroType))
+        if (ScriptEditorInstructionService.TryParseHeroObjectKey(objectKey, out var heroType, out var heroIndex))
+        {
+            return $"{BuildHeroObjectDisplayName(heroType, localizationService)}{heroIndex}";
+        }
+
+        if (ScriptEditorInstructionService.TryParseHeroSelection(objectKey, out heroType))
         {
             return BuildHeroObjectDisplayName(heroType, localizationService);
         }

@@ -46,13 +46,15 @@
 - `bindingId`
   - 编辑器内部稳定引用 ID
 - `objectId`
-  - 展示和追踪使用的对象键，例如 `DartMonkey:1`
+  - 展示和追踪使用的对象键，例如 `DartMonkey:1`、`Hero:Quincy:1`
 - `selectionCode`
   - 放置指令对应的选择值，例如 `Tower:DartMonkey`
 - `placementOrder`
   - 放置顺序
 
 这一层的目的是让脚本在回读后仍能稳定恢复对象引用关系。
+
+普通猴塔和英雄的每次放置均拥有独立的 `bindingId` 和对象编号。出售后再次放置同一种英雄会生成新的对象，例如 `Hero:Quincy:2`，不会复用第一次放置的身份；重排指令保留已有编号和引用。英雄的 `selectionCode` 仍为 `Hero:Quincy`，不包含实例编号。旧脚本中的未编号英雄键（例如 `Hero:Quincy`）仍可读取，编辑器重建对象时会分配编号并保留绑定引用。
 
 ## Instructions
 
