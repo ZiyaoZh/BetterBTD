@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Media;
 using Wpf.Ui.Appearance;
+using Wpf.Ui.Controls;
 
 namespace BetterBTD.Services.Settings;
 
@@ -18,10 +19,14 @@ public sealed class ThemeService
 
     public void ApplyTheme(string? themeCode)
     {
+        if (Application.Current is { } application && !application.Dispatcher.CheckAccess())
+        {
+            application.Dispatcher.Invoke(() => ApplyTheme(themeCode));
+            return;
+        }
+
         var theme = string.Equals(themeCode, "Light", StringComparison.OrdinalIgnoreCase) ? "Light" : "Dark";
         CurrentTheme = theme;
-
-        ApplicationThemeManager.Apply(theme == "Light" ? ApplicationTheme.Light : ApplicationTheme.Dark);
 
         if (Application.Current?.Resources is null)
         {
@@ -30,6 +35,12 @@ public sealed class ThemeService
 
         if (theme == "Light")
         {
+            SetSolidColor("TextFillColorPrimaryBrush", "#111827");
+            SetSolidColor("TextFillColorTertiaryBrush", "#4B5563");
+            SetSolidColor("ApplicationPageBackgroundThemeBrush", "#F7F9FC");
+            SetSolidColor("ControlFillColorSecondaryBrush", "#EEF2F8");
+            SetSolidColor("SubtleFillColorSecondaryBrush", "#EEF2F8");
+            SetSolidColor("ControlStrokeColorSecondaryBrush", "#D1D9E6");
             SetSolidColor("PanelBrush", "#F7F9FC");
             SetSolidColor("CardBrush", "#FFFFFF");
             SetSolidColor("SubtleSurfaceBrush", "#EEF2F8");
@@ -39,6 +50,12 @@ public sealed class ThemeService
         }
         else
         {
+            SetSolidColor("TextFillColorPrimaryBrush", "#F3F6FB");
+            SetSolidColor("TextFillColorTertiaryBrush", "#A7B3C5");
+            SetSolidColor("ApplicationPageBackgroundThemeBrush", "#0D111B");
+            SetSolidColor("ControlFillColorSecondaryBrush", "#1B2536");
+            SetSolidColor("SubtleFillColorSecondaryBrush", "#243247");
+            SetSolidColor("ControlStrokeColorSecondaryBrush", "#2E4058");
             SetSolidColor("PanelBrush", "#151D2B");
             SetSolidColor("CardBrush", "#1B2536");
             SetSolidColor("SubtleSurfaceBrush", "#243247");
@@ -46,6 +63,11 @@ public sealed class ThemeService
             SetSolidColor("TextSecondaryBrush", "#A7B3C5");
             SetGradient("WindowBgBrush", "#0D111B", "#101725", "#0B111D");
         }
+
+        // Publish the complete palette before notifying themed controls and updating the native window.
+        ApplicationThemeManager.Apply(
+            theme == "Light" ? ApplicationTheme.Light : ApplicationTheme.Dark,
+            (Application.Current.MainWindow as FluentWindow)?.WindowBackdropType ?? WindowBackdropType.Auto);
     }
 
     private static void SetSolidColor(string key, string colorHex)

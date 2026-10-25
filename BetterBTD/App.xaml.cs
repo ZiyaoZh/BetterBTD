@@ -64,9 +64,6 @@ namespace BetterBTD
                 _testApiRuntime = new TestApiRuntime();
                 _testApiRuntime.StartAsync(testApiOptions).GetAwaiter().GetResult();
             }
-
-            Activated += (_, _) => ThemeService.Instance.ApplyTheme(ThemeService.Instance.CurrentTheme);
-            Deactivated += (_, _) => ThemeService.Instance.ApplyTheme(ThemeService.Instance.CurrentTheme);
         }
 
         protected override void OnExit(ExitEventArgs e)

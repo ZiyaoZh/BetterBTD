@@ -18,7 +18,16 @@ namespace BetterBTD
         {
             InitializeComponent();
             DataContext = new MainWindowViewModel();
+            Loaded += MainWindow_Loaded;
             ContentRendered += MainWindow_ContentRendered;
+        }
+
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            Loaded -= MainWindow_Loaded;
+            // Resources are selected before construction; the native backdrop needs a loaded window.
+            ThemeService.Instance.ApplyTheme(ThemeService.Instance.CurrentTheme);
+            RootNavigation.Navigate(typeof(Views.Pages.StartPageView));
         }
 
         private void MainWindow_ContentRendered(object? sender, EventArgs e)
@@ -29,7 +38,6 @@ namespace BetterBTD
             }
 
             _hasCheckedForStartupUpdates = true;
-            RootNavigation.Navigate(typeof(Views.Pages.StartPageView));
             _ = Dispatcher.InvokeAsync(CheckForUpdatesOnStartupAsync, DispatcherPriority.Background);
         }
 

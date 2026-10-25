@@ -20,12 +20,6 @@
             <converters:BooleanToVisibilityRevertConverter x:Key="BooleanToVisibilityRevertConverter" />
             <converters:BooleanToEnableTextConverter x:Key="BooleanToEnableTextConverter" />
 
-            <SolidColorBrush x:Key="TextFillColorPrimaryBrush" Color="#F3F6FB" />
-            <SolidColorBrush x:Key="TextFillColorTertiaryBrush" Color="#A7B3C5" />
-            <SolidColorBrush x:Key="ApplicationPageBackgroundThemeBrush" Color="#0D111B" />
-            <SolidColorBrush x:Key="ControlFillColorSecondaryBrush" Color="#1B2536" />
-            <SolidColorBrush x:Key="SubtleFillColorSecondaryBrush" Color="#243247" />
-            <SolidColorBrush x:Key="ControlStrokeColorSecondaryBrush" Color="#2E4058" />
             <SolidColorBrush x:Key="AccentFillColorDefaultBrush" Color="#4C8DFF" />
             <SolidColorBrush x:Key="AccentFillColorSecondaryBrush" Color="#334A6E" />
             <SolidColorBrush x:Key="AccentTextFillColorPrimaryBrush" Color="#73A7FF" />

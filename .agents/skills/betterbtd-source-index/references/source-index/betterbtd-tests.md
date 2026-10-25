@@ -21,7 +21,7 @@ xUnit behavior, compatibility, protocol, and test-double coverage.
 | `BetterBTD.Tests/RobotControl` | 2 |
 | `BetterBTD.Tests/ScriptExecution` | 7 |
 | `BetterBTD.Tests/ScriptExecution/Handlers` | 6 |
-| `BetterBTD.Tests/Services` | 19 |
+| `BetterBTD.Tests/Services` | 20 |
 | `BetterBTD.Tests/TestApi` | 4 |
 | `BetterBTD.Tests/TestDoubles` | 4 |
 | `BetterBTD.Tests/ViewModels` | 4 |
@@ -125,6 +125,7 @@ Paths are relative to the repository root. Open the linked file and verify curre
 | [ScriptInputSimulationServiceTests.cs](../../../../../BetterBTD.Tests/Services/ScriptInputSimulationServiceTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: ScriptInputSimulationServiceTests |
 | [ScriptInstructionOptimizationServiceTests.cs](../../../../../BetterBTD.Tests/Services/ScriptInstructionOptimizationServiceTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: ScriptInstructionOptimizationServiceTests |
 | [ScriptTagCatalogTests.cs](../../../../../BetterBTD.Tests/Services/ScriptTagCatalogTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: ScriptTagCatalogTests |
+| [ThemeServiceTests.cs](../../../../../BetterBTD.Tests/Services/ThemeServiceTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: ThemeServiceTests |
 | [UserDataPathHelperTests.cs](../../../../../BetterBTD.Tests/Services/UserDataPathHelperTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: UserDataPathHelperTests |
 
 ### `BetterBTD.Tests/TestApi`
