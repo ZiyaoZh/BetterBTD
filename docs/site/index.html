@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="BetterBTD 玩家教程：从首次配置、编写全部脚本指令，到收集活动、金气球、黑框和自动任务排错。">
+  <meta name="color-scheme" content="light dark">
+  <title>BetterBTD 使用教程</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="tutorial.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">跳到正文</a>
+<header class="topbar">
+  <a class="brand" href="#overview"><span class="brand-mark" aria-hidden="true">B</span> BetterBTD <span class="badge">使用教程</span></a>
+  <nav aria-label="外部链接"><a href="https://github.com/ZiyaoZh/BetterBTD/releases/latest">下载</a><a href="https://github.com/ZiyaoZh/BetterBTD">GitHub ↗</a></nav>
+</header>
+<div class="layout">
+<aside>
+  <p class="eyebrow">玩家指南 / PLAYER GUIDE</p>
+  <label class="search-label" for="search">查找章节</label>
+  <input id="search" type="search" placeholder="例如：升级、黑框、F10" autocomplete="off" aria-controls="search-results">
+  <p id="search-status" role="status" aria-live="polite"></p>
+  <ul id="search-results" aria-label="章节搜索结果" hidden></ul>
+  <nav id="toc" aria-label="教程目录">
+    <a href="#overview">从这里开始</a>
+    <a href="#getting-started">01 · 首次配置</a>
+    <a href="#scripts">02 · 导入与管理脚本</a>
+    <a href="#editor">03 · 写出第一个脚本</a>
+    <a href="#instructions">04 · 全部指令怎么用</a>
+    <a href="#execution">05 · 运行与调试</a>
+    <a href="#auto-tasks">06 · 自动任务准备</a>
+    <a href="#binding-template">金气球 / 黑框绑定模板</a>
+    <a href="#collection">收集活动</a>
+    <a href="#golden-bloon">金气球</a>
+    <a href="#black-border">黑框</a>
+    <a href="#farming">循环刷关</a>
+    <a href="#race">竞速</a>
+    <a href="#odyssey">奥德赛</a>
+    <a href="#robot-control">机器人控制</a>
+    <a href="#tools">07 · 实用工具</a>
+    <a href="#hardware-input">08 · 硬件输入</a>
+    <a href="#troubleshooting">09 · 排错与备份</a>
+    <a href="#sources">机制与参考来源</a>
+  </nav>
+  <p class="aside-note">适用于当前仓库实现<br>核对日期：2026-10-25</p>
+</aside>
+<main id="main">
+<section id="overview" class="hero" aria-labelledby="overview-title">
+  <p class="eyebrow">BETTERBTD HANDBOOK</p>
+  <h1 id="overview-title">把打法写成脚本，<br>让重复操作更简单。</h1>
+  <p class="lead">先跑通一局，再交给自动任务。这份指南从玩家实际操作出发，解释每条指令的用途、适用场景和容易踩到的坑。</p>
+  <div class="actions"><a class="button" href="#getting-started">开始配置 →</a><a class="button secondary" href="#instructions">查指令用法</a></div>
+  <div class="cards">
+    <a href="#scripts"><span>已有脚本</span><strong>导入、检查、试运行 ↗</strong></a>
+    <a href="#editor"><span>想写自己的打法</span><strong>从开局放塔开始 ↗</strong></a>
+    <a href="#auto-tasks"><span>准备连续刷关</span><strong>先完成脚本绑定 ↗</strong></a>
+  </div>
+  <div class="callout"><strong>先确认环境。</strong>使用 Windows 10/11 x64、BTD6 和 .NET 8 Desktop Runtime x64。游戏窗口推荐 1920 × 1080、16:9；语言、热键、英雄、知识和模式都要与脚本前提一致。游戏更新可能改变价格、地图和识别结果。</div>
+</section>
+<section id="getting-started">
+  <p class="eyebrow">01 / SETUP</p><h2>首次配置：先看见游戏，再控制游戏</h2>
+  <ol class="steps">
+    <li><strong>安装与启动。</strong>从 <a href="https://github.com/ZiyaoZh/BetterBTD/releases/latest">Releases</a> 下载 BetterBTD.Install.exe，按需安装 <a href="https://dotnet.microsoft.com/download/dotnet/8.0">.NET 8 Desktop Runtime x64</a>。先手动打开 BTD6，停在主菜单，再打开 BetterBTD。</li>
+    <li><strong>对齐语言与按键。</strong>在“设置”选择界面语言，把“游戏语言”设为 BTD6 实际语言。打开按键绑定，对齐放塔、英雄、三路升级、卖出、目标切换、技能、播放/快进和竞速发送回合的热键。</li>
+    <li><strong>测试截图。</strong>在“开始”优先选 WindowsGraphicsCapture，点击“测试图像捕获”。预览应是正在使用的 BTD6 窗口；找不到或选错时，用“手动选择窗口”。截图正确后启动截图器。Win11 兼容修复只在 BitBlt 确有异常时尝试。</li>
+    <li><strong>保持普通输入。</strong>首次使用默认的普通模拟即可；硬件输入是可选方案，见<a href="#hardware-input">硬件输入</a>。运行时保持窗口大小、显示缩放和游戏布局稳定。</li>
+    <li><strong>只试一个脚本。</strong>导入脚本，按说明选英雄并手动进入对应地图、难度和模式的开局状态；打开运行窗口后点开始。观察第一条放置和随后步骤，失败时先停止。确认这一局能完成，再配置自动任务。</li>
+  </ol>
+  <p class="checkpoint">完成标志：预览正确、热键一致、一个脚本能独立完成预期流程。</p>
+</section>
+<section id="scripts">
+  <p class="eyebrow">02 / LIBRARY</p><h2>导入与管理：先看脚本的“使用条件”</h2>
+  <p>进入“我的脚本”导入文件。推荐使用 <code>.btd</code>；符合当前格式的 <code>.json</code> 也可导入，旧版 <code>.btd6</code> 和 <code>.btd6s</code> 会尝试转换。旧文件转换后，重新检查地图、对象引用和坐标，并试跑，不能把“导入成功”当成“打法仍然有效”。</p>
+  <div class="table-wrap"><table><thead><tr><th>要检查什么</th><th>为什么影响能否照着运行</th></tr></thead><tbody>
+    <tr><td>地图、难度与模式</td><td>地形影响落点，难度影响价格，模式影响起始现金、回合及可用塔。</td></tr>
+    <tr><td>英雄、知识、双倍现金等前提</td><td>英雄技能和现金节奏不同，脚本可能提前等待某次购买。作者应在说明中写清额外前提。</td></tr>
+    <tr><td>游戏版本与开局状态</td><td>旧版本的价格、能力或按钮位置可能变化；中途存档不一定符合脚本预期。</td></tr>
+    <tr><td>就绪状态</td><td>“文件缺失”需重新导入；“元数据异常”需修复文件或重新获取，不能继续绑定。</td></tr>
+  </tbody></table></div>
+  <p>可按关键词、地图、难度和模式筛选；查看说明与标签，打开编辑器、运行、导出或复制脚本 ID。“管理”支持批量选择，切换筛选后已选项目仍会保留。删除脚本会清除相关任务绑定，且无法撤销。</p>
+  <div class="callout"><strong>名称、标签和 ID 的分工。</strong>名称帮助你认出打法；标签帮助筛选；自动任务通过脚本 ID 或槽位绑定找到脚本。加一个“收集”标签并不会自动完成绑定。分享一整套活动配置时，导出对应订阅包，保留脚本和绑定关系。</div>
+</section>
+<section id="editor">
+  <p class="eyebrow">03 / FIRST SCRIPT</p><h2>写出第一个脚本：从一只飞镖猴开始</h2>
+  <p>先选择已解锁的普通地图，例如猴子草地，使用普通难度标准模式。以下练习只验证编排和输入，不是一份通关攻略。先关闭游戏自动开始回合，让开局状态可重复。</p>
+  <ol>
+    <li>在编辑器新建脚本，填写地图、难度、模式和英雄；说明中记录游戏版本、知识及开局要求。</li>
+    <li>添加“放置猴子”，选择飞镖猴。在截图器启动后用“选择坐标”，移动鼠标到地图内可放置地面，右键确认；不要取到道路、障碍物或面板上。</li>
+    <li>添加“注释”，写下该猴子的职责，例如“开局防守，后续升级此对象”。保存脚本并试跑这两步，确认塔确实落下。</li>
+    <li>重开到同样的开局。在放置后添加“下一回合 → 播放/快进”，再添加“等待 → 金钱”，填写当前难度下你计划购买的升级所需现金。</li>
+    <li>添加“升级猴子”，目标选刚才放置的对象，上路、升级次数 1。保存后从开局重跑，观察等待达到现金门槛后是否升级成功。</li>
+    <li>确认稳定后逐段增加其他塔、升级、技能与回合条件。每次先验证新增部分，再扩展到整局。</li>
+  </ol>
+  <div class="flow" aria-label="示例步骤">放置飞镖猴 <span>→</span> 播放 <span>→</span> 等待现金 ≥ 升级费用 <span>→</span> 上路升级 1 次</div>
+  <h3 id="coordinates">取点与对象：让后续指令找到同一只塔</h3>
+  <p>坐标按 1920 × 1080 游戏画面保存，运行时换算到目标窗口。选择坐标时可查看参考坐标、窗口坐标和像素颜色；“等待颜色”也使用这种取点方式。保持 16:9、相同布局，避开动画边缘。</p>
+  <p>每次放置都会生成独立对象，包括同类猴子和再次放置的英雄。后续升级、出售、切换目标都应选择正确对象。删除、复制、重排放置步骤后检查引用；不要用同类塔的名称猜目标。运行到中途的游戏也不会自动变成脚本的对象列表。</p>
+  <h3 id="timing">时间、条件与价格：什么时候用“等待”</h3>
+  <p>菜单动画可以留时间间隔，买塔/升级通常用现金门槛，某一波前的安排用回合门槛，固定界面出现才继续时可用颜色。游戏现金会受模式、折扣、知识和版本影响，避免把其他难度的价格直接照搬。用过多固定延时，机器变慢或快进状态改变后容易失步。</p>
+</section>
+<section id="instructions">
+  <p class="eyebrow">04 / INSTRUCTION REFERENCE</p><h2>全部 13 类指令：按你想做的事来选</h2>
+  <p>下面的标题对应编辑器指令。先看“用途”，再填参数；检测成功也不代表战术能守住下一波。点击各项查看具体用法。</p>
+  <details id="place-monkey" data-command="PlaceMonkey"><summary>01 · 放置猴子 <small>把防御塔或英雄放到指定位置</small></summary><div class="detail-body">
+    <p><strong>怎么填：</strong>选择防御塔或英雄，用取点工具填写落点。用途包括开局布防、补辅助塔、在预定回合放英雄。</p>
+    <p>默认检测放置结果；普通塔失败时可尝试周边微调，并记录实际落点。微调不能替代正确的地形和足够现金，英雄也没有相同的周边搜点行为。英雄使用统一放置热键，运行前必须在游戏中选对英雄。</p>
+    <p><strong>例：</strong>放置两只飞镖猴后，后续升级指令要分别引用对应对象，不能都选第一只。</p>
+  </div></details>
+  <details id="upgrade-monkey" data-command="UpgradeMonkey"><summary>02 · 升级猴子 <small>给已放置对象增加指定路线的升级</small></summary><div class="detail-body">
+    <p><strong>怎么填：</strong>选择目标对象、上/中/下路、升级次数（1–5）。次数表示在脚本原有预期等级上继续升级；例如已安排上路 1 次，再加上路 2 次，目标会累计到 3 阶，不是改成 2 阶。</p>
+    <p>普通塔默认读取面板确认目标，达到预期等级后继续。仍需遵守游戏的路线和五级限制，不能把次数当作绕过升级规则。先等待足够金钱，再升级。英雄没有路线选择，按次数发送英雄升级键，不会验证实际英雄等级。</p>
+  </div></details>
+  <details id="switch-target" data-command="SwitchMonkeyTarget"><summary>03 · 切换猴子目标 <small>改变这只塔的攻击优先级</small></summary><div class="detail-body">
+    <p><strong>怎么填：</strong>选对象，选择向左/向右和切换次数（1–3）。用于让特定塔从默认优先级切到适合本局的目标，例如优先处理更强气球。</p>
+    <p>它是从当前状态相对切换，不是直接指定“强力”或“最前”。不同塔的目标选项可能不同；先确认初始目标，再在游戏中验证切换顺序。</p>
+  </div></details>
+  <details id="set-monkey-ability" data-command="SetMonkeyAbility"><summary>04 · 设置猴子功能 <small>操作塔面板的特殊功能</small></summary><div class="detail-body">
+    <p><strong>怎么填：</strong>选择对象、功能 1 或功能 2；需要指定位置时勾选并填写功能坐标。适合支持相应特殊功能的塔，例如需要指定瞄准位置的操作。</p>
+    <p>这使用塔面板的特殊功能热键，不是屏幕底部的全局技能栏。功能 1/2 的含义取决于塔及升级，先手动打开该塔面板确认功能可用。</p>
+  </div></details>
+  <details id="sell-monkey" data-command="SellMonkey"><summary>05 · 出售猴子 <small>回收现金或腾出位置</small></summary><div class="detail-body">
+    <p><strong>怎么填：</strong>选择要出售的对象。普通塔默认确认面板与出售结果；成功后该对象从运行记录中移除。若再次放置同类塔，后续指令应引用新对象。</p>
+    <p>提前核对模式是否允许出售及返还金额；CHIMPS 禁止出售。英雄出售走快捷键流程，缺少普通塔的相同检测，不要仅凭步骤完成判断已卖掉。</p>
+  </div></details>
+  <details id="hero-inventory" data-command="PlaceHeroInventory"><summary>06 · 放置英雄仓库技能 <small>操作英雄物品栏中的物品</small></summary><div class="detail-body">
+    <p><strong>怎么填：</strong>选择英雄仓库物品快捷键槽位（1–16），按物品需要填写坐标。先按英雄键打开面板，再发送物品键；适合脚本所用英雄确有对应物品栏的情况。</p>
+    <p>它不代表支持所有游戏道具，也不会确认物品库存、金钱、解锁等级或购买成功。作者需保证英雄、库存和技能解锁时机符合本局，使用后观察实际结果。</p>
+  </div></details>
+  <details id="activate-ability" data-command="ActivateAbility"><summary>07 · 激活技能 <small>按技能栏编号释放技能</small></summary><div class="detail-body">
+    <p><strong>怎么填：</strong>选技能栏 1–12 的对应编号，技能需要目标时填坐标。用途包括定时爆发、收入技能或指定位置技能。</p>
+    <p>按技能编号发送热键，不自动等待冷却、不确认解锁或释放成功。卖塔、新增技能或英雄升级可能改变可用技能及顺序；检查当前技能栏，不要把编号当作某只塔永久专属的键。</p>
+  </div></details>
+  <details id="mouse-click" data-command="MouseClick"><summary>08 · 鼠标点击 <small>在固定点执行左键点击</small></summary><div class="detail-body">
+    <p><strong>怎么填：</strong>坐标、点击次数（1–1000）、点击间隔（毫秒）。适合明确知道当前页面与按钮位置的补充操作。</p>
+    <p>没有“按钮是否出现/操作是否成功”的结果检测。先用等待或其他前提确保页面正确；连续多次点击可能误触下一页，不要靠堆点击次数弥补导航问题。</p>
+  </div></details>
+  <details id="next-round" data-command="NextRound"><summary>09 · 下一回合 <small>播放/快进，或竞速提前发波</small></summary><div class="detail-body">
+    <p><strong>播放/快进：</strong>发送一次相应快捷键。初始状态决定它是开始回合还是切换速度，不会保证设置成某个固定速度。编写前统一开局的自动开始与速度状态。</p>
+    <p><strong>发送下一轮：</strong>用于竞速，按设置次数（1–500）重复发送竞速快捷键，间隔单位为毫秒；不确认每次发送都被游戏接受。普通模式不能照搬竞速的提前发波打法。</p>
+  </div></details>
+  <details id="wait" data-command="Wait"><summary>10 · 等待 <small>条件满足之后，才执行下一步</small></summary><div class="detail-body">
+    <ul><li><strong>时间：</strong>等待指定毫秒数，1000 毫秒 = 1 秒。适合短动画和固定节奏。</li><li><strong>金钱：</strong>等待画面读取的当前现金 ≥ 目标金额，适合购买塔或升级前。</li><li><strong>回合：</strong>等待画面读取的回合数 ≥ 目标。填 40 表示到达第 40 回合，不表示第 40 回合已打完，也不是再等 40 回合。</li><li><strong>坐标颜色：</strong>在固定点等待 RGB 颜色接近 <code>#RRGGBB</code>。容差 0–255，逐通道比较，0 为精确匹配；对动态画面取稳定色块并谨慎放宽容差。</li></ul>
+    <p>条件等待不会替你开始回合或赚钱。如果回合没开始、游戏失败或识别不到数值，可能一直等下去；检查画面后停止处理，不要只增大等待金额。</p>
+  </div></details>
+  <details id="modify-coordinate" data-command="ModifyMonkeyCoordinate"><summary>11 · 修改猴子坐标 <small>更新后续选塔使用的位置记录</small></summary><div class="detail-body">
+    <p><strong>怎么填：</strong>选择已有对象并填写新坐标。用于游戏中实际发生搬迁后，让后续升级、卖出等操作找到新位置。</p>
+    <p>这条指令只改脚本的记录，不会搬动游戏里的塔，也不会自动寻找塔。如果游戏中的位置没有变化，改记录反而会让后续选塔失准。</p>
+  </div></details>
+  <details id="freeplay-boundary" data-command="FreeplayBoundary"><summary>12 · 自由游戏分界点 <small>告诉循环任务在哪里接续自由游戏</small></summary><div class="detail-body">
+    <p>把正常通关部分写在前面，自由游戏操作写在分界点后面。循环刷关选择“自由游戏到指定回合”时，脚本必须恰好有一个分界点；任务负责处理胜利/奖励界面、进入自由游戏并执行后半段。</p>
+    <p>分界点本身不发送输入。单独运行脚本不会因为放了这个标记就自动点击胜利结算；先在对应的循环任务模式下测试。见<a href="#farming">自由游戏刷关流程</a>。</p>
+  </div></details>
+  <details id="comment" data-command="Comment"><summary>13 · 注释 <small>把打法意图留给自己和使用者</small></summary><div class="detail-body">
+    <p>填写说明文字，不操作游戏。适合标记“这一塔负责迷彩”“此处等技能冷却”等意图；注释不会真的等待或校验条件，需要实际操作时仍要加对应指令。</p>
+  </div></details>
+</section>
+<section id="execution">
+  <p class="eyebrow">05 / RUN & DEBUG</p><h2>运行：盯住第一条偏离预期的步骤</h2>
+  <p>从“我的脚本”运行已保存脚本，或从编辑器运行当前工作区。开始前回到脚本要求的游戏状态，确认截取的是同一个窗口。运行窗口显示指令状态、当前步骤、日志和间隔策略。</p>
+  <p><strong>F10 是开始/停止开关。</strong>只有脚本或任务运行窗口打开时才尝试注册；没有响应时使用窗口按钮，检查是否被其他软件占用。停止后，游戏里的塔、金钱和回合不会回滚；重新运行通常需要重新开局。</p>
+  <div class="callout"><strong>选中步骤后开始，会从选中行起跑。</strong>这只会重建先前步骤的对象记录，不会在游戏中补放塔、补升级或退款。初学时从第一行完整运行；调试中途起跑前，必须自己确保实际局面与记录一致。编辑器打开运行窗口后才会按按钮或 F10 开始。</div>
+  <div class="table-wrap"><table><thead><tr><th>间隔策略</th><th>你应该怎么选</th></tr></thead><tbody><tr><td>指令自定义间隔</td><td>逐条使用“到下一条指令的间隔”，适合对个别动画单独留时间。</td></tr><tr><td>统一操作间隔</td><td>用运行窗口的统一值控制常规步骤；自动任务也使用任务卡片中的统一间隔。</td></tr></tbody></table></div>
+  <p>保留放置检测、失败微调、升级检测、面板检测和卖出检测的默认设置。先确定热键与位置正确，再针对不稳定的步骤调整间隔。关闭检测会减少确认，可能让后续步骤在错误状态继续。一次只改一项，并从相同开局验证。</p>
+  <p class="checkpoint">确认顺序：正确窗口 → 正确按键 → 正确对象/坐标 → 等待条件 → 操作节奏。</p>
+</section>
+<section id="auto-tasks">
+  <p class="eyebrow">06 / AUTOMATION</p><h2>自动任务：把“打一局”接到“下一局”</h2>
+  <p>单脚本负责关卡内的操作；自动任务负责识别页面、选地图、进入关卡、调用绑定脚本及处理结算。两者共享截图和输入，同一时间只运行一个流程，运行期间不要手动干预游戏。</p>
+  <ol><li>先把目标脚本单独跑通，并确认在脚本库中显示“就绪”。</li><li>导入任务订阅包，或完成下方对应的脚本绑定。脚本 ID 在“我的脚本”中复制。</li><li>从单张地图、最小范围开始，保持默认操作间隔，检查运行窗口的当前阶段、动作和游戏页面。</li><li>启动前会检查任务范围内已配置脚本的热键；缺项时先到按键设置补齐，再启动。</li></ol>
+  <div class="table-wrap"><table><thead><tr><th>任务</th><th>脚本从哪里来</th><th>适合做什么</th></tr></thead><tbody>
+    <tr><td><a href="#collection">收集活动</a></td><td>可视化配置或订阅包</td><td>按活动地图刷收集物</td></tr>
+    <tr><td><a href="#golden-bloon">金气球</a></td><td>绑定文件或订阅包</td><td>按支持地图执行专用打法</td></tr>
+    <tr><td><a href="#black-border">黑框</a></td><td>地图 × 难度 × 模式绑定或订阅包</td><td>逐步完成目标地图的模式队列</td></tr>
+    <tr><td><a href="#farming">循环刷关</a></td><td>一个脚本 ID</td><td>反复执行同一个普通关卡</td></tr>
+    <tr><td><a href="#race">竞速</a></td><td>一个竞速脚本 ID</td><td>重复执行当期竞速路线</td></tr>
+    <tr><td><a href="#odyssey">奥德赛</a></td><td>依关卡顺序填写 3–5 个 ID</td><td>推进手动进入的活动流程</td></tr>
+  </tbody></table></div>
+</section>
+<section id="binding-template">
+  <h2>金气球与黑框：在配置窗口填写现有模板</h2>
+  <p>优先导入对应订阅包。只有单个脚本时，在“我的脚本”复制已验证脚本的 ID；展开目标任务，在“配置脚本”一栏点“配置”，程序会自动生成并打开绑定模板。找到目标地图/模式，把右侧空引号中的值替换为脚本 ID，然后点击编辑器“保存”。</p>
+  <p>下面各是一条模板行的示例，不是完整文件。保留原键名、引号、逗号、版本字段与其他空条目，不把英文键改成中文，也不填写脚本名称或文件路径。</p>
+  <div class="table-wrap"><table><thead><tr><th>目标</th><th>在已有模板中填写的单行</th></tr></thead><tbody><tr><td>猴子草地 · 金气球</td><td><code>"goldballoon/MonkeyMeadow": "粘贴你的脚本ID"</code></td></tr><tr><td>猴子草地 · 简单 · 标准</td><td><code>"blackborder/MonkeyMeadow/Easy/Standard": "粘贴你的脚本ID"</code></td></tr></tbody></table></div>
+  <p>保存只表示写入文件，不代表绑定已经验证。启动后检查实际解析出的脚本；找不到时先检查 ID、脚本就绪状态和目标条目。</p>
+</section>
+<section id="collection">
+  <h2>收集活动：按活动地图刷收集物</h2>
+  <p>收集活动通过通关获取活动收集物，再解锁 Insta Monkey 奖励箱；地图奖励加成会移动。节日收集物外观变化，不等于 BetterBTD 的脚本变体。具体奖励以当期活动界面为准。<a href="https://www.bloonswiki.com/Collection_Event_(BTD6)">查看游戏机制 ↗</a></p>
+  <ol><li>确认当前确有收集活动。展开任务卡片，按地图搜索界面顶部按钮从左到右的位置，选择活动按钮是第 1、2 还是 3 个，默认第 2 个。</li><li>选与账号及脚本相符的普通、双金、快速路径或双金快速路径变体；它描述打法前提，不是圣诞/万圣等活动主题。</li><li>导入收集订阅包，或点击“配置”，为当前变体下的目标专家地图选择托管脚本并保存。</li><li>启动任务，检查识别出的地图和调用脚本是否正确。先验证少量绑定，再扩大覆盖范围。</li></ol>
+  <p>当前实现按专家地图解析收集绑定。缺少绑定时，给脚本加标签无效，需要在对应变体和地图槽位中选择它。活动按钮位置与金气球独立保存，下次任务启动生效。</p>
+</section>
+<section id="golden-bloon">
+  <h2>金气球：准备专用打法，再绑定地图</h2>
+  <p>金气球活动中的特殊气球会随出现次数增加迷彩、铅、强化等属性，受到攻击有特殊伤害限制与短暂无敌；普通高伤害通关阵容未必抓得到。漏掉它不扣生命，赢下关卡也不等于拿到金气球奖励。<a href="https://www.bloonswiki.com/Golden_Bloon_(BTD6)">查看游戏机制 ↗</a></p>
+  <ol><li>确认金气球活动正在进行，并准备适用当前地图与难度的专用脚本；该气球不在 CHIMPS、放气、沙盒或自由游戏生成。</li><li>在任务卡片设置金气球按钮从左到右的位置（默认第 2 个）。</li><li>导入金气球订阅包，或在任务卡片点“配置”，按<a href="#binding-template">模板填写步骤</a>保存 <code>goldballoon.json</code>。不要直接把普通脚本换个名字就绑定。</li><li>当前任务按新手地图解析脚本；运行后观察目标地图、脚本和实际击破情况。</li></ol>
+  <p>没有有效绑定、脚本缺失或地图识别失败时，任务可能无法推进。先检查一张地图和一个脚本，再调整其他范围。</p>
+</section>
+<section id="black-border">
+  <h2>黑框：完成模式队列，也要检查 CHIMPS 勋章</h2>
+  <p>地图黑框需要全部相应模式勋章，并以不中途退出、不使用“重试上一回合”的方式完成一次 CHIMPS。使用重试得到的红色 CHIMPS 勋章可能仍对应金框。CHIMPS 本身禁用知识、额外收入、能力道具和出售等机制，不能照用依赖这些条件的普通脚本。<a href="https://www.bloonswiki.com/CHIMPS">CHIMPS 机制 ↗</a> · <a href="https://www.bloonswiki.com/Map">地图边框与勋章 ↗</a></p>
+  <ol><li>按“地图 × 难度 × 模式”准备脚本，导入黑框订阅包，或在任务卡片点“配置”，按<a href="#binding-template">模板填写步骤</a>保存 <code>blackborder.json</code>。</li><li>先选择单张已解锁地图，只为少量已验证模式填写绑定，其余保持空字符串，任务会跳过未绑定模式。不同模式的价格、回合和限制不同，不能将同一个脚本不加检查地填满槽位。</li><li>确认解锁顺序、胜利结算与脚本都正确后，再补齐该地图其余模式，最后扩到地图分组。</li><li>任务会按识别到的已完成徽章跳过部分项目；结束后回到游戏检查目标地图勋章和实际边框。</li></ol>
+  <p>当前黑框目录涵盖 14 种模式。队列结束可能包含已完成或被跳过的条目，不能直接当成“必然已获得黑框”。发现缺项时回查动作状态、绑定与 CHIMPS 完成方式。</p>
+</section>
+<section id="farming">
+  <h2>循环刷关：先选普通通关，或明确自由游戏终点</h2>
+  <p>复制一个已验证的普通关卡脚本 ID，填入循环刷关。标准流程会在胜利后退出、重新进入并运行，适合反复使用同一打法。</p>
+  <h3 id="freeplay-farming">自由游戏到指定回合</h3>
+  <ol><li>在脚本中保留正常胜利前的指令。</li><li>在两段操作之间加入恰好一个“自由游戏分界点”。</li><li>在后半段编写进入自由游戏之后的操作。</li><li>任务选择“自由游戏到指定回合”，填写终点并启动。任务会处理结算/奖励，接续脚本，并连续确认画面回合数达到目标后退出。</li></ol>
+  <p>达到目标回合数不保证该回合已经打完，脚本里的“等待回合”也不检查清场。若需要某回合结束后的奖励，不要把退出回合数当作完成证明。缺少或重复分界点时应先修复脚本，不要靠通用点击硬接结算。</p>
+</section>
+<section id="race">
+  <h2>竞速：先手动进入当期竞速关卡</h2>
+  <p>竞速允许在前面的气球未清完时发送后续回合，因此打法依赖发送节奏。地图、可用塔、英雄和规则会随活动变化，额外尝试也可能消耗猴币或竞速通行证。<a href="https://www.bloonswiki.com/Race_Event">查看竞速机制 ↗</a></p>
+  <ol><li>获取与当期规则相符的竞速脚本，检查发送下一轮热键与操作间隔。</li><li>复制脚本 ID 到竞速任务，并在游戏中手动进入竞速关卡。</li><li>在匹配脚本的开局状态启动，观察发波顺序与结算；确认尝试成本后再连续运行。</li></ol>
+  <p>当前不支持从主菜单自动导航进入竞速。普通通关脚本也不能保证适合竞速，活动更换后需要重新核对。</p>
+</section>
+<section id="odyssey">
+  <h2>奥德赛：把每座岛当作独立关卡准备</h2>
+  <p>奥德赛简单/中等/困难分别通常有 3/4/5 座岛，受船员、英雄、共享生命与关卡规则限制；极限规则还会跨岛消耗非英雄塔使用次数。前一岛的使用情况可能影响后一岛，不能随意拼接普通脚本。<a href="https://www.bloonswiki.com/Odyssey_Mode_(BTD6)">查看奥德赛机制 ↗</a></p>
+  <ol><li>先在游戏中手动进入当期奥德赛流程并准备合适船员与英雄。</li><li>按岛屿顺序填写 3–5 个脚本 ID，前 3 个必填，中间不能留空。</li><li>逐一核对地图、回合、可用塔与船员数量，启动后先验证第一岛，再检查跨岛接续。</li></ol>
+  <p>当期活动或难度变化后应重新配置。任务不会让脚本绕过船员和模式限制。</p>
+</section>
+<section id="robot-control">
+  <h2>机器人控制：给本机桥接工具的高级入口</h2>
+  <p>这不是普通刷关配置。启动任务后才监听本地 HTTP 地址，默认为 <code>http://127.0.0.1:18766/</code>，供桥接程序查询状态、调用已注册动作。已有动作执行时返回忙碌，不会排队；部分动作仍会返回 <code>NotImplemented</code>。</p>
+  <p>需要接入时阅读<a href="https://github.com/ZiyaoZh/BetterBTD/blob/main/docs/developer/robot-control-http-api.md">机器人控制 HTTP 协议</a>。普通玩家可跳过，不需要为运行脚本开启服务。</p>
+</section>
+<section id="tools">
+  <p class="eyebrow">07 / TOOLS</p><h2>实用工具：辅助规划，结果还要对照本局规则</h2>
+  <div class="table-wrap"><table><thead><tr><th>工具</th><th>怎么用 / 当前边界</th></tr></thead><tbody>
+    <tr><td>回合计算器</td><td>输入起止回合，查看内置数据中的现金、经验、RBE、持续时间与气球构成，适合规划升级节点。不是读取本局余额；特殊回合、额外收入与实际战斗耗时另行考虑。</td></tr>
+    <tr><td>英雄等级计算器</td><td>当前只记录英雄、放置回合与目标，并显示提示，尚未实际推算等级或所需回合。不要据此安排精确技能解锁时机。</td></tr>
+    <tr><td>模范度计算器</td><td>输入塔类型、难度、击破、产生现金、直接花费、滑条投入、5 阶数量、升级数和图腾数量，查看能量分项、模范度与下一等级所需能量。直接花费不重复包含滑条投入，结果依赖内置公式与输入。</td></tr>
+    <tr><td>模范数值计算器</td><td>输入模范度及基础攻击间隔/技能冷却、穿透、伤害和加成，估算对应属性。基础数值需自己核对游戏版本与具体攻击。</td></tr>
+    <tr><td>存档查看器</td><td>打开支持的 BTD6 存档，查看摘要、JSON 树与搜索结果，用于查阅；不要当作修改存档或自动修复工具。</td></tr>
+    <tr><td>精准放置辅助</td><td>在工具页启用后，用方向键微调鼠标，每步 1 像素，长按会重复移动。切换页面不会自动关闭，方向键仍被占用；用完回工具页停止，不要与脚本同时操作。</td></tr>
+  </tbody></table></div>
+  <div class="callout"><strong>模范度公式存在版本差异。</strong>当前应用仍按内置旧规则计算：现金能量上限 60,000、击破/收入能量上限 90,000，包含升级数量项。本次核查的 Wiki v57.0 规则已改为 80,000、125,000，并移除了升级数量项。不要据此承诺新版游戏的最终模范度；请对照 <a href="https://www.bloonswiki.com/Paragon">Paragon Wiki 的版本规则</a>和实际游戏。</div>
+</section>
+<section id="hardware-input">
+  <p class="eyebrow">08 / INPUT</p><h2>硬件输入：普通模拟不稳定时的可选方案</h2>
+  <p>默认普通模拟使用 Windows SendInput，无需额外驱动。硬件模拟使用第三方 Interception 驱动；BetterBTD 不负责安装或卸载它。请从 <a href="https://github.com/oblitum/Interception">Interception 上游仓库</a>了解安装要求和系统影响。</p>
+  <ol><li>按上游说明安装并按要求重启 Windows。</li><li>在 BetterBTD 设置中切换到硬件模拟，查看驱动状态。</li><li>实际移动一次鼠标、按一次键盘，让程序识别活跃设备。</li><li>用简单脚本验证点击、移动和按键，再运行完整任务。</li></ol>
+  <p>未检测到驱动时会回退到普通模拟。输入模式无法修复坐标、识图、语言或错误热键；设备无响应时先手动操作对应设备再试。</p>
+</section>
+<section id="troubleshooting">
+  <p class="eyebrow">09 / TROUBLESHOOTING</p><h2>出问题时，从第一处失败缩小范围</h2>
+  <div class="table-wrap"><table><thead><tr><th>现象</th><th>先做什么</th></tr></thead><tbody>
+    <tr><td>找不到游戏 / 截图不对</td><td>手动选择正确窗口，重新测试捕获；多开时核实实例。截图恢复前不启动任务。</td></tr>
+    <tr><td>放置偏移 / 点到面板</td><td>还原 16:9 与原布局，保持显示缩放稳定，重新取点；检查脚本是否使用同一地图。</td></tr>
+    <tr><td>按错键 / 完全不操作</td><td>对照游戏设置检查热键，确认输入模式与窗口权限，再用单条动作验证。</td></tr>
+    <tr><td>一直等金币 / 回合</td><td>确认当前回合已开始、现金能达到门槛、OCR 能读到值；检查是否在错误模式、回合被暂停或游戏已失败。</td></tr>
+    <tr><td>升级或技能无效</td><td>检查目标对象、现金、升级路线、技能冷却和编号；不要仅延长所有等待。</td></tr>
+    <tr><td>任务找不到脚本</td><td>检查 ID、就绪状态与槽位绑定；标签不能替代绑定。先从脚本库独立运行。</td></tr>
+    <tr><td>自动任务导航失败</td><td>查看运行窗口阶段与第一条错误；确认活动按钮位置、当前活动、解锁条件，再缩到单图验证。</td></tr>
+    <tr><td>F10 无效</td><td>打开运行窗口，用按钮开始/停止，排查快捷键占用。</td></tr>
+  </tbody></table></div>
+  <h3 id="recovery">失败恢复：先理解恢复点击会做什么</h3>
+  <p>在“设置 → 自动任务设置 → 失败恢复”可调整连续导航失败阈值、卡死时间、画面差异容差、恢复等待与点击坐标。默认是 5 次、10 秒、64 位指纹差异容差 6 和 800 毫秒。坐标按 1920 × 1080 保存。</p>
+  <p>恢复会按顺序点击全部配置坐标，再继续导航；点击完成本身不验证已经回到正确页面。清空坐标列表表示检测到卡死就失败；加载界面超时也直接失败。设置在下一次任务启动时生效。只配置你确认能在相应页面安全使用的点击。</p>
+  <h3 id="backup">日志与备份</h3>
+  <p>默认用户数据在安装目录的 <code>User\</code>；安装目录不可写时使用 <code>%LocalAppData%\BetterBTD\User\</code>。迁移后持续使用备用目录，原文件保留，已有备用数据不会被旧文件覆盖。</p>
+  <ul><li>应用配置：<code>%LocalAppData%\BetterBTD\appsettings.json</code>。</li><li>脚本与绑定：实际用户目录下的 <code>MyScripts\</code>；自动任务规则：<code>AutoTasks\</code>。</li><li>自动任务异常：<code>Logs\AutoTasks\Errors\</code> 每次失败的日期时间目录内有 <code>task.log</code> 与最后可用截图 <code>game.png</code>；没有画面时日志会说明原因。主动停止不会创建此错误目录。</li></ul>
+  <p>退出程序后备份整个实际 <code>User</code> 目录及应用配置。反馈问题时附程序版本、BTD6 版本、语言、分辨率、捕获模式、复现步骤与日志，前往 <a href="https://github.com/ZiyaoZh/BetterBTD/issues">GitHub Issues</a>。</p>
+</section>
+<section id="sources">
+  <p class="eyebrow">REFERENCE / 参考</p><h2>游戏机制与功能依据</h2>
+  <p>应用操作以当前源码为准；游戏机制参考独立 Blooncyclopedia，2026-10-25 核查时下列页面均可读取。Wiki 会继续更新，活动奖励、平衡数值和打法以你的游戏版本为准。本次教程完成的是源码与资料核对，没有进行真实 BTD6 通关验证。</p>
+  <ul>
+    <li><a href="https://www.bloonswiki.com/Collection_Event_(BTD6)">Collection Event (BTD6)</a>：收集物、活动奖励与地图加成。</li>
+    <li><a href="https://www.bloonswiki.com/Golden_Bloon_(BTD6)">Golden Bloon (BTD6)</a>：特殊属性、受伤限制与出现条件。</li>
+    <li><a href="https://www.bloonswiki.com/CHIMPS">CHIMPS</a>、<a href="https://www.bloonswiki.com/Map">Map</a>：模式限制、勋章与黑框要求。</li>
+    <li><a href="https://www.bloonswiki.com/Race_Event">Race Event</a>、<a href="https://www.bloonswiki.com/Odyssey_Mode_(BTD6)">Odyssey Mode (BTD6)</a>：竞速发波、岛屿数量与船员限制。</li>
+    <li><a href="https://www.bloonswiki.com/Paragon">Paragon</a>：模范合成、能量来源与版本变更。</li>
+  </ul>
+  <p>作者维护与深度排查可查看 <a href="https://github.com/ZiyaoZh/BetterBTD/blob/main/docs/developer/script-file-format.md">脚本文件格式</a>、<a href="https://github.com/ZiyaoZh/BetterBTD/blob/main/docs/developer/reference/script-library-design.md">脚本库与绑定规范</a>、<a href="https://github.com/ZiyaoZh/BetterBTD/tree/main/BetterBTD/Core/ScriptExecution/Handlers">指令实现</a>、<a href="https://github.com/ZiyaoZh/BetterBTD/tree/main/BetterBTD/Core/AutoTasks/Strategies">自动任务实现</a>及<a href="https://github.com/ZiyaoZh/BetterBTD/tree/main/BetterBTD/Services/Tools">工具实现</a>。</p>
+</section>
+<footer><a href="#overview">回到开头 ↑</a><p>BetterBTD · 非官方 BTD6 工具。游戏机制可能随版本更新；教程中的练习不承诺通关。</p></footer>
+</main>
+</div>
+</body>
+</html>

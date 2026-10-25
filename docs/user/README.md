@@ -1,5 +1,7 @@
 # BetterBTD 用户手册
 
+推荐阅读 [新版网页教程](https://ziyaozh.github.io/BetterBTD/)：包含全部 13 类指令、编写练习、游戏机制来源和各任务操作步骤。离线可直接打开 [本地网页](../site/index.html)。本目录保留为 Markdown 简版说明。
+
 本目录只说明如何安装和使用 BetterBTD，不讨论内部类结构或实现方案。
 
 ## 阅读顺序

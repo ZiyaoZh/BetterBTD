@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using BetterBTD.Core.AutoTasks;
 using BetterBTD.Core.RobotControl;
+using BetterBTD.Helpers;
 using BetterBTD.Models;
 using BetterBTD.Models.AutoTasks;
 using BetterBTD.Models.GameElements;
@@ -674,7 +675,7 @@ public sealed class AutoTasksPageViewModel : ObservableObject
         {
             task.Title = _localizationService.T($"Tasks.{task.Key}.Title");
             task.Description = _localizationService.T($"Tasks.{task.Key}.Description");
-            task.TutorialUrl = _localizationService.T("Tasks.TutorialUrl");
+            task.TutorialUrl = DocumentationLinks.ForAutoTask(task.Key);
             task.RunningButtonText = task.IsRunning ? _localizationService.T("Tasks.Stop") : _localizationService.T("Tasks.Start");
             task.SubscriptionLabel = ResolveSubscriptionLabel(task.Key);
             task.SubscriptionDescription = ResolveSubscriptionDescription(task.Key);

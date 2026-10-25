@@ -227,15 +227,9 @@ public sealed class StartPageViewModel : ObservableObject
 
     private void OpenTutorial()
     {
-        var tutorialUrl = _localizationService.T("Tasks.TutorialUrl");
-        if (string.IsNullOrWhiteSpace(tutorialUrl))
-        {
-            return;
-        }
-
         Process.Start(new ProcessStartInfo
         {
-            FileName = tutorialUrl,
+            FileName = DocumentationLinks.Home,
             UseShellExecute = true
         });
     }

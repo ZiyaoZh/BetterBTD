@@ -1,0 +1,55 @@
+name: User tutorial
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/site/**'
+      - 'tools/verify-tutorial.ps1'
+      - 'BetterBTD/Helpers/DocumentationLinks.cs'
+      - 'BetterBTD/Models/ScriptEditor/ScriptInstructionModels.cs'
+      - '.github/workflows/docs.yml'
+  pull_request:
+    paths:
+      - 'docs/site/**'
+      - 'tools/verify-tutorial.ps1'
+      - 'BetterBTD/Helpers/DocumentationLinks.cs'
+      - 'BetterBTD/Models/ScriptEditor/ScriptInstructionModels.cs'
+      - 'BetterBTD/Services/Shell/Localization/LocalizationService.Resources.Tasks.cs'
+      - '.github/workflows/docs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: user-tutorial-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Validate tutorial links and instruction coverage
+        shell: pwsh
+        run: ./tools/verify-tutorial.ps1
+      - name: Upload static website
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/site
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy tutorial
+        id: deployment
+        uses: actions/deploy-pages@v4

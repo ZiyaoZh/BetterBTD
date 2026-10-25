@@ -125,7 +125,7 @@ Paths are relative to the repository root. Open the linked file and verify curre
 | [ScriptInputSimulationServiceTests.cs](../../../../../BetterBTD.Tests/Services/ScriptInputSimulationServiceTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: ScriptInputSimulationServiceTests |
 | [ScriptInstructionOptimizationServiceTests.cs](../../../../../BetterBTD.Tests/Services/ScriptInstructionOptimizationServiceTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: ScriptInstructionOptimizationServiceTests |
 | [ScriptTagCatalogTests.cs](../../../../../BetterBTD.Tests/Services/ScriptTagCatalogTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: ScriptTagCatalogTests |
-| [ThemeServiceTests.cs](../../../../../BetterBTD.Tests/Services/ThemeServiceTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: ThemeServiceTests |
+| [ThemeServiceTests.cs](../../../../../BetterBTD.Tests/Services/ThemeServiceTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: ThemeServiceTests, ThemeTestPage |
 | [UserDataPathHelperTests.cs](../../../../../BetterBTD.Tests/Services/UserDataPathHelperTests.cs) | xUnit behavior, regression, protocol, or test-double code; primary symbols: UserDataPathHelperTests |
 
 ### `BetterBTD.Tests/TestApi`

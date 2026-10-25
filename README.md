@@ -14,7 +14,7 @@
   <p>
     <a href="https://github.com/ZiyaoZh/BetterBTD/releases/latest/download/BetterBTD.Install.exe"><strong>下载最新版</strong></a>
     ·
-    <a href="docs/user/README.md">用户手册</a>
+    <a href="https://ziyaozh.github.io/BetterBTD/">使用教程</a>
     ·
     <a href="docs/developer/README.md">开发者文档</a>
     ·
@@ -58,7 +58,7 @@ BetterBTD 不是简单的点击录制器。脚本包含地图、难度、模式�
 4. 如果没有找到游戏，使用“手动选择窗口”。
 5. 截图正常后启动截图器，再导入并试运行一个脚本。
 
-完整步骤见 [快速上手](docs/user/getting-started.md)。
+完整步骤见 [网页版快速上手](https://ziyaozh.github.io/BetterBTD/#getting-started)。
 
 ## 推荐工作流
 
@@ -74,9 +74,9 @@ BetterBTD 不是简单的点击录制器。脚本包含地图、难度、模式�
 绑定并启动自动任务
 ```
 
-- 普通用户应先阅读 [用户手册](docs/user/README.md)。
-- 脚本作者可继续阅读 [脚本与脚本库](docs/user/scripts.md)。
-- 自动任务需要先完成脚本绑定，详见 [自动任务指南](docs/user/auto-tasks.md)。
+- 普通用户应先阅读 [网页版使用教程](https://ziyaozh.github.io/BetterBTD/)。
+- 脚本作者可继续阅读 [写出第一个脚本](https://ziyaozh.github.io/BetterBTD/#editor)与[全部指令用法](https://ziyaozh.github.io/BetterBTD/#instructions)。
+- 自动任务需要先完成脚本绑定，详见 [自动任务指南](https://ziyaozh.github.io/BetterBTD/#auto-tasks)。
 - 参与开发、构建或协议集成请前往 [开发者文档](docs/developer/README.md)。
 
 ## 兼容性与限制

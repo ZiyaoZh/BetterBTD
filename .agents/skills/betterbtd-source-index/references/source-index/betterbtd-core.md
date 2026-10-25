@@ -27,7 +27,7 @@ UI-independent execution, automatic tasks, simulation, control leases, and helpe
 | `BetterBTD/Core/Simulator` | 7 |
 | `BetterBTD/Core/Simulator/Extensions` | 4 |
 | `BetterBTD/Core/TestApi` | 1 |
-| `BetterBTD/Helpers` | 16 |
+| `BetterBTD/Helpers` | 17 |
 | `BetterBTD/Helpers/Extensions` | 6 |
 | `BetterBTD/Helpers/Http` | 2 |
 | `BetterBTD/Helpers/Security` | 1 |
@@ -170,6 +170,7 @@ Paths are relative to the repository root. Open the linked file and verify curre
 | --- | --- |
 | [Base64Helper.cs](../../../../../BetterBTD/Helpers/Base64Helper.cs) | Cross-layer helpers, extensions, paths, and platform adapters; primary symbols: Base64Helper |
 | [DirectoryHelper.cs](../../../../../BetterBTD/Helpers/DirectoryHelper.cs) | Cross-layer helpers, extensions, paths, and platform adapters; primary symbols: DirectoryHelper |
+| [DocumentationLinks.cs](../../../../../BetterBTD/Helpers/DocumentationLinks.cs) | Cross-layer helpers, extensions, paths, and platform adapters; primary symbols: DocumentationLinks |
 | [DpiHelper.cs](../../../../../BetterBTD/Helpers/DpiHelper.cs) | Cross-layer helpers, extensions, paths, and platform adapters; primary symbols: DpiHelper, DpiScaleF |
 | [ExpandObjectConverter.cs](../../../../../BetterBTD/Helpers/ExpandObjectConverter.cs) | Cross-layer helpers, extensions, paths, and platform adapters; primary symbols: ExpandObjectConverter |
 | [GameElementCascadingItems.cs](../../../../../BetterBTD/Helpers/GameElementCascadingItems.cs) | Cross-layer helpers, extensions, paths, and platform adapters; primary symbols: GameElementCascadingItems |

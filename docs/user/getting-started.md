@@ -1,5 +1,7 @@
 # 快速上手
 
+推荐阅读 [新版网页快速上手](https://ziyaozh.github.io/BetterBTD/#getting-started)及[排错指南](https://ziyaozh.github.io/BetterBTD/#troubleshooting)。
+
 本页帮助你从安装 BetterBTD 开始，完成截图、热键和第一个脚本的验证。
 
 ## 系统要求

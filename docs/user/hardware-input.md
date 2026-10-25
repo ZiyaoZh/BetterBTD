@@ -1,5 +1,7 @@
 # 硬件输入模式
 
+网页版本：[硬件输入教程](https://ziyaozh.github.io/BetterBTD/#hardware-input)。
+
 BetterBTD 默认使用 Windows `SendInput` 模拟键盘和鼠标。只有普通模式在你的环境中不稳定时，才建议尝试基于 Interception 驱动的硬件输入模式。
 
 ## 两种模式
