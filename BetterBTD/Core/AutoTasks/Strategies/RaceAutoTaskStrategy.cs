@@ -43,6 +43,7 @@ public sealed class RaceAutoTaskStrategy : IAutoTaskStrategy
                 AutoTaskPhase.WaitingForLevelLoad),
             GameUiStateId.StageSettlement or
             GameUiStateId.StageHint or
+            GameUiStateId.NetworkUnavailableDialog or
             GameUiStateId.Defeat or
             GameUiStateId.StageSettings or
             GameUiStateId.LevelUp or
@@ -110,6 +111,7 @@ public sealed class RaceAutoTaskStrategy : IAutoTaskStrategy
             GameUiStateId.InLevel or GameUiStateId.Loading => MarkScriptFinishedAndWait(state),
             GameUiStateId.StageSettlement or
             GameUiStateId.StageHint or
+            GameUiStateId.NetworkUnavailableDialog or
             GameUiStateId.Defeat or
             GameUiStateId.StageSettings or
             GameUiStateId.LevelUp or
@@ -165,7 +167,7 @@ public sealed class RaceAutoTaskStrategy : IAutoTaskStrategy
     private static AutoTaskDecision BuildUnsupportedUiFailure(GameUiStateId uiState)
     {
         return AutoTaskDecision.Fail(
-            $"Race farming can only start from an active race stage and only handles settlement, stage hint, defeat, stage settings, level-up, and Insta Monkey reward screens. Current UI: {uiState}. Enter the race stage, then start the task again.");
+            $"Race farming can only start from an active race stage and only handles settlement, stage hint, network unavailable dialog, defeat, stage settings, level-up, and Insta Monkey reward screens. Current UI: {uiState}. Enter the race stage, then start the task again.");
     }
 
     private static void EnsureInitialized(AutoTaskRuntimeState state)

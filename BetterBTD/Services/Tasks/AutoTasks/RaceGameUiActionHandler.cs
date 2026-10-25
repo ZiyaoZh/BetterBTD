@@ -37,7 +37,7 @@ internal sealed class RaceGameUiActionHandler : AutoTaskGameUiActionHandlerBase
                 step,
                 new WpfPoint(1340, 850),
                 "Advanced past the race settlement screen."),
-            GameUiStateId.StageHint => Click(
+            GameUiStateId.StageHint or GameUiStateId.NetworkUnavailableDialog => Click(
                 step,
                 new WpfPoint(1135, 730),
                 "Dismissed the race stage hint."),

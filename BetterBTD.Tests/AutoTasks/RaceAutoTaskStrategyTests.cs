@@ -85,6 +85,8 @@ public sealed class RaceAutoTaskStrategyTests
     [Theory]
     [InlineData(GameUiStateId.StageSettlement)]
     [InlineData(GameUiStateId.StageSettings)]
+    [InlineData(GameUiStateId.StageHint)]
+    [InlineData(GameUiStateId.NetworkUnavailableDialog)]
     public async Task DecideNextAsync_HandledOverlayScreen_RequestsHandledOverlayNavigation(
         GameUiStateId uiState)
     {
@@ -102,6 +104,37 @@ public sealed class RaceAutoTaskStrategyTests
             RaceAutoTaskStateKeys.ScriptRunState,
             out var runState));
         Assert.Equal(RaceAutoTaskScriptRunState.NotStarted, runState);
+    }
+
+    [Theory]
+    [InlineData(GameUiStateId.StageHint)]
+    [InlineData(GameUiStateId.NetworkUnavailableDialog)]
+    public async Task DecideNextAsync_AfterScriptExecution_ConfirmationResetsAttemptAndAllowsRestart(
+        GameUiStateId uiState)
+    {
+        var strategy = new RaceAutoTaskStrategy();
+        var state = CreateState("race-stage.btd6");
+        await strategy.DecideNextAsync(state, new GameUiSnapshot { State = GameUiStateId.InLevel });
+        state.RecordScriptExecutionResult(new ScriptExecutionResult
+        {
+            Status = ScriptExecutionStatus.Completed,
+            ExecutedStepCount = 1,
+            LastCompletedStepIndex = 0,
+            FinalProgress = new ScriptExecutionProgressSnapshot()
+        });
+
+        var confirmation = await strategy.DecideNextAsync(state, new GameUiSnapshot { State = uiState });
+
+        Assert.Equal(AutoTaskDecisionKind.Navigate, confirmation.Kind);
+        Assert.Equal(AutoTaskPhase.AdvancingObjective, confirmation.NextPhase);
+        Assert.False(state.HasPendingScriptOutcome);
+        Assert.True(state.TryGetProperty<RaceAutoTaskScriptRunState>(
+            RaceAutoTaskStateKeys.ScriptRunState, out var runState));
+        Assert.Equal(RaceAutoTaskScriptRunState.NotStarted, runState);
+
+        var restart = await strategy.DecideNextAsync(state, new GameUiSnapshot { State = GameUiStateId.InLevel });
+
+        Assert.Equal(AutoTaskDecisionKind.StartScriptExecution, restart.Kind);
     }
 
     private static AutoTaskRuntimeState CreateState(string scriptPath)

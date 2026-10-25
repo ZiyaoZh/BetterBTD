@@ -218,7 +218,7 @@ public sealed class AutoTaskSkeletonTests
             var move = Assert.Single(
                 dispatcher.Commands,
                 static command => command.Type == InputSimulationCommandType.MoveMouseToVirtualDesktop);
-            Assert.Equal(780, move.X);
+            Assert.Equal(kind == AutoTaskKind.Race ? 1135 : 780, move.X);
             Assert.Equal(730, move.Y);
         }
     }

@@ -64,7 +64,7 @@ public sealed class GameUiActionExecutor : IGameUiActionExecutor
 
         cancellationToken.ThrowIfCancellationRequested();
 
-        if (snapshot.State == GameUiStateId.NetworkUnavailableDialog)
+        if (snapshot.State == GameUiStateId.NetworkUnavailableDialog && state.Request.Kind != AutoTaskKind.Race)
         {
             _inputSimulationService.PrepareTargetWindowForInput();
             _inputSimulationService.ClickMouseAtScriptCoordinate(new WpfPoint(780, 730));

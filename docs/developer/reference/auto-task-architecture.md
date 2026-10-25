@@ -84,6 +84,8 @@ PreparingStage
 
 策略不直接操作鼠标。它只读取 `AutoTaskRuntimeState` 与快照，并返回 `AutoTaskDecision`。这使策略测试可以替换识别、输入和脚本执行服务。
 
+竞速模式将 `NetworkUnavailableDialog` 与 `StageHint` 一样处理，均点击 `(1135,730)` 确认，兼容重试确认框被识别为网络不可用弹窗的情况；其他模式仍使用通用网络弹窗关闭坐标 `(780,730)`。
+
 ## 脚本解析
 
 自动任务通过 `AutoTaskScriptQuery` 请求脚本。解析顺序由任务和请求决定，可能包括：
